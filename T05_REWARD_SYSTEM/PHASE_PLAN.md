@@ -4,7 +4,7 @@
 **Scope**: Points calculation, anti-gaming gates (v1.0); vote-right conversion, Fisher-Yates shuffle ranking, audit logging (Phase 2+).
 
 > **v1.0 Scope**: Phase 1 + Phase 2 only. Phase 3-6 deferred to Phase 2+ per project lead decision (2026-03-06).
-> See: `shared/cross_team_comms/20260306_1840_M01_to_ALL_defer_voting_system.md`
+> See: MASTER_ROADMAP.md 決策紀錄 (投票系統延後至 Phase 2+, M01→ALL, 2026-03-06, 已完成歸檔)
 
 ---
 

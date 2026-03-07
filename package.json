@@ -20,15 +20,21 @@
     "security:patterns": "node scripts/security-patterns.js",
     "precommit": "npm run lint && npm run validate && npm test"
   },
-  "keywords": ["taiwan", "news", "bias-analysis", "cloudflare-workers", "pwa"],
+  "keywords": [
+    "taiwan",
+    "news",
+    "bias-analysis",
+    "cloudflare-workers",
+    "pwa"
+  ],
   "license": "AGPL-3.0",
   "engines": {
     "node": ">=20.0.0"
   },
   "devDependencies": {
-    "wrangler": "^3.80.0",
+    "@cloudflare/workers-types": "^4.20240620.0",
     "eslint": "^9.0.0",
     "jest": "^29.7.0",
-    "@cloudflare/workers-types": "^4.20240620.0"
+    "wrangler": "^4.71.0"
   }
 }

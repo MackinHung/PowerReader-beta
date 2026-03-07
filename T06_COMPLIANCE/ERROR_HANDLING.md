@@ -43,7 +43,7 @@
 
 **來源**: T03 QUALITY_GATES.md 品質驗證失敗碼
 **i18n key**: `quality.failed_format`, `quality.failed_range`, `quality.failed_consistency`, `quality.failed_duplicate` (T04 UI_LOCALIZATION.md)
-**跨團隊請求**: `shared/cross_team_comms/20260306_1833_M01_to_T03_T04_T06_quality_gate_feedback.md`
+**跨團隊請求**: 品質門回饋錯誤類型 (M01→T03/T04/T06, 2026-03-06, 已完成歸檔)
 
 ### 伺服器錯誤 (僅記錄日誌，顯示通用訊息)
 
