@@ -1,0 +1,78 @@
+{
+  "ext_name": {
+    "message": "PowerReader - 新聞立場分析"
+  },
+  "ext_description": {
+    "message": "透過公民算力分析台灣新聞媒體立場與爭議程度"
+  },
+  "popup_header": {
+    "message": "立場分析結果"
+  },
+  "popup_loading": {
+    "message": "正在分析..."
+  },
+  "popup_unsupported": {
+    "message": "不支援此網站"
+  },
+  "popup_open_pwa": {
+    "message": "開啟 PowerReader"
+  },
+  "popup_compare": {
+    "message": "查看其他媒體報導"
+  },
+  "popup_analyze": {
+    "message": "我要分析"
+  },
+  "context_menu_analyze": {
+    "message": "使用公民算力分析此文章"
+  },
+  "controversy_label": {
+    "message": "爭議程度:"
+  },
+  "bias_extreme_left": {
+    "message": "極左"
+  },
+  "bias_left": {
+    "message": "偏左"
+  },
+  "bias_center_left": {
+    "message": "中間偏左"
+  },
+  "bias_center": {
+    "message": "中立"
+  },
+  "bias_center_right": {
+    "message": "中間偏右"
+  },
+  "bias_right": {
+    "message": "偏右"
+  },
+  "bias_extreme_right": {
+    "message": "極右"
+  },
+  "controversy_low": {
+    "message": "低度爭議"
+  },
+  "controversy_moderate": {
+    "message": "中等爭議"
+  },
+  "controversy_high": {
+    "message": "高度爭議"
+  },
+  "controversy_very_high": {
+    "message": "極高爭議"
+  },
+  "a11y_bias": {
+    "message": "立場: $LABEL$，分數 $SCORE$",
+    "placeholders": {
+      "label": {
+        "content": "$1",
+        "example": "偏左"
+      },
+      "score": {
+        "content": "$2",
+        "example": "35"
+      }
+    }
+  }
+}

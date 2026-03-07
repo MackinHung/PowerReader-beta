@@ -1,0 +1,345 @@
+name: Deploy to Cloudflare
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+          - staging
+
+# 全域環境變數 — 根據觸發方式決定部署目標環境
+env:
+  DEPLOY_ENV: ${{ github.event.inputs.environment || 'production' }}
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests
+        run: npm test
+      - name: Security scan
+        run: npm audit --production
+      - name: Validate config
+        run: node scripts/validate-config.js
+      - name: Validate enums
+        run: node scripts/validate-enums.js
+      - name: Validate state machine
+        run: node scripts/validate-state-machine.js
+
+  deploy-pages:
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci && npm run build
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=powerreader
+
+  deploy-workers:
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    outputs:
+      # 記錄當前與前一個 commit SHA，供回滾使用
+      current_sha: ${{ steps.track-commits.outputs.current_sha }}
+      previous_sha: ${{ steps.track-commits.outputs.previous_sha }}
+      deploy_env: ${{ steps.track-commits.outputs.deploy_env }}
+      health_url: ${{ steps.track-commits.outputs.health_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 取得足夠的歷史紀錄以找到前一個 commit
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      # Phase 5: 追蹤當前與前一個 commit SHA，用於自動回滾
+      - name: Track commit SHAs for rollback
+        id: track-commits
+        run: |
+          CURRENT_SHA="${{ github.sha }}"
+          PREVIOUS_SHA=$(git rev-parse HEAD~1 2>/dev/null || echo "")
+
+          echo "current_sha=${CURRENT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "previous_sha=${PREVIOUS_SHA}" >> "$GITHUB_OUTPUT"
+          echo "deploy_env=${DEPLOY_ENV}" >> "$GITHUB_OUTPUT"
+
+          # 根據環境決定健康檢查端點
+          if [ "${DEPLOY_ENV}" = "staging" ]; then
+            echo "health_url=https://staging-api.powerreader.dev/api/v1/health" >> "$GITHUB_OUTPUT"
+          else
+            echo "health_url=https://api.powerreader.dev/api/v1/health" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "Current SHA: ${CURRENT_SHA}"
+          echo "Previous SHA: ${PREVIOUS_SHA}"
+          echo "Deploy env: ${DEPLOY_ENV}"
+
+      - name: Validate production security
+        run: |
+          node -e "
+            const config = await import('./shared/config.js');
+            config.validateProductionSecurity('production', process.env.SERVICE_TOKEN || '');
+          "
+        env:
+          SERVICE_TOKEN: ${{ secrets.SERVICE_TOKEN }}
+
+      - name: Deploy Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          command: deploy --env ${{ env.DEPLOY_ENV }}
+
+      - name: Smoke test
+        run: |
+          sleep 10
+          curl -sf "${{ steps.track-commits.outputs.health_url }}" || exit 1
+          echo "Smoke test passed"
+
+  # ============================================================
+  # Phase 5: 部署後健康檢查 — 連續 3 次探測，間隔 30 秒
+  # 若全部失敗則觸發自動回滾
+  # ============================================================
+  post-deploy-health-check:
+    needs: deploy-workers
+    runs-on: ubuntu-latest
+    if: needs.deploy-workers.result == 'success'
+    outputs:
+      health_status: ${{ steps.health-check.outputs.status }}
+    steps:
+      - name: Health check (3 次探測，間隔 30 秒)
+        id: health-check
+        run: |
+          HEALTH_URL="${{ needs.deploy-workers.outputs.health_url }}"
+          READY_URL="${HEALTH_URL%/health}/health/ready"
+          PASS_COUNT=0
+          TOTAL_ATTEMPTS=3
+          INTERVAL=30
+
+          echo "健康檢查端點: ${HEALTH_URL}"
+          echo "就緒檢查端點: ${READY_URL}"
+          echo "探測次數: ${TOTAL_ATTEMPTS}，間隔: ${INTERVAL}s"
+          echo "---"
+
+          for i in $(seq 1 $TOTAL_ATTEMPTS); do
+            echo "=== 第 ${i}/${TOTAL_ATTEMPTS} 次探測 ==="
+
+            # 主要健康檢查 (/api/v1/health)
+            HTTP_CODE=$(curl -s -o /tmp/health_response.json -w "%{http_code}" \
+              --max-time 10 \
+              "${HEALTH_URL}" 2>/dev/null || echo "000")
+
+            echo "Health 回應碼: ${HTTP_CODE}"
+
+            if [ "${HTTP_CODE}" = "200" ]; then
+              echo "Health 檢查通過"
+              cat /tmp/health_response.json 2>/dev/null || true
+
+              # 額外檢查錯誤率端點 (/api/v1/health/ready)
+              READY_CODE=$(curl -s -o /tmp/ready_response.json -w "%{http_code}" \
+                --max-time 10 \
+                "${READY_URL}" 2>/dev/null || echo "000")
+
+              echo "Ready 回應碼: ${READY_CODE}"
+              cat /tmp/ready_response.json 2>/dev/null || true
+
+              if [ "${READY_CODE}" = "200" ]; then
+                echo "Ready 檢查通過"
+                PASS_COUNT=$((PASS_COUNT + 1))
+              else
+                echo "Ready 檢查失敗 (回應碼: ${READY_CODE})"
+              fi
+            else
+              echo "Health 檢查失敗 (回應碼: ${HTTP_CODE})"
+            fi
+
+            echo "---"
+
+            # 最後一次探測後不需等待
+            if [ $i -lt $TOTAL_ATTEMPTS ]; then
+              echo "等待 ${INTERVAL} 秒後進行下一次探測..."
+              sleep $INTERVAL
+            fi
+          done
+
+          echo "=== 健康檢查結果 ==="
+          echo "通過次數: ${PASS_COUNT}/${TOTAL_ATTEMPTS}"
+
+          if [ $PASS_COUNT -eq 0 ]; then
+            echo "status=failed" >> "$GITHUB_OUTPUT"
+            echo "所有健康檢查均失敗，將觸發自動回滾"
+            exit 1
+          elif [ $PASS_COUNT -lt $TOTAL_ATTEMPTS ]; then
+            echo "status=degraded" >> "$GITHUB_OUTPUT"
+            echo "部分健康檢查失敗 (${PASS_COUNT}/${TOTAL_ATTEMPTS})，服務可能不穩定"
+            # 部分通過不觸發回滾，但標記為 degraded
+          else
+            echo "status=healthy" >> "$GITHUB_OUTPUT"
+            echo "所有健康檢查通過，部署成功"
+          fi
+
+  # ============================================================
+  # Phase 5: 自動回滾 — 當健康檢查全部失敗時，
+  # 回退到前一個已知正常的 commit 並重新部署
+  # ============================================================
+  rollback:
+    needs: [deploy-workers, post-deploy-health-check]
+    runs-on: ubuntu-latest
+    if: failure() && needs.deploy-workers.outputs.previous_sha != ''
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout previous known-good commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.deploy-workers.outputs.previous_sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Redeploy previous version (自動回滾)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          command: deploy --env ${{ needs.deploy-workers.outputs.deploy_env }}
+
+      # 回滾後驗證服務是否恢復
+      - name: Post-rollback verification
+        id: rollback-verify
+        run: |
+          HEALTH_URL="${{ needs.deploy-workers.outputs.health_url }}"
+          echo "回滾後驗證: ${HEALTH_URL}"
+          sleep 15
+
+          VERIFY_PASS=0
+          for i in 1 2 3; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+              --max-time 10 \
+              "${HEALTH_URL}" 2>/dev/null || echo "000")
+
+            echo "驗證第 ${i} 次: HTTP ${HTTP_CODE}"
+
+            if [ "${HTTP_CODE}" = "200" ]; then
+              VERIFY_PASS=$((VERIFY_PASS + 1))
+            fi
+            sleep 5
+          done
+
+          if [ $VERIFY_PASS -gt 0 ]; then
+            echo "rollback_success=true" >> "$GITHUB_OUTPUT"
+            echo "回滾成功，服務已恢復"
+          else
+            echo "rollback_success=false" >> "$GITHUB_OUTPUT"
+            echo "回滾後服務仍無法存取，需人工介入"
+          fi
+
+      # Phase 5: 回滾通知 — 建立 GitHub Issue 記錄自動回滾事件
+      - name: Rollback notification (建立 GitHub Issue)
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CURRENT_SHA="${{ needs.deploy-workers.outputs.current_sha }}"
+          PREVIOUS_SHA="${{ needs.deploy-workers.outputs.previous_sha }}"
+          DEPLOY_ENV="${{ needs.deploy-workers.outputs.deploy_env }}"
+          ROLLBACK_SUCCESS="${{ steps.rollback-verify.outputs.rollback_success }}"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          SHORT_CURRENT="${CURRENT_SHA:0:7}"
+          SHORT_PREVIOUS="${PREVIOUS_SHA:0:7}"
+          TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M:%S UTC')
+
+          if [ "${ROLLBACK_SUCCESS}" = "true" ]; then
+            SEVERITY="warning"
+            STATUS_LABEL="rollback-success"
+            STATUS_TEXT="已自動回滾至 ${SHORT_PREVIOUS}，服務已恢復"
+          else
+            SEVERITY="critical"
+            STATUS_LABEL="rollback-failed"
+            STATUS_TEXT="回滾後服務仍無法存取，需立即人工介入"
+          fi
+
+          HEALTH_URL="${{ needs.deploy-workers.outputs.health_url }}"
+          READY_URL="${HEALTH_URL%/health}/health/ready"
+
+          # 建立 GitHub Issue
+          gh issue create \
+            --title "[自動回滾] ${DEPLOY_ENV} 環境部署失敗 — ${SHORT_CURRENT} → ${SHORT_PREVIOUS}" \
+            --label "auto-rollback,${STATUS_LABEL},${DEPLOY_ENV}" \
+            --body "$(cat <<EOF
+          ## 自動回滾通知
+
+          | 項目 | 值 |
+          |------|---|
+          | **嚴重程度** | ${SEVERITY} |
+          | **環境** | ${DEPLOY_ENV} |
+          | **失敗 Commit** | \`${CURRENT_SHA}\` |
+          | **回滾至 Commit** | \`${PREVIOUS_SHA}\` |
+          | **回滾狀態** | ${STATUS_TEXT} |
+          | **時間** | ${TIMESTAMP} |
+          | **Workflow Run** | [查看詳情](${RUN_URL}) |
+
+          ## 事件經過
+
+          1. Commit \`${SHORT_CURRENT}\` 部署至 **${DEPLOY_ENV}** 環境
+          2. 部署後健康檢查 (3 次探測，間隔 30 秒) **全部失敗**
+          3. 系統自動回滾至前一個 commit \`${SHORT_PREVIOUS}\`
+          4. 回滾驗證結果: **${STATUS_TEXT}**
+
+          ## 健康檢查端點
+
+          - Health: \`${HEALTH_URL}\`
+          - Ready: \`${READY_URL}\`
+
+          ## 需要的行動
+
+          - [ ] 檢查失敗 commit \`${SHORT_CURRENT}\` 的變更內容
+          - [ ] 確認健康檢查端點回應正常
+          - [ ] 找出根本原因並修復
+          - [ ] 重新部署修復後的版本
+          - [ ] 關閉此 Issue
+
+          ---
+          > 此 Issue 由 CI/CD 自動回滾系統建立 (Phase 5)
+          EOF
+          )"
+
+          echo "GitHub Issue 已建立，通知回滾事件"

@@ -1,0 +1,22 @@
+# T05 Reward System Worker
+# This Worker is designed to be mounted by T01's main router under /api/v1/rewards/
+# It does NOT run as a standalone Worker in production.
+# This config is for local dev/testing with `wrangler dev`.
+
+name = "t05-reward-system"
+main = "src/api.js"
+compatibility_date = "2024-12-01"
+
+# D1 Database Binding
+# In production, this is bound by T01's main wrangler.toml.
+# For local dev/testing, create a local D1 database:
+#   wrangler d1 create powerreader-db
+#   wrangler d1 execute powerreader-db --local --file=../src/workers/migrations/0001_initial.sql
+#   wrangler d1 execute powerreader-db --local --file=../src/workers/migrations/0003_t05_reward.sql
+[[d1_databases]]
+binding = "DB"
+database_name = "powerreader-db"
+database_id = "PLACEHOLDER_REPLACE_WITH_ACTUAL_D1_ID"
+
+# Note: KV USER_POINTS namespace removed — D1 is primary storage per KV_SCHEMA.md v2.0
+# Note: VOTE_RESULTS KV namespace is Phase 2+ (deferred)

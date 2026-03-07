@@ -1,0 +1,254 @@
+[
+  {
+    "source_key": "LIBERTY_TIMES",
+    "source_name": "自由時報",
+    "article_url": "https://news.ltn.com.tw/news/politics/breakingnews/5361878",
+    "test_result": {
+      "success": true,
+      "status_code": 200,
+      "response_time_ms": 1377.2928714752197,
+      "content_length": 12667,
+      "tokens": 3528,
+      "title": "國民黨軍購條例被轟「軍盲條例」 張育萌：自走砲買來停路邊？ - 政治 - 自由時報電子報",
+      "has_chinese": true,
+      "paragraph_count": 47,
+      "error": null,
+      "rate_limit_remaining": null,
+      "first_200_chars": "---\ntitle: 國民黨軍購條例被轟「軍盲條例」 張育萌：自走砲買來停路邊？ - 政治 - 自由時報電子報\nimage: https://img.ltn.com.tw/Upload/news/600/2026/03/07/phpODCaz6.jpg\ndescription: 為強化國防韌性及不對稱戰力建構，政府提出8年期1.25兆元的國防特別預算案，過去數月卻遭在野黨連續在程序委員會杯葛，近日"
+    }
+  },
+  {
+    "source_key": "CHINA_TIMES",
+    "source_name": "中國時報",
+    "article_url": "https://www.chinatimes.com/realtimenews/20260307001920-260405",
+    "test_result": {
+      "success": true,
+      "status_code": 200,
+      "response_time_ms": 1240.6418323516846,
+      "content_length": 7597,
+      "tokens": 1933,
+      "title": "「聖嬰年＋選舉年」登革熱升溫 台南4月起查獲孑孓將開罰",
+      "has_chinese": true,
+      "paragraph_count": 23,
+      "error": null,
+      "rate_limit_remaining": null,
+      "first_200_chars": "---\ntitle: 「聖嬰年＋選舉年」登革熱升溫 台南4月起查獲孑孓將開罰\nimage: https://images.chinatimes.com/newsphoto/2026-03-07/656/20260307001921.jpg\ndescription: 近期氣候不穩定，不少人出門感覺蚊子變多了，台南上一次爆發登革熱大流行是民國112年，過去登革熱曾被觀察到每隔3至4年有大流行趨勢，今年"
+    }
+  },
+  {
+    "source_key": "UNITED_DAILY_NEWS",
+    "source_name": "聯合報",
+    "article_url": "https://udn.com/news/story/122629/9365550",
+    "test_result": {
+      "success": true,
+      "status_code": 200,
+      "response_time_ms": 1472.2709655761719,
+      "content_length": 8540,
+      "tokens": 2902,
+      "title": "經典賽／「驕傲代表媽媽的家鄉開轟」 費爾柴德簽名球換回全壘打球 | 聯合新聞網",
+      "has_chinese": true,
+      "paragraph_count": 84,
+      "error": null,
+      "rate_limit_remaining": null,
+      "first_200_chars": "---\ntitle: 經典賽／「驕傲代表媽媽的家鄉開轟」 費爾柴德簽名球換回全壘打球 | 聯合新聞網\nimage: https://pgw.udn.com.tw/gw/photo.php?u=https://uc.udn.com.tw/photo/t3/2026/03/07/34740962.jpg&M=1&s=Y&x=0&y=0&sw=1280&sh=853&exp=3600\ndescripti"
+    }
+  },
+  {
+    "source_key": "CNA",
+    "source_name": "中央社",
+    "article_url": "https://www.cna.com.tw/news/aipl/202603070078.aspx",
+    "test_result": {
+      "success": false,
+      "status_code": 403,
+      "response_time_ms": 652.7574062347412,
+      "content_length": 0,
+      "tokens": null,
+      "title": null,
+      "has_chinese": false,
+      "paragraph_count": 0,
+      "error": "HTTP 403: {\"success\":false,\"error\":\"This URL pattern is not allowed for security reasons.\"}",
+      "rate_limit_remaining": null,
+      "first_200_chars": ""
+    }
+  },
+  {
+    "source_key": "PTS",
+    "source_name": "公視新聞",
+    "article_url": "https://news.pts.org.tw/article/797887",
+    "test_result": {
+      "success": true,
+      "status_code": 200,
+      "response_time_ms": 3743.675470352173,
+      "content_length": 10687,
+      "tokens": 3102,
+      "title": "WBC台捷之戰我球迷東京加油 曾豪駒：已無退路全力搶勝 ｜ 公視新聞網 PNN",
+      "has_chinese": true,
+      "paragraph_count": 69,
+      "error": null,
+      "rate_limit_remaining": null,
+      "first_200_chars": "---\ndescription: WBC世界棒球經典賽台灣雖然連輸2場，但今（7）日對上捷克，可以看到台灣球迷依然熱情不減，一早東京巨蛋球場外滿滿人潮，全力為台灣加油。不過連2場「得分掛蛋」，球員心情不免也受到影響，賽前總教練曾豪駒表示，接下來的比賽沒有退路、要全力搶勝，他也說，很感動球迷們特地飛來東京，希望用最好的成績回報大家。\ntitle: WBC台捷之戰我球迷東京加油 曾豪駒：已無退路全力搶"
+    }
+  },
+  {
+    "source_key": "COMMON_WEALTH",
+    "source_name": "天下雜誌",
+    "article_url": null,
+    "test_result": {
+      "success": false,
+      "error": "NO_ARTICLE_URL_FOUND"
+    }
+  },
+  {
+    "source_key": "BUSINESS_WEEKLY",
+    "source_name": "商業週刊",
+    "article_url": "https://www.businessweekly.com.tw/style/blog/3020830",
+    "test_result": {
+      "success": false,
+      "status_code": 500,
+      "response_time_ms": 20514.66989517212,
+      "content_length": 0,
+      "tokens": null,
+      "title": null,
+      "has_chinese": false,
+      "paragraph_count": 0,
+      "error": "HTTP 500: {\"success\":false,\"error\":\"Error from The API: All conversion methods failed. The page might be empty or inaccessible.\"}",
+      "rate_limit_remaining": null,
+      "first_200_chars": ""
+    }
+  },
+  {
+    "source_key": "THE_NEWS_LENS",
+    "source_name": "關鍵評論網",
+    "article_url": "https://www.thenewslens.com/article/265333",
+    "test_result": {
+      "success": true,
+      "status_code": 200,
+      "response_time_ms": 1388.2274627685547,
+      "content_length": 10220,
+      "tokens": 2671,
+      "title": "【AI時代的領導力】6：打造VISTA領導作業系統，在不確定中建立決策優勢 - TNL The News Lens 關鍵評論網",
+      "has_chinese": true,
+      "paragraph_count": 93,
+      "error": null,
+      "rate_limit_remaining": null,
+      "first_200_chars": "---\ndescription: AI時代，數據已非優勢，真正的挑戰在於決策。領導者須具備數據洞察、快速決策、數據敘事與溝通影響力，才能將龐雜資訊化為團隊的一致行動，創造績效。\ntitle: 【AI時代的領導力】6：打造VISTA領導作業系統，在不確定中建立決策優勢 - TNL The News Lens 關鍵評論網\nimage: https://bucket-image.inkmaginecms"
+    }
+  },
+  {
+    "source_key": "THE_REPORTER",
+    "source_name": "報導者",
+    "article_url": "https://www.twreporter.org/a/bookreview-echos-of-the-bunun",
+    "test_result": {
+      "success": true,
+      "status_code": 200,
+      "response_time_ms": 929.4071197509766,
+      "content_length": 9596,
+      "tokens": 2840,
+      "title": "馬翊航／半島風真透：《忽聞布農踏歌聲》的實／在回音 - 報導者 The Reporter",
+      "has_chinese": true,
+      "paragraph_count": 121,
+      "error": null,
+      "rate_limit_remaining": null,
+      "first_200_chars": "---\ndescription: 這本書既是明智的文化接觸旅程地圖，也是有心於全民原教者的探索地圖。然若此書，因其種種「地圖」的特徵，被定位為一本「實用」之書的話，那我們如何看待地圖無法「觸及」處？\ntitle: 馬翊航／半島風真透：《忽聞布農踏歌聲》的實／在回音 - 報導者 The Reporter\nimage: https://www.twreporter.org/images/2026030"
+    }
+  },
+  {
+    "source_key": "ECONOMIC_DAILY_NEWS",
+    "source_name": "經濟日報",
+    "article_url": "https://money.udn.com/money/story/5612/9365435",
+    "test_result": {
+      "success": true,
+      "status_code": 200,
+      "response_time_ms": 1478.7845611572266,
+      "content_length": 33567,
+      "tokens": 9070,
+      "title": "台泥張安平：伊朗戰爭影響難預測 陸經濟尚未好轉 唯有 AI 應用最樂觀 | 產業熱點 | 產業 | 經濟日報",
+      "has_chinese": true,
+      "paragraph_count": 188,
+      "error": null,
+      "rate_limit_remaining": null,
+      "first_200_chars": "---\ntitle: 台泥張安平：伊朗戰爭影響難預測 陸經濟尚未好轉 唯有 AI 應用最樂觀 | 產業熱點 | 產業 | 經濟日報\nimage: https://pgw.udn.com.tw/gw/photo.php?u=https://uc.udn.com.tw/photo/t3/2026/03/07/34740775.jpg&M=1&x=0&y=0&sw=0&sh=0&sl=W&fw=1050"
+    }
+  },
+  {
+    "source_key": "COMMERCIAL_TIMES",
+    "source_name": "工商時報",
+    "article_url": null,
+    "test_result": {
+      "success": false,
+      "error": "NO_ARTICLE_URL_FOUND"
+    }
+  },
+  {
+    "source_key": "INSIDE",
+    "source_name": "Inside",
+    "article_url": "https://www.inside.com.tw/article/40701-biggest-study-yet-shows-plug-in-hybrids-use-over-300-more-fuel-than-claimed",
+    "test_result": {
+      "success": true,
+      "status_code": 200,
+      "response_time_ms": 2141.4973735809326,
+      "content_length": 16696,
+      "tokens": 4229,
+      "title": "近百萬輛實證數據揭真相：PHEV 實際油耗高出官方 3 倍，歐洲排放規範面臨修正壓力 - INSIDE",
+      "has_chinese": true,
+      "paragraph_count": 35,
+      "error": null,
+      "rate_limit_remaining": null,
+      "first_200_chars": "---\ndescription: 最新研究顯示，PHEV 實際油耗較官方數據高逾 300%。主因是車主充電頻率遠低於預期，使其減碳效益被高估。此發現挑戰了 PHEV 的環保定位與現行政策基礎。#趨勢,頭條,電動車,排放,PHEV (biggest-study-yet-shows-plug-in-hybrids-use-over-300-more-fuel-than-claimed)\ntitle: "
+    }
+  },
+  {
+    "source_key": "TECHNEWS",
+    "source_name": "科技新報",
+    "article_url": "https://technews.tw/2026/03/07/intelligence-emerges-when-the-whole-brain-works-as-one/",
+    "test_result": {
+      "success": true,
+      "status_code": 200,
+      "response_time_ms": 1872.546672821045,
+      "content_length": 8754,
+      "tokens": 3110,
+      "title": "技嘉攜手卡普空打造〈惡靈古堡：安魂曲〉主題訂製 PC 沉浸式體驗 | TechNews 科技新報",
+      "has_chinese": true,
+      "paragraph_count": 58,
+      "error": null,
+      "rate_limit_remaining": null,
+      "first_200_chars": "---\ntitle: 技嘉攜手卡普空打造〈惡靈古堡：安魂曲〉主題訂製 PC 沉浸式體驗 | TechNews 科技新報\ndescription: 電腦品牌技嘉科技（GIGABYTE）宣佈與卡普空（Capcom）展開全新合作，共同慶祝經典《惡靈古堡》生存恐怖系列第九部正傳續作〈惡靈古堡：安魂曲〉2 月 27 日發售。此次合作為技嘉推出限時遊戲主題訂製 PC 套裝抽獎活動，並同步推出獨家顯示器遊戲捆綁"
+    }
+  },
+  {
+    "source_key": "ITHOME",
+    "source_name": "iThome",
+    "article_url": "https://www.ithome.com.tw/news/174265",
+    "test_result": {
+      "success": true,
+      "status_code": 200,
+      "response_time_ms": 2464.033365249634,
+      "content_length": 2613,
+      "tokens": 1132,
+      "title": "時代力量3.3萬筆個資外流，官方晚間發聲明：CRM系統遭入侵",
+      "has_chinese": true,
+      "paragraph_count": 46,
+      "error": null,
+      "rate_limit_remaining": null,
+      "first_200_chars": "---\ndescription: 時代力量傳出約3.3萬個人資料已在駭客論壇流出，經求證後，該政黨於今日（3月6日）晚間發布聲明，初步清查是內部CRM（客戶關係管理）系統遭到非法入侵，已向主管機關通報，並公布因應與配套補救措施\nimage: https://s4.itho.me/sites/default/files/field/image/zhu_tu_shi_dai_li_liang_ge_z"
+    }
+  },
+  {
+    "source_key": "STORM_MEDIA",
+    "source_name": "風傳媒",
+    "article_url": null,
+    "test_result": {
+      "success": false,
+      "error": "NO_ARTICLE_URL_FOUND"
+    }
+  },
+  {
+    "source_key": "REW_CAUSAS",
+    "source_name": "新新聞",
+    "article_url": null,
+    "test_result": {
+      "success": false,
+      "error": "NO_ARTICLE_URL_FOUND"
+    }
+  }
+]

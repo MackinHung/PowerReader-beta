@@ -1,0 +1,60 @@
+# PowerReader - Cloudflare Workers Configuration
+# Maintainer: T07 (Deployment & Monitoring Team)
+# SSOT: shared/config.js
+
+name = "powerreader-api"
+main = "src/workers/index.js"
+compatibility_date = "2026-03-01"
+node_compat = true
+
+# ===== KV Namespaces (config/cache only — Decision #008) =====
+[[kv_namespaces]]
+binding = "KV"
+id = "<REPLACE_WITH_PRODUCTION_KV_ID>"
+
+[env.staging.kv_namespaces]
+binding = "KV"
+id = "<REPLACE_WITH_STAGING_KV_ID>"
+
+# ===== D1 Database (structured data — Decision #008) =====
+[[d1_databases]]
+binding = "DB"
+database_name = "powerreader-db"
+database_id = "<REPLACE_WITH_D1_DATABASE_ID>"
+
+# ===== Vectorize Index (knowledge base vector search) =====
+[[vectorize]]
+binding = "KNOWLEDGE_INDEX"
+index_name = "powerreader-knowledge"
+
+# ===== R2 Buckets =====
+[[r2_buckets]]
+binding = "ARTICLES"
+bucket_name = "powerreader-articles"
+
+# ===== Workers AI (bge-m3 embedding — Decision #007) =====
+[ai]
+binding = "AI"
+
+# ===== Environment: Staging =====
+[env.staging]
+name = "powerreader-api-staging"
+route = { pattern = "staging-api.powerreader.dev/*", zone_name = "powerreader.dev" }
+
+# ===== Environment: Production =====
+[env.production]
+name = "powerreader-api"
+route = { pattern = "api.powerreader.dev/*", zone_name = "powerreader.dev" }
+
+# ===== Build =====
+[build]
+command = "npm run build:worker"
+
+# ===== Cron Triggers (T07 monitoring) =====
+# Hourly: aggregate metrics_raw → metrics_hourly + evaluate alerts
+[triggers]
+crons = ["0 * * * *"]
+
+# ===== Limits =====
+[limits]
+cpu_ms = 10

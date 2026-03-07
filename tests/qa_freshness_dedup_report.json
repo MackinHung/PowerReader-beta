@@ -1,0 +1,1569 @@
+{
+  "test_time": "2026-03-07T15:36:18.536761+08:00",
+  "source_stats": {
+    "LIBERTY_TIMES": 160,
+    "CNA": 75,
+    "PTS": 25,
+    "THE_NEWS_LENS": 18,
+    "THE_REPORTER": 10,
+    "TECHNEWS": 40,
+    "ITHOME": 30,
+    "STORM_MEDIA": 32,
+    "UNITED_DAILY_NEWS": 80,
+    "ECONOMIC_DAILY_NEWS": 80
+  },
+  "freshness": {
+    "within_2h": 71,
+    "within_4h": 142,
+    "within_6h": 193,
+    "within_12h": 255,
+    "within_24h": 357,
+    "has_timestamp": 390,
+    "no_timestamp": 160,
+    "total": 550
+  },
+  "total_articles": 550,
+  "unique_articles": 467,
+  "exact_duplicate_groups": 83,
+  "fuzzy_clusters": 87,
+  "articles_sample": [
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "卓榮泰赴東京巨蛋應援 郭國文還原台日棒球外交突破",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5362218",
+      "published_at": "2026-03-07T07:26:20+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "台日斷交54年首例 行政院長卓榮泰赴東京巨蛋看球賽",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5362212",
+      "published_at": "2026-03-07T07:13:09+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "質疑不明勢力買斷粉專「借屍還魂」抹黑 陳見賢競辦提告",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5362180",
+      "published_at": "2026-03-07T06:57:22+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "國家人權博物館「望向天光 回首人權」新書發表",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5362196",
+      "published_at": "2026-03-07T06:57:12+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "民進黨北市電話民調初選黃金週 議員山田摩衣跨區挺師兄張銘祐",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5362178",
+      "published_at": "2026-03-07T06:53:48+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "他在總統前開唱 獲賴清德承諾「多唱歌給我聽，我就多去參加活動」",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5362161",
+      "published_at": "2026-03-07T06:50:29+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "松信激戰！許淑華掃市場高人氣 王鴻薇、費鴻泰奪許原榮焦點",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5362157",
+      "published_at": "2026-03-07T06:48:41+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "「編多少能贏大谷翔平？」挨轟 廖偉翔回應了",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5362155",
+      "published_at": "2026-03-07T06:41:47+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "許原榮主打韓國瑜唯一支持 藍營小雞靠自己：老是借光很奇怪",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5362094",
+      "published_at": "2026-03-07T06:39:45+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "中市民進黨潭雅神初選 2年輕女將挑戰資深議員",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5362075",
+      "published_at": "2026-03-07T06:30:11+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "柯P台南發婦女節小物，基進黨質疑",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5362138",
+      "published_at": "2026-03-07T06:28:52+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "國民黨軍購條例被轟「軍盲條例」 張育萌：自走砲買來停路邊？",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5361878",
+      "published_at": "2026-03-07T06:23:09+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "女性運動夯 蕭美琴：肯定透過運動展現自信力量並突破自我",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5362130",
+      "published_at": "2026-03-07T06:22:20+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "花蓮縣長選舉藍營分裂？ 鄭麗文這麼說",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5362120",
+      "published_at": "2026-03-07T06:13:03+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "自由觀點》傅崐萁惡搞台積電！王鴻薇同意嗎？",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5360445",
+      "published_at": "2026-03-07T06:00:00+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "國民黨11日中常會 可望通過「藍白合」徵召選區新北、宜縣、嘉市",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5362078",
+      "published_at": "2026-03-07T05:52:19+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "傅崐萁批1.25兆預算騙錢 稱「中南部田裡蓋鐵皮屋 土法煉鋼做無人機」",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5362076",
+      "published_at": "2026-03-07T05:43:51+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "嗆「編多少預算能贏大谷」引炎上！藍委急滅火：盼台灣體育進步",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5362087",
+      "published_at": "2026-03-07T05:28:21+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "台灣隊明戰韓國 王世堅憶當年斷交被欺負：心情沒辦法平復",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5362037",
+      "published_at": "2026-03-07T04:49:58+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "柯文哲想解境管赴子畢典 錢康明酸：做人清白才不怕搜索票敲門",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5362004",
+      "published_at": "2026-03-07T04:27:06+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "獨家》權宜輪「集體失控」枋山海纜區！軍粉憂心：恐趁機斷我電纜",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5362025",
+      "published_at": "2026-03-07T04:25:09+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "松信藍營六搶二！許原榮主打韓國瑜唯一支持與李明璇同搶韓家軍票源",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5362021",
+      "published_at": "2026-03-07T04:23:22+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "王世堅8字讚鄭麗君：參選意料之中",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5362006",
+      "published_at": "2026-03-07T04:11:22+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "藍白選擇性同意動支預算又諷綠委缺席 蘇巧慧：在野延宕審查才該檢討",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5361996",
+      "published_at": "2026-03-07T04:06:35+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "廖偉翔嗆「編多少能贏大谷翔平」？周軒批：耍嘴皮子立委",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5361860",
+      "published_at": "2026-03-07T04:05:11+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "柯文哲台南新營拜票 謝龍介：年底選舉藍白全面合作",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5361987",
+      "published_at": "2026-03-07T04:03:42+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "認為鄭麗君參選北市成強勁對手？蔣萬安仍語帶保留",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5361976",
+      "published_at": "2026-03-07T03:44:44+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "民進黨立委挨批翹班看棒球 王世堅：幫中華隊加油是好事",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5361977",
+      "published_at": "2026-03-07T03:44:40+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "被評六都選將春節聲量王 蘇巧慧喊持續努力：正聲量是團隊的能量",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5361975",
+      "published_at": "2026-03-07T03:42:21+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "藍遭質疑刪體育預算、廖偉翔卻回諷 蘇巧慧：落井下石極不妥",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5361965",
+      "published_at": "2026-03-07T03:38:32+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "別拿小孩要脅司法特權 翁達瑞：柯文哲說照顧母親卻都在跑選舉攤",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5361862",
+      "published_at": "2026-03-07T03:28:49+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "正告藍白莫擋政院版軍購案？AIT官方臉書指以實力求和平 「是唯一正途」",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5361927",
+      "published_at": "2026-03-07T03:04:03+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "民進黨北市長人選吳怡農最早表態卻未被討論 吳怡農：尊重黨中央決定",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5361905",
+      "published_at": "2026-03-07T02:43:05+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "柯文哲為何急著赴日？ 吳靜怡：凸顯柯家對司法認知偏差",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5361893",
+      "published_at": "2026-03-07T02:33:01+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "中市議員民進黨山城初選 新人詹智翔、資深里長張鴻斌拚出線",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5361880",
+      "published_at": "2026-03-07T02:24:07+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "柯建銘控打無聲電話騷擾 羅智強提告吞敗：上訴捍衛名譽",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5361879",
+      "published_at": "2026-03-07T02:19:36+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "體育預算被刪掀論戰 廖偉翔嗆「編多少能贏大谷翔平」？網友炸鍋",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5361858",
+      "published_at": "2026-03-07T02:15:07+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "台灣隊2連敗網友提體育署預算被藍白刪 廖偉翔竟嘲諷「編多少能贏大谷翔平」",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5361833",
+      "published_at": "2026-03-07T02:08:03+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "宜蘭張勝德初選落敗 挺張派無黨籍議員醞釀倒戈支持林國漳",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5361850",
+      "published_at": "2026-03-07T01:58:04+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "民進黨中市議員初選民調3月底登場 2選區老將新秀競爭激烈",
+      "url": "https://news.ltn.com.tw/news/politics/breakingnews/5361844",
+      "published_at": "2026-03-07T01:50:57+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "差500米到登山口！女山友合歡東峰下山摔倒骨折",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5362184",
+      "published_at": "2026-03-07T06:53:35+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "恐怖男全裸闖飯店鄰房還上廁所    辯夢遊法官不信判拘役",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5362166",
+      "published_at": "2026-03-07T06:53:04+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "汐止14歲少年「不明原因」墜樓 搶救1小時不治",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5362160",
+      "published_at": "2026-03-07T06:35:55+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "北市員警疏導交通遭追撞 右手肘受傷送醫",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5362159",
+      "published_at": "2026-03-07T06:27:03+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "國1八堵段恍神撞匝道「導頭」翻車 駕駛這動作保命",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5362124",
+      "published_at": "2026-03-07T06:15:59+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "LINE好友甜喊「老公」 55歲男暈船險丟100萬積蓄",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5362107",
+      "published_at": "2026-03-07T06:08:43+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "男酒駕撞路旁轎車 盧1小時才酒測超標送辦",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5362097",
+      "published_at": "2026-03-07T06:02:00+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "又見毒駕？男拒檢倒車衝撞警遭圍捕到案 查扣安毒、喪失煙彈",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5362085",
+      "published_at": "2026-03-07T05:45:04+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "退休壽險經理涉吸金5000萬 檢聲押禁見",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5362080",
+      "published_at": "2026-03-07T05:35:00+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "高中英文老師宣稱50多炮友、7女友   邀女學生拍裸胸照下場慘",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5362010",
+      "published_at": "2026-03-07T04:49:57+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "屏東高樹動力滑翔機掉落鳳梨田旁 駕駛送醫",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5362044",
+      "published_at": "2026-03-07T04:44:54+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "溫暖！作家分享國中生助回收嬤推車 網友：我的雙胞胎兒子",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361934",
+      "published_at": "2026-03-07T04:44:42+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "又撞了！沙鹿中山路、沙田路行人庇護島 轎車頻擦撞",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361908",
+      "published_at": "2026-03-07T04:41:52+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "女暗夜遭「電纜插銷」絆倒臉傷牙脫位 台電判賠17萬餘元",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5362024",
+      "published_at": "2026-03-07T04:35:07+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "不滿前男友「勾勾纏」撂人談判 汐止男亮刀砍人1小時被逮",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361974",
+      "published_at": "2026-03-07T03:51:23+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "竹科女工程師偷拍室友隱私讓男友看  同遭判刑且需賠償",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361989",
+      "published_at": "2026-03-07T03:50:07+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "人妻偷吃小王玩很大！ 超鹹濕約砲簡訊讓夫崩潰就醫",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361969",
+      "published_at": "2026-03-07T03:44:07+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "港女桃機迷路上演「國道馬拉松」 航警追逐護送完成報到",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361973",
+      "published_at": "2026-03-07T03:38:04+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "涉廁所裝針孔偷拍學生 嘉縣樂器行老闆收押",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361941",
+      "published_at": "2026-03-07T03:27:09+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "新竹男玩股票慘賠向老婆借錢 事後竟趕她出門逼離婚",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361916",
+      "published_at": "2026-03-07T03:18:43+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "保母夫泡咖啡還抱嬰  咖啡機傾倒燙嬰二度灼傷",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361938",
+      "published_at": "2026-03-07T03:05:50+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "嘲諷妻行房是「恩准」還辱罵 職軍男提前退伍救不回婚姻",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361915",
+      "published_at": "2026-03-07T02:55:15+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "又是毒駕！連撞2車卡路口 男昏睡猛踩油門冒白煙",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361900",
+      "published_at": "2026-03-07T02:45:31+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "128公里逆向酒駕奪命 26歲女判2年6月 國民法官量刑理由曝光",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361907",
+      "published_at": "2026-03-07T02:37:28+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "高中同學勾結中國毒梟 他好心幫忙載貨差點GG",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361899",
+      "published_at": "2026-03-07T02:35:18+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "超商內偷拍裙底被逮 拿出診斷書、病歷表證明有病仍判刑",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361898",
+      "published_at": "2026-03-07T02:32:50+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "又是你！6旬男3天被同一警察查獲酒駕2次",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361876",
+      "published_at": "2026-03-07T02:20:51+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "中和警前進南山中學 女警化身導師宣講防詐",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361865",
+      "published_at": "2026-03-07T02:18:59+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "男子酒駕闖紅燈撞死人還肇逃 國民法官判處9年10月重刑",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361866",
+      "published_at": "2026-03-07T02:17:45+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "女僕咖啡店老闆伸狼爪 躲過刑責但關門倒店還要賠錢",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361852",
+      "published_at": "2026-03-07T02:12:17+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "妻跨海打離婚官司自爆外遇連生2子 夫驚見訴狀內文當場心碎",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361834",
+      "published_at": "2026-03-07T01:53:21+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "台中工業區夫妻失聯 警消破門赫見已雙亡",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361845",
+      "published_at": "2026-03-07T01:43:55+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "建商拖延交屋825天 15住戶告贏獲賠757萬",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361822",
+      "published_at": "2026-03-07T01:36:58+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "木工斜槓「販毒」！ 苗栗男栽了要蹲7年牢",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361821",
+      "published_at": "2026-03-07T01:33:30+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "金價飆漲「金包銀」換真金 詐苗栗銀樓逾40萬不到1小時落網",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361803",
+      "published_at": "2026-03-07T01:17:13+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "妻揪小王搭摩天輪親密摟肩 綠帽夫心碎求償獲賠10萬",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361786",
+      "published_at": "2026-03-07T00:54:39+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "把前女友裸照設臉書頭貼還邀親友觀賞 噁男求和解遭拒判8月",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361768",
+      "published_at": "2026-03-07T00:10:32+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "有毒的父愛！憂身後兒子再被砍 竟是送他軍火當遺產",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361758",
+      "published_at": "2026-03-06T23:57:07+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "不爽洗澡被敲門！移工爆怒持刀狂刺同鄉 犯案後冷血吃早餐",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361745",
+      "published_at": "2026-03-06T23:57:06+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "資深協作峰哥魂斷北大武山  消防、義勇特搜送「雲霧裡的揹行者」最後一程",
+      "url": "https://news.ltn.com.tw/news/society/breakingnews/5361706",
+      "published_at": "2026-03-06T23:44:55+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "貼文稱竹市東門市場好臭別再推薦 網友附和",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362210",
+      "published_at": "2026-03-07T07:28:28+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "漁業署精進太平洋黑鮪管理措施  調增總漁獲配額2900噸",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362213",
+      "published_at": "2026-03-07T07:11:27+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "華航赴台大招募機師 未來可飛最新787、A321neo、 A350",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362204",
+      "published_at": "2026-03-07T07:07:49+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "開漳聖王文化季祈安遶境明登場 桃園區部分路段交管",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362177",
+      "published_at": "2026-03-07T06:52:46+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "台中地牛翻身4.5地震 中市府：針對中彰地區斷層觀察",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362165",
+      "published_at": "2026-03-07T06:50:21+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "分析經典賽台日之戰啟示 李忠憲：沒有夢想社會難進步",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362015",
+      "published_at": "2026-03-07T06:45:53+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "羅東棒球場月底前完工 宜縣府爭取職棒賽",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362174",
+      "published_at": "2026-03-07T06:42:53+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "台中市政大樓搬遷16年 氣象署地震資訊仍標設舊州廳",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362133",
+      "published_at": "2026-03-07T06:37:48+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "登革熱防疫變得有趣 台南後壁區邊健走、邊巡檢環境",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362153",
+      "published_at": "2026-03-07T06:31:10+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "高雄科技積木創意競賽開跑 58隊角逐前進全國與世界賽門票",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362146",
+      "published_at": "2026-03-07T06:30:53+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "東京巨蛋公廁為何很乾淨？ 張雅琳揭密：日本3關鍵翻轉文化",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362154",
+      "published_at": "2026-03-07T06:25:56+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "帛琉帆船二度訪台抵高雄港 台灣原住民號角迎接",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362131",
+      "published_at": "2026-03-07T06:06:42+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "國道7號、1號等多項大工程動工 國道基金創七年來最大缺口",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362118",
+      "published_at": "2026-03-07T06:03:48+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "嘉義大林陳井寮黃花風鈴木季開幕 在地鴨肉料理供遊客品嚐",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362086",
+      "published_at": "2026-03-07T06:02:45+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "昨晚台中罕見地震 氣象署：剛好夾在彰化和車籠埔斷層中間",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362100",
+      "published_at": "2026-03-07T06:00:29+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "慶祝38節 台東縣府辦解鎖女力Fun心動",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362095",
+      "published_at": "2026-03-07T06:00:22+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "台北杜鵑花季登場！「拾花號 」秀花藝 市集、音樂派對等你玩",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362084",
+      "published_at": "2026-03-07T05:56:38+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "經典賽打爆捷克 彰化和美小鎮的台韓應援加碼300份雞排",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362115",
+      "published_at": "2026-03-07T05:55:51+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "台灣唯一草本竹！ 消失50年囊稃竹在知本復育植樹",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362104",
+      "published_at": "2026-03-07T05:51:38+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "林園洋蔥節各族群秀創意料理 陳其邁下田「ㄎㄠ蔥頭」",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362068",
+      "published_at": "2026-03-07T05:28:53+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "驚蟄後防蚊關鍵期！南市4月起查獲孳生源 最高罰1萬5",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362066",
+      "published_at": "2026-03-07T05:25:09+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "會計所試題爭議  政大：命題構想取自國家考試與著名教科書",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362073",
+      "published_at": "2026-03-07T05:22:38+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "賴清德出席客家山歌比賽開幕式 向97歲「山歌王」許學傳致意",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362055",
+      "published_at": "2026-03-07T05:17:43+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "清海無上師世界會愛心送暖關懷弱勢 2年送近5萬份純素餐盒",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362056",
+      "published_at": "2026-03-07T05:17:26+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "台南七股紅蔥頭產業活動不只嘗料理 還有手作紅蔥頭棒棒糖",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362063",
+      "published_at": "2026-03-07T05:16:27+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "雲林斗南馬鈴薯節登場 千人下田體驗採收親子嗨翻",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362054",
+      "published_at": "2026-03-07T05:12:25+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "3/12植樹節來基隆七堵苗圃 發放5000株苗木",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362053",
+      "published_at": "2026-03-07T05:09:20+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "陽明交大「iTron」奪JAXA Kibo-RPC世界冠軍 台灣第三度摘冠",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362052",
+      "published_at": "2026-03-07T05:04:03+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "附影音，直擊台南站前圓環新動線首日 車流匯集一度塞、旅客找站牌像走迷宮",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362049",
+      "published_at": "2026-03-07T04:56:09+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "地表最強媽媽 單親媽賣地瓜、跑外送還考空大第一名畢業",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5361943",
+      "published_at": "2026-03-07T04:55:06+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "轟出滿貫砲！「費仔」結婚未滿半年 絕美嬌妻照曝光",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362000",
+      "published_at": "2026-03-07T04:47:38+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "1.4萬人考台語認證  日籍北海道考生關注語言保存",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362038",
+      "published_at": "2026-03-07T04:43:31+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "基隆仁愛市場3/16起2樓停業整修 吃美食等一等",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362040",
+      "published_at": "2026-03-07T04:42:35+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "免費一直拿！經典賽彰化派出肉圓美食應援 「排隊大軍」領5張券被噓爆！",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362027",
+      "published_at": "2026-03-07T04:28:07+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "萬金杜鵑花展倒數 週末推彩繪市集、打卡送限量美植袋、祈願卡",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362018",
+      "published_at": "2026-03-07T04:11:05+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "教育部每年投3000萬推實驗教育 苗栗小校用南瓜創新篇章",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362014",
+      "published_at": "2026-03-07T04:09:33+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "深化兩國教育合作 加拿大高貴林學區官員來台",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362005",
+      "published_at": "2026-03-07T04:08:48+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "金門縣發布低溫特報 明早可能10度以下",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5362007",
+      "published_at": "2026-03-07T04:05:21+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "桃園展演中心桃堡樂園球池碎片傷人 工作人員只說「喔」撿起繼續滑手機",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5361983",
+      "published_at": "2026-03-07T04:02:08+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "全台最美水溝在武陵農場  鋪滿櫻花花瓣絕美照片曝光",
+      "url": "https://news.ltn.com.tw/news/life/breakingnews/5361986",
+      "published_at": "2026-03-07T03:37:37+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "這些名車開5年後花費變無底洞 技師曝維護成本最高5款車 保時捷第1名",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/5362235",
+      "published_at": "2026-03-07T07:29:38+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "伊朗、委內瑞拉石油全斷供太慘！以色列駐美大使勸中國「這樣做」",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/5362145",
+      "published_at": "2026-03-07T07:12:18+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "蘋果美製晶片沒台灣真的不行 台積電守護「這項」關鍵技術",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/5362108",
+      "published_at": "2026-03-07T06:31:00+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "台泥董事長張安平化身船長 啟動「尼莫人才召募計畫」",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/5362137",
+      "published_at": "2026-03-07T06:09:36+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "德總理警告：伊朗無止盡的戰爭 恐釀歐洲新移民危機、衝擊經濟",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/5361992",
+      "published_at": "2026-03-07T03:44:55+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "台積電今年招募8千人   碩士工程師平均年薪220萬元",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/5361923",
+      "published_at": "2026-03-07T03:41:46+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "美製車零關稅2》消費者等降價！特斯拉2個月只賣2輛",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/5361985",
+      "published_at": "2026-03-07T03:40:24+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "美製車零關稅1》何時可以撿便宜？業界估最快今年Q3",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/5361978",
+      "published_at": "2026-03-07T03:39:06+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "嘉科台積電P2廠3件受傷事故 廠區未停工",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/5361253",
+      "published_at": "2026-03-07T02:49:55+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "華邦電2月營收119.73億元   年增逾8成、續創新高",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/5361840",
+      "published_at": "2026-03-07T01:57:12+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "ASML今啟動2026年校園徵才   預計招募6百名好手",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/5361859",
+      "published_at": "2026-03-07T01:54:38+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "美海關告知法院無法遵守關稅判決命令 最快這時才能退款",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/5361856",
+      "published_at": "2026-03-07T01:50:14+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "緩解供應缺口 貝森特鬆口：美國可能會解除更多俄油的制裁",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/5361793",
+      "published_at": "2026-03-07T00:50:32+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "國際油價單週漲近30％ 巴克萊警告：中東衝突持續 布油恐衝上120美元",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/5361783",
+      "published_at": "2026-03-07T00:31:45+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "85歲「做這行」全套服務收費475萬 阿嬤自爆很搶手",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/5361624",
+      "published_at": "2026-03-06T23:03:07+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "卡達天然氣出口露曙光? 彭博：第1批LNG似已裝船  目標是「這國 」",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/5361711",
+      "published_at": "2026-03-06T23:01:55+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "英特爾18A要來搶台積電生意了？外媒1句話打槍",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/5361612",
+      "published_at": "2026-03-06T23:00:15+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "外資殺紅眼！本週累計賣超3170億 創史上最狠",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/5361734",
+      "published_at": "2026-03-06T22:58:39+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "美股收盤》油價飆破90美元 美股均收黑、台積電ADR跌4.23％",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/5361748",
+      "published_at": "2026-03-06T22:38:51+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "油價飆漲　週線漲幅近30%",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/5361742",
+      "published_at": "2026-03-06T21:30:04+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "營收獲利速報》東陽去年每股賺6.43元 擬配息5元",
+      "url": "https://ec.ltn.com.tw/article/paper/1745898",
+      "published_at": "2026-03-06T21:30:00+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "盤勢分析》籌碼技術面不佳 短線保守",
+      "url": "https://ec.ltn.com.tw/article/paper/1745894",
+      "published_at": "2026-03-06T21:30:00+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "不滿斷油氣 中國急與伊朗磋商",
+      "url": "https://ec.ltn.com.tw/article/paper/1745833",
+      "published_at": "2026-03-06T21:30:00+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "雙平穩也壓不住 下週油價估大漲3元",
+      "url": "https://ec.ltn.com.tw/article/paper/1745834",
+      "published_at": "2026-03-06T21:30:00+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "營收獲利速報》貿聯去年每股賺46.57元 創新高",
+      "url": "https://ec.ltn.com.tw/article/paper/1745897",
+      "published_at": "2026-03-06T21:30:00+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "運價連2漲 波灣線飆漲72%",
+      "url": "https://ec.ltn.com.tw/article/paper/1745893",
+      "published_at": "2026-03-06T21:30:00+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "法說會速報》客戶需求強勁 尖點持續擴產",
+      "url": "https://ec.ltn.com.tw/article/paper/1745899",
+      "published_at": "2026-03-06T21:30:00+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "飆股幕後》獲利可望創高 良維寫天價 今年漲32%",
+      "url": "https://ec.ltn.com.tw/article/paper/1745896",
+      "published_at": "2026-03-06T21:30:00+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "商業服務業景氣連22跌 商研院示警M型化風險",
+      "url": "https://ec.ltn.com.tw/article/paper/1745838",
+      "published_at": "2026-03-06T21:30:00+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "農曆春節推升物價》2月CPI年增1.75% 中東戰事短期衝擊有限",
+      "url": "https://ec.ltn.com.tw/article/paper/1745837",
+      "published_at": "2026-03-06T21:30:00+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "阻中繞道偷買 美研擬AI晶片出口許可制",
+      "url": "https://ec.ltn.com.tw/article/paper/1745835",
+      "published_at": "2026-03-06T21:30:00+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "非農就業爆冷 美2月失業率升至4.4％",
+      "url": "https://ec.ltn.com.tw/article/paper/1745836",
+      "published_at": "2026-03-06T21:30:00+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "飆股幕後》傳接獲低軌衛星訂單 兆赫 4個月飆漲逾3倍",
+      "url": "https://ec.ltn.com.tw/article/paper/1745895",
+      "published_at": "2026-03-06T21:30:00+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "台塑四寶：3月營收及Q2審慎樂觀",
+      "url": "https://ec.ltn.com.tw/article/paper/1745892",
+      "published_at": "2026-03-06T21:30:00+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "鴻海AI業務太強 劉揚偉：今年絕對雙位數成長",
+      "url": "https://ec.ltn.com.tw/article/paper/1745891",
+      "published_at": "2026-03-06T21:30:00+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "財經青紅燈》台股扛住中東風暴",
+      "url": "https://ec.ltn.com.tw/article/paper/1745901",
+      "published_at": "2026-03-06T21:30:00+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "法說會速報》世芯看好下半年營收大增 全年將創高",
+      "url": "https://ec.ltn.com.tw/article/paper/1745900",
+      "published_at": "2026-03-06T21:30:00+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "利空出籠　歐股收黑",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/5361737",
+      "published_at": "2026-03-06T19:21:03+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "憂原油供應恐持續中斷　西德州中級原油價飆漲逾11%",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/5361727",
+      "published_at": "2026-03-06T17:30:04+00:00"
+    },
+    {
+      "source": "LIBERTY_TIMES",
+      "title": "美勞動市場現疲軟警訊！2月非農就業大減9.2萬人、失業率升至4.4％",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/5361692",
+      "published_at": "2026-03-06T14:46:11+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "蕭美琴：將挫折跌倒化為更強動力　為自己與台灣加油",
+      "url": "https://www.cna.com.tw/news/aipl/202603070078.aspx",
+      "published_at": "2026-03-07T04:44:25+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "中選會人事案　立法院最快3/13投票",
+      "url": "https://www.cna.com.tw/news/aipl/202603070069.aspx",
+      "published_at": "2026-03-07T04:02:05+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "柯文哲台南拜廟：人生求個平安順利就好",
+      "url": "https://www.cna.com.tw/news/aipl/202603070061.aspx",
+      "published_at": "2026-03-07T03:28:48+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "林佳龍自吐瓦魯返台　持續透過榮邦計畫深化兩國關係",
+      "url": "https://www.cna.com.tw/news/aipl/202603070039.aspx",
+      "published_at": "2026-03-07T02:24:00+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "工程會：採購法修法暫緩　維持3業者投標始得開標規定",
+      "url": "https://www.cna.com.tw/news/aipl/202603070036.aspx",
+      "published_at": "2026-03-07T01:54:54+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "2架次共機越中線擾西南空域　國軍嚴密監控與應處",
+      "url": "https://www.cna.com.tw/news/aipl/202603070031.aspx",
+      "published_at": "2026-03-07T01:26:42+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "女兒劉美賢曾說想訪台　劉俊憶台灣觀選「真正民主自由社會」【專訪】",
+      "url": "https://www.cna.com.tw/news/aipl/202603070018.aspx",
+      "published_at": "2026-03-07T00:47:14+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "川習會倒數　美前駐中大使籲川普捍衛對台軍事義務",
+      "url": "https://www.cna.com.tw/news/aipl/202603070013.aspx",
+      "published_at": "2026-03-06T23:21:02+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "維安勤員場勘涉竊簽名球　國安局解除任務歸建送法辦",
+      "url": "https://www.cna.com.tw/news/aipl/202603060340.aspx",
+      "published_at": "2026-03-06T15:12:13+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "WBC台灣隊不敵日本　總統：化失利為前進力量繼續拚",
+      "url": "https://www.cna.com.tw/news/aipl/202603060323.aspx",
+      "published_at": "2026-03-06T13:59:34+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "時代雜誌：伊朗戰爭挫中國銳氣　台灣更受到鞏固",
+      "url": "https://www.cna.com.tw/news/aipl/202603060315.aspx",
+      "published_at": "2026-03-06T13:03:11+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "李貞秀資格爭議  海基會：與政院、陸委會立場一致",
+      "url": "https://www.cna.com.tw/news/aipl/202603060307.aspx",
+      "published_at": "2026-03-06T12:31:54+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "AIT：持續歡迎台灣宣布1.25兆軍購特別預算",
+      "url": "https://www.cna.com.tw/news/aipl/202603060302.aspx",
+      "published_at": "2026-03-06T12:20:43+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "中東情勢緊張　外交部迄今協助795名滯留民眾返台",
+      "url": "https://www.cna.com.tw/news/aipl/202603060291.aspx",
+      "published_at": "2026-03-06T11:29:19+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "江啟臣：相信朝野能就國安所需資源達成共識",
+      "url": "https://www.cna.com.tw/news/aipl/202603060281.aspx",
+      "published_at": "2026-03-06T11:07:57+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "卓榮泰：已達成非核家園　全面接觸先進核能技術討論",
+      "url": "https://www.cna.com.tw/news/aipl/202603060275.aspx",
+      "published_at": "2026-03-06T10:51:44+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "陳福海讚立院問政表現　陳玉珍：金門要更往前發展",
+      "url": "https://www.cna.com.tw/news/aipl/202603060272.aspx",
+      "published_at": "2026-03-06T10:38:37+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "國民黨版軍購草案　卓榮泰：無法理解為何這樣分割",
+      "url": "https://www.cna.com.tw/news/aipl/202603060221.aspx",
+      "published_at": "2026-03-06T09:09:45+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "4月評估燃煤發電？卓榮泰：採大家最能接受方式",
+      "url": "https://www.cna.com.tw/news/aipl/202603060196.aspx",
+      "published_at": "2026-03-06T08:18:49+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "政院：718億新興計畫動支案無前例　速審總預算",
+      "url": "https://www.cna.com.tw/news/aipl/202603060191.aspx",
+      "published_at": "2026-03-06T08:08:38+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "台積電2026年徵8000人　碩士新進工程師年薪220萬元",
+      "url": "https://www.cna.com.tw/news/afe/202603070074.aspx",
+      "published_at": "2026-03-07T04:22:16+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "美伊開戰牽動全球航運　海運觀望、空運現價飆",
+      "url": "https://www.cna.com.tw/news/afe/202603070037.aspx",
+      "published_at": "2026-03-07T01:55:56+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "中華電建全光網路鋪路6G  簡志誠：如高鐵、台鐵並存",
+      "url": "https://www.cna.com.tw/news/afe/202603070029.aspx",
+      "published_at": "2026-03-07T01:21:38+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "中華電備戰6G  簡志誠：2028年推Pre-6G應用",
+      "url": "https://www.cna.com.tw/news/afe/202603070021.aspx",
+      "published_at": "2026-03-07T00:57:21+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "石油出不了荷莫茲海峽　中東戰火波及全球經濟",
+      "url": "https://www.cna.com.tw/news/afe/202603070015.aspx",
+      "published_at": "2026-03-06T23:41:06+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "市場對中東戰事憂慮加深　美股續挫",
+      "url": "https://www.cna.com.tw/news/afe/202603070009.aspx",
+      "published_at": "2026-03-06T22:23:50+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "油價飆漲　週線漲幅近30%",
+      "url": "https://www.cna.com.tw/news/afe/202603070007.aspx",
+      "published_at": "2026-03-06T21:18:45+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "利空出籠　歐股收黑",
+      "url": "https://www.cna.com.tw/news/afe/202603070005.aspx",
+      "published_at": "2026-03-06T19:11:39+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "憂原油供應恐持續中斷　西德州中級原油價飆漲逾11%",
+      "url": "https://www.cna.com.tw/news/aopl/202603070003.aspx",
+      "published_at": "2026-03-06T17:16:33+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "四大超商推零食咖啡優惠　陪伴WBC球迷熱血挺台",
+      "url": "https://www.cna.com.tw/news/ahel/202603060337.aspx",
+      "published_at": "2026-03-06T14:50:04+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "美國2月非農就業數減少逾9萬人　失業率微升至4.4%",
+      "url": "https://www.cna.com.tw/news/aopl/202603060336.aspx",
+      "published_at": "2026-03-06T14:41:02+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "大樂透頭獎3注中獎　各得0.48億元",
+      "url": "https://www.cna.com.tw/news/ahel/202603060328.aspx",
+      "published_at": "2026-03-06T14:10:44+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "今彩539第115059期　頭獎1注中獎",
+      "url": "https://www.cna.com.tw/news/ahel/202603060326.aspx",
+      "published_at": "2026-03-06T14:10:40+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "卡達警告戰火恐迫使波灣停止出口　油價恐飆至150美元",
+      "url": "https://www.cna.com.tw/news/aopl/202603060321.aspx",
+      "published_at": "2026-03-06T13:56:29+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "南山人壽適用新制淨值減631億　CSM餘額近3800億仍穩固",
+      "url": "https://www.cna.com.tw/news/afe/202603060314.aspx",
+      "published_at": "2026-03-06T12:55:09+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "大樂透第115033期開獎",
+      "url": "https://www.cna.com.tw/news/ahel/202603060312.aspx",
+      "published_at": "2026-03-06T12:51:05+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "今彩539第115059期開獎",
+      "url": "https://www.cna.com.tw/news/ahel/202603060310.aspx",
+      "published_at": "2026-03-06T12:45:00+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "台企銀年度經理人會議　拚全面優化獲利結構",
+      "url": "https://www.cna.com.tw/news/afe/202603060305.aspx",
+      "published_at": "2026-03-06T12:23:49+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "證交所獲亞洲資產管理雜誌亞太區最佳ETF交易所大獎",
+      "url": "https://www.cna.com.tw/news/afe/202603060304.aspx",
+      "published_at": "2026-03-06T12:22:47+00:00"
+    },
+    {
+      "source": "CNA",
+      "title": "ASML啟動校園徵才　預計招募超過600人",
+      "url": "https://www.cna.com.tw/news/afe/202603060303.aspx",
+      "published_at": "2026-03-06T12:22:45+00:00"
+    }
+  ],
+  "fuzzy_cluster_details": [
+    {
+      "sources": [
+        "LIBERTY_TIMES",
+        "CNA"
+      ],
+      "titles": [
+        "退休壽險經理涉吸金5000萬 檢聲押禁見",
+        "人壽公司退休經理吸金逾5千萬涉詐  北檢聲押禁見"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "LIBERTY_TIMES",
+        "ECONOMIC_DAILY_NEWS",
+        "UNITED_DAILY_NEWS"
+      ],
+      "titles": [
+        "屏東高樹動力滑翔機掉落鳳梨田旁 駕駛送醫",
+        "屏東高樹滑翔機疑機械故障墜落鳳梨田 駕駛骨折送醫",
+        "屏東高樹滑翔機疑機械故障墜落鳳梨田 駕駛骨折送醫"
+      ],
+      "count": 3
+    },
+    {
+      "sources": [
+        "LIBERTY_TIMES",
+        "ECONOMIC_DAILY_NEWS",
+        "UNITED_DAILY_NEWS"
+      ],
+      "titles": [
+        "台灣唯一草本竹！ 消失50年囊稃竹在知本復育植樹",
+        "50年消失再現！台灣唯一草本竹囊稃竹重返知本森林",
+        "50年消失再現！台灣唯一草本竹囊稃竹重返知本森林"
+      ],
+      "count": 3
+    },
+    {
+      "sources": [
+        "LIBERTY_TIMES",
+        "CNA"
+      ],
+      "titles": [
+        "台積電今年招募8千人   碩士工程師平均年薪220萬元",
+        "台積電2026年徵8000人　碩士新進工程師年薪220萬元"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "LIBERTY_TIMES",
+        "CNA"
+      ],
+      "titles": [
+        "ASML今啟動2026年校園徵才   預計招募6百名好手",
+        "ASML啟動校園徵才　預計招募超過600人"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "LIBERTY_TIMES",
+        "CNA"
+      ],
+      "titles": [
+        "油價飆漲　週線漲幅近30%",
+        "油價飆漲　週線漲幅近30%"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "LIBERTY_TIMES",
+        "CNA"
+      ],
+      "titles": [
+        "非農就業爆冷 美2月失業率升至4.4％",
+        "美國2月非農就業數減少逾9萬人　失業率微升至4.4%"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "LIBERTY_TIMES",
+        "CNA"
+      ],
+      "titles": [
+        "利空出籠　歐股收黑",
+        "利空出籠　歐股收黑"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "LIBERTY_TIMES",
+        "CNA"
+      ],
+      "titles": [
+        "憂原油供應恐持續中斷　西德州中級原油價飆漲逾11%",
+        "憂原油供應恐持續中斷　西德州中級原油價飆漲逾11%"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "STORM_MEDIA",
+        "ECONOMIC_DAILY_NEWS",
+        "UNITED_DAILY_NEWS"
+      ],
+      "titles": [
+        "國泰金擁抱AI人才　大開數位科技職缺逾800名",
+        "國泰金擁抱AI人才！數位科技職缺逾800名創高 連續4年成長",
+        "國泰金擁抱AI人才！數位科技職缺逾800名創高 連續4年成長"
+      ],
+      "count": 3
+    },
+    {
+      "sources": [
+        "ECONOMIC_DAILY_NEWS",
+        "UNITED_DAILY_NEWS"
+      ],
+      "titles": [
+        "元大金召募儲備幹部首增產業研究組 號召理工醫學跨域人才",
+        "元大金召募儲備幹部首增產業研究組 號召理工醫學跨域人才"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "ECONOMIC_DAILY_NEWS",
+        "UNITED_DAILY_NEWS"
+      ],
+      "titles": [
+        "河床《之間》又奪國際五項大獎 榮獲「最佳體驗」最高肯定",
+        "河床《之間》又奪國際五項大獎 榮獲「最佳體驗」最高肯定"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "ECONOMIC_DAILY_NEWS",
+        "UNITED_DAILY_NEWS"
+      ],
+      "titles": [
+        "金門婦女節表揚 陳玉珍談從政24年選縣長：像媳婦熬成婆",
+        "金門婦女節表揚 陳玉珍談從政24年選縣長：像媳婦熬成婆"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "ECONOMIC_DAILY_NEWS",
+        "UNITED_DAILY_NEWS"
+      ],
+      "titles": [
+        "日本「大皿節慶宴席」重現！HAYASE推「賞櫻之宴」共享海味",
+        "日本「大皿節慶宴席」重現！HAYASE推「賞櫻之宴」共享海味"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "ECONOMIC_DAILY_NEWS",
+        "UNITED_DAILY_NEWS"
+      ],
+      "titles": [
+        "搭機逃離中東安全嗎？她起飛前先交代後事 專家：真正風險不在飛機",
+        "搭機逃離中東安全嗎？她起飛前先交代後事 專家：真正風險不在飛機"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "ECONOMIC_DAILY_NEWS",
+        "UNITED_DAILY_NEWS"
+      ],
+      "titles": [
+        "經典賽／14:0大勝捷克釋放壓力 賴總統：明台韓大戰繼續拚",
+        "經典賽／14:0大勝捷克釋放壓力 賴總統：明台韓大戰繼續拚"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "ECONOMIC_DAILY_NEWS",
+        "UNITED_DAILY_NEWS"
+      ],
+      "titles": [
+        "甲骨文和OpenAI放棄德州資料中心擴建 牽動輝達新一代晶片布局",
+        "甲骨文和OpenAI放棄德州資料中心擴建 牽動輝達新一代晶片布局"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "ECONOMIC_DAILY_NEWS",
+        "UNITED_DAILY_NEWS"
+      ],
+      "titles": [
+        "被賦予科技「新」任務 江蘇省長：外資進入江蘇形式跟投資發生大變化",
+        "被賦予科技「新」任務 江蘇省長：外資進入江蘇形式跟投資發生大變化"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "ECONOMIC_DAILY_NEWS",
+        "UNITED_DAILY_NEWS"
+      ],
+      "titles": [
+        "「AI需求強勁、拉回成買點」 國泰投信總座：下半年Fed仍有降息2碼空間",
+        "「AI需求強勁、拉回成買點」 國泰投信總座：下半年Fed仍有降息2碼空間"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "ECONOMIC_DAILY_NEWS",
+        "UNITED_DAILY_NEWS"
+      ],
+      "titles": [
+        "經典賽／完美曲球沒被撿拍頭想挑戰 莊陳仲敖承認太衝動",
+        "經典賽／完美曲球沒被撿拍頭想挑戰 莊陳仲敖承認太衝動"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "ECONOMIC_DAILY_NEWS",
+        "UNITED_DAILY_NEWS"
+      ],
+      "titles": [
+        "靠偽裝避險？為通過荷莫茲海峽 至少10船隻改成「大陸身分」",
+        "靠偽裝避險？為通過荷莫茲海峽 至少10船隻改成「大陸身分」"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "ECONOMIC_DAILY_NEWS",
+        "UNITED_DAILY_NEWS"
+      ],
+      "titles": [
+        "經典賽／聽台灣球迷加油聲「快哭了」古林睿煬：我們值得大家的掌聲",
+        "經典賽／聽台灣球迷加油聲「快哭了」古林睿煬：我們值得大家的掌聲"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "ECONOMIC_DAILY_NEWS",
+        "UNITED_DAILY_NEWS"
+      ],
+      "titles": [
+        "台積電啟動校園徵才！今年預估招收8000名員工 碩士生年薪上看220萬元",
+        "台積電啟動校園徵才！今年預估招收8000名員工 碩士生年薪上看220萬元"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "ECONOMIC_DAILY_NEWS",
+        "UNITED_DAILY_NEWS"
+      ],
+      "titles": [
+        "車主傻眼…台中醉男半夜沿途亂推車 整排38輛汽、機車如骨牌倒",
+        "車主傻眼…台中醉男半夜沿途亂推車 整排38輛汽、機車如骨牌倒"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "ECONOMIC_DAILY_NEWS",
+        "UNITED_DAILY_NEWS"
+      ],
+      "titles": [
+        "華碩搶伺服器人才！前進校園徵才 邀學子開創AI新局",
+        "華碩搶伺服器人才！前進校園徵才 邀學子開創AI新局"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "ECONOMIC_DAILY_NEWS",
+        "UNITED_DAILY_NEWS"
+      ],
+      "titles": [
+        "整理包／賀中華隊14：0完封捷克首勝入袋！「4大超商限時優惠」一次看",
+        "整理包／賀中華隊14：0完封捷克首勝入袋！「4大超商限時優惠」一次看"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "ECONOMIC_DAILY_NEWS",
+        "UNITED_DAILY_NEWS"
+      ],
+      "titles": [
+        "《仁醫》、《醫龍》醫療劇變音樂 ABO Fusion醫院公益巡演",
+        "《仁醫》、《醫龍》醫療劇變音樂 ABO Fusion醫院公益巡演"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "ECONOMIC_DAILY_NEWS",
+        "UNITED_DAILY_NEWS"
+      ],
+      "titles": [
+        "「穿心颱」、「地表最強颱」別再亂用 氣象署修法擬嚴禁最高罰50萬",
+        "「穿心颱」、「地表最強颱」別再亂用 氣象署修法擬嚴禁最高罰50萬"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "ECONOMIC_DAILY_NEWS",
+        "UNITED_DAILY_NEWS"
+      ],
+      "titles": [
+        "卓榮泰現身東京WBC現場 看中華隊大勝捷克",
+        "卓榮泰現身東京WBC現場 看中華隊大勝捷克"
+      ],
+      "count": 2
+    },
+    {
+      "sources": [
+        "ECONOMIC_DAILY_NEWS",
+        "UNITED_DAILY_NEWS"
+      ],
+      "titles": [
+        "早餐店老闆也被罵…桃園某私校副校長大聲怒斥學生 校方反咬店家一事",
+        "早餐店老闆也被罵…桃園某私校副校長大聲怒斥學生 校方反咬店家一事"
+      ],
+      "count": 2
+    }
+  ]
+}

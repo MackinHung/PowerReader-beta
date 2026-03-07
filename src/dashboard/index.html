@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PowerReader 監控儀表板</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 16px;
+    }
+    /* -- Status Bar -- */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      background: #16213e;
+      border-radius: 8px;
+      padding: 12px 20px;
+      margin-bottom: 20px;
+    }
+    .status-bar .left { display: flex; align-items: center; gap: 12px; }
+    .status-indicator {
+      width: 14px; height: 14px; border-radius: 50%; display: inline-block; flex-shrink: 0;
+    }
+    .status-indicator.ok { background: #4caf50; box-shadow: 0 0 6px #4caf50; }
+    .status-indicator.warn { background: #ff9800; box-shadow: 0 0 6px #ff9800; }
+    .status-indicator.error { background: #f44336; box-shadow: 0 0 6px #f44336; }
+    .status-text { font-size: 15px; }
+    .status-bar .right { display: flex; align-items: center; gap: 12px; }
+    .updated-time { font-size: 13px; color: #9e9e9e; }
+    .token-input {
+      background: #0f3460; border: 1px solid #3a506b; border-radius: 4px;
+      color: #e0e0e0; padding: 6px 10px; font-size: 13px; width: 220px;
+    }
+    .token-input::placeholder { color: #6b7b8d; }
+    .btn-refresh {
+      background: #0f3460; border: 1px solid #3a506b; border-radius: 4px;
+      color: #e0e0e0; padding: 6px 14px; cursor: pointer; font-size: 14px;
+      transition: background 0.2s;
+    }
+    .btn-refresh:hover { background: #1a4a7a; }
+    /* -- Grid Layout -- */
+    .dashboard-grid {
+      display: grid;
+      gap: 20px;
+    }
+    /* -- Card Base -- */
+    .card {
+      background: #16213e;
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .card-title {
+      font-size: 13px;
+      color: #9e9e9e;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    /* -- KPI Row -- */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+    }
+    .kpi-card { text-align: center; }
+    .kpi-value {
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .kpi-unit { font-size: 14px; font-weight: 400; color: #9e9e9e; }
+    .kpi-target { font-size: 12px; color: #6b7b8d; margin-top: 4px; }
+    .kpi-status {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block; margin-right: 4px; vertical-align: middle;
+    }
+    .c-green { color: #4caf50; }
+    .c-yellow { color: #ff9800; }
+    .c-red { color: #f44336; }
+    .bg-green { background: #4caf50; }
+    .bg-yellow { background: #ff9800; }
+    .bg-red { background: #f44336; }
+    /* -- Chart Row -- */
+    .chart-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .chart-container canvas {
+      width: 100%;
+      height: 220px;
+      display: block;
+    }
+    /* -- Resource Bars -- */
+    .resource-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+    }
+    .resource-item .resource-label {
+      font-size: 13px; color: #9e9e9e; margin-bottom: 6px;
+    }
+    .resource-bar-bg {
+      background: #0f3460;
+      border-radius: 4px;
+      height: 12px;
+      overflow: hidden;
+    }
+    .resource-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+    .resource-detail {
+      font-size: 12px; color: #6b7b8d; margin-top: 4px;
+      display: flex; justify-content: space-between;
+    }
+    /* -- Bottom Panels -- */
+    .panel-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .panel-stat {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 8px; font-size: 14px;
+    }
+    .panel-stat .count { font-weight: 700; font-size: 20px; }
+    .source-bars { margin-top: 12px; }
+    .source-row {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 13px;
+    }
+    .source-row .name { width: 80px; text-align: right; color: #9e9e9e; flex-shrink: 0; }
+    .source-bar-bg-sm {
+      flex: 1; background: #0f3460; border-radius: 3px; height: 8px; overflow: hidden;
+    }
+    .source-bar-fill-sm { height: 100%; border-radius: 3px; background: #4fc3f7; }
+    .source-row .val { width: 36px; font-size: 12px; color: #6b7b8d; }
+    .quality-breakdown { margin-top: 12px; }
+    .quality-row {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 14px;
+    }
+    .quality-row .label { width: 60px; text-align: right; color: #9e9e9e; }
+    .quality-row .bar-wrap {
+      flex: 1; background: #0f3460; border-radius: 4px; height: 14px; overflow: hidden;
+    }
+    .quality-row .bar-fill { height: 100%; border-radius: 4px; }
+    .quality-row .val { width: 50px; font-size: 13px; }
+    /* -- Error Banner -- */
+    .error-banner {
+      background: #3e1929;
+      border: 1px solid #f44336;
+      border-radius: 6px;
+      padding: 12px 20px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      color: #ff8a80;
+      display: none;
+    }
+    /* -- Responsive -- */
+    @media (max-width: 900px) {
+      .kpi-row { grid-template-columns: repeat(3, 1fr); }
+      .chart-row, .panel-row { grid-template-columns: 1fr; }
+      .resource-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 540px) {
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+      .resource-grid { grid-template-columns: 1fr; }
+      .status-bar { flex-direction: column; align-items: flex-start; }
+      .token-input { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <div class="left">
+      <span id="globalIndicator" class="status-indicator ok"></span>
+      <span id="globalStatusText" class="status-text">系統正常</span>
+      <span id="updatedTime" class="updated-time"></span>
+    </div>
+    <div class="right">
+      <input id="tokenInput" class="token-input" type="password"
+        placeholder="Service Token" autocomplete="off">
+      <button class="btn-refresh" onclick="refreshDashboard()" title="重新整理">重新整理</button>
+    </div>
+  </div>
+
+  <!-- Error Banner -->
+  <div id="errorBanner" class="error-banner"></div>
+
+  <div class="dashboard-grid">
+    <!-- Row 1: KPI Cards -->
+    <div class="kpi-row" id="kpiRow"></div>
+
+    <!-- Row 2: Trend Charts -->
+    <div class="chart-row">
+      <div class="card chart-container">
+        <div class="card-title">KV 延遲趨勢 (24h)</div>
+        <canvas id="chartLatency"></canvas>
+      </div>
+      <div class="card chart-container">
+        <div class="card-title">CDN 命中率趨勢 (24h)</div>
+        <canvas id="chartCdn"></canvas>
+      </div>
+    </div>
+
+    <!-- Row 3: Resource Usage -->
+    <div class="card">
+      <div class="card-title">資源使用量</div>
+      <div class="resource-grid" id="resourceGrid"></div>
+    </div>
+
+    <!-- Row 4: Crawler & Analysis -->
+    <div class="panel-row">
+      <div class="card" id="crawlerPanel">
+        <div class="card-title">今日爬蟲報告</div>
+      </div>
+      <div class="card" id="analysisPanel">
+        <div class="card-title">分析品質分佈</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+const REFRESH_INTERVAL_MS = 3600 * 1000;
+const TOKEN_KEY = 'pr_service_token';
+
+const KPI_DEFS = [
+  { key: 'kv_latency_ms',       label: 'KV 延遲',     unit: 'ms', target: 30,  lowerBetter: true,
+    extract: function(m) { return m.kv_read_latency_ms ? m.kv_read_latency_ms.avg : null; } },
+  { key: 'cdn_hit_rate_pct',    label: 'CDN 命中率',   unit: '%',  target: 80,  lowerBetter: false,
+    extract: function(m) { return m.cdn_cache_hit_rate != null ? Math.round(m.cdn_cache_hit_rate * 100) : null; } },
+  { key: 'inference_time_s',    label: '推理時間',      unit: 's',  target: 10,  lowerBetter: true,
+    extract: function(m) { return m.model_inference_avg_sec; } },
+  { key: 'crawler_success_pct', label: '爬蟲成功率',   unit: '%',  target: 90,  lowerBetter: false,
+    extract: function(m) { return m.crawler ? Math.round(m.crawler.success_rate * 100) : null; } },
+  { key: 'analysis_pass_pct',   label: '分析通過率',   unit: '%',  target: 60,  lowerBetter: false,
+    extract: function(m) { return m.analysis ? Math.round(m.analysis.pass_rate * 100) : null; } },
+];
+
+const RESOURCE_DEFS = [
+  { key: 'workers_ai_neurons', label: 'Workers AI',     maxLabel: '10K'  },
+  { key: 'vectorize_queries',  label: 'Vectorize 查詢', maxLabel: '30M dims' },
+  { key: 'd1_storage_gb',     label: 'D1 儲存',        maxLabel: '5 GB' },
+  { key: 'kv_writes_today',   label: 'KV 寫入',        maxLabel: '1000' },
+  { key: 'r2_storage_gb',     label: 'R2 儲存',        maxLabel: '10 GB'},
+];
+
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+let autoRefreshTimer = null;
+
+// ---------------------------------------------------------------------------
+// Token helpers
+// ---------------------------------------------------------------------------
+function getToken() {
+  return document.getElementById('tokenInput').value.trim()
+    || sessionStorage.getItem(TOKEN_KEY)
+    || '';
+}
+
+function persistToken() {
+  const val = document.getElementById('tokenInput').value.trim();
+  if (val) { sessionStorage.setItem(TOKEN_KEY, val); }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const saved = sessionStorage.getItem(TOKEN_KEY);
+  if (saved) { document.getElementById('tokenInput').value = saved; }
+  refreshDashboard();
+  autoRefreshTimer = setInterval(refreshDashboard, REFRESH_INTERVAL_MS);
+});
+
+// ---------------------------------------------------------------------------
+// Fetch helpers
+// ---------------------------------------------------------------------------
+async function fetchJson(path) {
+  const token = getToken();
+  const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+  const res = await fetch(path, { headers: headers });
+  if (!res.ok) { throw new Error('HTTP ' + res.status); }
+  return res.json();
+}
+
+function showError(msg) {
+  var el = document.getElementById('errorBanner');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function hideError() {
+  document.getElementById('errorBanner').style.display = 'none';
+}
+
+// ---------------------------------------------------------------------------
+// Main refresh
+// ---------------------------------------------------------------------------
+async function refreshDashboard() {
+  persistToken();
+  hideError();
+  try {
+    var results = await Promise.all([
+      fetchJson('/api/v1/metrics'),
+      fetchJson('/api/v1/monitoring/usage'),
+    ]);
+    var metrics = results[0].data || results[0];
+    var usage = results[1].data || results[1];
+    renderAll(metrics, usage);
+  } catch (err) {
+    showError('API 未連線 - ' + err.message);
+    renderPlaceholder();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Render orchestrator
+// ---------------------------------------------------------------------------
+function renderAll(metrics, usage) {
+  updateTimestamp();
+  renderKpis(metrics);
+  renderCharts(metrics);
+  renderResources(usage);
+  renderCrawler(metrics);
+  renderAnalysis(metrics);
+  updateGlobalStatus(metrics);
+}
+
+function renderPlaceholder() {
+  updateTimestamp();
+  renderKpis(null);
+  clearCanvas('chartLatency');
+  clearCanvas('chartCdn');
+  renderResources(null);
+  document.getElementById('crawlerPanel').innerHTML =
+    '<div class="card-title">今日爬蟲報告</div><p style="color:#6b7b8d">無資料</p>';
+  document.getElementById('analysisPanel').innerHTML =
+    '<div class="card-title">分析品質分佈</div><p style="color:#6b7b8d">無資料</p>';
+  setGlobalStatus('error', '無法連線');
+}
+
+// ---------------------------------------------------------------------------
+// Timestamp
+// ---------------------------------------------------------------------------
+function updateTimestamp() {
+  var now = new Date();
+  var y = now.getFullYear();
+  var mo = String(now.getMonth() + 1).padStart(2, '0');
+  var d = String(now.getDate()).padStart(2, '0');
+  var h = String(now.getHours()).padStart(2, '0');
+  var mi = String(now.getMinutes()).padStart(2, '0');
+  document.getElementById('updatedTime').textContent =
+    '更新: ' + y + '/' + mo + '/' + d + ' ' + h + ':' + mi;
+}
+
+// ---------------------------------------------------------------------------
+// Global status
+// ---------------------------------------------------------------------------
+function updateGlobalStatus(metrics) {
+  var hasWarn = false;
+  var hasError = false;
+  KPI_DEFS.forEach(function(def) {
+    var val = def.extract ? def.extract(metrics) : metrics[def.key];
+    if (val == null) return;
+    var s = kpiStatus(val, def.target, def.lowerBetter);
+    if (s === 'red') hasError = true;
+    if (s === 'yellow') hasWarn = true;
+  });
+  if (hasError) { setGlobalStatus('error', '系統異常'); }
+  else if (hasWarn) { setGlobalStatus('warn', '部分警告'); }
+  else { setGlobalStatus('ok', '系統正常'); }
+}
+
+function setGlobalStatus(level, text) {
+  var ind = document.getElementById('globalIndicator');
+  ind.className = 'status-indicator ' + level;
+  document.getElementById('globalStatusText').textContent = text;
+}
+
+// ---------------------------------------------------------------------------
+// KPI Cards
+// ---------------------------------------------------------------------------
+function kpiStatus(value, target, lowerBetter) {
+  if (lowerBetter) {
+    if (value <= target) return 'green';
+    if (value <= target * 1.5) return 'yellow';
+    return 'red';
+  }
+  if (value >= target) return 'green';
+  if (value >= target * 0.7) return 'yellow';
+  return 'red';
+}
+
+function renderKpis(metrics) {
+  var container = document.getElementById('kpiRow');
+  var html = '';
+  KPI_DEFS.forEach(function(def) {
+    var val = metrics ? (def.extract ? def.extract(metrics) : metrics[def.key]) : null;
+    var display = val != null ? formatNum(val) : '--';
+    var s = val != null ? kpiStatus(val, def.target, def.lowerBetter) : 'green';
+    var sign = def.lowerBetter ? '\u2264' : '\u2265';
+    html += '<div class="card kpi-card">'
+      + '<div class="card-title">' + escHtml(def.label) + '</div>'
+      + '<div class="kpi-value c-' + s + '">' + display
+      + ' <span class="kpi-unit">' + escHtml(def.unit) + '</span></div>'
+      + '<div class="kpi-target"><span class="kpi-status bg-' + s + '"></span>'
+      + '目標 ' + sign + ' ' + def.target + escHtml(def.unit) + '</div>'
+      + '</div>';
+  });
+  container.innerHTML = html;
+}
+
+// ---------------------------------------------------------------------------
+// Resource Bars
+// ---------------------------------------------------------------------------
+function resourceColor(pct) {
+  if (pct < 60) return '#4caf50';
+  if (pct < 80) return '#ff9800';
+  return '#f44336';
+}
+
+function renderResources(usage) {
+  var container = document.getElementById('resourceGrid');
+  var html = '';
+  RESOURCE_DEFS.forEach(function(def) {
+    var obj = usage ? usage[def.key] : null;
+    var val = 0;
+    var pct = 0;
+    if (obj && typeof obj === 'object') {
+      val = obj.used || 0;
+      pct = obj.pct || 0;
+    } else if (typeof obj === 'number') {
+      val = obj;
+    }
+    pct = Math.min(100, pct);
+    var color = resourceColor(pct);
+    html += '<div class="resource-item">'
+      + '<div class="resource-label">' + escHtml(def.label) + '</div>'
+      + '<div class="resource-bar-bg">'
+      + '<div class="resource-bar-fill" style="width:' + pct.toFixed(1)
+      + '%;background:' + color + '"></div></div>'
+      + '<div class="resource-detail">'
+      + '<span>' + formatCompact(val) + ' / ' + escHtml(def.maxLabel) + '</span>'
+      + '<span>' + pct.toFixed(1) + '%</span></div></div>';
+  });
+  container.innerHTML = html;
+}
+
+// ---------------------------------------------------------------------------
+// Crawler Panel
+// ---------------------------------------------------------------------------
+function renderCrawler(metrics) {
+  var panel = document.getElementById('crawlerPanel');
+  var crawler = metrics.crawler || {};
+  var pushed = crawler.pushed || 0;
+  var failed = crawler.failed || 0;
+  var total = crawler.total_crawled || 0;
+  var rate = crawler.success_rate != null ? (crawler.success_rate * 100).toFixed(1) : '--';
+
+  var html = '<div class="card-title">今日爬蟲報告</div>';
+  html += '<div class="panel-stat">'
+    + '<span class="c-green count">' + pushed + '</span> 推送成功 &nbsp;&nbsp;'
+    + '<span class="c-red count">' + failed + '</span> 失敗 &nbsp;&nbsp;'
+    + '<span style="color:#6b7b8d">(共 ' + total + ' 篇, 成功率 ' + rate + '%)</span>'
+    + '</div>';
+  panel.innerHTML = html;
+}
+
+// ---------------------------------------------------------------------------
+// Analysis Panel
+// ---------------------------------------------------------------------------
+function renderAnalysis(metrics) {
+  var panel = document.getElementById('analysisPanel');
+  var analysis = metrics.analysis || {};
+  var passed = analysis.passed || 0;
+  var failed = analysis.failed || 0;
+  var total = analysis.total || (passed + failed) || 1;
+
+  var html = '<div class="card-title">分析品質分佈</div>';
+  html += '<div class="quality-breakdown">';
+  html += qualityBar('通過', passed, total, '#4caf50');
+  html += qualityBar('未通過', failed, total, '#f44336');
+  html += '</div>';
+  panel.innerHTML = html;
+}
+
+function qualityBar(label, value, total, color) {
+  var pct = (value / total) * 100;
+  return '<div class="quality-row">'
+    + '<span class="label">' + escHtml(label) + '</span>'
+    + '<div class="bar-wrap"><div class="bar-fill" style="width:'
+    + pct.toFixed(1) + '%;background:' + color + '"></div></div>'
+    + '<span class="val">' + value + ' (' + pct.toFixed(0) + '%)</span></div>';
+}
+
+// ---------------------------------------------------------------------------
+// Charts — lightweight Canvas 2D line charts
+// ---------------------------------------------------------------------------
+function clearCanvas(id) {
+  var c = document.getElementById(id);
+  var ctx = c.getContext('2d');
+  c.width = c.clientWidth * (window.devicePixelRatio || 1);
+  c.height = c.clientHeight * (window.devicePixelRatio || 1);
+  ctx.clearRect(0, 0, c.width, c.height);
+}
+
+function renderCharts(metrics) {
+  var latencyHistory = (metrics.kv_latency_history || []).map(function(p) { return p.avg; });
+  var cdnHistory = (metrics.cdn_hit_rate_history || []).map(function(p) { return p.value; });
+  drawLineChart('chartLatency', latencyHistory, {
+    thresholdY: 30, yLabel: 'ms', lineColor: '#4fc3f7', yMin: 0
+  });
+  drawLineChart('chartCdn', cdnHistory, {
+    thresholdY: 80, yLabel: '%', lineColor: '#81c784', yMin: 0, yMax: 100
+  });
+}
+
+function drawLineChart(canvasId, dataPoints, opts) {
+  var canvas = document.getElementById(canvasId);
+  var dpr = window.devicePixelRatio || 1;
+  var W = canvas.clientWidth;
+  var H = canvas.clientHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  var pad = { top: 12, right: 16, bottom: 32, left: 46 };
+  var plotW = W - pad.left - pad.right;
+  var plotH = H - pad.top - pad.bottom;
+
+  if (!dataPoints || dataPoints.length === 0) {
+    ctx.fillStyle = '#6b7b8d';
+    ctx.font = '13px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText('無趨勢資料', W / 2, H / 2);
+    return;
+  }
+
+  // Extract values & labels
+  var values = dataPoints.map(function(p) { return typeof p === 'number' ? p : p.value; });
+  var labels = dataPoints.map(function(p, i) {
+    if (typeof p === 'object' && p.label) return p.label;
+    return String(i);
+  });
+
+  var yMin = opts.yMin != null ? opts.yMin : Math.min.apply(null, values);
+  var yMax = opts.yMax != null ? opts.yMax : Math.max.apply(null, values);
+  if (opts.thresholdY != null) {
+    if (opts.thresholdY > yMax) yMax = opts.thresholdY * 1.15;
+  }
+  if (yMax === yMin) { yMax = yMin + 10; }
+  var yRange = yMax - yMin;
+
+  function xPos(i) { return pad.left + (i / Math.max(1, values.length - 1)) * plotW; }
+  function yPos(v) { return pad.top + plotH - ((v - yMin) / yRange) * plotH; }
+
+  // Grid lines (5 horizontal)
+  ctx.strokeStyle = '#1e2d4a';
+  ctx.lineWidth = 1;
+  ctx.font = '11px system-ui';
+  ctx.fillStyle = '#6b7b8d';
+  ctx.textAlign = 'right';
+  for (var gi = 0; gi <= 4; gi++) {
+    var gy = yMin + (yRange * gi / 4);
+    var py = yPos(gy);
+    ctx.beginPath();
+    ctx.moveTo(pad.left, py);
+    ctx.lineTo(W - pad.right, py);
+    ctx.stroke();
+    ctx.fillText(formatNum(gy), pad.left - 6, py + 4);
+  }
+
+  // Threshold line
+  if (opts.thresholdY != null) {
+    var ty = yPos(opts.thresholdY);
+    ctx.save();
+    ctx.strokeStyle = '#f44336';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    ctx.moveTo(pad.left, ty);
+    ctx.lineTo(W - pad.right, ty);
+    ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = '#f44336';
+    ctx.textAlign = 'left';
+    ctx.fillText(opts.thresholdY + opts.yLabel, W - pad.right + 2, ty + 4);
+  }
+
+  // X labels (show up to 8)
+  ctx.fillStyle = '#6b7b8d';
+  ctx.textAlign = 'center';
+  var step = Math.max(1, Math.floor(values.length / 8));
+  for (var xi = 0; xi < values.length; xi += step) {
+    ctx.fillText(labels[xi], xPos(xi), H - pad.bottom + 16);
+  }
+
+  // Data line
+  ctx.strokeStyle = opts.lineColor || '#4fc3f7';
+  ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  values.forEach(function(v, i) {
+    var px = xPos(i);
+    var py = yPos(v);
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  });
+  ctx.stroke();
+
+  // Data points
+  ctx.fillStyle = opts.lineColor || '#4fc3f7';
+  values.forEach(function(v, i) {
+    ctx.beginPath();
+    ctx.arc(xPos(i), yPos(v), 3, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Y axis label
+  ctx.fillStyle = '#6b7b8d';
+  ctx.textAlign = 'center';
+  ctx.save();
+  ctx.translate(12, pad.top + plotH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText(opts.yLabel, 0, 0);
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------------------
+// Utilities
+// ---------------------------------------------------------------------------
+function escHtml(str) {
+  var div = document.createElement('div');
+  div.appendChild(document.createTextNode(str));
+  return div.innerHTML;
+}
+
+function formatNum(n) {
+  if (n == null) return '--';
+  if (Number.isInteger(n)) return String(n);
+  return n.toFixed(1);
+}
+
+function formatCompact(n) {
+  if (n >= 1000000) return (n / 1000000).toFixed(2) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+  return String(n);
+}
+</script>
+</body>
+</html>

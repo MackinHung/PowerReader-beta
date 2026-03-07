@@ -1,0 +1,63 @@
+# Dependencies
+node_modules/
+.npm
+
+# Build output
+dist/
+.wrangler/
+
+# Environment
+.env
+.env.local
+.env.production
+.dev.vars
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Cloudflare
+.mf/
+
+# Reports (generated, not committed)
+reports/
+
+# Pipeline output (generated per run)
+output/
+
+# Models (too large for git)
+models/
+
+# Secrets (NEVER commit!)
+*.pem
+*.key
+credentials.json
+
+# Python (for crawler/test scripts)
+__pycache__/
+*.pyc
+.pytest_cache/
+venv/
+.venv/
+
+# 保留封存 (archive, not part of main project)
+保留封存/
+
+# Windows artifacts
+nul
