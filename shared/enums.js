@@ -21,6 +21,7 @@
  * |------------|---------|--------------------------|------------------|
  * | 2025-03-06 | v1.0    | Initial enums            | Project kickoff  |
  * | 2026-03-07 | v2.0    | PowerReader: config boundaries, filtered status, knowledge categories | Architecture decisions #004-#010 |
+ * | 2026-03-08 | v2.1    | +4 news sources (ETtoday, SETN, EBC, Newtalk) | Crawler expansion |
  */
 
 import { ANALYSIS } from './config.js';
@@ -61,7 +62,13 @@ export const NEWS_SOURCES = {
 
   // Investigative Journalism (調查報導)
   REW_CAUSAS: "新新聞",
-  STORM_MEDIA: "風傳媒"
+  STORM_MEDIA: "風傳媒",
+
+  // TV/Online Media (電視/網路媒體) — Added 2026-03-08
+  ETTODAY: "ETtoday新聞雲",
+  SETN: "三立新聞",
+  EBC: "東森新聞",
+  NEWTALK: "新頭殼"
 };
 
 // Create reverse mapping (value -> key)
