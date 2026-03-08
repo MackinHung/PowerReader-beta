@@ -121,5 +121,5 @@ export function formatKnowledgeAsL2(entries) {
     return `- [${label}] ${text}`;
   });
 
-  return `[背景知識]\n${lines.join('\n')}`;
+  return `[背景知識]\n以下為可能相關的背景知識，請自行判斷哪些與本文直接相關，忽略無關項目。\n${lines.join('\n')}`;
 }

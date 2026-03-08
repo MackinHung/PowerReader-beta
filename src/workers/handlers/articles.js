@@ -157,14 +157,20 @@ export async function createArticle(request, env, ctx, { params }) {
 
   // Knowledge query: embed title via Workers AI bge-m3, then Vectorize topK
   // This populates knowledge_ids for the knowledge transparency panel
+  // Strategy A+B: higher threshold (0.55) + metadata filter by matched_topic
   let knowledgeIds = [];
   try {
     const embResult = await env.AI.run(MODELS.EMBEDDING, { text: [body.title] });
     if (embResult?.data?.[0]) {
-      const matches = await env.KNOWLEDGE_INDEX.query(embResult.data[0], {
+      const queryOpts = {
         topK: CLOUDFLARE.VECTORIZE_TOP_K,
         returnMetadata: true
-      });
+      };
+      // Add metadata filter if article has a matched_topic
+      if (body.matched_topic) {
+        queryOpts.filter = { category: body.matched_topic };
+      }
+      const matches = await env.KNOWLEDGE_INDEX.query(embResult.data[0], queryOpts);
       knowledgeIds = (matches.matches || [])
         .filter(m => m.score >= CLOUDFLARE.VECTORIZE_MIN_SCORE)
         .map(m => m.id);
@@ -253,14 +259,19 @@ export async function createArticleBatch(request, env, ctx, { params }) {
       }));
 
       // Knowledge query (non-fatal, best-effort)
+      // Strategy A+B: higher threshold (0.55) + metadata filter by matched_topic
       let knowledgeIds = [];
       try {
         const embResult = await env.AI.run(MODELS.EMBEDDING, { text: [article.title] });
         if (embResult?.data?.[0]) {
-          const matches = await env.KNOWLEDGE_INDEX.query(embResult.data[0], {
+          const queryOpts = {
             topK: CLOUDFLARE.VECTORIZE_TOP_K,
             returnMetadata: true
-          });
+          };
+          if (article.matched_topic) {
+            queryOpts.filter = { category: article.matched_topic };
+          }
+          const matches = await env.KNOWLEDGE_INDEX.query(embResult.data[0], queryOpts);
           knowledgeIds = (matches.matches || [])
             .filter(m => m.score >= CLOUDFLARE.VECTORIZE_MIN_SCORE)
             .map(m => m.id);
