@@ -19,7 +19,7 @@ const ARTICLE_MAX_CHARS = 8400; // 40% context window rule (~13K tokens)
 /**
  * Assemble Pass 1 System Prompt — score extraction.
  * Role: 資深台灣媒體研究學者
- * Output: { bias_score, controversy_score }
+ * Output: { bias_score, controversy_score, camp_ratio }
  * @returns {string}
  */
 export function assembleScoreSystemPrompt() {
@@ -44,7 +44,11 @@ controversy_score:
 61-80: 核心對立議題
 81-100: 國安外交重大爭議
 
-只輸出JSON: {"bias_score": 數字, "controversy_score": 數字}`;
+camp_ratio: 評估文章內容主張各陣營的佔比(加總=100)
+green=民進黨/綠營 white=民眾黨/中立 blue=國民黨/藍營 gray=與政治幾乎無關
+判斷哪個陣營的論述或主張在文章中最突出，給予最高比例。若內容與政治幾乎無關，gray應為主要比例。
+
+只輸出JSON: {"bias_score": 數字, "controversy_score": 數字, "camp_ratio": {"green": 數字, "white": 數字, "blue": 數字, "gray": 數字}}`;
 }
 
 /**

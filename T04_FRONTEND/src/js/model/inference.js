@@ -40,7 +40,7 @@ const MODEL_PARAMS = {
 // Qwen3 /no_think suffix — appended to system prompt to suppress <think> loop
 const QWEN3_NO_THINK = '\n/no_think';
 
-const PASS1_MAX_TOKENS = 100;   // Score JSON is ~40 tokens, buffer for stray text
+const PASS1_MAX_TOKENS = 150;   // Score JSON + camp_ratio ~80 tokens, buffer for stray text
 const PASS2_MAX_TOKENS = 512;   // Narrative JSON ~200-400 tokens
 const INFERENCE_TIMEOUT_MS = 90000; // 90s total for dual pass (8B needs more time)
 
