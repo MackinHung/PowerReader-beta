@@ -16,6 +16,7 @@ import { t } from '../locale/zh-TW.js';
 const TOKEN_KEY = 'powerreader_token';
 const SESSION_KEY = 'powerreader_session';
 const CONSENT_KEY = 'powerreader_privacy_consent';
+const USER_HASH_KEY = 'powerreader_user_hash';
 
 /**
  * Get stored JWT token.
@@ -35,12 +36,36 @@ export function getSessionId() {
 
 /**
  * Store authentication credentials after OAuth callback.
+ * Also extracts user_hash from JWT payload for client-side use.
  * @param {string} token - JWT token
  * @param {string} sessionId - Session ID
  */
 export function setAuthCredentials(token, sessionId) {
   localStorage.setItem(TOKEN_KEY, token);
   localStorage.setItem(SESSION_KEY, sessionId);
+
+  // Extract user_hash from JWT payload (base64 decode, no verification needed)
+  const userHash = extractUserHashFromJwt(token);
+  if (userHash) {
+    localStorage.setItem(USER_HASH_KEY, userHash);
+  }
+}
+
+/**
+ * Extract user_hash from JWT payload without verification.
+ * Server always re-verifies JWT — this is for client-side display only.
+ * @param {string} token - JWT string
+ * @returns {string|null} user_hash or null
+ */
+function extractUserHashFromJwt(token) {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1]));
+    return payload.user_hash || payload.sub || null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -49,6 +74,25 @@ export function setAuthCredentials(token, sessionId) {
 export function clearAuth() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(USER_HASH_KEY);
+}
+
+/**
+ * Get stored user_hash (extracted from JWT on login).
+ * For already-logged-in users missing user_hash, re-extracts from stored token.
+ * @returns {string|null}
+ */
+export function getUserHash() {
+  let hash = localStorage.getItem(USER_HASH_KEY);
+  if (!hash) {
+    // Backfill: re-extract from stored token for existing sessions
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (token) {
+      hash = extractUserHashFromJwt(token);
+      if (hash) localStorage.setItem(USER_HASH_KEY, hash);
+    }
+  }
+  return hash;
 }
 
 /**

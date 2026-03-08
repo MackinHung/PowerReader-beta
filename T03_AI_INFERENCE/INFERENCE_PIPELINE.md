@@ -5,7 +5,7 @@
 - **Downstream**: T04_FRONTEND (client integration), T05_REWARD_SYSTEM (reward trigger), T06_COMPLIANCE/ERROR_HANDLING.md (error mapping)
 - **Maintainer**: T03 (AI Inference Team)
 - **Type**: Technical Specification
-- **Last Updated**: 2026-03-07
+- **Last Updated**: 2026-03-08
 
 ---
 
@@ -250,7 +250,7 @@ Client GET /api/v1/articles/:article_id
   -> [2] Fetch content_markdown from R2
   -> [3] Return: metadata + pre-computed Layer 2 + content
   -> Client assembles 3-layer prompt locally
-  -> Client runs Qwen3.5-4B via Ollama
+  -> Client runs Qwen3-4B via WebLLM (WebGPU browser-based)
 ```
 
 ### Workers Handler
@@ -297,12 +297,12 @@ export async function handleArticleRetrieval(
     layer2_entries: JSON.parse(article.layer2_entries || '[]'),
     inference_config: {
       prompt_version: 'v2.0.0',
-      model: 'qwen3.5:4b',
+      model: 'Qwen3-4B-q4f16_1-MLC',
       think: false,
       temperature: 0.5,
       top_p: 0.95,
       presence_penalty: 1.5,
-      num_predict: 4096,
+      max_tokens: 4096,
       response_format: { type: 'json_object' }
     }
   }, requestId);
@@ -347,12 +347,12 @@ function formatArticleResponse(article: ArticleRow): ArticleResponse {
     ],
     "inference_config": {
       "prompt_version": "v2.0.0",
-      "model": "qwen3.5:4b",
+      "model": "Qwen3-4B-q4f16_1-MLC",
       "think": false,
       "temperature": 0.5,
       "top_p": 0.95,
       "presence_penalty": 1.5,
-      "num_predict": 4096,
+      "max_tokens": 4096,
       "response_format": { "type": "json_object" }
     },
     "analysis_count": 3,
@@ -1064,7 +1064,7 @@ interface InferenceConfig {
   temperature: number;
   top_p: number;
   presence_penalty: number;
-  num_predict: number;
+  max_tokens: number;
   response_format: { type: string };
 }
 ```
@@ -1544,9 +1544,10 @@ async function withAdminAuth(
 |---------|------|---------|---------------|
 | v1.0 | 2026-03-07 | Initial pipeline spec: 4 pipelines, TypeScript interfaces, D1 schema, error handling | T01, T04, T05, T06, T07 |
 | v1.1 | 2026-03-07 | Complete KV→D1 migration: `checkCrawlerRateLimit()` migrated to D1 `crawler_rate_limits` table, `preCheckAnalysis()` migrated to D1 COUNT query on `analyses`, `rateLimitMiddleware()` migrated to D1 `api_rate_limits` table, `Env` interface removed `KV` binding, R2 fallback removed KV temp storage, users table fixed to `total_points_cents` INTEGER, added `crawler_rate_limits` and `api_rate_limits` D1 schemas, added cleanup cron trigger, updated Common Mistake 3 to reference D1 | T01, T04, T05, T06, T07 |
+| v1.2 | 2026-03-08 | 推理引擎 Ollama → WebLLM; 模型更新 Qwen3.5-4B (`qwen3.5:4b`) → Qwen3-4B (`Qwen3-4B-q4f16_1-MLC`); `num_predict` → `max_tokens` (OpenAI-compatible API via WebLLM); client inference 改為 WebGPU browser-based | T03, T04 |
 
 ---
 
 **Maintainer**: T03 (AI Inference Team)
-**Last Updated**: 2026-03-07
+**Last Updated**: 2026-03-08
 **Next Review**: After T04 client integration begins

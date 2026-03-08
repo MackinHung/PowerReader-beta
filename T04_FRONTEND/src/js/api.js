@@ -11,7 +11,7 @@
 
 import { openDB } from './db.js';
 
-const API_BASE = '/api/v1';
+export const API_BASE = 'https://powerreader-api.watermelom5404.workers.dev/api/v1';
 const FETCH_TIMEOUT_MS = 10000;
 
 // =============================================
@@ -136,7 +136,7 @@ async function getAllCachedArticles() {
 export async function fetchArticles({
   page = 1,
   limit = 20,
-  sort_by = 'controversy_score',
+  sort_by = 'published_at',
   sort_order = 'desc',
   source,
   category
@@ -279,4 +279,15 @@ export async function fetchArticleAnalyses(articleId) {
     await cacheResponse(cacheKey, result.data);
   }
   return result;
+}
+
+/**
+ * POST /api/v1/articles/:article_id/analysis — Submit analysis result.
+ */
+export async function submitAnalysisResult(articleId, payload, token) {
+  return apiFetch(`/articles/${encodeURIComponent(articleId)}/analysis`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(payload)
+  });
 }

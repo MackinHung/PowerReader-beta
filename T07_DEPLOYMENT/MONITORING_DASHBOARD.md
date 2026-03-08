@@ -5,13 +5,19 @@
 - **下游文件**: T07/PERFORMANCE_BENCHMARKS.md, T07/CI_CD_PIPELINE.md
 - **維護者**: T07 (Deployment & Monitoring Team)
 - **類型**: 參考文檔
-- **最後更新**: 2026-03-07
+- **最後更新**: 2026-03-08
 
 ---
 
 ## 🎯 文件目的
 定義 **監控儀表板的指標、告警規則、視覺化佈局**，涵蓋系統健康、
 爬蟲成功率、AI 推理品質、KV 延遲、CDN 快取命中率、D1/Vectorize/Workers AI 資源用量。
+
+### Dashboard 頁面位置
+- **檔案**: `T04_FRONTEND/src/dashboard.html`
+- **線上**: `https://powerreader.pages.dev/dashboard.html`
+- **功能**: 暗色主題、5 KPI 卡片、6 免費額度進度條、活躍告警、24h 趨勢圖、60 秒自動刷新
+- **認證**: 需要 SERVICE_TOKEN (Bearer token)，localStorage 儲存
 
 ---
 
@@ -23,7 +29,7 @@
 |------|--------|---------|------|
 | KV 讀取延遲 | ≤ 30ms | > 100ms | `TARGET_KV_LATENCY_MS` |
 | CDN 快取命中率 | ≥ 80% | < 60% | `TARGET_CDN_CACHE_HIT_RATE` |
-| 模型推理時間 | ≤ 10s | > 30s | `TARGET_MODEL_INFERENCE_SEC` (Qwen3.5-4B, ~6-10s) |
+| 模型推理時間 | ≤ 10s | > 30s | `TARGET_MODEL_INFERENCE_SEC` (Qwen3-4B WebLLM, ~6-10s) |
 | 爬蟲失敗率 | < 10% | > 10% | `ALERT_CRAWLER_FAILURE_THRESHOLD` |
 | 分析通過率 | 60-70% | < 60% | `ALERT_ANALYSIS_FAILURE_THRESHOLD` |
 
@@ -97,7 +103,7 @@
     "workers_ai_neurons_limit": 10000,
     "r2_storage_gb": 4.1,
     "active_users_today": 45,
-    "model_inference_avg_sec": 7.8          // Qwen3.5-4B typical range: 6-10s
+    "model_inference_avg_sec": 7.8          // Qwen3-4B WebLLM typical range: 6-10s
   }
 }
 ```

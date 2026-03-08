@@ -73,9 +73,127 @@
   100% { left: 100%; }
 }
 
+.analyze-status__step {
+  font-size: var(--text-h2);
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
 .analyze-status__elapsed {
   font-size: var(--text-caption);
   color: var(--color-text-secondary);
+}
+
+/* ==============================================
+   Model Download Phase (distinct from analysis)
+   ============================================== */
+.analyze-download__heading {
+  font-size: var(--text-h3);
+  font-weight: 700;
+  margin-bottom: var(--spacing-xs);
+}
+
+.analyze-download__subtitle {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-lg);
+}
+
+.analyze-download__bar-track {
+  width: 80%;
+  height: 8px;
+  margin: 0 auto var(--spacing-sm);
+  background-color: var(--color-bg-secondary);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.analyze-download__bar-fill {
+  height: 100%;
+  background-color: var(--color-primary);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.analyze-download__pct {
+  font-size: var(--text-h2);
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.analyze-download__detail {
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+
+/* ==============================================
+   Download Confirmation Gate (first-time users)
+   ============================================== */
+.analyze-download-confirm {
+  text-align: left;
+}
+
+.analyze-download-confirm__card {
+  padding: var(--spacing-lg);
+  background-color: var(--color-bg-secondary);
+  border-radius: 12px;
+}
+
+.analyze-download-confirm__card h3 {
+  font-size: var(--text-h3);
+  margin-bottom: var(--spacing-sm);
+}
+
+.analyze-download-confirm__desc {
+  font-size: var(--text-body);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-bottom: var(--spacing-md);
+}
+
+.analyze-download-confirm__checks {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--spacing-md);
+}
+
+.analyze-download-confirm__checks li {
+  padding: var(--spacing-sm) 0;
+  font-size: var(--text-body);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.analyze-download-confirm__check--ok::before {
+  content: '\2713 ';
+  color: var(--color-controversy-low);
+  font-weight: 700;
+}
+
+.analyze-download-confirm__check--warn::before {
+  content: '\26A0 ';
+  color: var(--color-controversy-high);
+  font-weight: 700;
+}
+
+.analyze-download-confirm__cellular-warn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: #FFF3CD;
+  border-radius: 8px;
+  font-size: var(--text-caption);
+  color: #856404;
+  margin-bottom: var(--spacing-md);
+}
+
+.analyze-download-confirm__actions {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.analyze-download-confirm__actions .btn {
+  flex: 1;
 }
 
 /* ==============================================
@@ -154,6 +272,35 @@
   font-size: var(--text-h3);
   margin-bottom: var(--spacing-lg);
   color: var(--color-controversy-low);
+}
+
+.analyze-success__reward {
+  background: var(--color-bg-secondary, #f8f9fa);
+  border-radius: var(--radius-md, 8px);
+  padding: var(--spacing-md);
+  margin: var(--spacing-md) auto;
+  max-width: 280px;
+}
+
+.analyze-success__points {
+  font-size: var(--text-h2, 1.5rem);
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.analyze-success__total,
+.analyze-success__votes {
+  font-size: var(--text-body);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.analyze-success__actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: center;
+  margin-top: var(--spacing-lg);
 }
 
 /* ==============================================

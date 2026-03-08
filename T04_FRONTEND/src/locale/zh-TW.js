@@ -71,6 +71,19 @@ const messages = {
   'source.name.rew_causas': '新新聞',
   'source.name.storm_media': '風傳媒',
 
+  // Chinese source keys (used by D1 data from crawler)
+  'source.name.自由時報': '自由時報',
+  'source.name.聯合報': '聯合報',
+  'source.name.中央社': '中央社',
+  'source.name.三立新聞': '三立新聞',
+  'source.name.ETtoday新聞雲': 'ETtoday新聞雲',
+  'source.name.東森新聞': '東森新聞',
+  'source.name.新頭殼': '新頭殼',
+  'source.name.公視新聞': '公視新聞',
+  'source.name.關鍵評論網': '關鍵評論網',
+  'source.name.科技新報': '科技新報',
+  'source.name.風傳媒': '風傳媒',
+
   // ==============================================
   // Navigation
   // ==============================================
@@ -114,26 +127,38 @@ const messages = {
   // Model Management
   // ==============================================
   'model.title': '模型管理',
-  'model.name': 'Qwen3.5-4B',
+  'model.name': 'Qwen3-8B (q4f16)',
   'model.version_label': '版本: v{version}',
-  'model.size_label': '大小: 3.4 GB',
+  'model.size_label': '大小: ~4.5 GB (建議 6GB+ VRAM)',
   'model.download.button': '下載模型',
   'model.download.pause': '暫停下載',
   'model.download.resume': '繼續下載',
   'model.download.progress': '已下載: {downloaded} / {total}',
   'model.download.estimate': '預估剩餘: 約 {minutes} 分鐘',
   'model.download.complete': '下載完成',
-  'model.download.wifi_required': '請連接 WiFi 後再下載模型 (約 3.4 GB)',
+  'model.download.heading': '下載 AI 模型',
+  'model.download.first_time_hint': '首次使用需下載模型 (約 4.5GB)，下載完成後將自動開始分析',
+  'model.download.chunks': '區塊',
+  'model.download.wifi_required': '請連接 WiFi 後再下載模型 (約 4.5 GB)',
   'model.download.low_battery': '電量不足 20%，請充電後再下載',
   'model.download.charging_required': '請接上充電器後再下載模型',
+  'model.download.confirm_heading': '首次使用需下載 AI 模型',
+  'model.download.confirm_desc': '分析功能需要下載約 4.5GB 的 AI 模型至瀏覽器，下載後可離線使用。建議使用 WiFi 下載。',
+  'model.download.check_wifi': '網路連線',
+  'model.download.check_battery': '電量充足',
+  'model.download.check_storage': '儲存空間',
+  'model.download.cellular_warning': '偵測到行動網路連線，下載 4.5GB 模型可能產生大量數據費用。',
+  'model.download.confirm_start': '確認下載並分析',
+  'model.download.confirm_anyway': '仍然下載',
   'model.delete.button': '刪除模型',
   'model.delete.confirm': '確定要刪除已下載的模型嗎？刪除後需要重新下載。',
+  'model.cache.clear_all': '清除所有 AI 模型快取',
+  'model.cache.clear_confirm': '將清除所有已下載的 AI 模型（包含舊版本），下次分析時會重新下載。確定嗎？',
+  'model.cache.cleared': '已清除，釋放約 {mb} MB',
   'model.status.not_downloaded': '尚未下載',
   'model.status.downloaded': '已下載',
   'model.status.downloading': '下載中...',
-  'model.inference.webgpu': '推理引擎: WebGPU',
-  'model.inference.ollama': '推理引擎: Ollama (本地)',
-  'model.inference.wasm': '推理引擎: WASM',
+  'model.inference.webgpu': '推理引擎: WebGPU (本地)',
   'model.inference.server': '推理引擎: 伺服器',
   'model.inference.thinking': '思考中...',
   'model.inference.analyzing': '分析結果產生中...',
@@ -141,6 +166,12 @@ const messages = {
   'model.inference.preparing': '正在組裝提示詞...',
   'model.inference.running': 'AI 分析中...',
   'model.inference.generating': '產生結果...',
+  'model.inference.loading_model': '載入 AI 模型中... (首次約需下載 4.5GB)',
+  'model.inference.loading_model_pct': '載入模型: {text}',
+  'model.inference.pass1_running': 'Pass 1/2: 分數分析中...',
+  'model.inference.pass1_done': 'Pass 1 完成，開始論述分析...',
+  'model.inference.pass2_running': 'Pass 2/2: 論述重點分析中...',
+  'model.inference.pass2_done': '分析完成',
   'model.inference.slow_hint': '分析較複雜的文章需要較長時間',
   'model.inference.timeout_offer': '分析時間較長，是否切換至伺服器模式？',
   'model.inference.switch_server': '切換至伺服器模式',
@@ -149,6 +180,7 @@ const messages = {
   // Reward System
   // ==============================================
   'reward.title': '我的點數',
+  'reward.points_awarded': '+{points} 點',
   'reward.total_points': '總點數: {points}',
   'reward.vote_power': '投票權: {votes} 票',
   'reward.conversion_hint': '每 10 點 = 1 票',
@@ -204,8 +236,7 @@ const messages = {
   'error.browser.outdated': '您的瀏覽器版本過舊，建議更新至最新版本',
   'error.sync.max_retries': '同步失敗次數過多，此筆資料已放棄提交',
   'error.article.not_cached': '此文章尚未快取，請在連線時重新載入',
-  'error.ollama.not_running': '未偵測到 Ollama，請先啟動 Ollama 應用程式',
-  'error.ollama.model_not_found': '尚未下載分析模型，請執行 ollama pull qwen3.5:4b',
+  'error.webllm.model_not_found': '分析模型載入失敗，請確認瀏覽器支援 WebGPU 並重新整理頁面',
 
   // ==============================================
   // Quality Gate Feedback
@@ -221,6 +252,7 @@ const messages = {
   'analyze.select_prompt': '請從首頁選擇一篇文章進行分析',
   'analyze.result_preview': '分析結果預覽',
   'analyze.reasoning': '分析推理',
+  'analyze.narrative_points': '論述重點',
   'analyze.key_phrases': '關鍵詞',
   'analyze.submit_success': '分析已成功提交',
   'article.knowledge.title': 'AI 參考知識',
@@ -375,7 +407,7 @@ const messages = {
   'a11y.button.share': '分享此分析結果',
   'a11y.button.go_original': '在新視窗開啟原文連結',
   'a11y.button.install_pwa': '將此應用程式加入主畫面',
-  'a11y.button.download_model': '下載 AI 分析模型，檔案大小約 3.4 GB',
+  'a11y.button.download_model': '下載 AI 分析模型，檔案大小約 4.5 GB',
   'a11y.button.delete_model': '刪除已下載的 AI 分析模型',
 
   // Forms

@@ -1,7 +1,7 @@
 /**
  * PowerReader - Model Download Manager
  *
- * Manages Qwen3.5-4B model download with:
+ * Manages Qwen3-4B model download via WebLLM with:
  *   - Pre-download condition checks (WiFi, battery, storage)
  *   - Resumable download via Range requests
  *   - OPFS storage (preferred) or IndexedDB fallback
@@ -11,7 +11,6 @@
  */
 
 import { t } from '../../locale/zh-TW.js';
-import { checkOllamaStatus } from './ollama-detect.js';
 
 // Model constants (from shared/config.js)
 const MODEL_SIZE_MB = 3400;
@@ -114,14 +113,8 @@ export async function runPreDownloadChecks() {
  * @returns {Promise<boolean>}
  */
 export async function isModelDownloaded() {
-  // Check Ollama first — if running with model, no download needed
-  try {
-    const ollamaStatus = await checkOllamaStatus();
-    if (ollamaStatus.available && ollamaStatus.model_ready) return true;
-  } catch {
-    // Ollama check failed — continue to local checks
-  }
-
+  // WebLLM caches models in browser Cache API automatically.
+  // Below checks cover pre-WebLLM downloads (OPFS / IndexedDB).
   try {
     // Try OPFS first
     if (navigator.storage && navigator.storage.getDirectory) {

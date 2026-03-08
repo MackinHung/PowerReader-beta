@@ -256,6 +256,13 @@ function showSyncFailureBanner(count) {
 // App initialization
 // --------------------------------------------------
 async function initApp() {
+  // 0. Register Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+      .then((reg) => console.log('[SW] Registered:', reg.scope))
+      .catch((err) => console.error('[SW] Registration failed:', err));
+  }
+
   // 1. Apply i18n translations
   applyI18n();
 
@@ -275,12 +282,12 @@ async function initApp() {
   // 5. SW message listener
   setupSWMessageListener();
 
-  // 6. Setup router
+  // 6. Check for first-visit onboarding (BEFORE routing to avoid race condition)
+  checkOnboarding();
+
+  // 7. Setup router
   window.addEventListener('hashchange', handleRoute);
   handleRoute();
-
-  // 7. Check for first-visit onboarding
-  checkOnboarding();
 }
 
 document.addEventListener('DOMContentLoaded', initApp);

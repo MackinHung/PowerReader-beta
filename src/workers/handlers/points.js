@@ -8,6 +8,7 @@
  */
 
 import { nowISO } from '../../../shared/utils.js';
+import { jsonResponse } from '../../../shared/response.js';
 
 /**
  * GET /api/v1/user/me/points — Get personal points and vote rights
@@ -40,9 +41,3 @@ export async function getPoints(request, env, ctx, { user }) {
   });
 }
 
-function jsonResponse(status, body) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' }
-  });
-}

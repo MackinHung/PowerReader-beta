@@ -8,7 +8,7 @@ Agent Teams 冷啟動文件。任何 Claude Agent 加入時的第一份必讀文
 ## 專案概覽
 
 ### 核心價值
-- **去中心化**: 用戶端運行 Qwen3.5-4B，本地 GPU 推理
+- **去中心化**: 用戶端運行 Qwen3-4B via WebLLM，瀏覽器內 WebGPU 推理
 - **中央空廚**: 統一爬取新聞，API 提供 RAG 知識注入
 - **知識透明化**: 使用者可查看 AI 分析時注入的所有背景知識
 - **即時分析**: Cloudflare KV 同步，建立 PowerReader 網絡
@@ -20,7 +20,7 @@ Agent Teams 冷啟動文件。任何 Claude Agent 加入時的第一份必讀文
 - **前端**: Cloudflare Pages (PWA) + IndexedDB
 - **後端**: Cloudflare Workers + D1 + R2 + KV + Vectorize + Workers AI
 - **爬蟲**: 閉源 GitHub 項目，GitHub Actions 每 2h，bge-small-zh 篩選
-- **推理**: Qwen3.5-4B (用戶端, think=false, t=0.5, ~6s/篇)
+- **推理**: Qwen3-4B via WebLLM (@mlc-ai/web-llm, 用戶端 WebGPU, think=false, t=0.5, ~6s/篇)
 - **嵌入**: Workers AI bge-m3 (1024d) + bge-small-zh-v1.5 (512d, 篩選用)
 - **向量搜索**: Cloudflare Vectorize
 - **介面**: LINE Bot + 瀏覽器插件 + Email 訂閱
@@ -35,7 +35,7 @@ Agent Teams 冷啟動文件。任何 Claude Agent 加入時的第一份必讀文
 Crawler(閉源) → 爬取 → bge-small-zh 篩選 → 清洗 → markdown.news 處理
 → API 推送 → PowerReader(開源) Workers 接收驗證 → bge-m3 嵌入
 → Vectorize 知識查詢 → R2+D1 儲存 → 客戶端取得文章+知識
-→ 組裝 3 層 Prompt → 本地 Qwen3.5-4B 推理 → 結果+知識透明化面板
+→ 組裝 3 層 Prompt → 本地 WebLLM (WebGPU) Qwen3-4B 雙 Pass 推理 → 結果+知識透明化面板
 
 ### Crawler API 輸出格式
 ```json
@@ -84,7 +84,7 @@ Crawler(閉源) → 爬取 → bge-small-zh 篩選 → 清洗 → markdown.news 
 M01 - 需求師 & 專案邏輯檢測師 (監督層,不寫代碼)
 ├─ T01 - 系統架構 (Cloudflare 全棧)
 ├─ T02 - 數據獲取 (爬蟲 + 議題篩選)
-├─ T03 - AI 推理 (Qwen3.5-4B + Prompt)
+├─ T03 - AI 推理 (Qwen3-4B WebLLM + Prompt)
 ├─ T04 - 前端體驗 (PWA + LINE Bot + 插件)
 ├─ T05 - 獎金系統 (票選 + Fisher-Yates)
 ├─ T06 - 合規安全 (爬蟲合規 + 隱私)
@@ -143,7 +143,7 @@ M01 - 需求師 & 專案邏輯檢測師 (監督層,不寫代碼)
 1. **嵌入模型一致性**: 篩選用 bge-small-zh(512d, Crawler CPU) 和知識查詢用 bge-m3(1024d, Workers AI GPU) 向量空間不相容，不可混用。
 2. **KV 寫入限制**: 免費方案每日 1000 次寫入，設計時避免頻繁寫入 KV。
 3. **LINE Bot 訊息長度**: Flex Message 有大小限制，只回傳摘要(前200字)+連結。
-4. **本地推理效能**: Qwen3.5-4B(3.4GB) 約 6-10s/篇。需提供下載進度和分析進度提示。電量<20%且非充電時不下載模型。推理超時 30 秒。
+4. **本地推理效能**: Qwen3-4B via WebLLM(3.4GB) 約 6-10s/篇 (雙 Pass ~14s)。模型自動下載至瀏覽器 Cache。需提供下載進度和分析進度提示。推理超時依 WebGPU benchmark 決定 (GPU 30s / CPU 120s)。
 
 ---
 
@@ -188,4 +188,4 @@ M01 - 需求師 & 專案邏輯檢測師 (監督層,不寫代碼)
 
 ---
 
-**維護者**: M01 | **最後更新**: 2026-03-07 | **版本**: v2.0 (精簡版, 從 v1.3 811 行精簡至此)
+**維護者**: M01 | **最後更新**: 2026-03-08 | **版本**: v2.1 (WebLLM 遷移)

@@ -87,7 +87,8 @@ Base Path:  /api/v1
         "bias_category": "center_right",
         "controversy_score": 12,
         "controversy_level": "moderate",
-        "status": "published"
+        "status": "published",
+        "thumbnail_url": "https://..."
       }
     ],
     "pagination": { "page": 1, "limit": 20, "total": 150, "total_pages": 8 }
@@ -169,6 +170,7 @@ Base Path:  /api/v1
 | `key_phrases` | string[] | Yes | Non-empty array, key phrases extracted from analysis |
 | `prompt_version` | string | Yes | Must match PROMPT_VERSIONS.md |
 | `user_hash` | string | Yes | SHA-256 user hash |
+| `model_name` | string | No | Optional model identifier (e.g., `Qwen3-4B-q4f16_1-MLC`) |
 
 **Server-Side Logic**:
 1. `bias_category = getBiasCategory(bias_score)`
@@ -258,6 +260,348 @@ Base Path:  /api/v1
 | `party` | string | null | Filter by party tag |
 | `page` | integer | 1 | Page number |
 | `limit` | integer | 50 | Items per page (max 100) |
+
+---
+
+## Feedback API (v2.0 — 回饋機制)
+
+### `POST /api/v1/articles/:article_id/feedback`
+**Purpose**: Submit user feedback on analysis quality
+**Auth**: JWT required
+**Rate Limit**: 10/min per user
+
+| Body Field | Type | Required | Validation |
+|-----------|------|----------|------------|
+| `type` | string | Yes | `thumbs_up` or `thumbs_down` |
+| `comment` | string | No | Max 500 chars, optional text feedback |
+
+**Response (200)**:
+```javascript
+{
+  "success": true,
+  "data": {
+    "feedback_id": "fb_abc123",
+    "article_id": "sha256...",
+    "user_hash": "sha256...",
+    "type": "thumbs_up",
+    "created_at": "2026-03-08T10:00:00+08:00"
+  },
+  "error": null
+}
+```
+
+**Duplicate check**: One feedback per user per article (upsert — latest wins).
+
+### `GET /api/v1/articles/:article_id/feedback/stats`
+**Purpose**: Get aggregated feedback stats for an article
+**Auth**: Not required
+
+**Response (200)**:
+```javascript
+{
+  "success": true,
+  "data": {
+    "article_id": "sha256...",
+    "thumbs_up": 15,
+    "thumbs_down": 3,
+    "total": 18
+  },
+  "error": null
+}
+```
+
+---
+
+## Events API (v2.0 — 事件聚合 + 三營陣)
+
+### `GET /api/v1/events`
+**Purpose**: Get event (cluster) list with three-camp distribution
+**Auth**: Not required
+**Rate Limit**: 60/min
+
+| Parameter | Type | Required | Description | Validation |
+|-----------|------|----------|-------------|------------|
+| `page` | number | No | Page number (default 1) | >= 1 |
+| `limit` | number | No | Items per page (default 20, max 50) | 1-50 |
+| `sort_by` | string | No | Sort field | Whitelist: `controversy_avg`, `article_count`, `created_at` |
+| `sort_order` | string | No | Sort direction | `asc` or `desc` (default `desc`) |
+| `blindspot_only` | boolean | No | Only return events with blindspot | `true` or `false` |
+
+**Response (200)**:
+```javascript
+{
+  "success": true,
+  "data": {
+    "events": [
+      {
+        "cluster_id": "evt_abc123",
+        "title": "立法院審議前瞻計畫",        // Representative title (highest controversy article)
+        "article_count": 12,
+        "source_count": 5,
+        "sources": ["liberty_times", "cna", "united_daily_news", "china_times", "newtalk"],
+        "controversy_avg": 72,
+        "camp_distribution": {
+          "green": 4,                           // Article count per camp
+          "white": 2,
+          "blue": 6
+        },
+        "camp_pct": {
+          "green": 33.3,                        // Percentage
+          "white": 16.7,
+          "blue": 50.0
+        },
+        "blindspot": "imbalanced",              // BLINDSPOT_TYPES value, or null
+        "consensus_score": 45,                  // 100 - std(bias_scores)*3
+        "created_at": "2026-03-08T10:00:00+08:00",
+        "updated_at": "2026-03-08T14:00:00+08:00"
+      }
+    ],
+    "pagination": { "page": 1, "limit": 20, "total": 35, "total_pages": 2 }
+  },
+  "error": null
+}
+```
+
+**⚠️ REUSES EXISTING**: `articles.bias_score` → `getCampFromScore()` per cluster member → aggregate counts
+
+### `GET /api/v1/events/:cluster_id`
+**Purpose**: Get event detail with member articles and three-camp analysis
+**Auth**: Not required
+
+**Response (200)**:
+```javascript
+{
+  "success": true,
+  "data": {
+    "cluster_id": "evt_abc123",
+    "title": "立法院審議前瞻計畫",
+    "camp_distribution": { "green": 4, "white": 2, "blue": 6 },
+    "camp_pct": { "green": 33.3, "white": 16.7, "blue": 50.0 },
+    "blindspot": "imbalanced",
+    "consensus_score": 45,
+    "controversy_avg": 72,
+    "articles": [
+      {
+        "article_id": "sha256...",
+        "title": "Article Title",
+        "source": "liberty_times",
+        "bias_score": 28,
+        "camp": "pan_green",                    // getCampFromScore() result
+        "camp_weights": { "green": 1.0, "white": 0.0, "blue": 0.0 },
+        "controversy_score": 68,
+        "published_at": "2026-03-08T10:00:00+08:00"
+      }
+      // ... more articles, sorted by bias_score ascending
+    ],
+    "three_way_summary": {                      // Phase 5, null before implementation
+      "green_summary": "泛綠方觀點摘要...",
+      "white_summary": "中立方觀點摘要...",
+      "blue_summary": "泛藍方觀點摘要...",
+      "subscriber_only": false                  // true if user not subscribed
+    }
+  },
+  "error": null
+}
+```
+
+---
+
+## Blindspot API (v2.0 — 報導盲區)
+
+### `GET /api/v1/blindspot/events`
+**Purpose**: Get events with blindspot detection results
+**Auth**: Not required
+**Rate Limit**: 60/min
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `page` | number | No | Page number (default 1) |
+| `limit` | number | No | Items per page (default 20) |
+| `type` | string | No | Filter by blindspot type | Must be in `BLINDSPOT_TYPES` |
+
+**Response (200)**:
+```javascript
+{
+  "success": true,
+  "data": {
+    "blindspot_events": [
+      {
+        "cluster_id": "evt_abc123",
+        "title": "環境保護法修正案",
+        "blindspot_type": "green_only",          // BLINDSPOT_TYPES value
+        "camp_distribution": { "green": 5, "white": 1, "blue": 0 },
+        "camp_pct": { "green": 83.3, "white": 16.7, "blue": 0.0 },
+        "missing_camp": "pan_blue",              // Which camp is missing
+        "article_count": 6,
+        "source_count": 3,
+        "detected_at": "2026-03-08T12:00:00+08:00"
+      }
+    ],
+    "pagination": { "page": 1, "limit": 20, "total": 8, "total_pages": 1 }
+  },
+  "error": null
+}
+```
+
+**⚠️ DERIVED**: Cron Worker 每小時掃描 `event_clusters` → `detectBlindspot(campCounts)` → 結果存 `blindspot_events` D1 表
+
+---
+
+## Source Transparency API (v2.0 — 來源透明度)
+
+### `GET /api/v1/sources`
+**Purpose**: Get all source tendency profiles
+**Auth**: Not required
+
+**Response (200)**:
+```javascript
+{
+  "success": true,
+  "data": {
+    "sources": [
+      {
+        "source": "liberty_times",
+        "display_name": "自由時報",
+        "avg_bias_score": 32.5,
+        "camp": "pan_green",
+        "sample_count": 45,
+        "confidence": "high",                    // high (>=30) / mid (>=10) / low (<10)
+        "last_updated": "2026-03-08T00:00:00+08:00"
+      }
+    ]
+  },
+  "error": null
+}
+```
+
+### `GET /api/v1/sources/:source`
+**Purpose**: Get detailed source transparency panel
+**Auth**: Not required
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `source` | string (path) | Yes | Source key (e.g., `liberty_times`) |
+
+**Response (200)**:
+```javascript
+{
+  "success": true,
+  "data": {
+    "source": "liberty_times",
+    "display_name": "自由時報",
+    "metadata": {
+      "type": "傳統紙媒",
+      "founded": 1980,
+      "owner": "聯邦企業集團"
+    },
+    "tendency": {
+      "avg_bias_score": 32.5,
+      "camp": "pan_green",
+      "sample_count": 45,
+      "window_days": 30,
+      "confidence": "high"
+    },
+    "camp_distribution": { "green": 33, "white": 8, "blue": 4 },
+    "monthly_trend": [
+      { "month": "2026-02", "avg_bias": 34.2, "count": 38 },
+      { "month": "2026-01", "avg_bias": 31.8, "count": 42 }
+      // ... up to 6 months
+    ],
+    "recent_articles": [
+      {
+        "article_id": "sha256...",
+        "title": "Article Title",
+        "bias_score": 28,
+        "camp": "pan_green",
+        "published_at": "2026-03-08T10:00:00+08:00"
+      }
+      // ... top 10 recent
+    ]
+  },
+  "error": null
+}
+```
+
+**⚠️ REUSES EXISTING**: `articles.bias_score`, `articles.source`, `articles.published_at` — 全部已有欄位
+**⚠️ DERIVED**: tendency = `SELECT AVG(bias_score), COUNT(*) FROM articles WHERE source=? AND published_at > DATE('now', '-30 days')`
+
+---
+
+## Reading Bias API (v2.0 — 個人閱讀偏見)
+
+### `GET /api/v1/user/me/reading-bias`
+**Purpose**: Get personal reading bias analysis
+**Auth**: JWT required
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `days` | number | No | Analysis window (default 30, max 90) |
+
+**Response (200)**:
+```javascript
+{
+  "success": true,
+  "data": {
+    "period_days": 30,
+    "total_articles_read": 85,
+    "camp_distribution": { "green": 53, "white": 15, "blue": 17 },
+    "camp_pct": { "green": 62.4, "white": 17.6, "blue": 20.0 },
+    "bias_level": "skewed_green",                // balanced / skewed_green / skewed_blue / skewed_white
+    "suggestion": {
+      "text": "reading_bias.skewed",             // i18n key
+      "recommended_camp": "pan_blue",
+      "recommended_articles": [
+        { "article_id": "sha256...", "title": "...", "source": "united_daily_news", "camp": "pan_blue" }
+      ]
+    },
+    "badges": [
+      { "badge_type": "cross_media_expert", "earned_at": "2026-03-05T10:00:00+08:00" }
+    ],
+    "streaks": {
+      "current_streak_days": 5,
+      "longest_streak_days": 12
+    }
+  },
+  "error": null
+}
+```
+
+---
+
+## Subscription API (v2.0 — 訂閱)
+
+### `POST /api/v1/subscribe`
+**Purpose**: Create or manage subscription
+**Auth**: JWT required
+
+| Body Field | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `action` | string | Yes | `subscribe` or `unsubscribe` |
+| `email` | string | Conditional | Required for `subscribe` |
+| `notifications` | object | No | `{ daily_digest: true, blindspot_alert: true, analysis_result: true }` |
+
+**Response (200)**:
+```javascript
+{
+  "success": true,
+  "data": {
+    "user_hash": "sha256...",
+    "tier": "supporter",                         // SUBSCRIBER_TIERS value
+    "email_verified": true,
+    "notifications": {
+      "daily_digest": true,
+      "blindspot_alert": true,
+      "analysis_result": true
+    },
+    "subscribed_at": "2026-03-08T10:00:00+08:00"
+  },
+  "error": null
+}
+```
+
+### `GET /api/v1/subscribe/status`
+**Purpose**: Check subscription status
+**Auth**: JWT required
 
 ---
 
@@ -471,6 +815,16 @@ The following vote endpoints are **deferred to Phase 2+** and are not implemente
 | `/votes/*` (Phase 2+) | T01 | T05 | T04 |
 | `/health`, `/metrics` | T01 | - | T07 |
 | `/monitoring/usage` | T01 | - | T07 |
+| `/events` GET | T01 | Cron Worker | T04 |
+| `/events/:cluster_id` GET | T01 | Cron Worker | T04 |
+| `/blindspot/events` GET | T01 | Cron Worker | T04 |
+| `/sources` GET | T01 | Cron Worker | T04 |
+| `/sources/:source` GET | T01 | Cron Worker | T04 |
+| `/user/me/reading-bias` GET | T01 | T04 (track) | T04 |
+| `/subscribe` POST | T01 | T04 | - |
+| `/subscribe/status` GET | T01 | - | T04 |
+| `/articles/:id/feedback` POST | T01 | T04 (user) | - |
+| `/articles/:id/feedback/stats` GET | T01 | - | T04 |
 
 ---
 
@@ -515,9 +869,11 @@ if (!ALLOWED.includes(sortBy)) return error(400);
 | v2.0 | 2026-03-07 | Crawler API fields (replace tokens/minhash), batch endpoint, Knowledge API, monitoring/usage, reasoning+key_phrases in analysis, vote endpoints deferred to Phase 2+, points uses total_points_cents integer, health route note (T01 routes + T07 logic) | All teams |
 | v2.1 | 2026-03-07 | Added T05 reward endpoints (POST /rewards/submit, POST /rewards/failure, GET /rewards/me) — all D1-backed, Service Token auth, field name `article_id` (not `article_hash`) | T05, T03 |
 | v2.2 | 2026-03-07 | Added knowledge batch/search/list endpoints, D1 knowledge_entries table, party tag for DPP/KMT/TPP disambiguation | T03 |
+| v3.0 | 2026-03-08 | v2.0 Three-Camp: Events API (GET /events, /events/:id), Blindspot API (GET /blindspot/events), Source Transparency API (GET /sources, /sources/:source), Reading Bias API (GET /user/me/reading-bias), Subscription API (POST /subscribe, GET /subscribe/status) | T04, All teams |
+| v3.1 | 2026-03-08 | Added Feedback API (POST/GET feedback), articles.thumbnail_url, analyses.model_name; v2.0 UX feasibility decisions #017-#020 | T04 |
 
 ---
 
 **Document Maintainer**: T01 (System Architecture Team)
-**Last Updated**: 2026-03-07
-**Status**: Complete
+**Last Updated**: 2026-03-08
+**Status**: Complete (v3.1 — Feedback API + thumbnail_url + model_name)

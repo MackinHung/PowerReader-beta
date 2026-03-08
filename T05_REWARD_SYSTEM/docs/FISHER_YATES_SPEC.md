@@ -4,7 +4,7 @@
 
 ## 導航
 - **上游文件**: CLAUDE.md, MASTER_ROADMAP.md, shared/config.js (`REWARD` section), shared/enums.js (`REWARD_STATUS`)
-- **下游文件**: VOTE_AUDIT_LOG.md, T01_SYSTEM_ARCHITECTURE/KV_SCHEMA.md (`VOTE_RESULTS` namespace)
+- **下游文件**: T01_SYSTEM_ARCHITECTURE/KV_SCHEMA.md (`VOTE_RESULTS` namespace)
 - **維護者**: T05 Reward System
 - **類型**: 技術規格 (SSOT for shuffle algorithm)
 - **最後更新**: 2026-03-06

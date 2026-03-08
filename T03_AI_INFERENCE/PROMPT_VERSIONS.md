@@ -5,13 +5,13 @@
 - **下游文件**: T03_AI_INFERENCE/QUALITY_GATES.md, T03_AI_INFERENCE/MODEL_ACCURACY_REPORT.md, T01_SYSTEM_ARCHITECTURE/KV_SCHEMA.md (prompt_version field), T01_SYSTEM_ARCHITECTURE/CLOUDFLARE_ARCHITECTURE.md (Vectorize + Workers AI)
 - **維護者**: T03 (AI Inference Team)
 - **類型**: SINGLE SOURCE OF TRUTH (SSOT) + 滾動式紀錄
-- **最後更新**: 2026-03-07
+- **最後更新**: 2026-03-08
 
 ---
 
 ## 文件目的
 
-這是 **Qwen3.5-4B Prompt 設計與版本演進的唯一定義**。
+這是 **Qwen3-4B Prompt 設計與版本演進的唯一定義**。
 所有分析用的 System Prompt 必須從此文件取得,不可自行定義。
 
 **修改此文件時必須通知**: T01 (KV Schema 的 prompt_version 欄位), T05 (品質影響獎勵)
@@ -22,7 +22,7 @@
 
 ### 1. 上下文注入優先 (Context Injection First)
 
-Qwen3.5-4B 有 40 億參數,具備基礎推理能力,但缺乏台灣政治領域知識。
+Qwen3-4B 有 40 億參數,具備基礎推理能力,但缺乏台灣政治領域知識。
 **測試證實: 小模型需要更多上下文,而非更少。但必須拿捏,過多會崩潰。**
 
 **原則**:
@@ -61,7 +61,7 @@ Qwen3.5-4B 有 40 億參數,具備基礎推理能力,但缺乏台灣政治領域
 
 ### 4. 上下文窗口預算 (Context Window Budget)
 
-Qwen3.5-4B 上下文窗口為 32,768 tokens。
+Qwen3-4B 上下文窗口為 32,768 tokens。
 **總 Prompt 輸入 (L1+L2+L3+指令) 不得超過上下文窗口的 40%** (~13,107 tokens)。
 
 **預算分配**:
@@ -92,7 +92,7 @@ Qwen3.5-4B 上下文窗口為 32,768 tokens。
 
 ---
 
-## Prompt v2.0.0 -- 當前生產版本
+## Prompt v2.0.1 -- 當前生產版本
 
 ### 三層 Prompt 架構
 
@@ -210,15 +210,16 @@ Qwen3.5-4B 上下文窗口為 32,768 tokens。
 | `reasoning` | string | 10-200 字元 | 長度檢查 |
 | `key_phrases` | string[] | 1-10 個項目 | 陣列長度檢查 |
 
-### Qwen3.5-4B 推理設定 (CONFIRMED 2026-03-07)
+### Qwen3-4B 推理設定 (CONFIRMED 2026-03-07, ENGINE UPDATED 2026-03-08)
 
 > **STATUS: LOCKED** — 參數經 Phase 1-7 測試驗證，已由專案負責人確認鎖定。
 > 除非 Gold Standard 測試顯示必要性，否則不得修改。
+> 推理引擎已從 Ollama 遷移至 WebLLM (WebGPU 瀏覽器內推理)。
 
 ```javascript
 // 推理設定 (從 shared/config.js MODELS 取得模型名稱)
 const inferenceConfig = {
-  model: "qwen3.5:4b",            // Ollama 官方模型 (含 RENDERER+PARSER)
+  model: "Qwen3-4B-q4f16_1-MLC",   // WebLLM 預編譯模型 (WebGPU, 瀏覽器內推理)
   think: false,                     // 4B thinking 不值得 (170-300s, 品質差)
   temperature: 0.5,                 // 穩定性甜蜜點 (測試驗證)
   top_p: 0.95,                      // 官方值
@@ -234,7 +235,7 @@ const inferenceConfig = {
 |------|-----|------|
 | `think` | false | 4B thinking 170-300s 且 bias 仍偏差 29 分,不值得 |
 | `temperature` | 0.5 | 0.3 太死板, 1.0 不穩定, 0.5 是測試驗證的甜蜜點 |
-| `top_p` | 0.95 | Qwen3.5 官方推薦值 |
+| `top_p` | 0.95 | Qwen3 官方推薦值 |
 | `presence_penalty` | 1.5 | 官方值;注意是加法型,與 repeat_penalty (乘法型) 不同 |
 | `num_predict` | 4096 | JSON 結構約 200-400 tokens;4096 留餘量 |
 
@@ -306,7 +307,7 @@ Prompt 版本遵循 **MAJOR.MINOR.PATCH** 格式:
 
 ### 威脅模型
 
-用戶端在本地運行 Qwen3.5-4B,理論上可修改 Prompt。但：
+用戶端在瀏覽器內透過 WebLLM (WebGPU) 運行 Qwen3-4B,理論上可修改 Prompt。但：
 - 分析結果需通過 4 層品質驗證 (QUALITY_GATES.md),注入造成的異常輸出會被攔截
 - Prompt 版本記錄在 KV 的 `prompt_version` 欄位,不匹配的版本會被標記
 
@@ -343,7 +344,7 @@ function sanitizeArticleInput(article) {
 ```javascript
 // KV 寫入時驗證 prompt_version
 function validatePromptVersion(submittedVersion) {
-  const CURRENT_VERSION = "v2.0.0";  // 必須與此文件同步
+  const CURRENT_VERSION = "v2.0.1";  // 必須與此文件同步
   if (submittedVersion !== CURRENT_VERSION) {
     console.warn(`Prompt version mismatch: expected ${CURRENT_VERSION}, got ${submittedVersion}`);
     return false;
@@ -362,6 +363,7 @@ function validatePromptVersion(submittedVersion) {
 |------|------|---------|---------|-------------------|--------|
 | v1.0.0 | 2026-03-06 | MAJOR | 初版 Prompt: System Prompt + JSON schema + Thinking Mode config | 待測試 | T03 |
 | v2.0.0 | 2026-03-07 | MAJOR | 模型 2B→4B + RAG 三層架構 + 參數更新 (think=false, t=0.5) + 禁止 few-shot | Phase 1-7 測試: bias_err 84%↓, spread 25→5 | T03 |
+| v2.0.1 | 2026-03-08 | PATCH | 推理引擎 Ollama → WebLLM; 模型 qwen3.5:4b → Qwen3-4B-q4f16_1-MLC | N/A (引擎變更,Prompt 內容不變) | T03 |
 
 ### 紀錄填寫範例
 
@@ -400,9 +402,9 @@ function validatePromptVersion(submittedVersion) {
 
 - **問題**: Qwen 模型可能更新,導致相同 Prompt 產生不同結果
 - **錯誤做法**: 使用 "latest" 版本標籤
-- **正確做法**: 鎖定 `qwen3.5:4b` (Ollama 官方模型, 含 RENDERER+PARSER)
+- **正確做法**: 鎖定 `Qwen3-4B-q4f16_1-MLC` (WebLLM 預編譯模型, WebGPU 瀏覽器內推理)
 - **驗證方法**: 每次模型更新後必須重跑 Gold Standard 測試
-- **⚠️ 注意**: 自訂 Modelfile 缺少 RENDERER+PARSER 會導致輸出異常
+- **⚠️ 注意**: WebLLM 模型 ID 必須與 MLC 預編譯清單完全一致,否則載入失敗
 
 ### Mistake 5: 允許模型輸出自然語言包裹
 
@@ -440,5 +442,5 @@ function validatePromptVersion(submittedVersion) {
 ---
 
 **文件維護者**: T03 (AI Inference Team)
-**最後更新**: 2026-03-07
+**最後更新**: 2026-03-08
 **下次審查**: Gold Standard 測試集建立完成後

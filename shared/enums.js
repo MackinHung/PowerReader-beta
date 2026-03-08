@@ -22,9 +22,10 @@
  * | 2025-03-06 | v1.0    | Initial enums            | Project kickoff  |
  * | 2026-03-07 | v2.0    | PowerReader: config boundaries, filtered status, knowledge categories | Architecture decisions #004-#010 |
  * | 2026-03-08 | v2.1    | +4 news sources (ETtoday, SETN, EBC, Newtalk) | Crawler expansion |
+ * | 2026-03-08 | v3.0    | Three-Camp: CAMP_TYPES, getCampFromScore(), CAMP_COLORS, BLINDSPOT_TYPES, detectBlindspot(), SUBSCRIBER_TIERS, BADGE_TYPES, getWhiteAxisValue() | Decision #013-#016 |
  */
 
-import { ANALYSIS } from './config.js';
+import { ANALYSIS, THREE_CAMP } from './config.js';
 
 // =========================================
 // 📰 News Sources (Taiwan Major Media)
@@ -300,6 +301,135 @@ export const KNOWLEDGE_CATEGORIES = {
 };
 
 // =========================================
+// 🏛️ Three-Camp System (三營陣系統)
+// =========================================
+// Decision #013: Taiwan political spectrum mapped to Green/White/Blue camps
+// bias_score boundaries: GREEN 0-40 / WHITE 40-60 / BLUE 60-100
+// With ±GRADIENT_ZONE for smooth transitions at boundaries
+
+export const CAMP_TYPES = {
+  PAN_GREEN: "pan_green",       // 泛綠 (DPP + allies): bias_score <= GREEN_MAX
+  PAN_WHITE: "pan_white",       // 泛白/中立 (TPP + independents): GREEN_MAX < score < BLUE_MIN
+  PAN_BLUE: "pan_blue",         // 泛藍 (KMT + allies): bias_score >= BLUE_MIN
+  INSUFFICIENT: "insufficient"  // 樣本不足,無法判定
+};
+
+/**
+ * Get camp classification from bias_score with gradient weights.
+ * Returns { camp, weights: { green, white, blue } } where weights sum to 1.0.
+ *
+ * Uses config.js THREE_CAMP boundaries (GREEN_MAX=40, BLUE_MIN=60, GRADIENT_ZONE=5).
+ * Within ±GRADIENT_ZONE of boundaries, returns blended weights for smooth transitions.
+ *
+ * ⚠️ REUSES EXISTING: articles.bias_score (0-100) — no new column needed.
+ *
+ * @param {number} score - bias_score (0-100)
+ * @returns {{ camp: string, weights: { green: number, white: number, blue: number } }}
+ */
+export function getCampFromScore(score) {
+  const { GREEN_MAX, BLUE_MIN, GRADIENT_ZONE } = THREE_CAMP;
+
+  // Pure zones (outside gradient)
+  if (score <= GREEN_MAX - GRADIENT_ZONE) {
+    return { camp: CAMP_TYPES.PAN_GREEN, weights: { green: 1.0, white: 0.0, blue: 0.0 } };
+  }
+  if (score >= BLUE_MIN + GRADIENT_ZONE) {
+    return { camp: CAMP_TYPES.PAN_BLUE, weights: { green: 0.0, white: 0.0, blue: 1.0 } };
+  }
+  if (score > GREEN_MAX + GRADIENT_ZONE && score < BLUE_MIN - GRADIENT_ZONE) {
+    return { camp: CAMP_TYPES.PAN_WHITE, weights: { green: 0.0, white: 1.0, blue: 0.0 } };
+  }
+
+  // Gradient zone: Green ↔ White boundary (35-45)
+  if (score > GREEN_MAX - GRADIENT_ZONE && score <= GREEN_MAX + GRADIENT_ZONE) {
+    const t = (score - (GREEN_MAX - GRADIENT_ZONE)) / (2 * GRADIENT_ZONE);
+    return {
+      camp: t < 0.5 ? CAMP_TYPES.PAN_GREEN : CAMP_TYPES.PAN_WHITE,
+      weights: { green: 1.0 - t, white: t, blue: 0.0 }
+    };
+  }
+
+  // Gradient zone: White ↔ Blue boundary (55-65)
+  if (score >= BLUE_MIN - GRADIENT_ZONE && score < BLUE_MIN + GRADIENT_ZONE) {
+    const t = (score - (BLUE_MIN - GRADIENT_ZONE)) / (2 * GRADIENT_ZONE);
+    return {
+      camp: t < 0.5 ? CAMP_TYPES.PAN_WHITE : CAMP_TYPES.PAN_BLUE,
+      weights: { green: 0.0, white: 1.0 - t, blue: t }
+    };
+  }
+
+  // Fallback (should not reach)
+  return { camp: CAMP_TYPES.PAN_WHITE, weights: { green: 0.0, white: 1.0, blue: 0.0 } };
+}
+
+/**
+ * Calculate white-axis value for radar chart.
+ * Decision: white = 100 - abs(score-50)*2 (Qwen can't reliably output multi-dimensional)
+ * ⚠️ DERIVED VALUE: computed from existing bias_score, no new column needed.
+ *
+ * @param {number} biasScore - bias_score (0-100)
+ * @returns {number} white axis value (0-100, peaks at 50)
+ */
+export function getWhiteAxisValue(biasScore) {
+  return Math.max(0, 100 - Math.abs(biasScore - 50) * 2);
+}
+
+// Camp display colors (three-bar + radar chart)
+export const CAMP_COLORS = {
+  PAN_GREEN: "#2E7D32",       // Forest green (泛綠)
+  PAN_WHITE: "#757575",       // Neutral gray (泛白/中立)
+  PAN_BLUE: "#1565C0",        // Deep blue (泛藍)
+  INSUFFICIENT: "#BDBDBD"     // Light gray (資料不足)
+};
+
+// Blindspot detection types
+// ⚠️ DERIVED from event_cluster camp distribution — no AI cost
+export const BLINDSPOT_TYPES = {
+  GREEN_ONLY: "green_only",       // Event covered only by green-leaning sources
+  BLUE_ONLY: "blue_only",         // Event covered only by blue-leaning sources
+  WHITE_MISSING: "white_missing", // No neutral/independent coverage
+  IMBALANCED: "imbalanced"        // Severe camp imbalance (e.g., 80%+ one camp)
+};
+
+/**
+ * Detect blindspot type from camp distribution.
+ * ⚠️ REUSES EXISTING: articles.bias_score → getCampFromScore() per cluster member
+ *
+ * @param {{ green: number, white: number, blue: number }} campCounts - article count per camp
+ * @returns {string|null} BLINDSPOT_TYPES value, or null if balanced
+ */
+export function detectBlindspot(campCounts) {
+  const total = campCounts.green + campCounts.white + campCounts.blue;
+  if (total === 0) return null;
+
+  const greenPct = campCounts.green / total;
+  const bluePct = campCounts.blue / total;
+  const whitePct = campCounts.white / total;
+
+  if (greenPct >= 0.8 && campCounts.blue === 0) return BLINDSPOT_TYPES.GREEN_ONLY;
+  if (bluePct >= 0.8 && campCounts.green === 0) return BLINDSPOT_TYPES.BLUE_ONLY;
+  if (whitePct === 0 && total >= 3) return BLINDSPOT_TYPES.WHITE_MISSING;
+  if (greenPct >= 0.7 || bluePct >= 0.7) return BLINDSPOT_TYPES.IMBALANCED;
+
+  return null; // Balanced
+}
+
+// Subscriber tiers
+export const SUBSCRIBER_TIERS = {
+  FREE: "free",                // 免費用戶 (所有功能可用)
+  SUPPORTER: "supporter"       // 公民贊助者 (投票權 2x + 搶先體驗 + 完整報告)
+};
+
+// Badge types (gamification)
+export const BADGE_TYPES = {
+  BEGINNER_ANALYST: "beginner_analyst",       // 新手分析師: 完成首次分析
+  STANCE_OBSERVER: "stance_observer",         // 立場觀察家: 分析 50 篇
+  CROSS_MEDIA_EXPERT: "cross_media_expert",   // 跨媒體達人: 閱讀 3+ 來源同事件
+  BLINDSPOT_FINDER: "blindspot_finder",       // 盲區發現者: 閱讀 10 篇盲區文章
+  NEUTRAL_GUARDIAN: "neutral_guardian"         // 中立守護者: 閱讀偏見 < 15%
+};
+
+// =========================================
 // 🌈 UI Theme Colors (Taiwan Localization)
 // =========================================
 export const THEME_COLORS = {
@@ -366,6 +496,12 @@ export default {
   NEWS_CATEGORIES,
   KNOWLEDGE_CATEGORIES,
   THEME_COLORS,
+  // Three-Camp System (v2.0)
+  CAMP_TYPES,
+  CAMP_COLORS,
+  BLINDSPOT_TYPES,
+  SUBSCRIBER_TIERS,
+  BADGE_TYPES,
   // Helper functions
   canTransitionStatus,
   getBiasCategory,
@@ -374,5 +510,9 @@ export default {
   getUserErrorMessage,
   isValidNewsSource,
   isValidArticleStatus,
-  validateEnum
+  validateEnum,
+  // Three-Camp helpers (v2.0)
+  getCampFromScore,
+  getWhiteAxisValue,
+  detectBlindspot
 };

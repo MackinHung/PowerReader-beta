@@ -8,30 +8,102 @@
  */
 
 import { SECURITY } from '../../../shared/config.js';
-import { nowISO } from '../../../shared/utils.js';
-import { generateUserHash } from '../../../shared/utils.js';
+import { nowISO, generateUserHash } from '../../../shared/utils.js';
+import { jsonResponse } from '../../../shared/response.js';
 
 /**
- * POST /api/v1/auth/google — Google OAuth login
- * Receives Google ID token, validates, creates/updates user, returns JWT.
+ * GET /api/v1/auth/google — Initiate Google OAuth redirect flow
+ * Redirects user to Google's consent screen.
+ * Query params: ?redirect=<frontend_url_after_login>
  */
 export async function googleAuth(request, env, ctx, { url }) {
-  const body = await request.json();
-  const { id_token } = body;
-
-  if (!id_token) {
-    return jsonResponse(400, {
+  const clientId = env.GOOGLE_CLIENT_ID;
+  if (!clientId) {
+    return jsonResponse(503, {
       success: false, data: null,
-      error: { type: 'validation_error', message: '輸入資料格式錯誤,請檢查後重試' }
+      error: { type: 'api_error', message: '系統錯誤,請稍後再試' }
     });
   }
 
-  // Verify Google ID token
-  // In production, verify via Google's tokeninfo endpoint or JWKS
+  const redirectUri = `${url.origin}/api/v1/auth/google/callback`;
+  const frontendRedirect = url.searchParams.get('redirect') || '';
+
+  // Store frontend redirect URL in state parameter
+  const state = btoa(JSON.stringify({ redirect: frontendRedirect }));
+
+  const googleAuthUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+  googleAuthUrl.searchParams.set('client_id', clientId);
+  googleAuthUrl.searchParams.set('redirect_uri', redirectUri);
+  googleAuthUrl.searchParams.set('response_type', 'code');
+  googleAuthUrl.searchParams.set('scope', 'openid profile');
+  googleAuthUrl.searchParams.set('state', state);
+  googleAuthUrl.searchParams.set('prompt', 'select_account');
+
+  return Response.redirect(googleAuthUrl.toString(), 302);
+}
+
+/**
+ * GET /api/v1/auth/google/callback — Handle Google OAuth callback
+ * Exchanges auth code for tokens, creates user/session, redirects to frontend.
+ */
+export async function googleOAuthCallback(request, env, ctx, { url }) {
+  const code = url.searchParams.get('code');
+  const stateParam = url.searchParams.get('state');
+  const error = url.searchParams.get('error');
+
+  if (error || !code) {
+    return jsonResponse(400, {
+      success: false, data: null,
+      error: { type: 'validation_error', message: '登入已取消或失敗' }
+    });
+  }
+
+  // Decode state to get frontend redirect URL
+  let frontendRedirect = '';
+  try {
+    const stateData = JSON.parse(atob(stateParam || ''));
+    frontendRedirect = stateData.redirect || '';
+  } catch { /* ignore invalid state */ }
+
+  const clientId = env.GOOGLE_CLIENT_ID;
+  const clientSecret = env.GOOGLE_CLIENT_SECRET;
+  const redirectUri = `${url.origin}/api/v1/auth/google/callback`;
+
+  // Exchange authorization code for tokens
+  let tokenData;
+  try {
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code'
+      })
+    });
+
+    if (!tokenResponse.ok) {
+      return jsonResponse(502, {
+        success: false, data: null,
+        error: { type: 'api_error', message: '系統錯誤,請稍後再試' }
+      });
+    }
+
+    tokenData = await tokenResponse.json();
+  } catch {
+    return jsonResponse(502, {
+      success: false, data: null,
+      error: { type: 'api_error', message: '系統錯誤,請稍後再試' }
+    });
+  }
+
+  // Get user info from the ID token
   let googleUser;
   try {
     const verifyResponse = await fetch(
-      `https://oauth2.googleapis.com/tokeninfo?id_token=${id_token}`
+      `https://oauth2.googleapis.com/tokeninfo?id_token=${tokenData.id_token}`
     );
     if (!verifyResponse.ok) {
       return jsonResponse(401, {
@@ -61,7 +133,6 @@ export async function googleAuth(request, env, ctx, { url }) {
   const session_id = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + SECURITY.SESSION_TTL_HOURS * 3600 * 1000).toISOString();
 
-  // Note: sessions table needs to be created in D1 schema
   await env.DB.prepare(`
     INSERT INTO sessions (session_id, user_hash, expires_at, created_at)
     VALUES (?, ?, ?, ?)
@@ -74,11 +145,19 @@ export async function googleAuth(request, env, ctx, { url }) {
     SECURITY.JWT_TTL_DAYS
   );
 
-  return jsonResponse(200, {
-    success: true,
-    data: { token: jwt, user_hash, session_id, expires_at: expiresAt },
-    error: null
-  });
+  // Redirect to frontend with token in URL fragment
+  // Parse the frontend redirect to determine the base URL
+  let redirectBase = frontendRedirect || 'https://powerreader.pages.dev';
+  // Extract origin from the redirect URL
+  try {
+    const redirectUrl = new URL(redirectBase);
+    redirectBase = redirectUrl.origin;
+  } catch {
+    redirectBase = 'https://powerreader.pages.dev';
+  }
+
+  const callbackUrl = `${redirectBase}/#/auth/callback?token=${encodeURIComponent(jwt)}&session=${encodeURIComponent(session_id)}`;
+  return Response.redirect(callbackUrl, 302);
 }
 
 /**
@@ -156,6 +235,76 @@ export async function exportMe(request, env, ctx, { user }) {
 }
 
 /**
+ * GET /api/v1/user/me/contributions — Contribution history + daily trend
+ * Supports: ?days=30 (sparkline), ?page=1&limit=20 (history list)
+ */
+export async function getContributions(request, env, ctx, { user, url }) {
+  const { user_hash } = user;
+  const days = Math.min(90, Math.max(1, parseInt(url.searchParams.get('days') || '30', 10)));
+  const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
+  const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '20', 10)));
+  const offset = (page - 1) * limit;
+
+  // Daily counts for sparkline (last N days)
+  const dailyRows = await env.DB.prepare(`
+    SELECT DATE(created_at) AS day, COUNT(*) AS cnt
+    FROM analyses
+    WHERE user_hash = ? AND created_at >= datetime('now', ?)
+    GROUP BY DATE(created_at)
+    ORDER BY day ASC
+  `).bind(user_hash, `-${days} days`).all();
+
+  // Build array of daily counts (fill missing days with 0)
+  const dailyMap = {};
+  for (const row of (dailyRows.results || [])) {
+    dailyMap[row.day] = row.cnt;
+  }
+
+  const daily_counts = [];
+  const now = new Date();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    daily_counts.push(dailyMap[key] || 0);
+  }
+
+  // Paginated contribution history (analyses joined with articles)
+  const countResult = await env.DB.prepare(
+    'SELECT COUNT(*) AS total FROM analyses WHERE user_hash = ?'
+  ).bind(user_hash).first();
+  const total = countResult?.total || 0;
+
+  const contribRows = await env.DB.prepare(`
+    SELECT a.article_id, a.bias_score, a.quality_gate_result, a.created_at,
+           ar.title AS article_title
+    FROM analyses a
+    LEFT JOIN articles ar ON a.article_id = ar.article_id
+    WHERE a.user_hash = ?
+    ORDER BY a.created_at DESC
+    LIMIT ? OFFSET ?
+  `).bind(user_hash, limit, offset).all();
+
+  const contributions = (contribRows.results || []).map(row => ({
+    article_id: row.article_id,
+    article_title: row.article_title || '',
+    status: row.quality_gate_result === 'passed' ? 'accepted' : 'pending',
+    points_earned: row.quality_gate_result === 'passed' ? 10 : 0,
+    created_at: row.created_at
+  }));
+
+  return jsonResponse(200, {
+    success: true,
+    data: {
+      daily_counts,
+      contributions,
+      pagination: { page, limit, total, total_pages: Math.ceil(total / limit) }
+    },
+    error: null
+  });
+}
+
+/**
  * Sign a JWT with RS256
  */
 async function signJwt(payload, privateKeyJwk, ttlDays) {
@@ -187,9 +336,3 @@ async function signJwt(payload, privateKeyJwk, ttlDays) {
   return `${headerB64}.${payloadB64}.${signatureB64}`;
 }
 
-function jsonResponse(status, body) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' }
-  });
-}

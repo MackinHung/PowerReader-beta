@@ -6,8 +6,8 @@
  *
  * Routes: #/compare
  *
- * Uses the articles API with sort_by=controversy_score to get
- * high-controversy articles, then loads their clusters for comparison.
+ * Uses title bigram Jaccard similarity (via cluster API) to find
+ * articles about the same event from different media sources.
  */
 
 import { t } from '../../locale/zh-TW.js';
@@ -40,11 +40,11 @@ export async function renderCompare(container) {
   loadingEl.textContent = t('common.label.loading');
   container.appendChild(loadingEl);
 
-  // Fetch high-controversy articles (likely to have multiple media covering same event)
+  // Fetch recent articles (published_at DESC) — more candidates = more cross-media hits
   const result = await fetchArticles({
     page: 1,
-    limit: 10,
-    sort_by: 'controversy_score',
+    limit: 20,
+    sort_by: 'published_at',
     sort_order: 'desc'
   });
 
@@ -72,25 +72,54 @@ export async function renderCompare(container) {
   list.className = 'compare-list';
   container.appendChild(list);
 
-  // Load clusters for each article in parallel
-  const clusterPromises = result.data.articles.map(article =>
-    loadComparisonCard(list, article)
+  // Load all clusters in parallel
+  const clusterResults = await Promise.all(
+    result.data.articles.map(article =>
+      fetchArticleCluster(article.article_id)
+        .then(cr => ({ article, cluster: cr }))
+    )
   );
-  await Promise.all(clusterPromises);
+
+  // Deduplicate: skip articles already shown in a previous cluster
+  const seenIds = new Set();
+
+  for (const { article, cluster } of clusterResults) {
+    if (seenIds.has(article.article_id)) continue;
+
+    const clusterArticles = cluster.success && cluster.data?.articles
+      ? cluster.data.articles
+      : [];
+
+    // Only show events with multiple sources
+    if (clusterArticles.length < 1) continue;
+
+    // Mark all articles in this cluster as seen to avoid duplicate cards
+    seenIds.add(article.article_id);
+    for (const ca of clusterArticles) {
+      seenIds.add(ca.article_id);
+    }
+
+    renderComparisonCard(list, article, clusterArticles);
+  }
+
+  // Show empty state if no multi-source events found
+  if (list.children.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.textContent = t('common.label.no_data');
+    list.appendChild(empty);
+  }
 }
 
 /**
- * Load and render a comparison card for one event cluster.
+ * Render a comparison card for one event cluster.
+ * @param {HTMLElement} list
+ * @param {Object} article - Source article
+ * @param {Object[]} clusterArticles - Similar articles from other sources
  */
-async function loadComparisonCard(list, article) {
-  const clusterResult = await fetchArticleCluster(article.article_id);
-
-  // Only show articles that have multiple sources
-  const clusterArticles = clusterResult.success && clusterResult.data?.articles
-    ? clusterResult.data.articles
-    : [article];
-
-  if (clusterArticles.length < 2) return; // Skip single-source events
+function renderComparisonCard(list, article, clusterArticles) {
+  // Combine source article + cluster for the full comparison set
+  const allArticles = [article, ...clusterArticles];
 
   const card = document.createElement('section');
   card.className = 'compare-card';
@@ -117,7 +146,7 @@ async function loadComparisonCard(list, article) {
   // Source count
   const meta = document.createElement('p');
   meta.className = 'compare-card__meta';
-  meta.textContent = t('common.label.source_count', { count: clusterArticles.length });
+  meta.textContent = t('common.label.source_count', { count: allArticles.length });
   card.appendChild(meta);
 
   // Source comparison table
@@ -126,7 +155,7 @@ async function loadComparisonCard(list, article) {
   table.setAttribute('role', 'table');
   table.setAttribute('aria-label', t('compare.table_label'));
 
-  for (const clusterArticle of clusterArticles) {
+  for (const clusterArticle of allArticles) {
     const row = document.createElement('div');
     row.className = 'compare-card__row';
     row.setAttribute('role', 'row');
@@ -172,7 +201,7 @@ async function loadComparisonCard(list, article) {
   card.appendChild(table);
 
   // Score spread indicator
-  const scores = clusterArticles
+  const scores = allArticles
     .filter(a => a.bias_score != null)
     .map(a => a.bias_score);
   if (scores.length >= 2) {

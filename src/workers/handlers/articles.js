@@ -13,6 +13,7 @@ import { validateArticle, validateArticleBatch } from '../../../shared/validator
 import { ARTICLE_STATUS } from '../../../shared/enums.js';
 import { nowISO, formatDate, escapeHtml } from '../../../shared/utils.js';
 import { CLOUDFLARE, MODELS } from '../../../shared/config.js';
+import { jsonResponse } from '../../../shared/response.js';
 
 /**
  * GET /api/v1/articles — Paginated article list
@@ -271,13 +272,14 @@ export async function createArticleBatch(request, env, ctx, { params }) {
       await env.DB.prepare(`
         INSERT INTO articles (article_id, content_hash, title, summary, author, source,
           primary_url, duplicate_urls, published_at, crawled_at, char_count,
-          filter_score, matched_topic, r2_path, knowledge_ids, status, status_updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          feed_category, filter_score, matched_topic, r2_path, knowledge_ids, status, status_updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         article.article_id, article.content_hash, article.title,
         article.summary || null, article.author || null, article.source,
         article.primary_url, JSON.stringify(article.duplicate_urls || []),
         article.published_at, article.crawled_at, article.char_count,
+        article.feed_category || '綜合',
         article.filter_score, article.matched_topic, r2Path,
         JSON.stringify(knowledgeIds),
         article.status || ARTICLE_STATUS.FILTERED, nowISO()
@@ -298,14 +300,16 @@ export async function createArticleBatch(request, env, ctx, { params }) {
 }
 
 /**
- * GET /api/v1/articles/:article_id/cluster — Similar articles
+ * GET /api/v1/articles/:article_id/cluster — Similar articles from different sources
+ *
+ * Uses title bigram Jaccard similarity (CJK-friendly, zero neuron cost)
+ * to find cross-media coverage of the same event.
  */
 export async function getArticleCluster(request, env, ctx, { params }) {
   const { article_id } = params;
 
-  // Find the article's content_hash, then find others with similar content
   const article = await env.DB.prepare(
-    'SELECT content_hash, source, title FROM articles WHERE article_id = ?'
+    'SELECT content_hash, source, title, published_at FROM articles WHERE article_id = ?'
   ).bind(article_id).first();
 
   if (!article) {
@@ -315,45 +319,94 @@ export async function getArticleCluster(request, env, ctx, { params }) {
     });
   }
 
-  // For now, return articles with same matched_topic published within 24h
-  // Full similarity cluster will use MinHash from T02
-  const cluster = await env.DB.prepare(`
+  const pubDate = article.published_at || nowISO();
+
+  // Fetch candidates within ±48h from different sources.
+  // datetime() normalizes ISO 8601 (+TZ) to 'YYYY-MM-DD HH:MM:SS' for correct comparison.
+  const candidates = await env.DB.prepare(`
     SELECT article_id, source, title, bias_score, bias_category, published_at
     FROM articles
-    WHERE article_id != ? AND matched_topic = (
-      SELECT matched_topic FROM articles WHERE article_id = ?
-    )
-    AND published_at >= datetime(?, '-1 day')
-    ORDER BY published_at DESC
-    LIMIT 10
-  `).bind(article_id, article_id, article.published_at || nowISO()).all();
+    WHERE article_id != ?
+      AND source != ?
+      AND datetime(published_at) >= datetime(?, '-2 days')
+      AND datetime(published_at) <= datetime(?, '+2 days')
+    LIMIT 500
+  `).bind(article_id, article.source, pubDate, pubDate).all();
+
+  // Compute title bigram Jaccard similarity and filter
+  const sourceBigrams = titleBigrams(article.title);
+  const similar = (candidates.results || [])
+    .map(row => ({ ...row, _sim: jaccardSimilarity(sourceBigrams, titleBigrams(row.title)) }))
+    .filter(row => row._sim >= TITLE_SIMILARITY_THRESHOLD)
+    .sort((a, b) => b._sim - a._sim)
+    .slice(0, 10);
+
+  // Strip internal similarity score before response
+  const articles = similar.map(({ _sim, ...rest }) => sanitizeArticleRow(rest));
 
   return jsonResponse(200, {
     success: true,
     data: {
       source_article: { article_id, ...article },
-      cluster: (cluster.results || []).map(sanitizeArticleRow),
-      total: cluster.results?.length || 0
+      articles,
+      total: articles.length
     },
     error: null
   });
+}
+
+// =============================================
+// Title similarity helpers (CJK bigram Jaccard)
+// =============================================
+
+const TITLE_SIMILARITY_THRESHOLD = 0.10;
+
+/**
+ * Extract character bigrams from title.
+ * Strips whitespace and punctuation for cleaner comparison.
+ */
+function titleBigrams(title) {
+  if (!title) return new Set();
+  const clean = title.replace(/[\s\p{P}\p{S}]/gu, '');
+  const bigrams = new Set();
+  for (let i = 0; i < clean.length - 1; i++) {
+    bigrams.add(clean.slice(i, i + 2));
+  }
+  return bigrams;
+}
+
+/**
+ * Jaccard similarity between two sets.
+ */
+function jaccardSimilarity(setA, setB) {
+  if (setA.size === 0 || setB.size === 0) return 0;
+  let intersection = 0;
+  for (const item of setA) {
+    if (setB.has(item)) intersection++;
+  }
+  const union = setA.size + setB.size - intersection;
+  return union === 0 ? 0 : intersection / union;
 }
 
 /**
  * Sanitize article row for client response (XSS prevention).
  */
 function sanitizeArticleRow(row) {
-  return {
+  const sanitized = {
     ...row,
     title: row.title ? escapeHtml(row.title) : row.title,
     summary: row.summary ? escapeHtml(row.summary) : row.summary,
     author: row.author ? escapeHtml(row.author) : row.author
   };
+
+  // Parse JSON string columns from D1 into proper arrays (only if present in SELECT)
+  if ('duplicate_urls' in row && typeof row.duplicate_urls === 'string') {
+    try { sanitized.duplicate_urls = JSON.parse(row.duplicate_urls); } catch { sanitized.duplicate_urls = []; }
+  }
+  if ('knowledge_ids' in row && typeof row.knowledge_ids === 'string') {
+    try { sanitized.knowledge_ids = JSON.parse(row.knowledge_ids); } catch { sanitized.knowledge_ids = []; }
+  }
+
+  return sanitized;
 }
 
-function jsonResponse(status, body) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' }
-  });
-}

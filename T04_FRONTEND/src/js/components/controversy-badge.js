@@ -3,7 +3,7 @@
  *
  * Displays controversy level as a colored badge.
  * Colors match THEME_COLORS in shared/enums.js.
- * CSS classes defined in css/main.css (.controversy-badge).
+ * CSS classes defined in css/article.css (.controversy-badge).
  */
 
 import { t } from '../../locale/zh-TW.js';

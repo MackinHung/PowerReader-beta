@@ -1,4 +1,4 @@
-# T03_AI_INFERENCE — Qwen3.5-4B Inference & Quality Validation
+# T03_AI_INFERENCE — Qwen3-4B WebLLM Inference & Quality Validation
 
 ## Overview
 
@@ -11,7 +11,7 @@ Core responsibilities:
 - 4-layer quality gate validation pipeline (format → range → consistency → duplicate)
 - Knowledge base schema for Cloudflare Vectorize (bge-m3, 1024d)
 - Model accuracy evaluation framework (gold standard dataset + A/B testing)
-- Inference parameter specification (Qwen3.5-4B, think=false, t=0.5)
+- Inference parameter specification (Qwen3-4B, think=false, t=0.5)
 
 ## Phase Status
 
@@ -54,7 +54,7 @@ Core responsibilities:
 | Team | What We Provide | Phase |
 |------|----------------|-------|
 | T01 | Analysis output JSON schema (6 fields) + quality_gate_result | Phase 2 |
-| T04 | Inference config (model: `qwen3.5:4b`, params, think=false) for client-side execution | Phase 2 |
+| T04 | Inference config (model: `Qwen3-4B-q4f16_1-MLC`, params, think=false) for client-side execution | Phase 2 |
 | T05 | Pass/fail signal for reward trigger (`quality_gate_result === "passed"` → 0.1 pt) | Phase 3 |
 | T07 | Pass rate metric, inference latency metric | Phase 3-4 |
 | All | Prompt version string (v2.0.0) for D1 records | Phase 2+ |
@@ -92,7 +92,7 @@ python scripts/eval_gold_standard.py
 
 Requires:
 - Gold standard articles in R2 `gold-standard/v2/`
-- Qwen3.5-4B running locally via Ollama (`ollama run qwen3.5:4b`)
+- Qwen3-4B running in browser via WebLLM (WebGPU, zero install)
 - PowerReader API accessible for knowledge queries
 
 ### Modifying Prompts

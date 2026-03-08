@@ -11,7 +11,7 @@
 
 ## Purpose
 
-Defines the **structure, schema, and retrieval strategy** for the RAG Layer 2 knowledge base used by Qwen3.5-4B inference.
+Defines the **structure, schema, and retrieval strategy** for the RAG Layer 2 knowledge base used by Qwen3-4B inference.
 
 All knowledge entries are embedded by Cloudflare Workers AI `@cf/baai/bge-m3` (1024d) and stored in Cloudflare Vectorize for cosine similarity retrieval.
 
@@ -25,7 +25,7 @@ Article arrives at PowerReader
   → Vectorize cosine similarity search (topK=5)
   → Retrieved knowledge entries formatted as Layer 2 prompt text
   → Client receives article + Layer 2 context
-  → Client assembles L1 + L2 + L3 → Qwen3.5-4B inference
+  → Client assembles L1 + L2 + L3 → Qwen3-4B WebLLM inference
 ```
 
 ### Embedding Pipeline
@@ -39,7 +39,7 @@ Article arrives at PowerReader
 
 ### Context Window Budget (40% Rule)
 
-Qwen3.5-4B context = 32,768 tokens. **Total prompt input must stay under 40%** (~13,107 tokens).
+Qwen3-4B context = 32,768 tokens. **Total prompt input must stay under 40%** (~13,107 tokens).
 
 | Component | Est. Tokens | Budget % |
 |-----------|------------|----------|

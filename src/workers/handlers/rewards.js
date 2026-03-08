@@ -16,6 +16,7 @@
 
 import { REWARD } from '../../../shared/config.js';
 import { nowISO } from '../../../shared/utils.js';
+import { jsonResponse } from '../../../shared/response.js';
 
 /**
  * POST /api/v1/rewards/submit — Process valid analysis submission
@@ -229,9 +230,3 @@ export async function getRewardsSummary(request, env, ctx, { url }) {
   });
 }
 
-function jsonResponse(status, body) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' }
-  });
-}

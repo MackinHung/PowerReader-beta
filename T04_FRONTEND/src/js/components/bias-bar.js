@@ -3,7 +3,7 @@
  *
  * Visual representation of political bias on a left-right spectrum.
  * Colors match THEME_COLORS in shared/enums.js.
- * CSS classes defined in css/main.css (.bias-bar, .bias-bar__indicator).
+ * CSS classes: css/main.css (.bias-bar) + css/article.css (.bias-indicator, .bias-bar-wrapper).
  *
  * Accessibility:
  *   - role="img" with descriptive aria-label

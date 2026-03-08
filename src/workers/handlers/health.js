@@ -10,6 +10,7 @@
 
 import { CLOUDFLARE } from '../../../shared/config.js';
 import { nowISO } from '../../../shared/utils.js';
+import { jsonResponse } from '../../../shared/response.js';
 import { runAllProbes } from '../monitoring/probes.js';
 import { getFullMetrics, getDailyCounter } from '../monitoring/metrics.js';
 import { getActiveAlerts } from '../monitoring/alerts.js';
@@ -160,9 +161,3 @@ export async function getUsage(request, env, ctx, { url }) {
   });
 }
 
-function jsonResponse(status, body) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' }
-  });
-}

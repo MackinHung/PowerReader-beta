@@ -152,7 +152,7 @@ M01
 
 ### 審計對齊
 - [ ] T05 的票選結果是否 commit 到 GitHub?
-- [ ] T05 的審計日誌是否在 `T05_REWARD_SYSTEM/VOTE_AUDIT_LOG.md` 記錄?
+- [ ] T05 的審計日誌規格是否已重建? (VOTE_AUDIT_LOG.md 已刪除，Phase 2+ 時重建)
 - [ ] 檢查: 票選演算法是否使用 `record_hash` 作為 seed?
 
 ### 部署流程對齊

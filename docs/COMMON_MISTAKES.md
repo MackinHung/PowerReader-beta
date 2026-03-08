@@ -16,7 +16,7 @@
 // ✅ 正確做法
 // 在 shared/config.js 統一定義
 export const MODELS = {
-  QWEN: "qwen3.5:4b",
+  QWEN: "Qwen3-4B-q4f16_1-MLC",
   EMBEDDING: "@cf/baai/bge-m3",
   FILTER: "bge-small-zh-v1.5"
 };

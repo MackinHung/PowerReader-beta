@@ -17,7 +17,7 @@ import { verifyJwt, verifyServiceToken } from './middleware/auth.js';
 import { getArticles, getArticle, createArticle, createArticleBatch, getArticleCluster } from './handlers/articles.js';
 import { createAnalysis, getAnalyses } from './handlers/analysis.js';
 import { getArticleKnowledge, upsertKnowledge, batchUpsertKnowledge, searchKnowledge, listKnowledge } from './handlers/knowledge.js';
-import { googleAuth, getMe, deleteMe, exportMe } from './handlers/auth.js';
+import { googleAuth, googleOAuthCallback, getMe, deleteMe, exportMe, getContributions } from './handlers/auth.js';
 import { getPoints } from './handlers/points.js';
 import { submitReward, recordFailure, getRewardsSummary } from './handlers/rewards.js';
 import { healthCheck, readinessCheck, getMetrics, getUsage } from './handlers/health.js';
@@ -53,10 +53,12 @@ const ROUTES = [
   ['GET',  '/api/v1/knowledge/list',                  listKnowledge,       { auth: 'admin', rateLimit: true,  cache: 'no-store' }],
 
   // User API
-  ['POST',   '/api/v1/auth/google',    googleAuth, { auth: 'none', rateLimit: true,  cache: 'no-store' }],
+  ['GET',    '/api/v1/auth/google',          googleAuth,          { auth: 'none', rateLimit: true,  cache: 'no-store' }],
+  ['GET',    '/api/v1/auth/google/callback', googleOAuthCallback, { auth: 'none', rateLimit: true,  cache: 'no-store' }],
   ['GET',    '/api/v1/user/me',        getMe,      { auth: 'jwt',  rateLimit: true,  cache: 'private, no-cache' }],
   ['DELETE', '/api/v1/user/me',        deleteMe,   { auth: 'jwt',  rateLimit: true,  cache: 'no-store' }],
-  ['GET',    '/api/v1/user/me/export', exportMe,   { auth: 'jwt',  rateLimit: true,  cache: 'private, no-cache' }],
+  ['GET',    '/api/v1/user/me/export',         exportMe,         { auth: 'jwt',  rateLimit: true,  cache: 'private, no-cache' }],
+  ['GET',    '/api/v1/user/me/contributions', getContributions, { auth: 'jwt',  rateLimit: true,  cache: 'private, no-cache' }],
 
   // Points API (T05)
   ['GET', '/api/v1/user/me/points', getPoints, { auth: 'jwt', rateLimit: true, cache: 'private, no-cache' }],

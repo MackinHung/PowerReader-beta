@@ -9,13 +9,16 @@
  * - Upstream: CLAUDE.md, MASTER_ROADMAP.md
  * - Downstream: All teams (T01-T07)
  * - Maintainer: T01 (System Architecture Team)
- * - Last Updated: 2026-03-07
+ * - Last Updated: 2026-03-08
  *
  * 📜 Change Log:
  * | Date       | Version | Changes                                            | Reason                          |
  * |------------|---------|----------------------------------------------------|---------------------------------|
  * | 2025-03-06 | v1.0    | Initial config                                     | Project kickoff                 |
  * | 2026-03-07 | v2.0    | PowerReader: 4B model, bge-m3, KV budget, boundaries | Architecture decisions #004-#010 |
+ * | 2026-03-08 | v3.0    | THREE_CAMP config: camp boundaries, gradient zone, source tendency, clustering, blindspot, subscription | Decisions #013-#016 |
+ * | 2026-03-08 | v3.1    | BENCHMARK config: Ollama detection, hardware benchmark, CPU/GPU timeout tiers; QWEN_TIMEOUT_MS 30s→120s | Decisions #017-#020 (desktop only, Mode A, CPU support) |
+ * | 2026-03-08 | v3.2    | WebLLM migration: QWEN model → Qwen3-4B-q4f16_1-MLC; BENCHMARK section Ollama→WebGPU; +DUAL_PASS_ENABLED; +WEBLLM_*; -OLLAMA_* | Decision #022-#023 (WebLLM + Dual Pass) |
  */
 
 // =========================================
@@ -25,15 +28,16 @@
 // bge-m3 (1024d) and bge-small-zh (512d) produce incompatible vector spaces.
 // Use MODELS.EMBEDDING for knowledge queries, MODELS.FILTER for topic filtering ONLY.
 export const MODELS = {
-  // Client-side local inference (Ollama official)
-  QWEN: "qwen3.5:4b",
+  // Client-side local inference (WebLLM, WebGPU browser)
+  QWEN: "Qwen3-4B-q4f16_1-MLC",
   QWEN_PARAMS: {
     think: false,
     temperature: 0.5,
     top_p: 0.95,
   },
-  QWEN_SIZE_MB: 3400,           // 3.4GB download
-  QWEN_TIMEOUT_MS: 30000,       // 30s inference timeout
+  QWEN_FALLBACK: "Qwen2.5-3B-Instruct-q4f16_1-MLC",  // Low VRAM fallback
+  QWEN_SIZE_MB: 3400,           // 3.4GB WebLLM model (WebGPU browser cache)
+  QWEN_TIMEOUT_MS: 120000,      // 120s inference timeout (CPU support, was 30s GPU-only)
 
   // Knowledge embedding (Cloudflare Workers AI, edge GPU)
   EMBEDDING: "@cf/baai/bge-m3",
@@ -76,7 +80,7 @@ export const CLOUDFLARE = {
   VECTORIZE_INDEX: "powerreader-knowledge",
   VECTORIZE_DIMENSIONS: 1024,
   VECTORIZE_METRIC: "cosine",
-  VECTORIZE_TOP_K: 5,
+  VECTORIZE_TOP_K: 8,
   VECTORIZE_MIN_SCORE: 0.4,
   VECTORIZE_MONTHLY_QUERY_DIM_LIMIT: 30000000,
 
@@ -195,6 +199,70 @@ export const REWARD = {
   MIN_ANALYSIS_TIME_MS: 5000,           // 5s min time; aligns with Qwen inference (~6s)
   CONSECUTIVE_FAILURE_COOLDOWN: 3,      // After 3 failures, cooldown
   COOLDOWN_DURATION_MIN: 60,            // 60 min cooldown
+};
+
+// =========================================
+// 🏛️ Three-Camp System Configuration (三營陣系統)
+// =========================================
+// Decision #013: Taiwan political camps mapped from bias_score
+// ⚠️ REUSES EXISTING: articles.bias_score (0-100)
+// ⚠️ DERIVED: white axis = 100 - abs(score-50)*2 (no new AI output needed)
+export const THREE_CAMP = {
+  GREEN_MAX: 40,                // bias_score <= 40 → 泛綠 (pan_green)
+  WHITE_MIN: 40,                // 40 < score < 60 → 泛白/中立 (pan_white)
+  WHITE_MAX: 60,
+  BLUE_MIN: 60,                 // bias_score >= 60 → 泛藍 (pan_blue)
+  GRADIENT_ZONE: 5,             // ±5 分邊界漸進區 (避免 39→41 顏色跳變)
+
+  // Source tendency (社群推導, not pre-labeled)
+  // Decision #014: 30-day sliding window AVG(bias_score) per source
+  MIN_SAMPLES: 10,              // 最低有效樣本數 (< 10 → "insufficient")
+  TENDENCY_WINDOW_DAYS: 30,     // 滑動視窗天數
+
+  // Event clustering (reuses existing title bigram Jaccard)
+  // Decision: keep zero-neuron Jaccard, raise threshold to 0.45
+  CLUSTER_JACCARD_THRESHOLD: 0.45,  // ⚠️ CHANGED: was implicit, now explicit
+  CLUSTER_MIN_ARTICLES: 2,          // 至少 2 篇才成事件
+
+  // Blindspot detection thresholds
+  BLINDSPOT_DOMINANT_PCT: 0.8,      // 單營陣占比 >= 80% → blindspot
+  BLINDSPOT_IMBALANCE_PCT: 0.7,     // 單營陣占比 >= 70% → imbalanced
+  BLINDSPOT_MIN_ARTICLES: 3,        // 至少 3 篇才做盲區判定
+
+  // Subscription
+  SUBSCRIBER_VOTE_MULTIPLIER: 2,    // 訂閱者投票權倍率
+  SUBSCRIBER_EARLY_ACCESS_HOURS: 24 // 搶先體驗時數
+};
+
+// =========================================
+// 🔬 Benchmark Configuration (WebGPU Hardware Detection)
+// =========================================
+// Decision #018/#022: Detect WebGPU → benchmark → determine GPU capability
+export const BENCHMARK = {
+  // WebLLM configuration
+  WEBLLM_MODEL_ID: "Qwen3-4B-q4f16_1-MLC",        // Primary model (3,432 MB VRAM)
+  WEBLLM_MODEL_VRAM_MB: 3432,                       // Required VRAM
+  WEBLLM_FALLBACK_MODEL_ID: "Qwen2.5-3B-Instruct-q4f16_1-MLC",  // Low VRAM fallback (2,505 MB)
+  WEBLLM_FALLBACK_VRAM_MB: 2505,
+
+  // Dual Pass architecture (Decision #023)
+  DUAL_PASS_ENABLED: true,                           // Run article through 2 passes with different focus
+  DUAL_PASS_TOTAL_TIMEOUT_MS: 60000,                 // 60s total for both passes
+
+  // Benchmark parameters
+  BENCHMARK_PROMPT: "分析以下新聞標題的政治立場：總統出席國防展覽",  // Short test prompt
+  BENCHMARK_MAX_WAIT_MS: 30000,                      // 30s max for benchmark inference
+  BENCHMARK_GPU_THRESHOLD_MS: 8000,                  // < 8s → GPU detected
+  BENCHMARK_CPU_THRESHOLD_MS: 60000,                 // < 60s → CPU acceptable (WASM fallback)
+
+  // Timeout tiers based on benchmark
+  TIMEOUT_GPU_MS: 30000,                             // GPU: 30s timeout per pass
+  TIMEOUT_CPU_MS: 120000,                            // CPU: 120s timeout per pass
+  TIMEOUT_CPU_SLOW_MS: 180000,                       // Slow CPU: 180s timeout per pass
+
+  // LocalStorage keys
+  LS_BENCHMARK_RESULT: "pr_benchmark_result",        // { mode: "gpu"|"cpu"|"none", latency_ms, tested_at }
+  LS_WEBGPU_AVAILABLE: "pr_webgpu_available",        // boolean
 };
 
 // =========================================
@@ -343,6 +411,8 @@ export default {
   CRAWLER,
   ANALYSIS,
   REWARD,
+  THREE_CAMP,
+  BENCHMARK,
   FRONTEND,
   SECURITY,
   MONITORING,

@@ -1,8 +1,9 @@
+// DEPRECATED: Ollama detection replaced by WebLLM WebGPU detection (2026-03-08). See shared/config.js WEBLLM_* params.
 /**
  * Ollama Detection Module
  *
  * Client-side detection of local Ollama inference engine.
- * Used by PWA to check if Qwen3.5-4B is available for analysis.
+ * Used by PWA to check if Qwen3-4B is available for analysis.
  *
  * Origin: T07 (src/client/ollama-detect.js)
  * Copied into T04 PWA for standalone deployment on Cloudflare Pages.
@@ -13,8 +14,8 @@
  */
 
 export const OLLAMA_CONFIG = Object.freeze({
-  DEFAULT_ENDPOINT: 'http://localhost:11434',
-  MODEL_NAME: 'qwen3.5:4b',
+  DEFAULT_ENDPOINT: 'http://localhost:11434', // DEPRECATED - no longer used
+  MODEL_NAME: 'Qwen3-4B-q4f16_1-MLC',
   MODEL_SIZE_MB: 3400,
   INFERENCE_TIMEOUT_MS: 30000,
   DETECT_TIMEOUT_MS: 3000,

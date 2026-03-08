@@ -43,9 +43,6 @@ const TYPE_MAP = {
   'inference_failed': 'error.model.inference_failed',
   'webgpu_unsupported': 'error.webgpu.not_supported',
   'wasm_unsupported': 'error.wasm.not_supported',
-  // Ollama
-  'ollama_not_running': 'error.ollama.not_running',
-  'ollama_model_not_found': 'error.ollama.model_not_found',
   // Sync
   'sync_max_retries': 'error.sync.max_retries',
   'article_not_cached': 'error.article.not_cached',

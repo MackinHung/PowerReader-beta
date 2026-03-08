@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-TW" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="PowerReader 監控儀表板 - 系統健康、KPI、資源用量">
+  <meta name="theme-color" content="#0f1419">
+  <title>PowerReader 監控儀表板</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+  <div class="dashboard" id="app">
+
+    <!-- Token Input -->
+    <div class="token-bar">
+      <label for="token-input">SERVICE_TOKEN:</label>
+      <input type="password" id="token-input" placeholder="貼上 Service Token 以存取監控資料" autocomplete="off">
+      <button id="token-save">儲存</button>
+    </div>
+
+    <!-- System Status Bar -->
+    <div class="header" id="status-bar">
+      <div class="header__left">
+        <span class="status-dot status-dot--unknown" id="status-dot"></span>
+        <span class="header__title">PowerReader 監控儀表板</span>
+        <span class="status-text" id="status-text">載入中...</span>
+      </div>
+      <div class="header__right">
+        <span id="last-update">--</span>
+        <span>|</span>
+        <span>下次更新: <span class="countdown" id="countdown">60</span>s</span>
+        <button class="refresh-btn" id="refresh-btn">重新整理</button>
+      </div>
+    </div>
+
+    <!-- Health Probes -->
+    <div class="probes-grid" id="probes-container"></div>
+
+    <!-- KPI Cards -->
+    <div class="section-title" style="margin-top: 16px;">核心 KPI</div>
+    <div class="kpi-grid" id="kpi-grid">
+      <div class="card" id="kpi-kv">
+        <div class="card__label">KV 讀取延遲</div>
+        <div class="card__value">--</div>
+        <div class="card__target">目標 &le; 30ms</div>
+      </div>
+      <div class="card" id="kpi-cdn">
+        <div class="card__label">CDN 命中率</div>
+        <div class="card__value">--</div>
+        <div class="card__target">目標 &ge; 80%</div>
+      </div>
+      <div class="card" id="kpi-inference">
+        <div class="card__label">模型推理時間</div>
+        <div class="card__value">--</div>
+        <div class="card__target">目標 &le; 10s</div>
+      </div>
+      <div class="card" id="kpi-crawler">
+        <div class="card__label">爬蟲成功率</div>
+        <div class="card__value">--</div>
+        <div class="card__target">目標 &ge; 90%</div>
+      </div>
+      <div class="card" id="kpi-analysis">
+        <div class="card__label">分析通過率</div>
+        <div class="card__value">--</div>
+        <div class="card__target">目標 &ge; 60%</div>
+      </div>
+    </div>
+
+    <!-- Trend Charts -->
+    <div class="section-title">24 小時趨勢</div>
+    <div class="two-col" id="charts-section">
+      <div class="chart-card">
+        <div class="chart-card__title">KV 延遲趨勢 (ms)</div>
+        <div class="chart-container">
+          <canvas id="chart-kv"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card__title">CDN 命中率趨勢 (%)</div>
+        <div class="chart-container">
+          <canvas id="chart-cdn"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Free Tier Usage -->
+    <div class="section-title">Cloudflare 免費額度使用量</div>
+    <div class="usage-grid" id="usage-grid"></div>
+
+    <!-- Active Alerts -->
+    <div class="section-title">活躍告警</div>
+    <div class="alerts-card" id="alerts-container">
+      <div class="alert-empty">載入中...</div>
+    </div>
+
+  </div>
+
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

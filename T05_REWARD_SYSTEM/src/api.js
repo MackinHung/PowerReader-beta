@@ -17,7 +17,7 @@
  *
  * Dependencies:
  *   - D1 Database: powerreader-db (bound as env.DB via wrangler.toml)
- *   - Module: ./points.js
+ *   - Module: ./index.js (barrel re-export)
  *
  * @module T05/api
  */
@@ -31,7 +31,7 @@ import {
   getAnonymizedName,
   checkCooldown,
   DAILY_ANALYSIS_LIMIT,
-} from "./points.js";
+} from "./index.js";
 
 // ── Response Helpers ────────────────────────────────────────
 

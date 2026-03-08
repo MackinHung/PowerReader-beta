@@ -2,7 +2,7 @@
 
 **Scope**: CI/CD pipelines (GitHub Actions), Cloudflare deployment automation, monitoring dashboard, performance benchmarking, rollback strategy, and article R2 storage pipeline.
 
-**Last Updated**: 2026-03-07
+**Last Updated**: 2026-03-08
 
 ---
 
@@ -44,48 +44,50 @@
 
 ---
 
-## Phase 3: Article R2 Pipeline & Ollama Setup Guide ✅ COMPLETED
+## Phase 3: Article R2 Pipeline & WebLLM Setup Guide ✅ COMPLETED
 
-**Goal**: Automate article storage to R2 and document Ollama model setup for users.
+**Goal**: Automate article storage to R2 and document WebLLM model setup for users.
 
 **Deliverables**:
 1. Article ingestion workflow -- Crawler pushes processed articles to PowerReader Workers API, which stores full text to R2 and metadata to D1
 2. R2 storage structure: `powerreader-articles/{source}/{date}/{article_id}.md`
-3. Ollama setup documentation -- installation guide, `ollama pull qwen3.5:4b` instructions, health check verification
-4. Client-side Ollama detection -- PWA checks `localhost:11434` availability, prompts user to install/start Ollama if unavailable
+3. WebLLM setup documentation -- WebGPU browser requirements, model auto-download on first use, troubleshooting guide
+4. Client-side WebGPU capability detection -- PWA checks `navigator.gpu` availability, prompts user to use a supported browser (Chrome 113+ / Edge 113+) if unavailable
 
 **Notes**:
-- Qwen3.5-4B model (~3.4GB) is distributed via Ollama registry (`ollama pull qwen3.5:4b`), NOT uploaded to R2
+- Qwen3-4B model (~3.4GB) is distributed via WebLLM / HuggingFace CDN (`Qwen3-4B-q4f16_1-MLC`), auto-downloaded to browser cache on first use
 - R2 is used exclusively for article full text storage (~2.2GB/year), not model hosting
-- Users manage their own Ollama installation locally
+- Users do not need to install any local software; inference runs in-browser via WebGPU
 
 **Dependencies**:
 - T01: R2 bucket `powerreader-articles` created and bound in `wrangler.toml`
 - T01: D1 schema for article metadata finalized
-- T03: Confirmed model version (qwen3.5:4b via Ollama)
-- T04: Client-side Ollama detection UX designed
+- T03: Confirmed model version (`Qwen3-4B-q4f16_1-MLC` via WebLLM)
+- T04: Client-side WebGPU detection UX designed
 
 ---
 
-## Phase 4: Performance Benchmarks & Load Testing ⏸️ BLOCKED
+## Phase 4: Performance Benchmarks & Load Testing 🟡 PARTIAL
 
 **Goal**: Establish baselines and run stress tests across device tiers.
 
-> **Blocked reason**: Requires T03 Ollama running, T04 PWA deployed, T02 Crawler operational — all external dependencies not yet available.
+> **Status**: Server-side API benchmarks completed (2026-03-08). Client-side benchmarks (WebLLM, Web Vitals) still pending T03/T04 integration.
 
 **Deliverables**:
-1. KV latency benchmark script (100-read avg/p95/p99)
-2. CDN cache hit rate test script
-3. Client-side inference benchmark via Ollama API (high/mid/low-tier devices, GPU vs CPU-only)
-4. bge-m3 embedding benchmark via Workers AI (latency per embed call)
-5. Web Vitals baseline (Lighthouse: FCP, LCP, CLS, FID, TTFB, TTI)
-6. Load test scenarios -- normal (50 concurrent), peak (200 concurrent)
-7. Rolling results table in `PERFORMANCE_BENCHMARKS.md`
+1. ✅ API endpoint latency baselines (4 endpoints × 10 requests each, avg/min/max)
+2. ✅ Health probe latency baselines (D1/R2/KV/Vectorize, internal)
+3. ✅ D1 data integrity verification (384 articles, 11 sources)
+4. ✅ Monitoring infrastructure validation (daily_counters active, secrets deployed)
+5. ✅ Rolling results table in `PERFORMANCE_BENCHMARKS.md` (v1.2)
+6. ⏸️ Client-side inference benchmark via WebLLM (awaiting T03)
+7. ⏸️ Web Vitals baseline via Lighthouse (awaiting T04 PWA)
+8. ⏸️ Load test scenarios -- normal (50 concurrent), peak (200 concurrent)
 
-**Dependencies**:
-- T03: Working Qwen3.5-4B via Ollama for client-side benchmarks
-- T04: PWA deployed for Web Vitals measurement
-- T02: Crawler running for real crawl-performance data
+**Dependencies (updated)**:
+- ✅ T02: Crawler operational — 384 articles ingested from 11 sources
+- ✅ T01: Workers API deployed and responding
+- ⏸️ T03: Working Qwen3-4B via WebLLM for client-side benchmarks
+- ⏸️ T04: PWA deployed for Web Vitals measurement
 
 ---
 
@@ -114,8 +116,8 @@
 |--------------|------|-------|
 | T01 | KV namespace IDs, R2 bucket, D1 database ID, Vectorize index, wrangler.toml, API routes for health/metrics | 1, 2, 3 |
 | T02 | Crawler source code (bge-small-zh filtering integrated in crawler) | 1 |
-| T03 | Model runs via Ollama (`qwen3.5:4b`), inference pipeline for benchmarks | 3, 4 |
-| T04 | PWA build config (`npm run build` output to `dist/`), dashboard integration, Ollama detection UX | 1, 2, 3, 4 |
+| T03 | Model runs via WebLLM (`Qwen3-4B-q4f16_1-MLC`), inference pipeline for benchmarks | 3, 4 |
+| T04 | PWA build config (`npm run build` output to `dist/`), dashboard integration, WebGPU detection UX | 1, 2, 3, 4 |
 | T05 | No direct dependency (vote audit deferred to Phase 2+) | - |
 | T06 | Security review of workflows, incident response review | 1, 5 |
 
@@ -127,7 +129,7 @@
 | ALL | Preview deployments per PR | 1 |
 | T02 | Automated crawler scheduling (GitHub Actions cron, every 2h) | 1 |
 | T01 | Article R2 storage pipeline documentation | 3 |
-| T03 | Ollama setup guide and health check documentation (model via Ollama registry, not R2) | 3 |
+| T03 | WebLLM setup guide and WebGPU requirements documentation (model via HuggingFace CDN, auto-downloaded to browser cache) | 3 |
 | T04 | Cloudflare Pages deployment with CDN | 1 |
 | ALL | Health endpoints (D1/R2/Vectorize/KV), metrics API, alert notifications | 2 |
 | ALL | Performance baselines and regression detection | 4 |
@@ -141,7 +143,7 @@
 |------|--------|------------|
 | KV write limit (1000/day free) | Minimal risk — KV is config-only now (~100 writes/day) | Monitor usage; batch config updates |
 | GitHub Actions cron uses UTC | Crawler runs at unexpected Taiwan times | Document UTC-to-Asia/Taipei mapping explicitly |
-| User Ollama not running or model not downloaded | Client-side inference fails silently | PWA detects Ollama status at startup; show setup guide if unavailable |
+| User browser lacks WebGPU or model not downloaded | Client-side inference fails silently | PWA detects WebGPU support at startup (`navigator.gpu`); show browser upgrade guide if unavailable; model auto-downloads on first use |
 | Workers CPU limit (10ms free tier) | Metrics aggregation may exceed CPU budget | Pre-aggregate via KV counters; avoid per-request computation |
 | Wrangler version drift | Local vs CI behavior mismatch | Lock version in `package.json`, enforce `npm ci` |
 | Secret rotation gaps | Expired tokens break deployments | Calendar reminders for 30/90-day rotation cycles |
@@ -155,7 +157,7 @@
 |-------|-----------------|------------|
 | Phase 1: CI/CD Foundation | 2-3 days | T01 wrangler.toml ready |
 | Phase 2: Monitoring Dashboard | 2-3 days | Phase 1 + T01 API routes |
-| Phase 3: Article R2 Pipeline & Ollama Guide | 1 day | T01 R2/D1 ready, T03 Ollama confirmed |
+| Phase 3: Article R2 Pipeline & WebLLM Guide | 1 day | T01 R2/D1 ready, T03 WebLLM confirmed |
 | Phase 4: Performance Benchmarks | 2 days | Phase 2 + T04 PWA deployed |
 | Phase 5: Rollback & Incidents | 1 day | Phase 2 operational |
 
@@ -165,4 +167,4 @@
 
 **Maintainer**: T07 (Deployment & Monitoring Team)
 **Created**: 2026-03-06
-**Updated**: 2026-03-07 -- Phase 1/2/3/5 COMPLETED, Phase 4 BLOCKED (external deps). Deliverables: deploy.yml (CI/CD+auto-rollback), crawler-cron.yml, metrics.js, alerts.js, probes.js, collector.js, dashboard/index.html, OLLAMA_SETUP.md, ollama-detect.js, INCIDENT_RESPONSE.md
+**Updated**: 2026-03-08 -- Phase 1/2/3/5 COMPLETED, Phase 4 PARTIAL (server-side benchmarks done, client-side pending T03/T04). New: deploy.yml fixed for Node.js 20 LTS, monitoring dashboard page (T04_FRONTEND/src/dashboard.html), first E2E benchmarks recorded in PERFORMANCE_BENCHMARKS.md v1.2

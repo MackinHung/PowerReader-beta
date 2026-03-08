@@ -1,0 +1,304 @@
+/**
+ * PowerReader — Article & Detail Styles
+ *
+ * Extracted from main.css to keep files under 800 lines.
+ * Uses CSS custom properties defined in main.css :root.
+ *
+ * Contains: article-card, article-detail, bias-indicator,
+ *           controversy-badge, knowledge-panel, cluster-panel.
+ */
+
+/* ==============================================
+   Article List
+   ============================================== */
+.article-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+/* ==============================================
+   Article Card
+   ============================================== */
+.article-card {
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: var(--spacing-md);
+  transition: box-shadow 0.2s, transform 0.1s;
+}
+
+.article-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.article-card:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.article-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-sm);
+}
+
+.article-card__source {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: var(--text-small);
+  font-weight: 700;
+  color: var(--color-primary);
+  background-color: #E8F0FE;
+  border-radius: 4px;
+}
+
+.article-card__date {
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+}
+
+.article-card__title {
+  font-size: var(--text-h3);
+  font-weight: 700;
+  line-height: 1.4;
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-text);
+}
+
+.article-card__summary {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin-bottom: var(--spacing-sm);
+}
+
+.article-card__footer {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+/* ==============================================
+   Bias Indicator (compact, for cards)
+   ============================================== */
+.bias-indicator {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: var(--text-small);
+  font-weight: 700;
+  border-radius: 4px;
+  color: #FFFFFF;
+}
+
+.bias-indicator--extreme_left { background-color: var(--color-bias-extreme-left); }
+.bias-indicator--left { background-color: var(--color-bias-left); }
+.bias-indicator--center_left { background-color: var(--color-bias-center-left); }
+.bias-indicator--center { background-color: var(--color-bias-center); }
+.bias-indicator--center_right { background-color: var(--color-bias-center-right); }
+.bias-indicator--right { background-color: var(--color-bias-right); }
+.bias-indicator--extreme_right { background-color: var(--color-bias-extreme-right); }
+
+/* ==============================================
+   Bias Bar Labels
+   ============================================== */
+.bias-bar-wrapper {
+  margin: var(--spacing-sm) 0;
+}
+
+.bias-bar__label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--spacing-xs);
+  font-size: var(--text-caption);
+}
+
+.bias-bar__category {
+  font-weight: 700;
+}
+
+.bias-bar__score {
+  color: var(--color-text-secondary);
+}
+
+/* ==============================================
+   Controversy Badge
+   ============================================== */
+.controversy-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: var(--text-small);
+  font-weight: 700;
+  border-radius: 4px;
+  color: #FFFFFF;
+}
+
+.controversy-badge--low { background-color: var(--color-controversy-low); }
+.controversy-badge--moderate { background-color: var(--color-controversy-moderate); color: #212121; }
+.controversy-badge--high { background-color: var(--color-controversy-high); }
+.controversy-badge--very_high { background-color: var(--color-controversy-very-high); }
+
+/* ==============================================
+   Controversy Meter Labels
+   ============================================== */
+.controversy-meter-wrapper {
+  margin: var(--spacing-sm) 0;
+}
+
+.controversy-meter__label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--spacing-xs);
+  font-size: var(--text-caption);
+}
+
+.controversy-meter__score {
+  color: var(--color-text-secondary);
+}
+
+/* ==============================================
+   Article Detail
+   ============================================== */
+.article-detail__back {
+  margin-bottom: var(--spacing-md);
+}
+
+.article-detail__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.article-detail__date {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+.article-detail__title {
+  font-size: var(--text-h1);
+  line-height: 1.3;
+  margin-bottom: var(--spacing-lg);
+}
+
+.article-detail__bias,
+.article-detail__controversy {
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background-color: var(--color-bg-secondary);
+  border-radius: 12px;
+}
+
+.article-detail__summary {
+  margin-bottom: var(--spacing-lg);
+  line-height: 1.8;
+}
+
+.article-detail__actions {
+  margin-bottom: var(--spacing-md);
+}
+
+/* ==============================================
+   Knowledge Panel
+   ============================================== */
+.knowledge-panel {
+  margin-top: var(--spacing-lg);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.knowledge-panel__summary {
+  padding: var(--spacing-md);
+  font-weight: 700;
+  cursor: pointer;
+  background-color: var(--color-bg-secondary);
+}
+
+.knowledge-panel__list {
+  list-style: none;
+  padding: 0;
+}
+
+.knowledge-panel__item {
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  align-items: baseline;
+}
+
+.knowledge-panel__snippet {
+  width: 100%;
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  margin-top: var(--spacing-xs);
+}
+
+.knowledge-panel__score {
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+  margin-left: auto;
+}
+
+.knowledge-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  font-size: var(--text-small);
+  font-weight: 700;
+  border-radius: 4px;
+  color: #FFFFFF;
+}
+
+.knowledge-badge--politician { background-color: #6366F1; }
+.knowledge-badge--media { background-color: #EC4899; }
+.knowledge-badge--topic { background-color: #F59E0B; color: #212121; }
+.knowledge-badge--term { background-color: #10B981; }
+.knowledge-badge--event { background-color: #EF4444; }
+
+/* ==============================================
+   Cluster Panel (Cross-Media Comparison)
+   ============================================== */
+.article-detail__cluster {
+  margin-top: var(--spacing-lg);
+}
+
+.cluster-panel__desc {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.cluster-panel__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.cluster-panel__item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.cluster-panel__item:hover {
+  background-color: var(--color-bg-secondary);
+}
+
+.cluster-panel__title {
+  flex: 1;
+  font-size: var(--text-caption);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

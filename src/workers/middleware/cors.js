@@ -6,6 +6,8 @@
  */
 
 const ALLOWED_ORIGINS = [
+  'https://powerreader.pages.dev',
+  'https://master.powerreader.pages.dev',
   'https://powerreader.dev',
   'https://staging.powerreader.dev',
   'http://localhost:8788',  // wrangler dev

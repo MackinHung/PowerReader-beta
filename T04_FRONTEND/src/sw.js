@@ -5,7 +5,7 @@
  * TTL and cache settings sourced from shared/config.js (CLOUDFLARE.KV_STATIC_TTL).
  */
 
-const STATIC_CACHE_NAME = 'static-v4';
+const STATIC_CACHE_NAME = 'static-v19';
 const STATIC_CACHE_TTL_MS = 864000 * 1000; // 10 days (config.js CLOUDFLARE.KV_STATIC_TTL)
 const MAX_SYNC_RETRIES = 5;
 
@@ -14,6 +14,7 @@ const STATIC_ASSETS = [
   '/index.html',
   // CSS
   '/css/main.css',
+  '/css/article.css',
   '/css/analyze.css',
   '/css/profile.css',
   '/css/settings.css',
@@ -25,6 +26,7 @@ const STATIC_ASSETS = [
   '/js/auth.js',
   '/js/utils/sanitize.js',
   '/js/utils/error.js',
+  '/js/utils/score-categories.js',
   // JS - components
   '/js/components/bias-bar.js',
   '/js/components/controversy-badge.js',
@@ -32,12 +34,20 @@ const STATIC_ASSETS = [
   // JS - model
   '/js/model/manager.js',
   '/js/model/inference.js',
-  '/js/model/ollama-detect.js',
+  '/js/model/prompt.js',
+  '/js/model/output-parser.js',
   // JS - pages
   '/js/pages/home.js',
   '/js/pages/article-detail.js',
   '/js/pages/analyze.js',
+  '/js/pages/analyze-checks.js',
+  '/js/pages/analyze-engine.js',
+  '/js/pages/analyze-result.js',
+  '/js/pages/analyze-helpers.js',
   '/js/pages/profile.js',
+  '/js/pages/profile-points.js',
+  '/js/pages/profile-contributions.js',
+  '/js/pages/profile-helpers.js',
   '/js/pages/compare.js',
   '/js/pages/settings.js',
   '/js/pages/onboarding.js',

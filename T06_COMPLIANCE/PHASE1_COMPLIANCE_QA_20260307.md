@@ -53,7 +53,7 @@ Audited 13 team documents across T01-T05 against T06's three SSOT documents (CRA
 - PWA: IndexedDB contains zero PII (5 stores checked) ✅
 - PWA: JWT in-memory (not localStorage), avoiding XSS ✅
 - PWA: `escapeHtml()` function defined + innerHTML rules ✅
-- PWA: Qwen3.5-4B model size 3.4GB documented ✅
+- PWA: Qwen3-4B-q4f16_1-MLC model size 3.4GB documented ✅
 - LINE Bot: User ID SHA-256 hashing mandatory (not optional) ✅
 - LINE Bot: X-Line-Signature validation mandatory (Step 1) ✅
 - LINE Bot: Flex Message size limit documented (≤10KB) ✅

@@ -558,96 +558,39 @@ git push origin main
 
 ---
 
-## 8. R2 Model Upload Pipeline
+## 8. Model Distribution (WebLLM Auto-Download)
 
-管理 Qwen3.5-4B (~3.4GB) 模型檔案的上傳與版本控管。
+Qwen3-4B (~3.4GB) 模型由 WebLLM 自動從 HuggingFace CDN 下載至瀏覽器 Cache，無需手動上傳或 R2 託管。
 
-> **架構變更 (Decision #004, #007)**: CKIP BERT 已移除,不再需要上傳。Qwen 模型從 2B 升級為 4B (3.4GB)。嵌入模型 bge-m3 由 Cloudflare Workers AI 提供,無需手動上傳。
+> **架構變更 (Decision #004, #007, #022)**: CKIP BERT 已移除。Qwen 模型從 Ollama 遷移至 WebLLM (`Qwen3-4B-q4f16_1-MLC`)，模型由 @mlc-ai/web-llm 套件自動從 HuggingFace CDN 下載至瀏覽器 Cache Storage，無需 R2 上傳 pipeline 或任何手動下載腳本。嵌入模型 bge-m3 由 Cloudflare Workers AI 提供,無需手動上傳。
 
-```yaml
-# .github/workflows/model-upload.yml
-name: Upload Model to R2
+### 模型分發機制
 
-on:
-  workflow_dispatch:
-    inputs:
-      model_name:
-        description: "Model to upload"
-        required: true
-        type: choice
-        options:
-          - qwen-3.5-4b
-      model_version:
-        description: "Model version (e.g., 3.5.4)"
-        required: true
-
-jobs:
-  upload:
-    runs-on: ubuntu-latest
-    timeout-minutes: 90    # 增加: 4B 模型較大
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Validate model version
-        run: |
-          MODEL=${{ inputs.model_name }}
-          VERSION=${{ inputs.model_version }}
-
-          if [ "$MODEL" = "qwen-3.5-4b" ]; then
-            EXPECTED="3.5.4"   # config.js MODELS.QWEN_VERSION
-          fi
-
-          echo "Uploading $MODEL v$VERSION (expected: v$EXPECTED)"
-
-      - name: Download model from HuggingFace
-        run: |
-          MODEL=${{ inputs.model_name }}
-          if [ "$MODEL" = "qwen-3.5-4b" ]; then
-            # Qwen/Qwen3.5-4B (~3.4GB)
-            python scripts/download_model.py --model Qwen/Qwen3.5-4B --output ./models/qwen/
-          fi
-
-      - name: Upload to R2
-        env:
-          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-        run: |
-          MODEL=${{ inputs.model_name }}
-          VERSION=${{ inputs.model_version }}
-
-          # 上傳模型檔案到 R2 (含版本路徑)
-          wrangler r2 object put \
-            "powerreader-models/${MODEL}/v${VERSION}/" \
-            --file ./models/${MODEL}/ \
-            --content-type application/octet-stream
-
-          # 更新 latest 指標
-          echo "${VERSION}" | wrangler r2 object put \
-            "powerreader-models/${MODEL}/latest.txt" \
-            --pipe
-
-      - name: Verify upload
-        run: |
-          wrangler r2 object list powerreader-models/${{ inputs.model_name }}/v${{ inputs.model_version }}/
-          echo "Model upload verified"
+```
+用戶首次開啟 PWA
+    |
+    v
+WebLLM 初始化 (import @mlc-ai/web-llm)
+    |
+    v
+檢查瀏覽器 Cache Storage 是否有模型
+    |
+    ├── 已快取 → 直接載入 (~2-5s)
+    |
+    └── 未快取 → 從 HuggingFace CDN 自動下載
+                    Qwen3-4B-q4f16_1-MLC (~3.4GB)
+                    顯示下載進度條
+                    完成後快取至 Cache Storage
 ```
 
 ### R2 儲存結構
 
 ```
-powerreader-models/
-  qwen-3.5-4b/
-    latest.txt            # 內容: "3.5.4"
-    v3.5.4/
-      config.json
-      tokenizer.json
-      model-00001.safetensors
-      model-00002.safetensors
-      model-00003.safetensors  # 總計 ~3.4GB
-
 powerreader-articles/
   {article_id}.md         # 文章全文 (Markdown)
+
+# 注意: R2 不再用於模型託管
+# 模型由 WebLLM 自動從 HuggingFace CDN 下載至瀏覽器 Cache
 ```
 
 ### 模型下載條件 (用戶端)
@@ -659,7 +602,9 @@ powerreader-articles/
 | 僅 WiFi 下載 | `true` | `FRONTEND.DOWNLOAD_WIFI_ONLY` |
 | 最低電量 | 20% | `FRONTEND.DOWNLOAD_MIN_BATTERY_PCT` |
 | 需要充電中 | `true` | `FRONTEND.DOWNLOAD_REQUIRE_CHARGING` |
-| 模型大小 | ~3.4GB | Qwen3.5-4B (Decision #004) |
+| 模型大小 | ~3.4GB | Qwen3-4B-q4f16_1-MLC (Decision #004, #022) |
+| 下載方式 | 自動 (WebLLM) | HuggingFace CDN → 瀏覽器 Cache Storage |
+| WebGPU 要求 | Chrome 113+ / Edge 113+ | `navigator.gpu` 偵測 |
 
 ---
 

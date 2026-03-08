@@ -34,7 +34,7 @@
 
 - **Source**: PROMPT_VERSIONS.md
 - ❌ Using `"latest"` version tag for Ollama
-- ✅ Lock to `qwen3.5:4b` (official Ollama model, includes RENDERER+PARSER)
+- ✅ Lock to `Qwen3-4B-q4f16_1-MLC` (WebLLM pre-compiled model, 4bit+fp16 quantization)
 - **Warning**: Custom Modelfiles missing RENDERER+PARSER cause abnormal output. Re-run gold standard tests after any model update.
 
 ### Mistake 5: Allowing natural language wrapping around JSON

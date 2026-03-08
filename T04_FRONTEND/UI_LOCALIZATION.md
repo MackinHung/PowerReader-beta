@@ -6,7 +6,7 @@
 - **下游文件**: T04_FRONTEND/PWA_SPEC.md (Manifest `lang`, UI 文案), T04_FRONTEND/LINE_BOT_DESIGN.md (LINE Bot 訊息文案), T06_COMPLIANCE/ERROR_HANDLING.md (使用者錯誤訊息)
 - **維護者**: T04 (Frontend Experience Team)
 - **類型**: SSOT - 前端在地化規格
-- **最後更新**: 2026-03-07
+- **最後更新**: 2026-03-08
 
 **修改此文件時必須通知**: T03 (Prompt 中文用語一致性), T06 (錯誤訊息合規)
 
@@ -134,6 +134,14 @@ locale/
 | `onboarding.*` | 首次引導 | `onboarding.step1.title` |
 | `privacy.*` | 隱私同意 | `privacy.consent.title` |
 | `pwa.*` | PWA 相關 | `pwa.install.prompt` |
+| `camp.*` | 三營陣相關 (v2.0) | `camp.label.pan_green` |
+| `blindspot.*` | 報導盲區 (v2.0) | `blindspot.label.green_only` |
+| `subscribe.*` | 訂閱相關 (v2.0) | `subscribe.tier.supporter` |
+| `source_transparency.*` | 來源透明 (v2.0) | `source_transparency.tendency` |
+| `reading_bias.*` | 個人偏見 (v2.0) | `reading_bias.title` |
+| `email.*` | Email 通知 (v2.0) | `email.daily_digest` |
+| `badge.*` | 成就徽章 (v2.0) | `badge.beginner_analyst` |
+| `event.*` | 事件聚合 (v2.0) | `event.card.sources` |
 
 ---
 
@@ -312,7 +320,7 @@ const common = {
 ```javascript
 const model = {
   "model.title":                 "模型管理",
-  "model.name":                  "Qwen3.5-4B",
+  "model.name":                  "Qwen3-4B",
   "model.version_label":         "版本: v{version}",
   "model.size_label":            "大小: 3.4 GB",
   "model.download.button":       "下載模型",
@@ -448,6 +456,169 @@ const privacy = {
   "privacy.consent.link":        "查看完整隱私政策",
   "privacy.consent.required":    "需要同意隱私政策才能繼續",
   "privacy.consent.button":      "同意並繼續"
+};
+```
+
+### 4.15 三營陣標籤 (Three-Camp Labels) — v2.0
+
+對應 `shared/enums.js` 的 `CAMP_TYPES`:
+
+```javascript
+const camp = {
+  // 營陣標籤
+  "camp.label.pan_green":      "泛綠",
+  "camp.label.pan_white":      "泛白",
+  "camp.label.pan_blue":       "泛藍",
+  "camp.label.insufficient":   "資料不足",
+  "camp.label.neutral":        "中立",
+
+  // 三色分布條
+  "camp.bar.green_pct":        "泛綠 {pct}%",
+  "camp.bar.white_pct":        "泛白 {pct}%",
+  "camp.bar.blue_pct":         "泛藍 {pct}%",
+
+  // 雷達圖
+  "camp.radar.green_axis":     "泛綠軸",
+  "camp.radar.white_axis":     "泛白軸",
+  "camp.radar.blue_axis":      "泛藍軸",
+  "camp.radar.score":          "營陣判定: {camp} (bias_score: {score})",
+
+  // 漸進區提示
+  "camp.gradient.hint":        "此分數位於邊界漸進區 ({low}-{high})"
+};
+```
+
+### 4.16 報導盲區 (Blindspot Labels) — v2.0
+
+對應 `shared/enums.js` 的 `BLINDSPOT_TYPES`:
+
+```javascript
+const blindspot = {
+  // 盲區類型
+  "blindspot.label.green_only":     "藍營盲區",      // 只有綠營報導,藍營缺席
+  "blindspot.label.blue_only":      "綠營盲區",      // 只有藍營報導,綠營缺席
+  "blindspot.label.white_missing":  "中立盲區",      // 缺少中立/獨立來源
+  "blindspot.label.imbalanced":     "觀點失衡",      // 嚴重營陣不平衡
+
+  // 盲區頁面
+  "blindspot.title":                "報導盲區",
+  "blindspot.description":         "報導盲區是指某個事件只被特定營陣的媒體報導,缺少其他觀點。",
+  "blindspot.severity.critical":   "嚴重盲區",
+  "blindspot.severity.warning":    "注意盲區",
+  "blindspot.no_blindspot":        "目前沒有偵測到報導盲區",
+  "blindspot.source_count":        "僅有 {camp} 來源報導",
+  "blindspot.missing_camp":        "缺少{camp}觀點"
+};
+```
+
+### 4.17 來源透明度 (Source Transparency Labels) — v2.0
+
+```javascript
+const source_transparency = {
+  "source_transparency.title":          "來源透明度",
+  "source_transparency.tendency":       "社群傾向分析",
+  "source_transparency.tendency_desc":  "基於近 30 天文章的 AI 分析結果推導",
+  "source_transparency.sample_count":   "有效樣本: {count} 篇",
+  "source_transparency.insufficient":   "資料不足 (需至少 {min} 篇)",
+  "source_transparency.confidence.high":"信賴度: 高",
+  "source_transparency.confidence.mid": "信賴度: 中",
+  "source_transparency.confidence.low": "信賴度: 低",
+  "source_transparency.avg_bias":       "平均立場分數: {score}",
+  "source_transparency.owner":          "擁有者: {owner}",
+  "source_transparency.type":           "類型: {type}",
+  "source_transparency.founded":        "創立: {year}",
+  "source_transparency.monthly_trend":  "月度趨勢 (近 6 個月)",
+  "source_transparency.recent_articles":"此來源的近期文章"
+};
+```
+
+### 4.18 個人閱讀偏見 (Reading Bias Labels) — v2.0
+
+```javascript
+const reading_bias = {
+  "reading_bias.title":             "我的閱讀偏見報告",
+  "reading_bias.period":            "近 {days} 天閱讀分布",
+  "reading_bias.analysis":          "偏見分析",
+  "reading_bias.suggestion":        "建議閱讀",
+  "reading_bias.badges":            "徽章成就",
+  "reading_bias.balanced":          "您的閱讀分布相當均衡，繼續保持！",
+  "reading_bias.skewed":            "您主要閱讀{camp}來源的報導。建議嘗試閱讀更多{other_camp}來源,以獲得更全面的觀點。",
+  "reading_bias.no_data":           "閱讀紀錄不足,請繼續瀏覽更多新聞",
+  "reading_bias.subscriber_upgrade":"升級為公民贊助者以獲取完整報告 (每週趨勢+營陣偏移警報)"
+};
+```
+
+### 4.19 訂閱相關 (Subscription Labels) — v2.0
+
+```javascript
+const subscribe = {
+  "subscribe.title":                "公民贊助",
+  "subscribe.tier.free":            "免費用戶",
+  "subscribe.tier.supporter":       "公民贊助者",
+  "subscribe.benefit.vote_2x":      "投票權 2 倍",
+  "subscribe.benefit.early_access": "新功能搶先體驗 (24 小時)",
+  "subscribe.benefit.full_report":  "完整版個人閱讀報告",
+  "subscribe.benefit.ai_summary":   "AI 三方摘要",
+  "subscribe.benefit.email":        "Email 每日摘要 + 盲區警報",
+  "subscribe.cta":                  "成為公民贊助者",
+  "subscribe.manage":               "管理訂閱",
+  "subscribe.cancel":               "取消訂閱",
+  "subscribe.no_ads":               "PowerReader 永遠不會有廣告"
+};
+```
+
+### 4.20 Email 通知 (Email Notification Labels) — v2.0
+
+```javascript
+const email = {
+  "email.daily_digest":            "每日摘要",
+  "email.blindspot_alert":         "盲區警報",
+  "email.analysis_result":         "分析結果通知",
+  "email.daily_digest_subject":    "PowerReader 今日摘要 — {date}",
+  "email.blindspot_alert_subject": "報導盲區警報: {event_title}",
+  "email.analysis_result_subject": "您的分析結果: {article_title}",
+  "email.unsubscribe":             "取消訂閱",
+  "email.preferences":             "通知偏好設定"
+};
+```
+
+### 4.21 成就徽章 (Badge Labels) — v2.0
+
+對應 `shared/enums.js` 的 `BADGE_TYPES`:
+
+```javascript
+const badge = {
+  "badge.beginner_analyst":     "新手分析師",
+  "badge.beginner_analyst_desc":"完成您的第一次立場分析",
+  "badge.stance_observer":      "立場觀察家",
+  "badge.stance_observer_desc": "累計分析 50 篇新聞",
+  "badge.cross_media_expert":   "跨媒體達人",
+  "badge.cross_media_expert_desc":"在同一事件中閱讀 3 個以上不同來源",
+  "badge.blindspot_finder":     "盲區發現者",
+  "badge.blindspot_finder_desc":"閱讀 10 篇報導盲區文章",
+  "badge.neutral_guardian":     "中立守護者",
+  "badge.neutral_guardian_desc":"閱讀偏見指數低於 15%,持續 30 天"
+};
+```
+
+### 4.22 事件聚合 (Event Aggregation Labels) — v2.0
+
+```javascript
+const event = {
+  "event.card.sources":         "{count} 家媒體",
+  "event.card.articles":        "{count} 篇報導",
+  "event.card.more":            "更多事件",
+  "event.detail.title":         "事件詳細",
+  "event.detail.camp_dist":     "三營陣分布",
+  "event.detail.media_reports": "各媒體報導",
+  "event.detail.consensus":     "共識分數: {score}/100",
+  "event.detail.low_consensus": "低共識",
+  "event.detail.high_consensus":"高共識",
+  "event.detail.three_way":     "三方摘要",
+  "event.three_way.green":      "泛綠方觀點",
+  "event.three_way.white":      "中立方觀點",
+  "event.three_way.blue":       "泛藍方觀點",
+  "event.three_way.subscriber_only":"升級為公民贊助者以查看完整 AI 摘要"
 };
 ```
 
@@ -869,7 +1040,17 @@ const a11y = {
   "a11y.notification.success":  "成功: {message}",
   "a11y.notification.error":    "錯誤: {message}",
   "a11y.notification.warning":  "警告: {message}",
-  "a11y.notification.info":     "資訊: {message}"
+  "a11y.notification.info":     "資訊: {message}",
+
+  // v2.0: 三營陣 & 事件
+  "a11y.camp_bar":              "三營陣分布條: 泛綠 {green}%, 泛白 {white}%, 泛藍 {blue}%",
+  "a11y.radar_chart":           "三軸雷達圖: 泛綠 {green}, 泛白 {white}, 泛藍 {blue}",
+  "a11y.event_card":            "事件: {title}, {source_count} 家媒體, {article_count} 篇報導",
+  "a11y.blindspot_badge":       "報導盲區: {type}",
+  "a11y.source_tendency":       "來源傾向: {source}, 平均立場分數 {score}, 樣本 {count} 篇",
+  "a11y.reading_bias_chart":    "閱讀偏見餅圖: 泛綠 {green}%, 泛白 {white}%, 泛藍 {blue}%",
+  "a11y.badge.earned":          "已獲得徽章: {badge_name}",
+  "a11y.nav.blindspot":         "報導盲區"
 };
 ```
 
@@ -1112,145 +1293,18 @@ function toROCYear(date) {
 
 ---
 
-## 14. locale/zh-TW.js 完整範例結構
+## 14. locale/zh-TW.js 實作參照
 
+完整實作見 `src/locale/zh-TW.js`。該檔案是所有 UI 字串的唯一來源 (SSOT)。
+
+**使用方式**:
 ```javascript
-/**
- * zh-TW Locale - 繁體中文 (台灣)
- *
- * SSOT for all UI strings in the application.
- * Import this file instead of hardcoding Chinese strings.
- *
- * Usage:
- *   import { t } from '../locale/zh-TW.js';
- *   element.textContent = t('bias.label.center'); // "中立"
- *   element.textContent = t('common.label.source_count', { count: 3 }); // "來源: 3 家媒體"
- */
-
-const messages = {
-  // === Bias Labels ===
-  "bias.label.extreme_left":   "極左",
-  "bias.label.left":           "偏左",
-  "bias.label.center_left":    "中間偏左",
-  "bias.label.center":         "中立",
-  "bias.label.center_right":   "中間偏右",
-  "bias.label.right":          "偏右",
-  "bias.label.extreme_right":  "極右",
-
-  // === Controversy Labels ===
-  "controversy.label.low":       "低",
-  "controversy.label.moderate":  "中等",
-  "controversy.label.high":      "高",
-  "controversy.label.very_high": "極高",
-
-  // === Controversy Badges ===
-  "controversy.badge.low":       "低度爭議",
-  "controversy.badge.moderate":  "中等爭議",
-  "controversy.badge.high":      "高度爭議",
-  "controversy.badge.very_high": "極高爭議",
-
-  // === News Categories ===
-  "category.label.politics":      "政治",
-  "category.label.economy":       "經濟",
-  "category.label.society":       "社會",
-  "category.label.technology":    "科技",
-  "category.label.international": "國際",
-  "category.label.entertainment": "娛樂",
-  "category.label.sports":        "體育",
-  "category.label.health":        "健康",
-  "category.label.education":     "教育",
-  "category.label.environment":   "環境",
-
-  // === Error Messages ===
-  "error.message.validation":     "輸入資料格式錯誤,請檢查後重試",
-  "error.message.not_found":      "找不到請求的資源",
-  "error.message.rate_limit":     "請求過於頻繁,請稍後再試",
-  "error.message.unauthorized":   "未授權,請先登入",
-  "error.message.generic":        "系統錯誤,請稍後再試",
-
-  // === Quality Gate Feedback ===
-  "quality.failed_format":       "分析結果格式異常，請重新分析",
-  "quality.failed_range":        "分析結果包含無效數值，請重新分析",
-  "quality.failed_consistency":  "您的分析與過往紀錄差異較大，請重新審視後再提交",
-  "quality.failed_duplicate":    "此文章已完成分析，或已達分析次數上限",
-
-  // === Cooldown ===
-  "reward.cooldown.active":      "分析功能暫時停用",
-  "reward.cooldown.remaining":   "剩餘等待時間: {minutes} 分鐘",
-  "reward.cooldown.reason":      "連續 3 次未通過品質驗證，已暫停分析功能 1 小時",
-
-  // === Article Deadline ===
-  "article.deadline.remaining":   "可分析剩餘時間: {hours} 小時",
-  "article.deadline.expired":     "已截止分析",
-  "article.deadline.warning":     "即將截止 (剩餘 {hours} 小時)",
-
-  // === Login & Auth ===
-  "login.prompt":                "請先登入以參與分析",
-  "login.google_oauth":          "使用 Google 帳號登入",
-  "login.anonymous_browse":      "先瀏覽看看",
-  "login.success":               "登入成功",
-  "login.failed":                "登入失敗，請稍後再試",
-  "login.logout":                "登出",
-  "login.logout_confirm":        "確定要登出嗎？",
-
-  // === Onboarding ===
-  "onboarding.step1.title":      "歡迎使用新聞立場分析",
-  "onboarding.step1.desc":       "透過公民算力，分析台灣新聞媒體的報導立場",
-  "onboarding.step2.title":      "認識立場光譜",
-  "onboarding.step2.desc":       "光譜左側代表泛綠立場，右側代表泛藍立場，中間為中立",
-  "onboarding.step3.title":      "AI 本地分析",
-  "onboarding.step3.desc":       "下載 AI 模型後，分析完全在您的裝置上進行，資料不會外洩",
-  "onboarding.step4.title":      "開始使用",
-  "onboarding.step4.desc":       "瀏覽今日新聞，或立即開始您的第一次分析",
-  "onboarding.button.next":      "下一步",
-  "onboarding.button.skip":      "略過",
-  "onboarding.button.start":     "開始使用",
-
-  // === Privacy Consent ===
-  "privacy.consent.title":       "隱私政策同意",
-  "privacy.consent.checkbox":    "我已閱讀並同意隱私政策",
-  "privacy.consent.link":        "查看完整隱私政策",
-  "privacy.consent.required":    "需要同意隱私政策才能繼續",
-  "privacy.consent.button":      "同意並繼續",
-
-  // === Offline/Sync (PWA) ===
-  "pwa.sync.saved_offline":        "已保存，連線後自動提交",
-  "pwa.sync.failed_permanent":     "同步失敗次數過多，此筆資料需手動重新提交",
-  "pwa.sync.retry_button":         "重新提交",
-  "pwa.sync.discard_button":       "捨棄",
-
-  // === Inference UX ===
-  "model.inference.preparing":     "正在組裝提示詞...",
-  "model.inference.running":       "AI 分析中...",
-  "model.inference.generating":    "產生結果...",
-  "model.inference.slow_hint":     "分析較複雜的文章需要較長時間",
-  "model.inference.timeout_offer": "分析時間較長，是否切換至伺服器模式？",
-  "model.inference.switch_server": "切換至伺服器模式",
-
-  // ... (其他 key 參見各章節定義)
-};
-
-/**
- * Translation function with interpolation support
- * @param {string} key - i18n key (e.g. "bias.label.center")
- * @param {Object} params - interpolation params (e.g. { count: 3 })
- * @returns {string} translated string
- */
-export function t(key, params = {}) {
-  let msg = messages[key];
-  if (!msg) {
-    console.warn(`Missing i18n key: ${key}`);
-    return key; // Fallback: return the key itself
-  }
-  // Interpolation: replace {param} with value
-  for (const [k, v] of Object.entries(params)) {
-    msg = msg.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
-  }
-  return msg;
-}
-
-export default messages;
+import { t } from '../locale/zh-TW.js';
+element.textContent = t('bias.label.center');                       // "中立"
+element.textContent = t('common.label.source_count', { count: 3 }); // "來源: 3 家媒體"
 ```
+
+**key 定義**: 參見本文件各章節 4.1-4.22 的完整對照表。
 
 ---
 
@@ -1283,6 +1337,7 @@ export default messages;
 | v0.1 | 2025-03-06 | 骨架版本 | 快速建立架構 |
 | v1.0 | 2026-03-06 | 完整在地化規格: i18n 策略, 字串對照表 (bias/controversy/category/source/error/nav/model/reward/pwa), 台灣術語規範, 日期時間格式化 (含民國年), 數字格式化, 字型規範, 無障礙文字 (a11y), LINE Bot 與瀏覽器插件在地化, Common Mistakes 9 則 | 階段 4 前端開發啟動,建立完整 SSOT |
 | v1.1 | 2026-03-07 | Model 4B, quality gate keys, cooldown/deadline/login/onboarding/privacy/sync i18n keys, inference UX strings | Decision #004 + M01 UX review + cross-team comm 1833 |
+| v2.0 | 2026-03-08 | +8 new key prefixes: camp.*/blindspot.*/subscribe.*/source_transparency.*/reading_bias.*/email.*/badge.*/event.* — 三營陣標籤, 盲區分類, 訂閱權益, 來源透明, 閱讀偏見, Email通知, 徽章成就, 事件聚合; +8 a11y keys for v2.0 components | Decision #013-#016, Ground.news 台灣化 |
 
 ---
 

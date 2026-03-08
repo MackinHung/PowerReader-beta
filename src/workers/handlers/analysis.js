@@ -12,6 +12,7 @@ import { getBiasCategory, getControversyLevel } from '../../../shared/enums.js';
 import { transitionStatus } from '../../../shared/state-machine.js';
 import { nowISO, escapeHtml } from '../../../shared/utils.js';
 import { REWARD } from '../../../shared/config.js';
+import { jsonResponse } from '../../../shared/response.js';
 
 /**
  * POST /api/v1/articles/:article_id/analysis — Submit analysis result
@@ -57,7 +58,7 @@ export async function createAnalysis(request, env, ctx, { params, user }) {
   }
 
   // Anti-cheat: minimum analysis time (blocks instant automated submissions)
-  // T05 spec: 5000ms aligns with Qwen3.5-4B inference (~6s)
+  // T05 spec: 5000ms aligns with Qwen3-4B WebLLM inference (~6s)
   if (body.analysis_duration_ms != null && body.analysis_duration_ms < REWARD.MIN_ANALYSIS_TIME_MS) {
     return jsonResponse(400, {
       success: false, data: null,
@@ -93,15 +94,8 @@ export async function createAnalysis(request, env, ctx, { params, user }) {
   const bias_category = getBiasCategory(body.bias_score);
   const controversy_level = getControversyLevel(body.controversy_score);
 
-  // Quality gate validation (T03 provides full logic; stub here)
-  // 4-layer: format, range, consistency, duplicate
-  const quality_gate_result = 'passed'; // TODO: T03 implements full gate logic
-  const quality_scores = {
-    format_valid: true,
-    range_valid: true,
-    consistency_valid: true,
-    duplicate_valid: true
-  };
+  // Quality gate validation (4-layer: format, range, consistency, duplicate)
+  const { result: quality_gate_result, scores: quality_scores } = runQualityGates(body);
 
   // Insert analysis (using authenticated user_hash, not body.user_hash)
   await env.DB.prepare(`
@@ -177,6 +171,27 @@ export async function createAnalysis(request, env, ctx, { params, user }) {
     // Status transition failure is non-fatal; analysis is still recorded
   }
 
+  // Fetch updated points for response feedback
+  let pointsData = null;
+  if (quality_gate_result === 'passed') {
+    try {
+      const updatedUser = await env.DB.prepare(
+        'SELECT total_points_cents, vote_rights, contribution_count FROM users WHERE user_hash = ?'
+      ).bind(user_hash).first();
+      if (updatedUser) {
+        pointsData = {
+          points_awarded_cents: REWARD.POINTS_PER_VALID_ANALYSIS,
+          total_points_cents: updatedUser.total_points_cents,
+          display_points: (updatedUser.total_points_cents / 100).toFixed(2),
+          vote_rights: updatedUser.vote_rights,
+          contribution_count: updatedUser.contribution_count
+        };
+      }
+    } catch {
+      // Points fetch failure is non-fatal
+    }
+  }
+
   return jsonResponse(201, {
     success: true,
     data: {
@@ -185,7 +200,8 @@ export async function createAnalysis(request, env, ctx, { params, user }) {
       bias_category,
       controversy_score: body.controversy_score,
       controversy_level,
-      quality_gate_result
+      quality_gate_result,
+      reward: pointsData
     },
     error: null
   });
@@ -219,9 +235,48 @@ export async function getAnalyses(request, env, ctx, { params }) {
   });
 }
 
-function jsonResponse(status, body) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' }
-  });
+/**
+ * Quality Gates — 4-layer validation for analysis submissions.
+ * Layer 1 (Format): Type checks on all fields
+ * Layer 2 (Range): Value range validation
+ * Layer 3 (Consistency): Skipped — requires historical data
+ * Layer 4 (Duplicate): Handled upstream (L81-89)
+ *
+ * @param {object} body - Analysis submission body
+ * @returns {{ result: string, scores: object }}
+ */
+function runQualityGates(body) {
+  const scores = {
+    format_valid: true,
+    range_valid: true,
+    consistency_valid: true,  // Layer 3: skipped, needs historical data
+    duplicate_valid: true     // Layer 4: handled upstream
+  };
+
+  // Layer 1: Format validation
+  if (typeof body.bias_score !== 'number' ||
+      typeof body.controversy_score !== 'number' ||
+      typeof body.reasoning !== 'string' ||
+      !Array.isArray(body.key_phrases)) {
+    scores.format_valid = false;
+    return { result: 'failed_format', scores };
+  }
+
+  // Layer 2: Range validation
+  const biasInRange = Number.isInteger(body.bias_score) &&
+    body.bias_score >= 0 && body.bias_score <= 100;
+  const contInRange = Number.isInteger(body.controversy_score) &&
+    body.controversy_score >= 0 && body.controversy_score <= 100;
+  const reasoningLen = body.reasoning.length >= 10 && body.reasoning.length <= 500;
+  const phrasesValid = body.key_phrases.length >= 1 &&
+    body.key_phrases.length <= 10 &&
+    body.key_phrases.every(p => typeof p === 'string');
+
+  if (!biasInRange || !contInRange || !reasoningLen || !phrasesValid) {
+    scores.range_valid = false;
+    return { result: 'failed_range', scores };
+  }
+
+  return { result: 'passed', scores };
 }
+

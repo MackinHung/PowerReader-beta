@@ -1,7 +1,7 @@
 # T03 AI Inference Team -- Phase Plan
 
 **Team**: T03 (AI Inference Team)
-**Scope**: Qwen3.5-4B client-side inference, RAG three-layer prompt engineering, 4-layer quality gates, model accuracy evaluation, knowledge base maintenance.
+**Scope**: Qwen3-4B client-side inference via WebLLM (WebGPU), dual-pass architecture, RAG three-layer prompt engineering, 4-layer quality gates, model accuracy evaluation, knowledge base maintenance.
 
 ---
 
@@ -36,8 +36,8 @@
 
 **Deliverables**:
 1. Implement `sanitizeArticleInput()` -- input sanitization (control chars, length truncation at 4096 chars, source validation against `shared/enums.js NEWS_SOURCES`)
-2. Implement Qwen3.5-4B inference wrapper with locked config:
-   - model: `qwen3.5:4b` (Ollama official, 3.4GB download, includes RENDERER+PARSER)
+2. Implement Qwen3-4B inference wrapper with locked config:
+   - model: `Qwen3-4B-q4f16_1-MLC` (WebLLM, 3,432 MB VRAM, WebGPU browser inference)
    - think=false, temperature=0.5, top_p=0.95, presence_penalty=1.5
    - num_predict=4096, response_format: { type: "json_object" }
 3. Three-layer prompt architecture (reference PROMPT_VERSIONS.md v2.0.0):
@@ -99,10 +99,10 @@
 3. Edge case regression tests: satire, editorials, wire stories, short (<200 chars), long (>2000 chars), mixed CJK/English
 4. Prompt injection defense validation: tampered prompts caught by Layer 1/2
 5. Version mismatch detection: `validatePromptVersion()` blocks non-v2.0.0 submissions
-6. Verify think=false latency target: 6-10 seconds per article (no thinking mode)
+6. Verify think=false latency target: 6-10 seconds per pass, ~14s total dual-pass (no thinking mode)
 
 **Dependencies**:
-- T04: PWA integration for real device testing (model download, progress UI)
+- T04: PWA integration for real device testing (WebLLM model download, WebGPU progress UI)
 - T07: Performance benchmark infrastructure
 
 **Risks**:
@@ -146,7 +146,7 @@
 | Team | What We Provide | When |
 |------|----------------|------|
 | T01 | Analysis output JSON schema (6 fields) + quality_gate_result | Phase 2 |
-| T04 | Inference config (model: `qwen3.5:4b`, params, think=false) for client-side execution | Phase 2 |
+| T04 | Inference config (model: `Qwen3-4B-q4f16_1-MLC`, params, think=false, dual-pass) for WebLLM client-side execution | Phase 2 |
 | T05 | Pass/fail signal for reward trigger | Phase 3 |
 | T07 | Pass rate metric, inference latency metric | Phase 3-4 |
 | All  | Prompt version string (v2.0.0) for D1 records | Phase 2+ |
@@ -159,15 +159,15 @@
 |------|--------|------------|
 | Knowledge base coverage insufficient for cold topics | L2 RAG returns empty or irrelevant context, degrading analysis quality | Seed knowledge base with top 20 politicians, 15 media outlets, 10 active topics; monitor Vectorize query hit rate |
 | Vectorize query quota exhaustion (30M dimensions/month) | Knowledge queries throttled or blocked | Monitor usage; batch queries where possible; topK=5 keeps dimension usage per query at 5120 (1024d x 5) |
-| OOM on low-end devices (~4GB runtime) | Users cannot run analysis | Graceful degradation message; minimum RAM check before download; suggest desktop over mobile |
+| VRAM insufficient (~3.4GB required) | Users cannot run WebGPU analysis | Graceful degradation to WASM fallback or browse-only; WebGPU adapter VRAM check; suggest desktop Chrome 113+ |
 | Prompt injection by local users | Garbage results in D1 | 4-layer quality gates catch anomalies; version mismatch detection; all outputs validated server-side before D1 write |
 | Cold-start: Layer 3 always passes | No consistency filtering early on | Accept higher pass rate initially; tighten once history accumulates |
-| Model download failure (3.4GB) | Users cannot start analysis | Resume-capable download; progress UI; WiFi-only default; battery check |
+| Model download failure (3.4GB) | Users cannot start analysis | WebLLM auto-download to browser Cache/IndexedDB; progress UI; resume-capable |
 
 ---
 
-**Status**: Phase 1 in progress (awaiting gold standard articles from project owner). Phase 2 parameters LOCKED.
-**Last Updated**: 2026-03-07
+**Status**: Phase 2-3 code implemented. Phase 1 gold standard awaiting project owner. Phase 4-5 post-launch.
+**Last Updated**: 2026-03-08
 
 ---
 
@@ -175,8 +175,8 @@
 
 | Phase | Status | Notes |
 |-------|--------|-------|
-| Phase 1 | 🔵 IN PROGRESS | Annotation guidelines done. Awaiting 20 articles from project owner. |
-| Phase 2 | 🟡 PARAMS LOCKED | Inference config confirmed (2026-03-07). Prompt v2.0.0 neutral version confirmed. Implementation blocked on Phase 1 + T01 infrastructure. |
-| Phase 3 | ⬜ NOT STARTED | QUALITY_GATES.md spec complete. Blocked on T01 D1 API. |
-| Phase 4 | ⬜ NOT STARTED | Blocked on T04 PWA integration. |
+| Phase 1 | 🔵 WAITING | Annotation guidelines done. Awaiting 20 gold standard articles from project owner. Knowledge base loaded (1121 entries in D1 + Vectorize). |
+| Phase 2 | ✅ IMPLEMENTED | inference.js: 3-layer prompt assembly + inference + 6-field parsing (migrating to WebLLM). analyze.js: Full analysis UI + knowledge fetch + submission. All API endpoints verified (2026-03-08). Dual-pass prompt architecture: pending design. |
+| Phase 3 | 🟡 PARTIAL | Quality gates L1-L2 implemented in analysis.js. L3 consistency check stubbed (needs historical data). Anti-cheat: daily limit 50, cooldown, min 5000ms. |
+| Phase 4 | ⬜ NOT STARTED | Blocked on T04 PWA integration + real device testing. |
 | Phase 5 | ⬜ NOT STARTED | Post-launch. |

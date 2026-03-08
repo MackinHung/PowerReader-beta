@@ -1,7 +1,7 @@
 /**
  * PowerReader - Home Page
  *
- * Trending articles sorted by controversy, with infinite scroll.
+ * Latest articles sorted by published date, with infinite scroll.
  * Offline: loads cached articles from IndexedDB.
  *
  * Features:
@@ -148,7 +148,7 @@ async function loadArticles(list, loader) {
   const result = await fetchArticles({
     page: currentPage,
     limit: 20,
-    sort_by: 'controversy_score',
+    sort_by: 'published_at',
     sort_order: 'desc',
     category: currentCategory || undefined
   });
