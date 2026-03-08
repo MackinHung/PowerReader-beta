@@ -1,31 +1,167 @@
 /**
- * PowerReader - Inference Engine
+ * PowerReader - Inference Engine (WebLLM Dual-Pass)
  *
- * Fallback chain: Ollama → WebGPU → WASM → Server (Cloudflare Workers AI)
- * Detects device capabilities and selects optimal inference mode.
+ * Fallback chain: WebGPU (WebLLM) -> Server (Cloudflare Workers AI)
  *
- * Config: shared/config.js MODELS section
- *   - Model: Qwen3.5-4B, think=false, t=0.5
- *   - Timeout: 30s
- *   - Server fallback: always available
+ * Dual-Pass Architecture:
+ *   Pass 1: Score extraction (bias_score + controversy_score)
+ *   Pass 2: Narrative analysis (3-5 key points, informed by Pass 1)
+ *
+ * Config:
+ *   - Model: Qwen3-4B-q4f16_1-MLC (3.4GB, WebGPU)
+ *   - Params: think=false, t=0.5, response_format=json_object
+ *   - Timeout: 30s/pass GPU, 120s/pass CPU
+ *
+ * @copyright MackinHung
+ * @license AGPL-3.0
  */
 
 import { t } from '../../locale/zh-TW.js';
-import { checkOllamaStatus, OLLAMA_CONFIG } from './ollama-detect.js';
+import {
+  assembleScoreSystemPrompt,
+  assembleNarrativeSystemPrompt,
+  assembleUserMessage
+} from './prompt.js';
+import { parseScoreOutput, parseNarrativeOutput, parseAnalysisOutput } from './output-parser.js';
+import { getCachedBenchmark, getTimeoutForTier, scanGPU } from './benchmark.js';
 
-const INFERENCE_TIMEOUT_MS = 30000;
-const SLOW_HINT_THRESHOLD_MS = 10000;
-const SERVER_OFFER_THRESHOLD_MS = 30000;
+// =============================================
+// Configuration
+// =============================================
+
+const WEBLLM_CDN = 'https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm/+esm';
+const MODEL_ID = 'Qwen3-8B-q4f16_1-MLC';
+const MODEL_PARAMS = {
+  temperature: 0.3,
+  top_p: 0.85,
+  repetition_penalty: 1.05
+};
+
+// Qwen3 /no_think suffix — appended to system prompt to suppress <think> loop
+const QWEN3_NO_THINK = '\n/no_think';
+
+const PASS1_MAX_TOKENS = 100;   // Score JSON is ~40 tokens, buffer for stray text
+const PASS2_MAX_TOKENS = 512;   // Narrative JSON ~200-400 tokens
+const INFERENCE_TIMEOUT_MS = 90000; // 90s total for dual pass (8B needs more time)
 
 /**
- * Inference modes in fallback order.
+ * Get dynamic inference timeout based on benchmark tier.
+ * Falls back to INFERENCE_TIMEOUT_MS if no benchmark data.
+ * @returns {number} Timeout in milliseconds
  */
+function getInferenceTimeout() {
+  const cached = getCachedBenchmark();
+  if (cached && cached.mode) {
+    return getTimeoutForTier(cached.mode);
+  }
+  return INFERENCE_TIMEOUT_MS; // fallback to default
+}
+
+const SLOW_HINT_THRESHOLD_MS = 15000;
+const SERVER_OFFER_THRESHOLD_MS = 60000;
+
+// =============================================
+// Inference Modes
+// =============================================
+
 export const INFERENCE_MODES = {
-  OLLAMA: 'ollama',
   WEBGPU: 'webgpu',
-  WASM: 'wasm',
   SERVER: 'server'
 };
+
+// =============================================
+// WebLLM Engine (Singleton)
+// =============================================
+
+let _webllmEngine = null;
+let _webllmLoading = false;
+
+/**
+ * Get or create the WebLLM engine (singleton).
+ * Downloads model on first call (~3.4GB).
+ *
+ * @param {function} onProgress - Progress callback ({ text, progress })
+ * @returns {Promise<Object>} WebLLM MLCEngine instance
+ */
+export async function getWebLLMEngine(onProgress) {
+  if (_webllmEngine) return _webllmEngine;
+  if (_webllmLoading) {
+    // Wait for in-progress loading
+    while (_webllmLoading) {
+      await new Promise(r => setTimeout(r, 200));
+    }
+    if (_webllmEngine) return _webllmEngine;
+    throw new Error('WebLLM engine loading failed');
+  }
+
+  _webllmLoading = true;
+  try {
+    const webllm = await import(/* webpackIgnore: true */ WEBLLM_CDN);
+
+    _webllmEngine = await webllm.CreateMLCEngine(MODEL_ID, {
+      initProgressCallback: (report) => {
+        if (onProgress) {
+          onProgress({
+            text: report.text || '',
+            progress: report.progress || 0
+          });
+        }
+      }
+    });
+
+    // Mark model as cached for future visits (skip download confirmation)
+    try { localStorage.setItem('powerreader_webllm_cached', '1'); } catch {}
+
+    return _webllmEngine;
+  } catch (err) {
+    _webllmEngine = null;
+    throw err;
+  } finally {
+    _webllmLoading = false;
+  }
+}
+
+// =============================================
+// Cache Management
+// =============================================
+
+/**
+ * Clear all WebLLM model caches from browser Cache API.
+ * This removes ALL downloaded models (old and current).
+ *
+ * @returns {Promise<number>} Approximate freed MB
+ */
+export async function clearAllModelCaches() {
+  let freedBytes = 0;
+
+  try {
+    const cacheNames = await caches.keys();
+    for (const name of cacheNames) {
+      // WebLLM cache names contain 'webllm' or model-related patterns
+      if (name.includes('webllm') || name.includes('mlc') ||
+          name.includes('Qwen') || name.includes('DeepSeek') ||
+          name.includes('Llama') || name.includes('wasm')) {
+        const cache = await caches.open(name);
+        const keys = await cache.keys();
+        for (const key of keys) {
+          const resp = await cache.match(key);
+          if (resp) {
+            const blob = await resp.blob();
+            freedBytes += blob.size;
+          }
+        }
+        await caches.delete(name);
+      }
+    }
+  } catch (e) {
+    console.warn('[Inference] Cache cleanup error:', e);
+  }
+
+  // Reset engine singleton
+  _webllmEngine = null;
+
+  return Math.round(freedBytes / (1024 * 1024));
+}
 
 // =============================================
 // Capability Detection
@@ -40,36 +176,34 @@ export async function hasWebGPU() {
   try {
     const adapter = await navigator.gpu.requestAdapter();
     return adapter !== null;
-  } catch (e) {
-    return false;
-  }
-}
-
-/**
- * Check WASM availability.
- * @returns {boolean}
- */
-export function hasWASM() {
-  try {
-    return typeof WebAssembly === 'object' &&
-      WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0]));
-  } catch (e) {
+  } catch {
     return false;
   }
 }
 
 /**
  * Detect best available inference mode.
- * Priority: Ollama (user's local install) → WebGPU → WASM → Server
+ * Priority: WebGPU -> Server
  * @returns {Promise<string>} INFERENCE_MODES value
  */
 export async function detectBestMode() {
-  const ollamaStatus = await checkOllamaStatus();
-  if (ollamaStatus.available && ollamaStatus.model_ready) {
-    return INFERENCE_MODES.OLLAMA;
+  // Check cached benchmark first
+  const cached = getCachedBenchmark();
+  if (cached && cached.mode) {
+    if (cached.mode === 'gpu' || cached.mode === 'cpu') {
+      return INFERENCE_MODES.WEBGPU;
+    }
+    if (cached.mode === 'none') {
+      return INFERENCE_MODES.SERVER;
+    }
   }
+
+  // No cached benchmark — probe WebGPU
   if (await hasWebGPU()) return INFERENCE_MODES.WEBGPU;
-  if (hasWASM()) return INFERENCE_MODES.WASM;
+
+  // Fire-and-forget: scan GPU and cache availability for future visits
+  scanGPU().catch(() => {});
+
   return INFERENCE_MODES.SERVER;
 }
 
@@ -80,34 +214,32 @@ export async function detectBestMode() {
  */
 export function getModeLabel(mode) {
   const labels = {
-    [INFERENCE_MODES.OLLAMA]: t('model.inference.ollama'),
     [INFERENCE_MODES.WEBGPU]: t('model.inference.webgpu'),
-    [INFERENCE_MODES.WASM]: t('model.inference.wasm'),
     [INFERENCE_MODES.SERVER]: t('model.inference.server')
   };
   return labels[mode] || mode;
 }
 
 // =============================================
-// Inference
+// Main Entry Point
 // =============================================
 
 /**
- * Run bias analysis on an article.
+ * Run dual-pass bias analysis on an article.
  *
  * @param {Object} options
- * @param {string} options.articleContent - Full article text (markdown)
+ * @param {Object} options.article - Full article object
  * @param {Array} options.knowledgeEntries - RAG Layer 2 entries
  * @param {string} options.mode - Forced inference mode (optional)
- * @param {function} options.onStatus - Status callback (stage, elapsedMs)
- * @returns {Promise<{ bias_score: number, controversy_score: number, reasoning: string, key_phrases: string[], mode: string, latency_ms: number }>}
+ * @param {function} options.onStatus - Status callback (stage, elapsedMs, extra)
+ * @returns {Promise<Object>} Analysis result with mode, latency_ms, and narrative points
  */
-export async function runAnalysis({ articleContent, knowledgeEntries = [], mode, onStatus }) {
+export async function runAnalysis({ article, knowledgeEntries = [], mode, onStatus }) {
   const selectedMode = mode || await detectBestMode();
   const startTime = Date.now();
 
-  const updateStatus = (stage) => {
-    if (onStatus) onStatus(stage, Date.now() - startTime);
+  const updateStatus = (stage, extra) => {
+    if (onStatus) onStatus(stage, Date.now() - startTime, extra);
   };
 
   updateStatus('preparing');
@@ -115,80 +247,114 @@ export async function runAnalysis({ articleContent, knowledgeEntries = [], mode,
   try {
     let result;
 
-    if (selectedMode === INFERENCE_MODES.OLLAMA) {
-      result = await runOllamaInference(articleContent, knowledgeEntries, updateStatus);
-    } else if (selectedMode === INFERENCE_MODES.SERVER) {
-      result = await runServerInference(articleContent, knowledgeEntries, updateStatus);
+    if (selectedMode === INFERENCE_MODES.WEBGPU) {
+      result = await runWebLLMInference(article, knowledgeEntries, updateStatus);
     } else {
-      result = await runLocalInference(articleContent, knowledgeEntries, selectedMode, updateStatus);
+      result = await runServerInference(article, knowledgeEntries, updateStatus);
     }
 
     return { ...result, mode: selectedMode, latency_ms: Date.now() - startTime };
   } catch (err) {
-    // If non-server inference fails, fallback to server
+    // If WebGPU inference fails, fallback to server
     if (selectedMode !== INFERENCE_MODES.SERVER) {
       updateStatus('fallback_to_server');
-      const result = await runServerInference(articleContent, knowledgeEntries, updateStatus);
-      return { ...result, mode: INFERENCE_MODES.SERVER, latency_ms: Date.now() - startTime };
+      try {
+        const result = await runServerInference(article, knowledgeEntries, updateStatus);
+        return { ...result, mode: INFERENCE_MODES.SERVER, latency_ms: Date.now() - startTime };
+      } catch (serverErr) {
+        throw new Error(`All inference modes failed. WebGPU: ${err.message}. Server: ${serverErr.message}`);
+      }
     }
     throw err;
   }
 }
 
 // =============================================
-// Ollama Inference (Local via Ollama HTTP API)
+// WebLLM Inference (WebGPU, Dual-Pass)
 // =============================================
 
-/**
- * Run inference via local Ollama instance.
- * Calls POST /api/generate with assembled 3-layer prompt.
- */
-async function runOllamaInference(articleContent, knowledgeEntries, updateStatus) {
-  updateStatus('running');
-
-  const prompt = assemblePrompt(articleContent, knowledgeEntries);
-
-  const response = await fetch(`${OLLAMA_CONFIG.DEFAULT_ENDPOINT}/api/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: OLLAMA_CONFIG.MODEL_NAME,
-      prompt,
-      stream: false,
-      options: { temperature: 0.5, num_predict: 1024 }
-    }),
-    signal: AbortSignal.timeout(INFERENCE_TIMEOUT_MS)
+async function runWebLLMInference(article, knowledgeEntries, updateStatus) {
+  // Phase 0: Load model
+  updateStatus('loading_model');
+  const engine = await getWebLLMEngine((progress) => {
+    updateStatus('loading_model', progress);
   });
 
-  if (!response.ok) {
-    throw new Error(`Ollama inference failed: HTTP ${response.status}`);
-  }
+  const userMessage = assembleUserMessage(article, knowledgeEntries);
 
-  const data = await response.json();
-  updateStatus('generating');
+  // Phase 1: Score extraction
+  updateStatus('pass1_running');
+  const pass1SystemPrompt = assembleScoreSystemPrompt() + QWEN3_NO_THINK;
+  const pass1Response = await engine.chat.completions.create({
+    messages: [
+      { role: 'system', content: pass1SystemPrompt },
+      { role: 'user', content: userMessage }
+    ],
+    ...MODEL_PARAMS,
+    max_tokens: PASS1_MAX_TOKENS
+  });
 
-  return parseAnalysisOutput(data.response || '');
+  const pass1Raw = pass1Response.choices[0]?.message?.content || '';
+  const scores = parseScoreOutput(pass1Raw);
+  updateStatus('pass1_done');
+
+  // Free KV cache between passes — critical for 6GB VRAM
+  try { await engine.resetChat(); } catch {}
+
+  // Phase 2: Narrative analysis (informed by Pass 1 scores)
+  updateStatus('pass2_running');
+  const pass2SystemPrompt = assembleNarrativeSystemPrompt(scores.bias_score, scores.controversy_score) + QWEN3_NO_THINK;
+  const pass2Response = await engine.chat.completions.create({
+    messages: [
+      { role: 'system', content: pass2SystemPrompt },
+      { role: 'user', content: userMessage }
+    ],
+    ...MODEL_PARAMS,
+    max_tokens: PASS2_MAX_TOKENS
+  });
+
+  const pass2Raw = pass2Response.choices[0]?.message?.content || '';
+  const narrative = parseNarrativeOutput(pass2Raw);
+  updateStatus('pass2_done');
+
+  // Fallback: derive key_phrases from points if model didn't provide them
+  const key_phrases = narrative.key_phrases.length > 0
+    ? narrative.key_phrases
+    : narrative.points.slice(0, 5).map(p => p.slice(0, 20).replace(/[，。！？,\.!?\s]+$/, ''));
+
+  return {
+    ...scores,
+    points: narrative.points,
+    reasoning: narrative.points.join('\n'),
+    key_phrases,
+    prompt_version: 'v3.0.0',
+    // Debug: raw prompts and outputs for inspection
+    _debug: {
+      pass1_system: pass1SystemPrompt,
+      pass1_user: userMessage.substring(0, 500),
+      pass1_raw: pass1Raw,
+      pass2_system: pass2SystemPrompt,
+      pass2_raw: pass2Raw
+    }
+  };
 }
 
 // =============================================
 // Server Inference (Cloudflare Workers AI)
 // =============================================
 
-/**
- * Run inference on server (Cloudflare Workers AI).
- */
-async function runServerInference(articleContent, knowledgeEntries, updateStatus) {
+async function runServerInference(article, knowledgeEntries, updateStatus) {
   updateStatus('running');
 
   const response = await fetch('/api/v1/inference', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      content: articleContent,
+      content: article.content_markdown || article.summary || '',
       knowledge: knowledgeEntries,
       model_params: { think: false, temperature: 0.5 }
     }),
-    signal: AbortSignal.timeout(INFERENCE_TIMEOUT_MS)
+    signal: AbortSignal.timeout(getInferenceTimeout())
   });
 
   if (!response.ok) {
@@ -199,98 +365,13 @@ async function runServerInference(articleContent, knowledgeEntries, updateStatus
   updateStatus('generating');
 
   return {
-    bias_score: data.bias_score,
-    controversy_score: data.controversy_score,
+    bias_score: data.bias_score ?? 50,
+    controversy_score: data.controversy_score ?? 0,
+    points: data.points || [],
     reasoning: data.reasoning || '',
-    key_phrases: data.key_phrases || []
+    key_phrases: data.key_phrases || [],
+    prompt_version: data.prompt_version || 'server'
   };
-}
-
-// =============================================
-// Local Inference (WebGPU / WASM)
-// =============================================
-
-/**
- * Run local inference (WebGPU or WASM).
- * Stub: Actual model loading will be implemented when T03 provides binary.
- */
-async function runLocalInference(articleContent, knowledgeEntries, mode, updateStatus) {
-  updateStatus('running');
-  // TODO: T03 dependency — load model from OPFS/IndexedDB
-  // TODO: Assemble 3-layer prompt (L1 core + L2 RAG + L3 article)
-  // TODO: Run Qwen3.5-4B inference with { think: false, temperature: 0.5 }
-  throw new Error(`Local inference (${mode}) not yet implemented — awaiting T03 model binary`);
-}
-
-// =============================================
-// Prompt Assembly (3-Layer Architecture)
-// =============================================
-
-/**
- * Assemble the 3-layer prompt for Qwen3.5-4B bias analysis.
- * Layer 1: Core scoring rules (static, ~300 tokens)
- * Layer 2: RAG knowledge entries (dynamic, ~200-800 tokens)
- * Layer 3: Article content + JSON output instruction
- *
- * @param {string} articleContent
- * @param {Array} knowledgeEntries
- * @returns {string}
- */
-function assemblePrompt(articleContent, knowledgeEntries) {
-  // Layer 1: Core scoring rules
-  const layer1 = [
-    '你是台灣新聞立場分析師。請分析以下新聞的政治立場偏向。',
-    '評分標準 (0-100): 0=極左(偏綠) 50=中立 100=極右(偏藍)',
-    '偏綠特徵: 批評藍營/國民黨、支持台獨/正名、強調轉型正義',
-    '偏藍特徵: 批評綠營/民進黨、支持兩岸交流、強調經濟發展',
-    '爭議程度 (0-100): 0=無爭議 100=極高爭議',
-  ].join('\n');
-
-  // Layer 2: RAG knowledge injection
-  let layer2 = '';
-  if (knowledgeEntries.length > 0) {
-    const entries = knowledgeEntries
-      .map((e) => `- [${e.type}] ${e.title}: ${e.snippet}`)
-      .join('\n');
-    layer2 = `\n背景知識:\n${entries}\n`;
-  }
-
-  // Layer 3: Article + output format
-  const layer3 = [
-    '\n請分析以下新聞:',
-    articleContent.slice(0, 3000),
-    '\n請以 JSON 格式回覆:',
-    '{"bias_score":數字,"controversy_score":數字,"reasoning":"分析理由","key_phrases":["關鍵詞1","關鍵詞2"]}'
-  ].join('\n');
-
-  return layer1 + layer2 + layer3;
-}
-
-/**
- * Parse JSON analysis output from model response.
- * Handles partial/malformed JSON gracefully.
- *
- * @param {string} rawOutput
- * @returns {{ bias_score: number, controversy_score: number, reasoning: string, key_phrases: string[] }}
- */
-function parseAnalysisOutput(rawOutput) {
-  const defaults = { bias_score: 50, controversy_score: 0, reasoning: '', key_phrases: [] };
-
-  // Extract JSON from response (model may include extra text)
-  const jsonMatch = rawOutput.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) return defaults;
-
-  try {
-    const parsed = JSON.parse(jsonMatch[0]);
-    return {
-      bias_score: typeof parsed.bias_score === 'number' ? parsed.bias_score : defaults.bias_score,
-      controversy_score: typeof parsed.controversy_score === 'number' ? parsed.controversy_score : defaults.controversy_score,
-      reasoning: typeof parsed.reasoning === 'string' ? parsed.reasoning : defaults.reasoning,
-      key_phrases: Array.isArray(parsed.key_phrases) ? parsed.key_phrases : defaults.key_phrases
-    };
-  } catch {
-    return defaults;
-  }
 }
 
 // =============================================
@@ -325,4 +406,17 @@ export function createInferenceTimer(onStatus) {
       }
     }
   };
+}
+
+// =============================================
+// Benchmark Integration
+// =============================================
+
+/**
+ * Get the current device benchmark tier.
+ * @returns {"gpu" | "cpu" | "none" | "unknown"}
+ */
+export function getBenchmarkTier() {
+  const cached = getCachedBenchmark();
+  return cached?.mode || 'unknown';
 }

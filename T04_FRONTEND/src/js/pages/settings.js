@@ -10,7 +10,8 @@
 import { t } from '../../locale/zh-TW.js';
 import { openDB } from '../db.js';
 import { isModelDownloaded, deleteModel } from '../model/manager.js';
-import { detectBestMode, getModeLabel } from '../model/inference.js';
+import { detectBestMode, getModeLabel, clearAllModelCaches, getWebLLMEngine } from '../model/inference.js';
+import { scanGPU, runBenchmark, getCachedBenchmark, clearBenchmark } from '../model/benchmark.js';
 
 /**
  * Render settings page.
@@ -27,6 +28,9 @@ export async function renderSettings(container) {
 
   // Model management section
   await renderModelSection(container);
+
+  // Hardware detection section
+  await renderHardwareSection(container);
 
   // Cache management section
   await renderCacheSection(container);
@@ -90,32 +94,181 @@ async function renderModelSection(container) {
   const actionsRow = document.createElement('div');
   actionsRow.className = 'settings-card__actions';
 
-  if (!modelReady) {
-    // Download button → navigate to analyze page which handles download
-    const downloadBtn = document.createElement('button');
-    downloadBtn.className = 'btn btn--primary';
-    downloadBtn.textContent = t('model.download.button');
-    downloadBtn.setAttribute('aria-label', t('a11y.button.download_model'));
-    downloadBtn.addEventListener('click', () => {
-      window.location.hash = '#/analyze';
-    });
-    actionsRow.appendChild(downloadBtn);
-  } else {
-    // Delete button
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'btn btn--secondary';
-    deleteBtn.textContent = t('model.delete.button');
-    deleteBtn.setAttribute('aria-label', t('a11y.button.delete_model'));
-    deleteBtn.addEventListener('click', async () => {
-      if (!window.confirm(t('model.delete.confirm'))) return;
-      deleteBtn.disabled = true;
-      deleteBtn.textContent = t('common.label.loading');
-      await deleteModel();
-      // Re-render
-      renderSettings(container.parentElement || container);
-    });
-    actionsRow.appendChild(deleteBtn);
+  // Clear all WebLLM model caches (old + current)
+  const clearCacheBtn = document.createElement('button');
+  clearCacheBtn.className = 'btn btn--secondary';
+  clearCacheBtn.textContent = t('model.cache.clear_all');
+  clearCacheBtn.addEventListener('click', async () => {
+    if (!window.confirm(t('model.cache.clear_confirm'))) return;
+    clearCacheBtn.disabled = true;
+    clearCacheBtn.textContent = t('common.label.loading');
+    const freedMB = await clearAllModelCaches();
+    await deleteModel();
+    localStorage.removeItem('powerreader_webllm_cached');
+    clearCacheBtn.textContent = t('model.cache.cleared', { mb: String(freedMB) });
+    setTimeout(() => renderSettings(container.parentElement || container), 1500);
+  });
+  actionsRow.appendChild(clearCacheBtn);
+
+  card.appendChild(actionsRow);
+  section.appendChild(card);
+  container.appendChild(section);
+}
+
+/**
+ * Create a label-value info row element.
+ * @param {string} label
+ * @param {string} value
+ * @param {string} [color]
+ * @returns {HTMLElement}
+ */
+function createInfoRow(label, value, color) {
+  const row = document.createElement('div');
+  row.className = 'settings-about__row';
+
+  const labelEl = document.createElement('span');
+  labelEl.className = 'settings-about__label';
+  labelEl.textContent = label;
+
+  const valueEl = document.createElement('span');
+  valueEl.className = 'settings-about__value';
+  valueEl.textContent = value;
+  if (color) valueEl.style.color = color;
+
+  row.appendChild(labelEl);
+  row.appendChild(valueEl);
+  return row;
+}
+
+/**
+ * Format mode label for benchmark result display.
+ * @param {string} mode - 'gpu' | 'cpu' | 'none'
+ * @returns {{ text: string, color: string }}
+ */
+function formatBenchmarkMode(mode) {
+  if (mode === 'gpu') {
+    return { text: 'GPU 模式 (高速)', color: 'var(--color-controversy-low)' };
   }
+  if (mode === 'cpu') {
+    return { text: 'CPU 模式 (標準)', color: 'var(--color-text-secondary)' };
+  }
+  return { text: '無法本地推理', color: 'var(--color-bias-extreme)' };
+}
+
+/**
+ * Render hardware detection section.
+ * @param {HTMLElement} container
+ */
+async function renderHardwareSection(container) {
+  const section = document.createElement('section');
+  section.className = 'settings-section';
+
+  const heading = document.createElement('h3');
+  heading.className = 'section-heading';
+  heading.textContent = '硬體偵測';
+  section.appendChild(heading);
+
+  const card = document.createElement('div');
+  card.className = 'settings-card';
+
+  // --- GPU Info ---
+  const gpuTitle = document.createElement('p');
+  gpuTitle.className = 'settings-card__title';
+  gpuTitle.textContent = 'GPU 資訊';
+  card.appendChild(gpuTitle);
+
+  const gpuInfo = await scanGPU();
+
+  const supportedColor = gpuInfo.supported
+    ? 'var(--color-controversy-low)'
+    : 'var(--color-bias-extreme)';
+  const supportedText = gpuInfo.supported ? '✓ 支援' : '✗ 不支援';
+
+  card.appendChild(createInfoRow('WebGPU 支援', supportedText, supportedColor));
+  card.appendChild(createInfoRow('GPU 廠商', gpuInfo.vendor || '—'));
+  card.appendChild(createInfoRow('GPU 架構', gpuInfo.architecture || '—'));
+  card.appendChild(createInfoRow('GPU 裝置', gpuInfo.device || '—'));
+  card.appendChild(createInfoRow(
+    '預估 VRAM',
+    gpuInfo.estimatedVRAM_MB ? `${gpuInfo.estimatedVRAM_MB} MB` : '無法偵測'
+  ));
+
+  // --- Benchmark Result ---
+  const benchTitle = document.createElement('p');
+  benchTitle.className = 'settings-card__title';
+  benchTitle.style.marginTop = '1rem';
+  benchTitle.textContent = '效能測試結果';
+  card.appendChild(benchTitle);
+
+  const cached = getCachedBenchmark();
+  if (cached) {
+    const { text: modeText, color: modeColor } = formatBenchmarkMode(cached.mode);
+    card.appendChild(createInfoRow('效能等級', modeText, modeColor));
+    card.appendChild(createInfoRow('推理延遲', `${cached.latency_ms} ms`));
+    card.appendChild(createInfoRow('測試時間', cached.tested_at));
+  } else {
+    const noResultEl = document.createElement('p');
+    noResultEl.className = 'settings-card__subtitle';
+    noResultEl.textContent = '尚未執行效能測試';
+    card.appendChild(noResultEl);
+  }
+
+  // --- Status text (for benchmark progress) ---
+  const statusEl = document.createElement('p');
+  statusEl.className = 'settings-card__subtitle';
+  statusEl.style.display = 'none';
+  card.appendChild(statusEl);
+
+  // --- Buttons ---
+  const actionsRow = document.createElement('div');
+  actionsRow.className = 'settings-card__actions';
+
+  // Re-detect hardware button
+  const redetectBtn = document.createElement('button');
+  redetectBtn.className = 'btn btn--secondary';
+  redetectBtn.textContent = '重新偵測硬體';
+  redetectBtn.addEventListener('click', () => {
+    clearBenchmark();
+    renderSettings(container.parentElement || container);
+  });
+  actionsRow.appendChild(redetectBtn);
+
+  // Run benchmark button
+  const benchmarkBtn = document.createElement('button');
+  benchmarkBtn.className = 'btn btn--primary';
+  benchmarkBtn.textContent = '執行效能測試';
+  benchmarkBtn.addEventListener('click', async () => {
+    benchmarkBtn.disabled = true;
+    benchmarkBtn.textContent = '測試中...';
+    redetectBtn.disabled = true;
+    statusEl.style.display = 'block';
+    statusEl.textContent = '正在初始化...';
+
+    try {
+      await runBenchmark(
+        () => getWebLLMEngine(),
+        (progress) => {
+            const stageLabels = {
+              scanning_gpu: '正在掃描 GPU...',
+              loading_engine: '正在載入模型...',
+              running_inference: '正在執行推理測試...',
+              done: '測試完成',
+              error: '測試失敗'
+            };
+            statusEl.textContent = stageLabels[progress.stage] || progress.stage;
+          }
+      );
+      renderSettings(container.parentElement || container);
+    } catch (err) {
+      console.error('[Settings] Benchmark failed:', err);
+      statusEl.textContent = `測試失敗: ${err.message || '未知錯誤'}`;
+      statusEl.style.color = 'var(--color-bias-extreme)';
+      benchmarkBtn.disabled = false;
+      benchmarkBtn.textContent = '執行效能測試';
+      redetectBtn.disabled = false;
+    }
+  });
+  actionsRow.appendChild(benchmarkBtn);
 
   card.appendChild(actionsRow);
   section.appendChild(card);
