@@ -17,6 +17,7 @@ id = "d0f86735f09844ea85ce52cf36817f1c"
 binding = "DB"
 database_name = "powerreader-db"
 database_id = "a686912e-9f86-4f63-b6bc-a26b72ec0567"
+migrations_dir = "src/workers/migrations"
 
 # ===== Vectorize Index (knowledge base vector search) =====
 [[vectorize]]
