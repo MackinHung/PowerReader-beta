@@ -261,6 +261,10 @@ const messages = {
   'article.deadline.expired': '已截止分析',
   'article.deadline.warning': '即將截止 (剩餘 {hours} 小時)',
 
+  // Article Auto-Analysis
+  'article.analyze.waiting': '準備分析中...',
+  'article.analyze.queued': '排隊等待中 (第 {position} 順位)...',
+
   // ==============================================
   // Article Status Labels
   // ==============================================

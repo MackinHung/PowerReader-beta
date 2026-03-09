@@ -86,7 +86,7 @@ async function fetchKnowledgeForArticle(articleId) {
  *   1. Model download (loading_model) — progress bar with percentage
  *   2. Analysis (pass1/pass2) — stage indicator with spinner
  */
-function updateStatusUI(statusArea, stage, elapsedMs, extra) {
+export function updateStatusUI(statusArea, stage, elapsedMs, extra) {
   statusArea.innerHTML = '';
 
   // ── Phase 1: Model Download ──
