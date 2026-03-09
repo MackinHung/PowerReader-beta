@@ -166,8 +166,8 @@
 
 ---
 
-**Status**: Phase 2-3 code implemented. Phase 1 gold standard awaiting project owner. Phase 4-5 post-launch.
-**Last Updated**: 2026-03-08
+**Status**: Phase 1-2 complete. Phase 3 partial (L1-L2 done, L3 needs history). Phase 4-5 post-launch.
+**Last Updated**: 2026-03-09
 
 ---
 
@@ -175,8 +175,8 @@
 
 | Phase | Status | Notes |
 |-------|--------|-------|
-| Phase 1 | 🔵 WAITING | Annotation guidelines done. Awaiting 20 gold standard articles from project owner. Knowledge base loaded (1121 entries in D1 + Vectorize). |
-| Phase 2 | ✅ IMPLEMENTED | inference.js: 3-layer prompt assembly + inference + 6-field parsing (migrating to WebLLM). analyze.js: Full analysis UI + knowledge fetch + submission. All API endpoints verified (2026-03-08). Dual-pass prompt architecture: pending design. |
+| Phase 1 | ✅ COMPLETE | Gold standard dataset (20 articles) provided by project owner. Knowledge base loaded (1121+ entries in D1 + Vectorize). Political party knowledge expanded. |
+| Phase 2 | ✅ IMPLEMENTED | inference.js: WebLLM Qwen3-8B dual-pass architecture (v3.0.0). prompt.js: 3-layer prompt assembly. output-parser.js: 6-field parsing with think-block stripping. analyze-engine.js: Full analysis UI + knowledge fetch + submission. All API endpoints verified (2026-03-09). |
 | Phase 3 | 🟡 PARTIAL | Quality gates L1-L2 implemented in analysis.js. L3 consistency check stubbed (needs historical data). Anti-cheat: daily limit 50, cooldown, min 5000ms. |
 | Phase 4 | ⬜ NOT STARTED | Blocked on T04 PWA integration + real device testing. |
 | Phase 5 | ⬜ NOT STARTED | Post-launch. |
