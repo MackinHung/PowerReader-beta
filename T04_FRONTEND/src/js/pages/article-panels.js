@@ -43,18 +43,24 @@ export async function loadKnowledgePanel(container, articleId) {
   const result = await fetchArticleKnowledge(articleId);
   if (!result.success || !result.data?.knowledge_entries?.length) return;
 
+  // Filter same as prompt.js formatKnowledgeAsL2 — only show entries actually fed to AI
+  const relevantEntries = result.data.knowledge_entries.filter(
+    e => e.score == null || e.score > 0
+  );
+  if (relevantEntries.length === 0) return;
+
   const details = document.createElement('details');
   details.className = 'knowledge-panel';
 
   const summary = document.createElement('summary');
   summary.className = 'knowledge-panel__summary';
-  summary.textContent = t('article.knowledge.summary', { count: result.data.knowledge_entries.length });
+  summary.textContent = t('article.knowledge.summary', { count: relevantEntries.length });
   details.appendChild(summary);
 
   const list = document.createElement('ul');
   list.className = 'knowledge-panel__list';
 
-  for (const entry of result.data.knowledge_entries) {
+  for (const entry of relevantEntries) {
     const item = document.createElement('li');
     item.className = 'knowledge-panel__item';
 

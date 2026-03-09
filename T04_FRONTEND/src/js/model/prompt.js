@@ -111,6 +111,11 @@ export function assembleUserMessage(article, knowledgeEntries) {
 export function formatKnowledgeAsL2(entries) {
   if (!Array.isArray(entries) || entries.length === 0) return '';
 
+  // Filter out zero-relevance entries — they waste context tokens and add noise.
+  // Keep entries without score field (backward compat with APIs that don't return scores).
+  const relevant = entries.filter(e => e.score == null || e.score > 0);
+  if (relevant.length === 0) return '';
+
   const typeLabels = {
     politician: '人物',
     topic: '議題',
@@ -119,7 +124,7 @@ export function formatKnowledgeAsL2(entries) {
     media: '媒體'
   };
 
-  const lines = entries.map(entry => {
+  const lines = relevant.map(entry => {
     const label = typeLabels[entry.type] || entry.type || '其他';
     const text = entry.content || entry.snippet || entry.title || '';
     return `- [${label}] ${text}`;

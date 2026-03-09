@@ -262,6 +262,48 @@ describe('formatKnowledgeAsL2', () => {
     expect(result).not.toContain('from_snippet');
     expect(result).not.toContain('from_title');
   });
+
+  // ── Score filtering ──
+
+  it('filters out entries with score = 0', () => {
+    const entries = [
+      { type: 'politician', content: '蔡英文', score: 0.85 },
+      { type: 'topic', content: '兩岸關係', score: 0 }
+    ];
+    const result = formatKnowledgeAsL2(entries);
+    expect(result).toContain('蔡英文');
+    expect(result).not.toContain('兩岸關係');
+  });
+
+  it('returns empty string when all entries have score = 0', () => {
+    const entries = [
+      { type: 'politician', content: 'A', score: 0 },
+      { type: 'topic', content: 'B', score: 0 }
+    ];
+    expect(formatKnowledgeAsL2(entries)).toBe('');
+  });
+
+  it('keeps entries without score field (backward compat)', () => {
+    const entries = [
+      { type: 'politician', content: '無分數條目' }
+    ];
+    const result = formatKnowledgeAsL2(entries);
+    expect(result).toContain('無分數條目');
+  });
+
+  it('keeps entries with score > 0 and filters score = 0 in mixed list', () => {
+    const entries = [
+      { type: 'politician', content: 'A', score: 0.7 },
+      { type: 'topic', content: 'B' },           // no score → keep
+      { type: 'term', content: 'C', score: 0 },  // zero → filter
+      { type: 'event', content: 'D', score: 0.01 }
+    ];
+    const result = formatKnowledgeAsL2(entries);
+    expect(result).toContain('A');
+    expect(result).toContain('B');
+    expect(result).not.toContain('[名詞] C');
+    expect(result).toContain('D');
+  });
 });
 
 // ---------------------------------------------------------------------------
