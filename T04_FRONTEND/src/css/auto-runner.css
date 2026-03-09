@@ -10,7 +10,7 @@
    ============================================== */
 .auto-runner-float {
   position: fixed;
-  bottom: 60px; /* above bottom-nav */
+  bottom: var(--bottom-nav-height, 56px); /* above bottom-nav */
   left: 0;
   right: 0;
   z-index: 899;
