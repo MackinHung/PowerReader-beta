@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // ── Module-level reset helpers ──
 
 let mod;
-let mockEnqueueAnalysis, mockFetchArticles, mockSubmitAnalysisResult;
+let mockEnqueueAnalysis, mockCancelAll, mockFetchArticles, mockSubmitAnalysisResult;
 let mockGetAuthToken, mockGetUserHash, mockIsAuthenticated;
 let mockOpenDB, mockT;
 let mockGetCachedBenchmark, mockScanGPU;
@@ -20,6 +20,7 @@ beforeEach(async () => {
   localStorage.clear();
 
   mockEnqueueAnalysis = vi.fn();
+  mockCancelAll = vi.fn();
   mockFetchArticles = vi.fn();
   mockSubmitAnalysisResult = vi.fn();
   mockGetAuthToken = vi.fn(() => 'token');
@@ -36,6 +37,7 @@ beforeEach(async () => {
   }));
   vi.doMock('../../src/js/model/queue.js', () => ({
     enqueueAnalysis: mockEnqueueAnalysis,
+    cancelAll: mockCancelAll,
     AnalysisCancelledError: class AnalysisCancelledError extends Error {
       constructor(id) {
         super(id);
@@ -416,7 +418,7 @@ describe('stopAutoRunner', () => {
     expect(statusAfter).toEqual(statusBefore);
   });
 
-  it('has no side effects when called twice while running', async () => {
+  it('force-stops by calling cancelAll when called twice while running', async () => {
     mockIsAuthenticated.mockReturnValue(true);
     localStorage.setItem('powerreader_webllm_cached', '1');
     setupMockDB();
@@ -429,11 +431,14 @@ describe('stopAutoRunner', () => {
     const promise = mod.startAutoRunner();
     await vi.advanceTimersByTimeAsync(0);
 
+    // First call: graceful stop
     mod.stopAutoRunner();
-    // Second call should be a no-op (already stopping)
-    mod.stopAutoRunner();
-
     expect(mod.getAutoRunnerStatus().stopping).toBe(true);
+    expect(mockCancelAll).not.toHaveBeenCalled();
+
+    // Second call: force stop — cancels running inference
+    mod.stopAutoRunner();
+    expect(mockCancelAll).toHaveBeenCalledTimes(1);
 
     resolveFetch({ success: false, data: null });
     await vi.advanceTimersByTimeAsync(0);

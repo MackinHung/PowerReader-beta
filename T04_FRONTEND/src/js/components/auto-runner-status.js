@@ -120,13 +120,12 @@ function _render(status) {
 
   _container.appendChild(counters);
 
-  // Stop button
+  // Stop button — first click = graceful stop, second click = force stop
   const stopBtn = document.createElement('button');
   stopBtn.className = 'auto-runner-float__stop';
   stopBtn.textContent = status.stopping
-    ? t('auto_runner.stopping')
+    ? t('auto_runner.force_stop')
     : t('auto_runner.stop');
-  stopBtn.disabled = status.stopping;
   stopBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     stopAutoRunner();

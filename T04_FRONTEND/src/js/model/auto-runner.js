@@ -11,7 +11,7 @@
  * @license AGPL-3.0
  */
 
-import { enqueueAnalysis, AnalysisCancelledError } from './queue.js';
+import { enqueueAnalysis, cancelAll, AnalysisCancelledError } from './queue.js';
 import { fetchArticles, submitAnalysisResult } from '../api.js';
 import { getAuthToken, getUserHash, isAuthenticated } from '../auth.js';
 import { openDB } from '../db.js';
@@ -153,10 +153,20 @@ export async function startAutoRunner() {
 }
 
 /**
- * Graceful stop: finishes current analysis then stops.
+ * Stop auto-runner.
+ * First call: graceful stop (waits for current analysis to finish).
+ * Second call (while stopping): force stop (cancels running inference immediately).
  */
 export function stopAutoRunner() {
-  if (!_running || _stopping) return;
+  if (!_running) return;
+
+  // Already stopping → force stop: cancel running inference
+  if (_stopping) {
+    cancelAll();
+    return;
+  }
+
+  // First click → graceful stop
   _stopping = true;
   _stopReason = null;
   if (_abortController) _abortController.abort();

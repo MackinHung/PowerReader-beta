@@ -302,6 +302,7 @@ const messages = {
   'auto_runner.start': '開始自動分析',
   'auto_runner.stop': '停止',
   'auto_runner.stopping': '停止中...',
+  'auto_runner.force_stop': '強制停止',
   'auto_runner.status.running': '自動分析進行中',
   'auto_runner.status.pausing': '暫停中 ({seconds}s)',
   'auto_runner.status.stopped': '已停止',

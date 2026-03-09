@@ -179,10 +179,9 @@ function renderAnalysisModeSection(container) {
         : title.length > 40 ? title.slice(0, 40) + '…' : title;
 
       actionBtn.textContent = status.stopping
-        ? t('auto_runner.stopping')
+        ? t('auto_runner.force_stop')
         : t('auto_runner.stop');
       actionBtn.className = 'btn btn--secondary';
-      actionBtn.disabled = status.stopping;
       actionBtn.onclick = () => stopAutoRunner();
     } else {
       if (status.stopReason) {
