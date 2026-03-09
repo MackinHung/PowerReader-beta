@@ -19,6 +19,7 @@ import { t } from '../../locale/zh-TW.js';
 import { createEventEmitter } from '../utils/event-emitter.js';
 import { promisifyRequest, promisifyTransaction } from '../utils/idb-helpers.js';
 import { isMobileDevice } from '../utils/device-detect.js';
+import { getCachedBenchmark, scanGPU } from './benchmark.js';
 
 // ── Constants ──
 
@@ -101,6 +102,22 @@ export async function startAutoRunner() {
     _stopReason = t('auto_runner.error.mobile_blocked');
     _notify();
     return;
+  }
+
+  // GPU capability gate
+  const benchmark = getCachedBenchmark();
+  if (benchmark && benchmark.mode === 'none') {
+    _stopReason = t('auto_analysis.error.vram_insufficient');
+    _notify();
+    return;
+  }
+  if (!benchmark) {
+    const gpuInfo = await scanGPU();
+    if (!gpuInfo.supported) {
+      _stopReason = t('auto_analysis.error.no_webgpu');
+      _notify();
+      return;
+    }
   }
 
   if (!isAuthenticated()) {

@@ -21,6 +21,11 @@ import { runPreAnalysisChecks } from './analyze-checks.js';
 import { updateStatusUI } from './analyze-engine.js';
 import { loadKnowledgePanel, loadClusterPanel } from './article-panels.js';
 import { getAutoRunnerStatus } from '../model/auto-runner.js';
+import { runPreDownloadChecks } from '../model/manager.js';
+
+// ── Constants ──
+
+const CONSENT_KEY = 'powerreader_auto_consent';
 
 // ── Module State ──
 
@@ -209,6 +214,12 @@ async function startAutoAnalysis(container, article) {
     return;
   }
 
+  // One-time consent dialog
+  if (localStorage.getItem(CONSENT_KEY) !== '1') {
+    renderConsentDialog(section, article);
+    return;
+  }
+
   enqueueAndTrack(section, article);
 }
 
@@ -256,11 +267,20 @@ function renderAnalysisBlocked(section, checks, article) {
       });
       item.appendChild(loginBtn);
     }
+
+    if (issue.type === 'benchmark_needed') {
+      const benchBtn = document.createElement('button');
+      benchBtn.className = 'btn btn--primary';
+      benchBtn.textContent = t('settings.hw.btn_benchmark');
+      benchBtn.addEventListener('click', () => { window.location.hash = '#/settings'; });
+      item.appendChild(benchBtn);
+    }
+
     section.appendChild(item);
   }
 }
 
-function renderDownloadConfirmation(section, article) {
+async function renderDownloadConfirmation(section, article) {
   section.innerHTML = '';
   const heading = document.createElement('h3');
   heading.className = 'analyze-download__heading';
@@ -272,10 +292,72 @@ function renderDownloadConfirmation(section, article) {
   desc.textContent = t('model.download.confirm_desc');
   section.appendChild(desc);
 
+  // Device condition checks
+  const { checks } = await runPreDownloadChecks();
+  const checkList = document.createElement('ul');
+  checkList.className = 'analyze-download__checks';
+  const checkLabels = {
+    wifi: t('model.download.check_wifi'),
+    battery: t('model.download.check_battery'),
+    storage: t('model.download.check_storage')
+  };
+  let hasWarning = false;
+  for (const check of checks) {
+    const li = document.createElement('li');
+    const icon = check.ok ? '\u2705' : '\u274C';
+    li.textContent = `${icon} ${checkLabels[check.name] || check.name}`;
+    if (!check.ok) {
+      li.className = 'analyze-download__check--warn';
+      hasWarning = true;
+    }
+    checkList.appendChild(li);
+  }
+  section.appendChild(checkList);
+
+  // Size hint
+  const sizeHint = document.createElement('p');
+  sizeHint.className = 'analyze-download__size-hint';
+  sizeHint.textContent = t('auto_analysis.download.size_hint');
+  section.appendChild(sizeHint);
+
+  // Warning if any check failed
+  if (hasWarning) {
+    const warn = document.createElement('p');
+    warn.className = 'analyze-download__warning';
+    warn.textContent = t('model.download.cellular_warning');
+    section.appendChild(warn);
+  }
+
   const confirmBtn = document.createElement('button');
   confirmBtn.className = 'btn btn--primary';
   confirmBtn.textContent = t('model.download.confirm_start');
   confirmBtn.addEventListener('click', () => { enqueueAndTrack(section, article); });
+  section.appendChild(confirmBtn);
+}
+
+/**
+ * One-time consent dialog explaining auto GPU analysis.
+ */
+function renderConsentDialog(section, article) {
+  section.innerHTML = '';
+
+  const heading = document.createElement('h3');
+  heading.className = 'analyze-consent__heading';
+  heading.textContent = t('auto_analysis.consent.title');
+  section.appendChild(heading);
+
+  const desc = document.createElement('p');
+  desc.className = 'analyze-consent__desc';
+  desc.textContent = t('auto_analysis.consent.desc');
+  section.appendChild(desc);
+
+  const confirmBtn = document.createElement('button');
+  confirmBtn.className = 'btn btn--primary';
+  confirmBtn.textContent = t('auto_analysis.consent.confirm');
+  confirmBtn.addEventListener('click', () => {
+    localStorage.setItem(CONSENT_KEY, '1');
+    enqueueAndTrack(section, article);
+  });
   section.appendChild(confirmBtn);
 }
 

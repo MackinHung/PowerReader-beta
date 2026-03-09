@@ -11,15 +11,31 @@
 import { t } from '../../locale/zh-TW.js';
 import { detectBestMode, INFERENCE_MODES } from '../model/inference.js';
 import { isAuthenticated } from '../auth.js';
+import { getCachedBenchmark, scanGPU } from '../model/benchmark.js';
 
 // Analysis deadline: 72 hours from publish
 const DEADLINE_HOURS = 72;
+const MIN_VRAM_MB = 4500;
 
 /**
  * Run all pre-analysis checks and return {canAnalyze, issues, modelReady, bestMode}.
  */
 export async function runPreAnalysisChecks(article) {
   const issues = [];
+
+  // 0. GPU capability gate (before model check)
+  const benchmark = getCachedBenchmark();
+  const gpuInfo = await scanGPU();
+
+  if (!gpuInfo.supported) {
+    issues.push({ type: 'gpu', message: t('auto_analysis.error.no_webgpu') });
+  } else if (benchmark && benchmark.mode === 'none') {
+    issues.push({ type: 'gpu', message: t('auto_analysis.error.vram_insufficient') });
+  } else if (!benchmark && gpuInfo.vramMB > 0 && gpuInfo.vramMB < MIN_VRAM_MB) {
+    issues.push({ type: 'gpu', message: t('auto_analysis.error.vram_insufficient') });
+  } else if (!benchmark && gpuInfo.vramMB === 0) {
+    issues.push({ type: 'benchmark_needed', message: t('auto_analysis.error.benchmark_needed') });
+  }
 
   // 1. Check model / inference mode
   const bestMode = await detectBestMode();
@@ -129,6 +145,18 @@ export function renderBlockedState(container, checks, article, reRender) {
       dlBtn.textContent = t('model.download.button');
       dlBtn.addEventListener('click', () => { window.location.hash = '#/settings'; });
       item.appendChild(dlBtn);
+    }
+
+    // GPU not supported — informational only
+    // (no action button, just a message)
+
+    // Benchmark needed — show settings button
+    if (issue.type === 'benchmark_needed') {
+      const benchBtn = document.createElement('button');
+      benchBtn.className = 'btn btn--primary';
+      benchBtn.textContent = t('settings.hw.btn_benchmark');
+      benchBtn.addEventListener('click', () => { window.location.hash = '#/settings'; });
+      item.appendChild(benchBtn);
     }
 
     // Not logged in — show login button

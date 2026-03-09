@@ -265,6 +265,15 @@ const messages = {
   'article.analyze.waiting': '準備分析中...',
   'article.analyze.queued': '排隊等待中 (第 {position} 順位)...',
 
+  // Auto-Analysis Prerequisites
+  'auto_analysis.error.no_webgpu': '您的瀏覽器不支援 WebGPU，無法執行本地分析',
+  'auto_analysis.error.vram_insufficient': 'GPU 記憶體不足，建議使用 6GB 以上顯存的電腦',
+  'auto_analysis.error.benchmark_needed': '請先至設定頁執行效能測試，確認 GPU 能力',
+  'auto_analysis.consent.title': '自動分析說明',
+  'auto_analysis.consent.desc': 'PowerReader 會使用您的 GPU 自動分析文章立場。過程約 15 秒，完全在您的裝置上執行，不會上傳原文。',
+  'auto_analysis.consent.confirm': '了解，開始分析',
+  'auto_analysis.download.size_hint': '模型大小: 約 4.5GB',
+
   // ==============================================
   // Article Status Labels
   // ==============================================

@@ -5,7 +5,7 @@
  * TTL and cache settings sourced from shared/config.js (CLOUDFLARE.KV_STATIC_TTL).
  */
 
-const STATIC_CACHE_NAME = 'static-v27';
+const STATIC_CACHE_NAME = 'static-v28';
 const STATIC_CACHE_TTL_MS = 864000 * 1000; // 10 days (config.js CLOUDFLARE.KV_STATIC_TTL)
 const MAX_SYNC_RETRIES = 5;
 
