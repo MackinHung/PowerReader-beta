@@ -353,6 +353,9 @@ const messages = {
   'settings.hw.stage_error': '測試失敗',
   'settings.hw.error_prefix': '測試失敗: {message}',
   'settings.hw.device_type': '裝置類型',
+  'settings.hw.browser': '瀏覽器',
+  'settings.hw.browser_unknown': '無法偵測',
+  'settings.hw.browser_privacy_hint': '可能受瀏覽器隱私設定影響，偵測結果僅供參考',
 
   // Device detection
   'device.type.mobile': '行動裝置',

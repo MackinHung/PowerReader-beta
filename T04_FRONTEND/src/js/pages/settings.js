@@ -124,6 +124,15 @@ function renderAnalysisModeSection(container) {
   toggleRow.appendChild(manualBtn);
   card.appendChild(toggleRow);
 
+  // Mobile hint below toggle
+  if (mobileBlocked) {
+    const mobileHint = document.createElement('p');
+    mobileHint.className = 'settings-card__hint';
+    mobileHint.style.color = 'var(--color-bias-extreme)';
+    mobileHint.textContent = t('auto_runner.error.mobile_blocked');
+    card.appendChild(mobileHint);
+  }
+
   // Stats grid (live-updated)
   const statsGrid = document.createElement('div');
   statsGrid.className = 'auto-runner-settings__stats';
@@ -190,7 +199,7 @@ function renderAnalysisModeSection(container) {
 
       actionBtn.textContent = t('auto_runner.start');
       actionBtn.className = 'btn btn--primary';
-      actionBtn.disabled = !isAuthenticated() || mobileBlocked;
+      actionBtn.disabled = !isAuthenticated();
       actionBtn.onclick = () => startAutoRunner();
     }
   }
@@ -323,6 +332,26 @@ async function renderHardwareSection(container) {
   card.appendChild(createInfoRow(t('settings.hw.device_type'), deviceTypeText, deviceTypeColor));
 
   card.appendChild(createInfoRow(t('settings.hw.webgpu_supported'), supportedText, supportedColor));
+
+  // Browser info
+  const browserInfo = getBrowserInfo();
+  if (browserInfo.name !== 'Unknown') {
+    card.appendChild(createInfoRow(
+      t('settings.hw.browser'),
+      `${browserInfo.name} ${browserInfo.version}`
+    ));
+  } else {
+    const browserUnknownRow = createInfoRow(
+      t('settings.hw.browser'),
+      t('settings.hw.browser_unknown'),
+      'var(--color-text-secondary)'
+    );
+    card.appendChild(browserUnknownRow);
+    const privacyHint = document.createElement('p');
+    privacyHint.className = 'settings-card__hint';
+    privacyHint.textContent = t('settings.hw.browser_privacy_hint');
+    card.appendChild(privacyHint);
+  }
 
   // Mobile warning or desktop browser hint
   if (mobile) {
