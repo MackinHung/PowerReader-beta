@@ -21,6 +21,8 @@ import { executeAnalysis } from './analyze-engine.js';
 import { renderResultPreview } from './analyze-result.js';
 import { createDeadlineIndicator, renderAnalyzeError } from './analyze-helpers.js';
 import { checkWifi, checkBattery, checkStorage } from '../model/manager.js';
+import { getQueueStatus, onQueueChange } from '../model/queue.js';
+import { getAutoRunnerStatus } from '../model/auto-runner.js';
 
 /**
  * Render analysis page.
@@ -124,12 +126,55 @@ function renderAnalysisUI(container, article) {
 
   wrapper.appendChild(articleInfo);
 
+  // Check if this article is already in queue or if queue is busy
+  const queueStatus = getQueueStatus();
+  const articleId = article.article_id;
+  const isInQueue = (queueStatus.currentJob && queueStatus.currentJob.articleId === articleId)
+    || queueStatus.pending.includes(articleId);
+  const queueBusy = queueStatus.currentJob !== null || queueStatus.pending.length > 0;
+
   // Start analysis button
   const startBtn = document.createElement('button');
   startBtn.className = 'btn btn--primary analyze-start-btn';
   startBtn.textContent = t('common.button.start_analysis');
   startBtn.setAttribute('aria-label', t('a11y.button.analyze'));
+
+  // Queue warning area
+  const queueWarning = document.createElement('p');
+  queueWarning.className = 'analyze-queue-warning';
+  queueWarning.hidden = true;
+
+  if (isInQueue) {
+    startBtn.disabled = true;
+    queueWarning.hidden = false;
+    queueWarning.textContent = t('analyze.already_in_queue');
+  } else if (queueBusy) {
+    queueWarning.hidden = false;
+    queueWarning.textContent = t('analyze.queue_busy_warning');
+  }
+
+  wrapper.appendChild(queueWarning);
   wrapper.appendChild(startBtn);
+
+  // Subscribe to queue changes to update button state
+  const unsubQueue = onQueueChange((qs) => {
+    const stillInQueue = (qs.currentJob && qs.currentJob.articleId === articleId)
+      || qs.pending.includes(articleId);
+    const stillBusy = qs.currentJob !== null || qs.pending.length > 0;
+
+    if (stillInQueue) {
+      startBtn.disabled = true;
+      queueWarning.hidden = false;
+      queueWarning.textContent = t('analyze.already_in_queue');
+    } else if (stillBusy) {
+      startBtn.disabled = false;
+      queueWarning.hidden = false;
+      queueWarning.textContent = t('analyze.queue_busy_warning');
+    } else {
+      startBtn.disabled = false;
+      queueWarning.hidden = true;
+    }
+  });
 
   // Download confirmation area (hidden by default)
   const confirmArea = document.createElement('div');
@@ -151,17 +196,21 @@ function renderAnalysisUI(container, article) {
 
   // Wire up start button
   startBtn.addEventListener('click', async () => {
+    unsubQueue(); // stop watching once user starts
+
     const modelCached = localStorage.getItem('powerreader_webllm_cached') === '1';
 
     if (modelCached) {
       // Model already downloaded — start directly
       startBtn.disabled = true;
       startBtn.hidden = true;
+      queueWarning.hidden = true;
       statusArea.hidden = false;
       await executeAnalysis(article, statusArea, resultArea, renderResultPreview);
     } else {
       // First time — show download confirmation with device checks
       startBtn.hidden = true;
+      queueWarning.hidden = true;
       confirmArea.hidden = false;
       await renderDownloadConfirm(confirmArea, () => {
         confirmArea.hidden = true;

@@ -107,7 +107,7 @@ describe('getAutoRunnerStatus', () => {
     const status = mod.getAutoRunnerStatus();
     expect(status).toEqual({
       running: false,
-      stopping: false,
+      paused: false,
       analyzed: 0,
       failed: 0,
       skipped: 0,
@@ -374,7 +374,7 @@ describe('startAutoRunner', () => {
 // ══════════════════════════════════════════════
 
 describe('stopAutoRunner', () => {
-  it('sets stopping=true when runner is active', async () => {
+  it('sets paused=true when runner is active', async () => {
     mockIsAuthenticated.mockReturnValue(true);
     localStorage.setItem('powerreader_webllm_cached', '1');
     setupMockDB();
@@ -397,7 +397,7 @@ describe('stopAutoRunner', () => {
 
     // Stop it
     mod.stopAutoRunner();
-    expect(mod.getAutoRunnerStatus().stopping).toBe(true);
+    expect(mod.getAutoRunnerStatus().paused).toBe(true);
 
     // Resolve fetchArticles to let the loop exit
     resolveFetch({ success: false, data: null });
@@ -406,7 +406,7 @@ describe('stopAutoRunner', () => {
 
     const finalStatus = mod.getAutoRunnerStatus();
     expect(finalStatus.running).toBe(false);
-    expect(finalStatus.stopping).toBe(false);
+    expect(finalStatus.paused).toBe(false);
   });
 
   it('has no side effects when runner is not started', () => {
@@ -431,14 +431,96 @@ describe('stopAutoRunner', () => {
     const promise = mod.startAutoRunner();
     await vi.advanceTimersByTimeAsync(0);
 
-    // First call: graceful stop
+    // First call: pause
     mod.stopAutoRunner();
-    expect(mod.getAutoRunnerStatus().stopping).toBe(true);
+    expect(mod.getAutoRunnerStatus().paused).toBe(true);
     expect(mockCancelAll).not.toHaveBeenCalled();
 
     // Second call: force stop — cancels running inference
     mod.stopAutoRunner();
     expect(mockCancelAll).toHaveBeenCalledTimes(1);
+
+    resolveFetch({ success: false, data: null });
+    await vi.advanceTimersByTimeAsync(0);
+    await promise;
+  });
+});
+
+// ══════════════════════════════════════════════
+// 6. pauseAutoRunner / resumeAutoRunner / forceStopAutoRunner
+// ══════════════════════════════════════════════
+
+describe('pauseAutoRunner', () => {
+  it('pauses and resumeAutoRunner continues the loop', async () => {
+    mockIsAuthenticated.mockReturnValue(true);
+    localStorage.setItem('powerreader_webllm_cached', '1');
+    setupMockDB();
+
+    const articles = [
+      { article_id: 'a1', title: 'Test 1' },
+      { article_id: 'a2', title: 'Test 2' },
+    ];
+
+    // First fetch returns articles, second returns empty to end loop
+    mockFetchArticles
+      .mockResolvedValueOnce({ success: true, data: { articles } })
+      .mockResolvedValueOnce({ success: true, data: { articles: [] } });
+
+    mockEnqueueAnalysis.mockResolvedValue({
+      bias_score: 0.5, controversy_score: 0.3,
+      reasoning: 'test', key_phrases: [], points: [],
+      prompt_version: 'v3.0.0', latency_ms: 100, mode: 'webgpu',
+    });
+    mockSubmitAnalysisResult.mockResolvedValue({ success: true });
+
+    const promise = mod.startAutoRunner();
+    // Let microtasks run — loop processes first article then hits _delay(2000)
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Pause (aborts delay timer, loop continues to next article, hits _waitForResume)
+    mod.pauseAutoRunner();
+    await vi.advanceTimersByTimeAsync(0); // flush microtasks so loop suspends
+
+    expect(mod.getAutoRunnerStatus().paused).toBe(true);
+    expect(mod.getAutoRunnerStatus().running).toBe(true);
+
+    // Resume
+    mod.resumeAutoRunner();
+    expect(mod.getAutoRunnerStatus().paused).toBe(false);
+    expect(mod.getAutoRunnerStatus().running).toBe(true);
+
+    // Let rest of loop finish (process second article + inter-delay + next fetch returns empty)
+    await vi.advanceTimersByTimeAsync(10000);
+    await promise;
+
+    expect(mod.getAutoRunnerStatus().running).toBe(false);
+  });
+
+  it('forceStopAutoRunner cancels everything and exits', async () => {
+    mockIsAuthenticated.mockReturnValue(true);
+    localStorage.setItem('powerreader_webllm_cached', '1');
+    setupMockDB();
+
+    let resolveFetch;
+    mockFetchArticles.mockImplementation(
+      () => new Promise((resolve) => { resolveFetch = resolve; })
+    );
+
+    const promise = mod.startAutoRunner();
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Pause first
+    mod.pauseAutoRunner();
+    expect(mod.getAutoRunnerStatus().paused).toBe(true);
+
+    // Force stop
+    mod.forceStopAutoRunner();
+    expect(mockCancelAll).toHaveBeenCalledTimes(1);
+
+    // Runner should be fully stopped
+    const status = mod.getAutoRunnerStatus();
+    expect(status.running).toBe(false);
+    expect(status.paused).toBe(false);
 
     resolveFetch({ success: false, data: null });
     await vi.advanceTimersByTimeAsync(0);

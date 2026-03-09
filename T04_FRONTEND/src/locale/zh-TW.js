@@ -249,6 +249,8 @@ const messages = {
   // ==============================================
   // Article Deadline
   // ==============================================
+  'analyze.already_in_queue': '此文章正在分析中',
+  'analyze.queue_busy_warning': '目前有其他文章正在分析，請稍後再試',
   'analyze.select_prompt': '請從首頁選擇一篇文章進行分析',
   'analyze.result_preview': '分析結果預覽',
   'analyze.reasoning': '分析推理',
@@ -301,6 +303,9 @@ const messages = {
   'auto_runner.mode.manual': '手動模式',
   'auto_runner.start': '開始自動分析',
   'auto_runner.stop': '停止',
+  'auto_runner.pause': '暫停',
+  'auto_runner.resume': '繼續',
+  'auto_runner.paused': '已暫停',
   'auto_runner.stopping': '停止中...',
   'auto_runner.force_stop': '強制停止',
   'auto_runner.status.running': '自動分析進行中',

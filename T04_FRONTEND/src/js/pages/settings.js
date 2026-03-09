@@ -15,7 +15,8 @@ import { scanGPU, runBenchmark, getCachedBenchmark, clearBenchmark, getUserGPUSe
 import { getGPUOptionsForArch } from '../model/gpu-database.js';
 import {
   startAutoRunner, stopAutoRunner, getAutoRunnerStatus,
-  onAutoRunnerUpdate, isAutoModeEnabled, setAnalysisMode
+  onAutoRunnerUpdate, isAutoModeEnabled, setAnalysisMode,
+  pauseAutoRunner, resumeAutoRunner, forceStopAutoRunner
 } from '../model/auto-runner.js';
 import { isAuthenticated } from '../auth.js';
 import {
@@ -171,18 +172,34 @@ function renderAnalysisModeSection(container) {
       statsGrid.appendChild(stat);
     }
 
-    // Status + button
+    // Status + button(s)
+    // Remove any extra buttons from previous render
+    const existingExtra = card.querySelector('.settings-analysis-extra-btn');
+    if (existingExtra) existingExtra.remove();
+
     if (status.running) {
       const title = status.currentArticle?.title || '';
-      statusEl.textContent = status.stopping
-        ? t('auto_runner.stopping')
+      statusEl.textContent = status.paused
+        ? t('auto_runner.paused')
         : title.length > 40 ? title.slice(0, 40) + '…' : title;
 
-      actionBtn.textContent = status.stopping
-        ? t('auto_runner.force_stop')
-        : t('auto_runner.stop');
-      actionBtn.className = 'btn btn--secondary';
-      actionBtn.onclick = () => stopAutoRunner();
+      if (status.paused) {
+        // Paused: show "繼續" + "強制停止"
+        actionBtn.textContent = t('auto_runner.resume');
+        actionBtn.className = 'btn btn--primary';
+        actionBtn.onclick = () => resumeAutoRunner();
+
+        const forceBtn = document.createElement('button');
+        forceBtn.className = 'btn btn--secondary settings-analysis-extra-btn';
+        forceBtn.textContent = t('auto_runner.force_stop');
+        forceBtn.onclick = () => forceStopAutoRunner();
+        card.appendChild(forceBtn);
+      } else {
+        // Running: show "暫停"
+        actionBtn.textContent = t('auto_runner.pause');
+        actionBtn.className = 'btn btn--secondary';
+        actionBtn.onclick = () => pauseAutoRunner();
+      }
     } else {
       if (status.stopReason) {
         statusEl.textContent = status.stopReason;

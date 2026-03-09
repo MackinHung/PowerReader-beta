@@ -10,7 +10,10 @@
  */
 
 import { t } from '../../locale/zh-TW.js';
-import { onAutoRunnerUpdate, stopAutoRunner } from '../model/auto-runner.js';
+import {
+  onAutoRunnerUpdate, stopAutoRunner,
+  pauseAutoRunner, resumeAutoRunner, forceStopAutoRunner
+} from '../model/auto-runner.js';
 
 let _container = null;
 let _unsubscribe = null;
@@ -60,16 +63,20 @@ function _render(status) {
   _container.hidden = false;
   _container.innerHTML = '';
 
-  // Clickable area → navigate to settings
+  // Clickable area → navigate to current article (if available) or settings
   const infoArea = document.createElement('div');
   infoArea.className = 'auto-runner-float__info';
   infoArea.addEventListener('click', () => {
-    window.location.hash = '#/settings';
+    if (status.currentArticle && status.currentArticle.id) {
+      window.location.hash = `#/article/${status.currentArticle.id}`;
+    } else {
+      window.location.hash = '#/settings';
+    }
   });
 
   // Pulsing dot
   const dot = document.createElement('span');
-  dot.className = status.stopping
+  dot.className = status.paused
     ? 'auto-runner-float__dot auto-runner-float__dot--pausing'
     : 'auto-runner-float__dot auto-runner-float__dot--active';
   infoArea.appendChild(dot);
@@ -81,8 +88,8 @@ function _render(status) {
     const title = status.currentArticle.title || '';
     titleEl.textContent = title.length > 25 ? title.slice(0, 25) + '…' : title;
   } else {
-    titleEl.textContent = status.stopping
-      ? t('auto_runner.stopping')
+    titleEl.textContent = status.paused
+      ? t('auto_runner.paused')
       : t('auto_runner.status.running');
   }
   infoArea.appendChild(titleEl);
@@ -120,17 +127,40 @@ function _render(status) {
 
   _container.appendChild(counters);
 
-  // Stop button — first click = graceful stop, second click = force stop
-  const stopBtn = document.createElement('button');
-  stopBtn.className = 'auto-runner-float__stop';
-  stopBtn.textContent = status.stopping
-    ? t('auto_runner.force_stop')
-    : t('auto_runner.stop');
-  stopBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    stopAutoRunner();
-  });
-  _container.appendChild(stopBtn);
+  // Buttons: Running → "暫停"; Paused → "繼續" + "強制停止"
+  const btnArea = document.createElement('div');
+  btnArea.className = 'auto-runner-float__buttons';
+
+  if (status.paused) {
+    const resumeBtn = document.createElement('button');
+    resumeBtn.className = 'auto-runner-float__stop';
+    resumeBtn.textContent = t('auto_runner.resume');
+    resumeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      resumeAutoRunner();
+    });
+    btnArea.appendChild(resumeBtn);
+
+    const forceBtn = document.createElement('button');
+    forceBtn.className = 'auto-runner-float__stop auto-runner-float__stop--danger';
+    forceBtn.textContent = t('auto_runner.force_stop');
+    forceBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      forceStopAutoRunner();
+    });
+    btnArea.appendChild(forceBtn);
+  } else {
+    const pauseBtn = document.createElement('button');
+    pauseBtn.className = 'auto-runner-float__stop';
+    pauseBtn.textContent = t('auto_runner.pause');
+    pauseBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      pauseAutoRunner();
+    });
+    btnArea.appendChild(pauseBtn);
+  }
+
+  _container.appendChild(btnArea);
 }
 
 function _createBadge(count, label, className) {

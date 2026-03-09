@@ -15,7 +15,7 @@ import { t } from '../../locale/zh-TW.js';
 import { fetchArticle } from '../api.js';
 import { createBiasBar } from '../components/bias-bar.js';
 import { createControversyMeter } from '../components/controversy-badge.js';
-import { enqueueAnalysis, cancelAnalysis, onQueueChange, AnalysisCancelledError } from '../model/queue.js';
+import { enqueueAnalysis, cancelAnalysis, onQueueChange, getQueueStatus, AnalysisCancelledError } from '../model/queue.js';
 import { renderResultPreview } from './analyze-result.js';
 import { runPreAnalysisChecks } from './analyze-checks.js';
 import { updateStatusUI } from './analyze-engine.js';
@@ -194,6 +194,18 @@ function renderArticleContent(container, article) {
 async function startAutoAnalysis(container, article) {
   const section = container.querySelector('#analysis-section');
   if (!section) return;
+
+  // Check if this article is already in the queue (auto-runner or manual)
+  const queueStatus = getQueueStatus();
+  const articleId = article.article_id;
+  const isInQueue = (queueStatus.currentJob && queueStatus.currentJob.articleId === articleId)
+    || queueStatus.pending.includes(articleId);
+
+  if (isInQueue) {
+    // Article already being analyzed — show live progress (dedup returns same promise)
+    enqueueAndTrack(section, article);
+    return;
+  }
 
   // If auto-runner is active, show info banner instead of auto-enqueuing
   const runnerStatus = getAutoRunnerStatus();

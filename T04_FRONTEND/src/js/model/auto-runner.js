@@ -32,13 +32,14 @@ const ANALYSIS_MODE_KEY = 'powerreader_analysis_mode';
 // ── Module State ──
 
 let _running = false;
-let _stopping = false;
+let _paused = false;
 let _stats = { analyzed: 0, skipped: 0, failed: 0 };
 let _currentArticle = null;
 let _startedAt = null;
 let _stopReason = null;
 let _consecutiveFailures = 0;
 let _abortController = null;
+let _resumeResolver = null;
 const _emitter = createEventEmitter('AutoRunner');
 
 // ── Event System ──
@@ -64,7 +65,7 @@ export function onAutoRunnerUpdate(cb) {
 export function getAutoRunnerStatus() {
   return {
     running: _running,
-    stopping: _stopping,
+    paused: _paused,
     analyzed: _stats.analyzed,
     failed: _stats.failed,
     skipped: _stats.skipped,
@@ -133,7 +134,7 @@ export async function startAutoRunner() {
   }
 
   _running = true;
-  _stopping = false;
+  _paused = false;
   _stats = { analyzed: 0, skipped: 0, failed: 0 };
   _currentArticle = null;
   _startedAt = Date.now();
@@ -146,37 +147,76 @@ export async function startAutoRunner() {
     await _runLoop();
   } finally {
     _running = false;
-    _stopping = false;
+    _paused = false;
     _currentArticle = null;
+    _resumeResolver = null;
     _notify();
   }
 }
 
 /**
- * Stop auto-runner.
- * First call: graceful stop (waits for current analysis to finish).
- * Second call (while stopping): force stop (cancels running inference immediately).
+ * Smart toggle: running → pause; paused → force stop.
  */
 export function stopAutoRunner() {
   if (!_running) return;
 
-  // Already stopping → force stop: cancel running inference
-  if (_stopping) {
-    cancelAll();
-    return;
+  if (_paused) {
+    forceStopAutoRunner();
+  } else {
+    pauseAutoRunner();
   }
+}
 
-  // First click → graceful stop
-  _stopping = true;
+/**
+ * Pause auto-runner. Current analysis finishes, then loop suspends.
+ */
+export function pauseAutoRunner() {
+  if (!_running || _paused) return;
+  _paused = true;
   _stopReason = null;
   if (_abortController) _abortController.abort();
+  _notify();
+}
+
+/**
+ * Resume auto-runner from paused state.
+ */
+export function resumeAutoRunner() {
+  if (!_running || !_paused) return;
+  _paused = false;
+  _abortController = new AbortController();
+  if (_resumeResolver) {
+    _resumeResolver();
+    _resumeResolver = null;
+  }
+  _notify();
+}
+
+/**
+ * Force stop: cancel all running/queued analyses and exit.
+ */
+export function forceStopAutoRunner() {
+  if (!_running) return;
+  cancelAll();
+  _running = false;
+  _paused = false;
+  if (_resumeResolver) {
+    _resumeResolver();
+    _resumeResolver = null;
+  }
   _notify();
 }
 
 // ── Internal: Main Loop ──
 
 async function _runLoop() {
-  while (_running && !_stopping) {
+  while (_running) {
+    // Check for pause between batches
+    if (_paused) {
+      await _waitForResume();
+      if (!_running) return;
+    }
+
     // Fetch a batch of articles
     const result = await fetchArticles({
       sort_by: 'published_at',
@@ -204,12 +244,20 @@ async function _runLoop() {
 
     // Process each article
     for (const article of shuffled) {
-      if (_stopping) return;
+      // Check for pause between articles
+      if (_paused) {
+        _currentArticle = null;
+        _notify();
+        await _waitForResume();
+        if (!_running) return;
+      }
 
       _currentArticle = article;
       _notify();
 
       const status = await _processArticle(article);
+
+      if (!_running) return;
 
       // Record to IndexedDB
       await _recordHistory(article.article_id, status.type, status.error);
@@ -253,6 +301,15 @@ async function _runLoop() {
 
     // Batch exhausted — loop will fetch next batch
   }
+}
+
+/**
+ * Suspend loop until resume or force-stop.
+ */
+function _waitForResume() {
+  return new Promise((resolve) => {
+    _resumeResolver = resolve;
+  });
 }
 
 // ── Internal: Process Single Article ──
