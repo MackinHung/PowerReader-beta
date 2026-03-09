@@ -22,7 +22,7 @@ import {
   assembleNarrativeSystemPrompt,
   assembleUserMessage
 } from './prompt.js';
-import { parseScoreOutput, parseNarrativeOutput, parseAnalysisOutput } from './output-parser.js';
+import { parseScoreOutput, parseNarrativeOutput } from './output-parser.js';
 import { getCachedBenchmark, getTimeoutForTier, scanGPU } from './benchmark.js';
 
 // =============================================
@@ -57,8 +57,6 @@ function getInferenceTimeout() {
   return INFERENCE_TIMEOUT_MS; // fallback to default
 }
 
-const SLOW_HINT_THRESHOLD_MS = 15000;
-const SERVER_OFFER_THRESHOLD_MS = 60000;
 
 // =============================================
 // Inference Modes
@@ -378,45 +376,3 @@ async function runServerInference(article, knowledgeEntries, updateStatus) {
 // Inference Timer UX
 // =============================================
 
-/**
- * Create a timed inference wrapper that provides UX status updates.
- *
- * @param {function} onStatus - Callback for UX updates
- * @returns {{ start: function, cancel: function }}
- */
-export function createInferenceTimer(onStatus) {
-  let intervalId = null;
-  const startTime = Date.now();
-
-  return {
-    start() {
-      intervalId = setInterval(() => {
-        const elapsed = Date.now() - startTime;
-        if (elapsed >= SERVER_OFFER_THRESHOLD_MS) {
-          onStatus('timeout_offer', elapsed);
-        } else if (elapsed >= SLOW_HINT_THRESHOLD_MS) {
-          onStatus('slow_hint', elapsed);
-        }
-      }, 1000);
-    },
-    cancel() {
-      if (intervalId) {
-        clearInterval(intervalId);
-        intervalId = null;
-      }
-    }
-  };
-}
-
-// =============================================
-// Benchmark Integration
-// =============================================
-
-/**
- * Get the current device benchmark tier.
- * @returns {"gpu" | "cpu" | "none" | "unknown"}
- */
-export function getBenchmarkTier() {
-  const cached = getCachedBenchmark();
-  return cached?.mode || 'unknown';
-}

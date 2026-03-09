@@ -10,6 +10,7 @@
 
 import { runAnalysis } from './inference.js';
 import { fetchArticleKnowledge } from '../api.js';
+import { createEventEmitter } from '../utils/event-emitter.js';
 
 export class AnalysisCancelledError extends Error {
   constructor(articleId) {
@@ -24,21 +25,17 @@ export class AnalysisCancelledError extends Error {
 let _currentJob = null;
 let _pendingQueue = [];
 let _cancelledIds = new Set();
-const _listeners = new Set();
+const _emitter = createEventEmitter('Queue');
 
 // ── Event System ──
 
 function _notifyListeners() {
-  const status = getQueueStatus();
-  for (const cb of _listeners) {
-    try { cb(status); } catch (e) { console.error('[Queue] Listener error:', e); }
-  }
+  _emitter.notify(getQueueStatus());
 }
 
 /** Subscribe to queue state changes. Returns unsubscribe function. */
 export function onQueueChange(callback) {
-  _listeners.add(callback);
-  return () => { _listeners.delete(callback); };
+  return _emitter.subscribe(callback);
 }
 
 // ── Queue Status ──

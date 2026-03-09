@@ -11,6 +11,7 @@
  */
 
 import { t } from '../../locale/zh-TW.js';
+import { promisifyRequest, promisifyTransaction } from '../utils/idb-helpers.js';
 
 // Model constants (from shared/config.js)
 const MODEL_SIZE_MB = 3400;
@@ -133,10 +134,7 @@ export async function isModelDownloaded() {
     const db = await openDB();
     const tx = db.transaction('model_files', 'readonly');
     const req = tx.objectStore('model_files').get('qwen-4b-manifest');
-    const result = await new Promise((res, rej) => {
-      req.onsuccess = () => res(req.result);
-      req.onerror = () => rej(req.error);
-    });
+    const result = await promisifyRequest(req);
     db.close();
     return result && result.complete === true;
   } catch (e) {
@@ -247,7 +245,7 @@ export async function deleteModel() {
     const db = await openDB();
     const tx = db.transaction('model_files', 'readwrite');
     tx.objectStore('model_files').delete('qwen-4b-manifest');
-    await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = () => rej(tx.error); });
+    await promisifyTransaction(tx);
     db.close();
   } catch (e) {
     console.error('[Model] Delete from IndexedDB failed:', e);
@@ -295,7 +293,7 @@ async function markModelComplete() {
       stored_at: new Date().toISOString(),
       size_bytes: downloadedBytes
     });
-    await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = () => rej(tx.error); });
+    await promisifyTransaction(tx);
     db.close();
   } catch (e) {
     console.error('[Model] Mark complete failed:', e);

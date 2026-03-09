@@ -8,7 +8,7 @@ Agent Teams 冷啟動文件。任何 Claude Agent 加入時的第一份必讀文
 ## 專案概覽
 
 ### 核心價值
-- **去中心化**: 用戶端運行 Qwen3-4B via WebLLM，瀏覽器內 WebGPU 推理
+- **去中心化**: 用戶端運行 Qwen3-8B via WebLLM，瀏覽器內 WebGPU 推理
 - **中央空廚**: 統一爬取新聞，API 提供 RAG 知識注入
 - **知識透明化**: 使用者可查看 AI 分析時注入的所有背景知識
 - **即時分析**: Cloudflare KV 同步，建立 PowerReader 網絡
@@ -20,7 +20,7 @@ Agent Teams 冷啟動文件。任何 Claude Agent 加入時的第一份必讀文
 - **前端**: Cloudflare Pages (PWA) + IndexedDB
 - **後端**: Cloudflare Workers + D1 + R2 + KV + Vectorize + Workers AI
 - **爬蟲**: 閉源 GitHub 項目，GitHub Actions 每 2h，bge-small-zh 篩選
-- **推理**: Qwen3-4B via WebLLM (@mlc-ai/web-llm, 用戶端 WebGPU, think=false, t=0.5, ~6s/篇)
+- **推理**: Qwen3-8B via WebLLM (@mlc-ai/web-llm, 用戶端 WebGPU, /no_think, t=0.3, top_p=0.85, ~7s/篇)
 - **嵌入**: Workers AI bge-m3 (1024d) + bge-small-zh-v1.5 (512d, 篩選用)
 - **向量搜索**: Cloudflare Vectorize
 - **介面**: LINE Bot + 瀏覽器插件 + Email 訂閱
@@ -35,7 +35,7 @@ Agent Teams 冷啟動文件。任何 Claude Agent 加入時的第一份必讀文
 Crawler(閉源) → 爬取 → bge-small-zh 篩選 → 清洗 → markdown.news 處理
 → API 推送 → PowerReader(開源) Workers 接收驗證 → bge-m3 嵌入
 → Vectorize 知識查詢 → R2+D1 儲存 → 客戶端取得文章+知識
-→ 組裝 3 層 Prompt → 本地 WebLLM (WebGPU) Qwen3-4B 雙 Pass 推理 → 結果+知識透明化面板
+→ 組裝 3 層 Prompt → 本地 WebLLM (WebGPU) Qwen3-8B 雙 Pass 推理 → 結果+知識透明化面板
 
 ### Crawler API 輸出格式
 ```json
@@ -143,7 +143,112 @@ M01 - 需求師 & 專案邏輯檢測師 (監督層,不寫代碼)
 1. **嵌入模型一致性**: 篩選用 bge-small-zh(512d, Crawler CPU) 和知識查詢用 bge-m3(1024d, Workers AI GPU) 向量空間不相容，不可混用。
 2. **KV 寫入限制**: 免費方案每日 1000 次寫入，設計時避免頻繁寫入 KV。
 3. **LINE Bot 訊息長度**: Flex Message 有大小限制，只回傳摘要(前200字)+連結。
-4. **本地推理效能**: Qwen3-4B via WebLLM(3.4GB) 約 6-10s/篇 (雙 Pass ~14s)。模型自動下載至瀏覽器 Cache。需提供下載進度和分析進度提示。推理超時依 WebGPU benchmark 決定 (GPU 30s / CPU 120s)。
+4. **本地推理效能**: Qwen3-8B via WebLLM(~4.5GB VRAM) 約 7s/篇 (雙 Pass ~14s)。模型自動下載至瀏覽器 Cache。需提供下載進度和分析進度提示。推理超時依 WebGPU benchmark 決定 (GPU 30s / CPU 120s)。
+
+---
+
+## 前端功能一覽 (T04_FRONTEND)
+
+### 部署資訊
+- **Production URL**: `https://powerreader.pages.dev`
+- **部署方式**: `npx wrangler pages deploy src --project-name=powerreader --branch=main`
+- **Production 分支**: `main` (⚠️ 不是 `master`，用 `--branch=main` 部署到 production)
+- **SW 版本**: `static-v22` (每次改靜態資源必須 bump)
+
+### 頁面路由 (5-tab 底部導航)
+| Tab | 路由 | 頁面 | 功能 |
+|-----|------|------|------|
+| 首頁 | `#/` | `home.js` | 新聞列表 (分頁/排序/篩選)，文章卡片含來源+日期+立場光譜 |
+| 比較 | `#/compare` | `compare.js` | 跨媒體比較 — 同事件不同媒體報導角度，立場分歧分數 |
+| 分析 | `#/analyze` | `analyze.js` | 手動選文章進行 AI 分析 |
+| 我的 | `#/profile` | `profile.js` | Google OAuth 登入，點數/投票權 KPI，貢獻歷史，30 天趨勢 |
+| 設定 | `#/settings` | `settings.js` | 模型管理、分析模式、硬體偵測、快取、通知、關於 |
+
+### 子頁面
+| 路由 | 功能 |
+|------|------|
+| `#/article/{id}` | 文章詳情：立場光譜+爭議度+摘要+原文連結+自動分析+AI 知識面板+跨媒體群組 |
+| `#/onboarding` | 首次使用 4 步引導 |
+| `#/auth/callback` | Google OAuth 回調 |
+
+### 核心功能模組
+| 模組 | 檔案 | 功能 |
+|------|------|------|
+| WebLLM 推理 | `model/inference.js` | Qwen3-8B 雙 Pass 本地推理 (WebGPU) |
+| 分析佇列 | `model/queue.js` | FIFO 單一佇列，去重，取消支援 |
+| 自動分析器 | `model/auto-runner.js` | 背景迴圈：抓文章→篩選→隨機→分析→自動提交 |
+| GPU 偵測 | `model/benchmark.js` | WebGPU 掃描 + 推理延遲測試 → GPU/CPU/none 分級 |
+| Prompt 組裝 | `model/prompt.js` | L1 靜態 + L2 RAG 知識 + L3 文章輸入 |
+| 結果解析 | `model/output-parser.js` | stripThinkBlocks + JSON 解析 + key_phrases |
+| 模型下載管理 | `model/manager.js` | OPFS/IndexedDB 模型儲存 + 下載進度 + 暫停/恢復 |
+| 事件發射器 | `utils/event-emitter.js` | 共用 observer pattern (queue + auto-runner) |
+| IDB 工具 | `utils/idb-helpers.js` | promisifyRequest/promisifyTransaction 共用 |
+| 獎勵系統 | (API 端) | 分析→品質驗證→點數獎勵→投票權 |
+| 離線支援 | `sw.js` + `db.js` | SW cache-first + IndexedDB 離線快取 + Background Sync |
+
+---
+
+## ⚠️ 前端部署踩雷紀錄
+
+### 1. shared/config.js 跨目錄 import 問題
+**問題**: `T04_FRONTEND/src/` 部署到 Cloudflare Pages，但 `shared/config.js` 在 `src/` 外面。
+任何 `import ... from '../../../../shared/config.js'` 在部署後會 404，瀏覽器收到 HTML 回應導致
+`Failed to load module script: MIME type "text/html"` 錯誤。ES Module 的 import 鏈一旦斷裂，
+整個 app.js 無法載入，頁面空白。
+
+**解法**: 把需要的常數直接 inline 到前端檔案內，不得跨出 `src/` import。
+已修: `benchmark.js` 將 `BENCHMARK` 常數從 import 改為內嵌。
+
+**規則**: ❌ 前端 `src/` 下的檔案**絕對不可** import `src/` 外部的檔案。
+
+### 2. Service Worker cache-first 更新延遲
+**問題**: SW 用 cache-first 策略，新版檔案部署後使用者仍看到舊版。
+即使 `skipWaiting()` + `clients.claim()`，使用者可能需要重新整理 2 次或手動清除 site data。
+
+**解法**: 每次改動靜態資源時，必須 bump `STATIC_CACHE_NAME` 版本 (e.g. `static-v21` → `static-v22`)。
+新增檔案也要加入 `STATIC_ASSETS` 清單 (但不要加入 import 鏈會斷的檔案)。
+
+### 3. Cloudflare Pages production 分支
+**問題**: `wrangler pages deploy` 預設部署到 Preview 環境。`powerreader.pages.dev` 只認 `main` 分支的 Production 部署。
+Git repo 用 `master` 分支，但 Pages 的 production 分支是 `main`。
+
+**解法**: 部署指令必須加 `--branch=main`：
+```
+npx wrangler pages deploy src --project-name=powerreader --branch=main
+```
+
+### 4. SW precache 清單不可包含有跨目錄 import 的檔案
+**問題**: 把 `benchmark.js` 加入 SW `STATIC_ASSETS` 預快取清單。SW install 時抓到 benchmark.js，
+但 benchmark.js import 的 `shared/config.js` 不存在，導致 SW install 可能失敗或快取壞資料。
+
+**解法**: 只把 self-contained (無跨目錄依賴) 的檔案加入 precache。
+
+---
+
+## 測試基礎設施 (T04_FRONTEND)
+
+### 框架
+- **Vitest** + jsdom 環境
+- `package.json`: `npm test` (vitest run), `npm run test:watch`, `npm run test:coverage`
+- `vitest.config.js`: jsdom environment, `tests/**/*.test.js`
+
+### 測試覆蓋 (229 tests, ALL PASSING)
+| 檔案 | 測試數 | 重點 |
+|------|--------|------|
+| `output-parser.test.js` | 45 | stripThinkBlocks, parseJsonFromLLM, extractKeyPhrases |
+| `prompt.test.js` | 54 | buildPass1Prompt, buildPass2Prompt, L1+L2+L3 組裝 |
+| `queue.test.js` | 21 | FIFO 佇列, 去重, 取消, singleton |
+| `benchmark.test.js` | 23 | scanGPU, runBenchmark, 分級, localStorage 快取 |
+| `inference.test.js` | 23 | hasWebGPU, detectBestMode, timeout tiers |
+| `auto-runner.test.js` | 20 | 迴圈控制, 失敗計數, rate limit 停止 |
+| `manager.test.js` | 31 | OPFS/IndexedDB 儲存, 下載/暫停/刪除 |
+| `event-emitter.test.js` | 7 | subscribe/notify/unsubscribe, 錯誤隔離 |
+| `idb-helpers.test.js` | 5 | promisifyRequest/promisifyTransaction |
+
+### 測試技巧
+- **Singleton 模組**: `vi.resetModules()` + `vi.doMock()` + 動態 `import()` 隔離狀態
+- **瀏覽器 API**: globalThis mock (navigator.gpu, localStorage, fetch, IndexedDB, OPFS)
+- **WebLLM CDN import**: 自然失敗觸發 fallback 測試路徑
 
 ---
 
@@ -188,4 +293,4 @@ M01 - 需求師 & 專案邏輯檢測師 (監督層,不寫代碼)
 
 ---
 
-**維護者**: M01 | **最後更新**: 2026-03-08 | **版本**: v2.1 (WebLLM 遷移)
+**維護者**: M01 | **最後更新**: 2026-03-09 | **版本**: v2.3 (Auto Runner + 部署踩雷紀錄 + 單元測試 + 模組重構)

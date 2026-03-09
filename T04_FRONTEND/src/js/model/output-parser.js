@@ -111,20 +111,3 @@ export function parseNarrativeOutput(rawOutput) {
   return { points, key_phrases };
 }
 
-/**
- * Combined parser for backward compatibility.
- * Parses Pass 1 format (scores) and returns with derived category/level.
- *
- * @param {string} rawOutput - Raw model output string
- * @returns {Object} Analysis result with all legacy fields
- */
-export function parseAnalysisOutput(rawOutput) {
-  const scores = parseScoreOutput(rawOutput);
-  return {
-    ...scores,
-    bias_category: 'center',
-    controversy_level: 'low',
-    reasoning: '',
-    key_phrases: []
-  };
-}

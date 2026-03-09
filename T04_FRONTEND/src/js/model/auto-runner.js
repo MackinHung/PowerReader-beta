@@ -16,6 +16,8 @@ import { fetchArticles, submitAnalysisResult } from '../api.js';
 import { getAuthToken, getUserHash, isAuthenticated } from '../auth.js';
 import { openDB } from '../db.js';
 import { t } from '../../locale/zh-TW.js';
+import { createEventEmitter } from '../utils/event-emitter.js';
+import { promisifyRequest, promisifyTransaction } from '../utils/idb-helpers.js';
 
 // ── Constants ──
 
@@ -35,15 +37,12 @@ let _startedAt = null;
 let _stopReason = null;
 let _consecutiveFailures = 0;
 let _abortController = null;
-const _listeners = new Set();
+const _emitter = createEventEmitter('AutoRunner');
 
 // ── Event System ──
 
 function _notify() {
-  const status = getAutoRunnerStatus();
-  for (const cb of _listeners) {
-    try { cb(status); } catch (e) { console.error('[AutoRunner] Listener error:', e); }
-  }
+  _emitter.notify(getAutoRunnerStatus());
 }
 
 /**
@@ -52,8 +51,7 @@ function _notify() {
  * @returns {Function} unsubscribe
  */
 export function onAutoRunnerUpdate(cb) {
-  _listeners.add(cb);
-  return () => { _listeners.delete(cb); };
+  return _emitter.subscribe(cb);
 }
 
 // ── Public API ──
@@ -298,12 +296,7 @@ async function _getProcessedIds() {
   try {
     const db = await openDB();
     const tx = db.transaction('auto_runner_history', 'readonly');
-    const store = tx.objectStore('auto_runner_history');
-    const req = store.getAllKeys();
-    const keys = await new Promise((res, rej) => {
-      req.onsuccess = () => res(req.result);
-      req.onerror = () => rej(req.error);
-    });
+    const keys = await promisifyRequest(tx.objectStore('auto_runner_history').getAllKeys());
     db.close();
     return new Set(keys);
   } catch {
@@ -321,7 +314,7 @@ async function _recordHistory(articleId, status, errorMessage) {
       analyzed_at: new Date().toISOString(),
       error_message: errorMessage || null
     });
-    await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = () => rej(tx.error); });
+    await promisifyTransaction(tx);
     db.close();
   } catch (e) {
     console.error('[AutoRunner] Failed to record history:', e);
