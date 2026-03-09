@@ -310,7 +310,16 @@ async function renderHardwareSection(container) {
   card.appendChild(createInfoRow(t('settings.hw.gpu_vendor'), gpuInfo.vendor || '—'));
   card.appendChild(createInfoRow(t('settings.hw.gpu_arch'), gpuInfo.architecture || '—'));
   card.appendChild(createInfoRow(t('settings.hw.gpu_device'), gpuInfo.device || '—'));
-  card.appendChild(createInfoRow(t('settings.hw.vram'), formatVRAM(gpuInfo.estimatedVRAM_MB)));
+
+  // VRAM display — based on known-GPU lookup (not WebGPU maxBufferSize which caps at 2GB)
+  if (gpuInfo.gpuType === 'integrated' || gpuInfo.gpuType === 'unified') {
+    card.appendChild(createInfoRow(t('settings.hw.vram'), t('settings.hw.vram_shared')));
+  } else if (gpuInfo.vramMB > 0) {
+    const vramText = formatVRAM(gpuInfo.vramMB) + ' ' + t('settings.hw.vram_ref');
+    card.appendChild(createInfoRow(t('settings.hw.vram'), vramText));
+  } else {
+    card.appendChild(createInfoRow(t('settings.hw.vram'), t('settings.hw.vram_unknown')));
+  }
 
   // --- Benchmark Result ---
   const benchTitle = document.createElement('p');

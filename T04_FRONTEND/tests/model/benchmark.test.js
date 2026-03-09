@@ -78,7 +78,8 @@ describe('scanGPU', () => {
       vendor: '',
       architecture: '',
       device: '',
-      estimatedVRAM_MB: 0,
+      vramMB: 0,
+      gpuType: 'unknown',
     });
     // cacheWebGPUFlag(false)
     expect(JSON.parse(localStorage.getItem(LS_WEBGPU_AVAILABLE))).toBe(false);
@@ -95,12 +96,11 @@ describe('scanGPU', () => {
     expect(JSON.parse(localStorage.getItem(LS_WEBGPU_AVAILABLE))).toBe(false);
   });
 
-  it('returns supported info with correct fields from a valid adapter', async () => {
+  it('returns supported info with VRAM from GPU lookup table', async () => {
     const adapter = createMockAdapter({
       vendor: 'intel',
       architecture: 'xe',
       device: 'Arc A770',
-      maxBufferSize: 8 * 1024 * 1024 * 1024, // 8 GB
     });
     globalThis.navigator.gpu = {
       requestAdapter: vi.fn().mockResolvedValue(adapter),
@@ -112,7 +112,8 @@ describe('scanGPU', () => {
     expect(result.vendor).toBe('intel');
     expect(result.architecture).toBe('xe');
     expect(result.device).toBe('Arc A770');
-    expect(result.estimatedVRAM_MB).toBe(8192);
+    expect(result.vramMB).toBe(16384); // 16 GB from GPU database lookup
+    expect(result.gpuType).toBe('discrete');
     expect(JSON.parse(localStorage.getItem(LS_WEBGPU_AVAILABLE))).toBe(true);
   });
 
@@ -132,7 +133,6 @@ describe('scanGPU', () => {
       vendor: 'nvidia',
       architecture: 'ada',
       device: 'RTX 4090',
-      maxBufferSize: 16 * 1024 * 1024 * 1024,
     });
     // Verify adapter.info is used, not requestAdapterInfo
     expect(adapter.info).toBeDefined();
@@ -147,7 +147,8 @@ describe('scanGPU', () => {
     expect(result.supported).toBe(true);
     expect(result.vendor).toBe('nvidia');
     expect(result.device).toBe('RTX 4090');
-    expect(result.estimatedVRAM_MB).toBe(16384);
+    expect(result.vramMB).toBe(24576); // 24 GB from GPU database lookup
+    expect(result.gpuType).toBe('discrete');
   });
 
   it('falls back to requestAdapterInfo when adapter.info is unavailable (legacy)', async () => {
@@ -155,7 +156,7 @@ describe('scanGPU', () => {
       useLegacyAPI: true,
       vendor: 'amd',
       architecture: 'rdna3',
-      device: 'RX 7900',
+      device: 'RX 7900 XTX',
     });
     expect(adapter.info).toBeUndefined();
 
@@ -167,7 +168,9 @@ describe('scanGPU', () => {
 
     expect(result.supported).toBe(true);
     expect(result.vendor).toBe('amd');
-    expect(result.device).toBe('RX 7900');
+    expect(result.device).toBe('RX 7900 XTX');
+    expect(result.vramMB).toBe(24576); // 24 GB from GPU database lookup
+    expect(result.gpuType).toBe('discrete');
     expect(adapter.requestAdapterInfo).toHaveBeenCalled();
   });
 
@@ -185,7 +188,8 @@ describe('scanGPU', () => {
     expect(result.supported).toBe(true);
     expect(result.vendor).toBe('');
     expect(result.device).toBe('');
-    expect(result.estimatedVRAM_MB).toBe(4096);
+    expect(result.vramMB).toBe(0); // No device name → lookup returns unknown
+    expect(result.gpuType).toBe('unknown');
   });
 
   it('returns fallback when requestAdapter throws', async () => {
@@ -196,12 +200,12 @@ describe('scanGPU', () => {
     const result = await scanGPU();
 
     expect(result.supported).toBe(false);
-    expect(result.estimatedVRAM_MB).toBe(0);
+    expect(result.vramMB).toBe(0);
     expect(JSON.parse(localStorage.getItem(LS_WEBGPU_AVAILABLE))).toBe(false);
   });
 
-  it('handles maxBufferSize being 0 gracefully', async () => {
-    const adapter = createMockAdapter({ maxBufferSize: 0 });
+  it('returns unknown gpuType for unrecognized device name', async () => {
+    const adapter = createMockAdapter({ device: 'Some Future GPU 9999' });
     globalThis.navigator.gpu = {
       requestAdapter: vi.fn().mockResolvedValue(adapter),
     };
@@ -209,7 +213,9 @@ describe('scanGPU', () => {
     const result = await scanGPU();
 
     expect(result.supported).toBe(true);
-    expect(result.estimatedVRAM_MB).toBe(0);
+    expect(result.device).toBe('Some Future GPU 9999');
+    expect(result.vramMB).toBe(0);
+    expect(result.gpuType).toBe('unknown');
   });
 });
 

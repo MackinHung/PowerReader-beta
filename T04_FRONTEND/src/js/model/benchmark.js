@@ -16,6 +16,8 @@
  * @license AGPL-3.0
  */
 
+import { lookupGPU } from './gpu-database.js';
+
 // Inlined from shared/config.js BENCHMARK section (cannot import outside src/)
 const BENCHMARK = {
   BENCHMARK_PROMPT: '分析以下新聞標題的政治立場：總統出席國防展覽',
@@ -34,15 +36,20 @@ const BENCHMARK = {
 // =============================================
 
 /**
- * Probe the browser for WebGPU adapter info and estimated VRAM.
+ * Probe the browser for WebGPU adapter info and GPU VRAM (via known-GPU lookup).
  * Does NOT load any model -- purely a hardware capabilities check.
+ *
+ * VRAM is determined by matching the GPU device name against a database of
+ * known GPUs, NOT from adapter.limits.maxBufferSize (which is capped at 2 GB
+ * by the WebGPU spec regardless of actual VRAM).
  *
  * @returns {Promise<{
  *   supported: boolean,
  *   vendor: string,
  *   architecture: string,
  *   device: string,
- *   estimatedVRAM_MB: number
+ *   vramMB: number,
+ *   gpuType: 'discrete'|'integrated'|'unified'|'unknown'
  * }>}
  */
 export async function scanGPU() {
@@ -51,7 +58,8 @@ export async function scanGPU() {
     vendor: '',
     architecture: '',
     device: '',
-    estimatedVRAM_MB: 0,
+    vramMB: 0,
+    gpuType: 'unknown',
   };
 
   try {
@@ -78,8 +86,8 @@ export async function scanGPU() {
       // Info retrieval failed — adapter still works, just no details
     }
 
-    const maxBuffer = adapter.limits.maxBufferSize || 0;
-    const estimatedVRAM_MB = Math.round(maxBuffer / (1024 * 1024));
+    const deviceName = info.device || info.description || '';
+    const gpu = lookupGPU(deviceName);
 
     cacheWebGPUFlag(true);
 
@@ -87,8 +95,9 @@ export async function scanGPU() {
       supported: true,
       vendor: info.vendor || '',
       architecture: info.architecture || '',
-      device: info.device || info.description || '',
-      estimatedVRAM_MB,
+      device: deviceName,
+      vramMB: gpu.vramMB,
+      gpuType: gpu.type,
     };
   } catch {
     cacheWebGPUFlag(false);

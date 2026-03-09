@@ -15,13 +15,13 @@ import {
 // ══════════════════════════════════════════════
 
 describe('formatVRAM', () => {
-  it('returns "無法偵測" for 0', () => {
-    expect(formatVRAM(0)).toBe('無法偵測');
+  it('returns "未知" for 0', () => {
+    expect(formatVRAM(0)).toBe('未知');
   });
 
-  it('returns "無法偵測" for falsy values', () => {
-    expect(formatVRAM(null)).toBe('無法偵測');
-    expect(formatVRAM(undefined)).toBe('無法偵測');
+  it('returns "未知" for falsy values', () => {
+    expect(formatVRAM(null)).toBe('未知');
+    expect(formatVRAM(undefined)).toBe('未知');
   });
 
   it('returns MB for values < 1024', () => {
