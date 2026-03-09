@@ -256,7 +256,7 @@ header {
 }
 
 .controversy-meter__fill--partisan_clash {
-  background-color: var(--color-controversy-moderate);  /* yellow — 藍綠交鋒 */
+  background-color: var(--color-controversy-moderate);  /* yellow — 政黨交鋒 */
 }
 
 .controversy-meter__fill--core_conflict {

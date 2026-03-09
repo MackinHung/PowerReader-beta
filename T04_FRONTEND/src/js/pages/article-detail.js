@@ -45,7 +45,7 @@ const SOURCE_NAMES = {
 const CONTROVERSY_LABELS = {
   non_political: '非政治',
   general_policy: '一般政策',
-  partisan_clash: '藍綠交鋒',
+  partisan_clash: '政黨交鋒',
   core_conflict: '核心對立',
   national_security: '國安外交'
 };

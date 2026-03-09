@@ -4,7 +4,7 @@
  * 5-level controversy scale aligned with prompt definition:
  * 0-20: 非政治或日常社會 (non_political)
  * 21-40: 一般政策 (general_policy)
- * 41-60: 藍綠交鋒 (partisan_clash)
+ * 41-60: 政黨交鋒 (partisan_clash)
  * 61-80: 核心對立議題 (core_conflict)
  * 81-100: 國安外交重大爭議 (national_security)
  *
@@ -15,13 +15,13 @@
 const LEVEL_LABELS = {
   non_political: '非政治',
   general_policy: '一般政策',
-  partisan_clash: '藍綠交鋒',
+  partisan_clash: '政黨交鋒',
   core_conflict: '核心對立',
   national_security: '國安外交',
   // Legacy 4-level fallback
   low: '非政治',
   moderate: '一般政策',
-  high: '藍綠交鋒',
+  high: '政黨交鋒',
   very_high: '核心對立'
 };
 

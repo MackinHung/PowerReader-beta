@@ -149,7 +149,7 @@ export function getBiasCategory(score) {
 export const CONTROVERSY_LEVELS = {
   NON_POLITICAL: "non_political",       // 0-20: 非政治或日常社會
   GENERAL_POLICY: "general_policy",     // 21-40: 一般政策
-  PARTISAN_CLASH: "partisan_clash",     // 41-60: 藍綠交鋒
+  PARTISAN_CLASH: "partisan_clash",     // 41-60: 政黨交鋒
   CORE_CONFLICT: "core_conflict",       // 61-80: 核心對立議題
   NATIONAL_SECURITY: "national_security" // 81-100: 國安外交重大爭議
 };
