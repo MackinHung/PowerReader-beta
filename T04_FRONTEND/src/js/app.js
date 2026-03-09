@@ -19,6 +19,8 @@ import { renderProfile } from './pages/profile.js';
 import { renderCompare } from './pages/compare.js';
 import { renderSettings } from './pages/settings.js';
 import { renderOnboarding } from './pages/onboarding.js';
+import { renderBlindspot } from './pages/blindspot.js';
+import { renderSourceDetail } from './pages/source-detail.js';
 import { setAuthCredentials } from './auth.js';
 import { mountAutoRunnerStatus } from './components/auto-runner-status.js';
 
@@ -74,6 +76,7 @@ function checkOnboarding() {
 // --------------------------------------------------
 const routes = {
   '/': renderHome,
+  '/blindspot': renderBlindspot,
   '/compare': renderCompare,
   '/analyze': renderAnalyze,
   '/profile': renderProfile,
@@ -93,6 +96,11 @@ function getRouteAndParams() {
   const analyzeMatch = hash.match(/^\/analyze\/(.+)$/);
   if (analyzeMatch) {
     return { route: '/analyze_article', params: { hash: analyzeMatch[1] } };
+  }
+
+  const sourceMatch = hash.match(/^\/source\/(.+)$/);
+  if (sourceMatch) {
+    return { route: '/source', params: { hash: decodeURIComponent(sourceMatch[1]) } };
   }
 
   // OAuth callback: #/auth/callback?token=xxx&session=xxx
@@ -122,6 +130,11 @@ function handleRoute() {
 
   if (route === '/analyze_article') {
     renderAnalyze(content, params);
+    return;
+  }
+
+  if (route === '/source') {
+    renderSourceDetail(content, params);
     return;
   }
 

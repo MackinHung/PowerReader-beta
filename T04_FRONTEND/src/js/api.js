@@ -291,3 +291,71 @@ export async function submitAnalysisResult(articleId, payload, token) {
     body: JSON.stringify(payload)
   });
 }
+
+// =============================================
+// Blindspot API (v2.0)
+// =============================================
+
+/**
+ * GET /api/v1/blindspot/events — paginated blindspot events.
+ */
+export async function fetchBlindspotEvents({ page = 1, limit = 20, type } = {}) {
+  const cacheKey = `blindspot:${page}:${limit}:${type || ''}`;
+
+  if (!navigator.onLine) {
+    const cached = await getCachedResponse(cacheKey);
+    if (cached) return { success: true, data: cached, error: null };
+    return { success: false, data: null, error: { type: 'offline' } };
+  }
+
+  const params = new URLSearchParams({ page, limit });
+  if (type) params.set('type', type);
+
+  const result = await apiFetch(`/blindspot/events?${params}`);
+  if (result.success && result.data) {
+    await cacheResponse(cacheKey, result.data);
+  }
+  return result;
+}
+
+// =============================================
+// Source Transparency API (v2.0)
+// =============================================
+
+/**
+ * GET /api/v1/sources — all source tendency profiles.
+ */
+export async function fetchSources() {
+  const cacheKey = 'sources:all';
+
+  if (!navigator.onLine) {
+    const cached = await getCachedResponse(cacheKey);
+    if (cached) return { success: true, data: cached, error: null };
+    return { success: false, data: null, error: { type: 'offline' } };
+  }
+
+  const result = await apiFetch('/sources');
+  if (result.success && result.data) {
+    await cacheResponse(cacheKey, result.data);
+  }
+  return result;
+}
+
+/**
+ * GET /api/v1/sources/:source — detailed source transparency.
+ */
+export async function fetchSource(source) {
+  const cacheKey = `source:${source}`;
+
+  if (!navigator.onLine) {
+    const cached = await getCachedResponse(cacheKey);
+    if (cached) return { success: true, data: cached, error: null };
+    return { success: false, data: null, error: { type: 'offline' } };
+  }
+
+  const result = await apiFetch(`/sources/${encodeURIComponent(source)}`);
+  if (result.success && result.data) {
+    await cacheResponse(cacheKey, result.data);
+  }
+  return result;
+}

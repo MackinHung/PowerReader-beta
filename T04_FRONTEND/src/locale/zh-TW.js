@@ -37,6 +37,15 @@ const messages = {
   'controversy.badge.very_high': '極高爭議',
 
   // ==============================================
+  // Camp Labels (三營陣 — shared/enums.js CAMP_TYPES)
+  // ==============================================
+  'camp.bar.title': '陣營比例',
+  'camp.label.green': '泛綠',
+  'camp.label.white': '中立',
+  'camp.label.blue': '泛藍',
+  'camp.label.gray': '非政治',
+
+  // ==============================================
   // News Categories (shared/enums.js NEWS_CATEGORIES)
   // ==============================================
   'category.label.politics': '政治',
@@ -257,6 +266,15 @@ const messages = {
   'analyze.narrative_points': '論述重點',
   'analyze.key_phrases': '關鍵詞',
   'analyze.submit_success': '分析已成功提交',
+  'analyze.transparency.toggle': '查看分析依據',
+  'analyze.transparency.l1_title': '系統分析框架',
+  'analyze.transparency.l1_desc': 'AI 依照預設的台灣政治光譜定義 (0=泛綠 ~ 100=泛藍) 與爭議度量表進行量化評分，再以論述分析框架產生重點摘要。',
+  'analyze.transparency.l2_title': '背景知識注入',
+  'analyze.transparency.l2_desc': '以下知識條目在分析時被注入給 AI 作為參考依據，AI 自行判斷哪些與本文相關。',
+  'analyze.transparency.l2_empty': '本次分析未使用額外背景知識。',
+  'analyze.transparency.l3_title': '原始文章',
+  'analyze.transparency.l3_desc': '新聞原文 (標題 + 摘要 + 內文) 作為分析輸入，截取前 {chars} 字。',
+  'analyze.transparency.knowledge_ref': '參考知識',
   'article.knowledge.title': 'AI 參考知識',
   'article.knowledge.summary': 'AI 參考知識 ({count} 項)',
   'article.deadline.remaining': '可分析剩餘時間: {hours} 小時',
@@ -294,6 +312,48 @@ const messages = {
   'compare.desc': '同一事件，不同媒體的報導角度比較',
   'compare.table_label': '各媒體立場比較表',
   'compare.spread': '立場分歧: {spread} 分',
+
+  // ==============================================
+  // Blindspot Page (v2.0)
+  // ==============================================
+  'nav.button.blindspot': '盲區',
+  'nav.title.blindspot': '報導盲區',
+  'blindspot.desc': '偵測只有單一陣營媒體報導的事件，揭示資訊盲區',
+  'blindspot.filter.all': '全部',
+  'blindspot.filter.green_only': '僅泛綠報導',
+  'blindspot.filter.blue_only': '僅泛藍報導',
+  'blindspot.filter.white_missing': '缺乏中立報導',
+  'blindspot.filter.imbalanced': '報導失衡',
+  'blindspot.type.green_only': '僅泛綠報導',
+  'blindspot.type.blue_only': '僅泛藍報導',
+  'blindspot.type.white_missing': '缺乏中立報導',
+  'blindspot.type.imbalanced': '報導失衡',
+  'blindspot.missing_camp': '缺少{camp}觀點',
+  'blindspot.camp.pan_green': '泛綠',
+  'blindspot.camp.pan_blue': '泛藍',
+  'blindspot.camp.pan_white': '中立',
+  'blindspot.article_count': '{count} 篇報導',
+  'blindspot.source_count': '{count} 家媒體',
+  'blindspot.detected_at': '偵測時間',
+  'blindspot.empty': '目前沒有偵測到報導盲區',
+
+  // ==============================================
+  // Source Tendency (v2.0)
+  // ==============================================
+  'source.tendency.title': '媒體傾向',
+  'source.tendency.desc': '根據近 30 天報導的立場分數滾動平均，動態推導各媒體傾向',
+  'source.tendency.avg_score': '平均分數',
+  'source.tendency.sample_count': '樣本數',
+  'source.tendency.confidence.high': '高信心度',
+  'source.tendency.confidence.mid': '中信心度',
+  'source.tendency.confidence.low': '低信心度',
+  'source.tendency.camp.pan_green': '偏泛綠',
+  'source.tendency.camp.pan_white': '中立',
+  'source.tendency.camp.pan_blue': '偏泛藍',
+  'source.tendency.window': '近 {days} 天',
+  'source.tendency.trend_title': '月度趨勢',
+  'source.tendency.recent_title': '近期文章',
+  'source.tendency.distribution': '陣營分布',
 
   // ==============================================
   // Auto Runner
@@ -492,6 +552,9 @@ const messages = {
   'a11y.bias_bar.left_end': '光譜左端，代表泛綠立場',
   'a11y.bias_bar.right_end': '光譜右端，代表泛藍立場',
   'a11y.bias_bar.indicator': '目前立場指標位於分數 {score}，屬於{category}',
+
+  // Camp ratio
+  'a11y.camp_bar': '陣營比例：泛綠 {green}%、中立 {white}%、泛藍 {blue}%、非政治 {gray}%',
 
   // Controversy
   'a11y.controversy_bar': '爭議程度指標，分數 {score}，等級 {level}',

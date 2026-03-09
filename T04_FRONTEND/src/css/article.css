@@ -162,6 +162,78 @@
 }
 
 /* ==============================================
+   Camp Ratio Bar (三營陣)
+   ============================================== */
+.camp-bar-wrapper {
+  margin: var(--spacing-sm) 0;
+}
+
+.camp-bar__heading {
+  font-size: var(--text-caption);
+  font-weight: 700;
+  margin-bottom: var(--spacing-xs);
+}
+
+.camp-bar {
+  display: flex;
+  width: 100%;
+  height: 24px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.camp-bar__segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #FFFFFF;
+  min-width: 0;
+  transition: width 0.3s ease;
+}
+
+.camp-bar__segment--gray {
+  color: #424242;
+}
+
+.camp-bar__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-xs);
+  font-size: var(--text-caption);
+}
+
+.camp-bar__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.camp-bar__legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* Camp indicator (compact, for cards) */
+.camp-indicator {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: var(--text-small);
+  font-weight: 700;
+  border-radius: 4px;
+  color: #FFFFFF;
+}
+
+.camp-indicator--green { background-color: #2E7D32; }
+.camp-indicator--white { background-color: #757575; }
+.camp-indicator--blue { background-color: #1565C0; }
+.camp-indicator--gray { background-color: #BDBDBD; color: #424242; }
+
+/* ==============================================
    Article Detail
    ============================================== */
 .article-detail__back {
@@ -187,7 +259,8 @@
 }
 
 .article-detail__bias,
-.article-detail__controversy {
+.article-detail__controversy,
+.article-detail__camp {
   margin-bottom: var(--spacing-lg);
   padding: var(--spacing-md);
   background-color: var(--color-bg-secondary);

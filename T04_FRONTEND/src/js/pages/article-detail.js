@@ -15,6 +15,7 @@ import { t } from '../../locale/zh-TW.js';
 import { fetchArticle } from '../api.js';
 import { createBiasBar } from '../components/bias-bar.js';
 import { createControversyMeter } from '../components/controversy-badge.js';
+import { createCampBar } from '../components/camp-bar.js';
 import { enqueueAnalysis, cancelAnalysis, onQueueChange, getQueueStatus, AnalysisCancelledError } from '../model/queue.js';
 import { renderResultPreview } from './analyze-result.js';
 import { runPreAnalysisChecks } from './analyze-checks.js';
@@ -144,6 +145,13 @@ function renderArticleContent(container, article) {
     controversySection.appendChild(contHeading);
     controversySection.appendChild(createControversyMeter(article.controversy_score, article.controversy_level));
     container.appendChild(controversySection);
+  }
+
+  if (article.camp_ratio) {
+    const campSection = document.createElement('section');
+    campSection.className = 'article-detail__camp';
+    campSection.appendChild(createCampBar(article.camp_ratio));
+    container.appendChild(campSection);
   }
 
   if (article.summary) {

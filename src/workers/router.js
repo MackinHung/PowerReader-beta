@@ -21,6 +21,8 @@ import { googleAuth, googleOAuthCallback, getMe, deleteMe, exportMe, getContribu
 import { getPoints } from './handlers/points.js';
 import { submitReward, recordFailure, getRewardsSummary } from './handlers/rewards.js';
 import { healthCheck, readinessCheck, getMetrics, getUsage } from './handlers/health.js';
+import { getBlindspotEvents } from './handlers/blindspot.js';
+import { getSources, getSource } from './handlers/sources.js';
 
 /**
  * Route table: [method, pattern, handler, options]
@@ -67,6 +69,13 @@ const ROUTES = [
   ['POST', '/api/v1/rewards/submit',  submitReward,      { auth: 'service', rateLimit: false, cache: 'no-store' }],
   ['POST', '/api/v1/rewards/failure', recordFailure,     { auth: 'service', rateLimit: false, cache: 'no-store' }],
   ['GET',  '/api/v1/rewards/me',      getRewardsSummary, { auth: 'service', rateLimit: false, cache: 'no-store' }],
+
+  // Blindspot API (v2.0 — camp imbalance detection)
+  ['GET', '/api/v1/blindspot/events', getBlindspotEvents, { auth: 'none', rateLimit: true, cache: `public, max-age=${CLOUDFLARE.CDN_NEWS_LIST_TTL}` }],
+
+  // Source Transparency API (v2.0 — dynamic media tendency)
+  ['GET', '/api/v1/sources',          getSources, { auth: 'none', rateLimit: true, cache: `public, max-age=${CLOUDFLARE.CDN_NEWS_LIST_TTL}` }],
+  ['GET', '/api/v1/sources/:source',  getSource,  { auth: 'none', rateLimit: true, cache: `public, max-age=${CLOUDFLARE.CDN_NEWS_LIST_TTL}` }],
 
   // Health & Monitoring API (T07 provides monitoring logic)
   ['GET', '/api/v1/health',           healthCheck,     { auth: 'none',    rateLimit: false, cache: 'no-store' }],

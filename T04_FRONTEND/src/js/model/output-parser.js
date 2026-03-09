@@ -13,7 +13,8 @@
 
 const SCORE_DEFAULTS = {
   bias_score: 50,
-  controversy_score: 0
+  controversy_score: 0,
+  camp_ratio: null
 };
 
 const NARRATIVE_DEFAULTS = {
@@ -72,10 +73,44 @@ function extractJSON(raw) {
 }
 
 /**
+ * Parse and validate camp_ratio from parsed JSON.
+ * Expects { green, white, blue, gray } with values 0-100 summing to ~100.
+ * Returns null if invalid.
+ *
+ * @param {Object|undefined} raw - Raw camp_ratio object from model output
+ * @returns {{ green: number, white: number, blue: number, gray: number } | null}
+ */
+function parseCampRatio(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+
+  const keys = ['green', 'white', 'blue', 'gray'];
+  const values = {};
+
+  for (const key of keys) {
+    if (typeof raw[key] !== 'number') return null;
+    values[key] = Math.round(Math.max(0, Math.min(100, raw[key])));
+  }
+
+  // Normalize: if sum is off (model quirk), scale proportionally
+  const sum = values.green + values.white + values.blue + values.gray;
+  if (sum === 0) return null;
+  if (sum !== 100) {
+    const scale = 100 / sum;
+    values.green = Math.round(values.green * scale);
+    values.white = Math.round(values.white * scale);
+    values.blue = Math.round(values.blue * scale);
+    // gray absorbs rounding remainder
+    values.gray = 100 - values.green - values.white - values.blue;
+  }
+
+  return values;
+}
+
+/**
  * Parse Pass 1 output: score extraction.
  *
  * @param {string} rawOutput - Raw model output string
- * @returns {{ bias_score: number, controversy_score: number }}
+ * @returns {{ bias_score: number, controversy_score: number, camp_ratio: { green: number, white: number, blue: number, gray: number } | null }}
  */
 export function parseScoreOutput(rawOutput) {
   const parsed = extractJSON(rawOutput);
@@ -87,7 +122,9 @@ export function parseScoreOutput(rawOutput) {
   const contRaw = typeof parsed.controversy_score === 'number' ? parsed.controversy_score : SCORE_DEFAULTS.controversy_score;
   const controversy_score = Math.round(Math.max(0, Math.min(100, contRaw)));
 
-  return { bias_score, controversy_score };
+  const camp_ratio = parseCampRatio(parsed.camp_ratio);
+
+  return { bias_score, controversy_score, camp_ratio };
 }
 
 /**

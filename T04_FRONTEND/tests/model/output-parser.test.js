@@ -21,13 +21,13 @@ describe('parseScoreOutput', () => {
   it('parses normal JSON with bias_score and controversy_score', () => {
     const raw = '{"bias_score": 75, "controversy_score": 40}';
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 75, controversy_score: 40 });
+    expect(result).toEqual({ bias_score: 75, controversy_score: 40, camp_ratio: null });
   });
 
   it('parses JSON wrapped in <think>...</think> blocks', () => {
     const raw = '<think>Let me analyze this...</think>{"bias_score": 30, "controversy_score": 60}';
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 30, controversy_score: 60 });
+    expect(result).toEqual({ bias_score: 30, controversy_score: 60, camp_ratio: null });
   });
 
   it('parses JSON wrapped in multiline <think> blocks', () => {
@@ -37,25 +37,25 @@ Multiple lines here.
 </think>
 {"bias_score": 45, "controversy_score": 20}`;
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 45, controversy_score: 20 });
+    expect(result).toEqual({ bias_score: 45, controversy_score: 20, camp_ratio: null });
   });
 
   it('parses JSON wrapped in markdown code fences', () => {
     const raw = '```json\n{"bias_score": 80, "controversy_score": 55}\n```';
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 80, controversy_score: 55 });
+    expect(result).toEqual({ bias_score: 80, controversy_score: 55, camp_ratio: null });
   });
 
   it('parses markdown code fences without json label', () => {
     const raw = '```\n{"bias_score": 10, "controversy_score": 5}\n```';
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 10, controversy_score: 5 });
+    expect(result).toEqual({ bias_score: 10, controversy_score: 5, camp_ratio: null });
   });
 
   it('parses single-quote JSON (4B model quirk)', () => {
     const raw = "{'bias_score': 75, 'controversy_score': 40}";
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 75, controversy_score: 40 });
+    expect(result).toEqual({ bias_score: 75, controversy_score: 40, camp_ratio: null });
   });
 
   it('clamps bias_score above 100 to 100', () => {
@@ -100,22 +100,22 @@ Multiple lines here.
   it('returns full defaults for completely invalid string', () => {
     const raw = 'This is not JSON at all, just some random text.';
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 50, controversy_score: 0 });
+    expect(result).toEqual({ bias_score: 50, controversy_score: 0, camp_ratio: null });
   });
 
   it('returns defaults for null input', () => {
     const result = parseScoreOutput(null);
-    expect(result).toEqual({ bias_score: 50, controversy_score: 0 });
+    expect(result).toEqual({ bias_score: 50, controversy_score: 0, camp_ratio: null });
   });
 
   it('returns defaults for undefined input', () => {
     const result = parseScoreOutput(undefined);
-    expect(result).toEqual({ bias_score: 50, controversy_score: 0 });
+    expect(result).toEqual({ bias_score: 50, controversy_score: 0, camp_ratio: null });
   });
 
   it('returns defaults for empty string input', () => {
     const result = parseScoreOutput('');
-    expect(result).toEqual({ bias_score: 50, controversy_score: 0 });
+    expect(result).toEqual({ bias_score: 50, controversy_score: 0, camp_ratio: null });
   });
 
   it('rounds floating-point bias_score with Math.round', () => {
@@ -135,7 +135,7 @@ Multiple lines here.
   it('extracts JSON from surrounding text', () => {
     const raw = 'Here is the result: {"bias_score": 60, "controversy_score": 30} hope this helps!';
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 60, controversy_score: 30 });
+    expect(result).toEqual({ bias_score: 60, controversy_score: 30, camp_ratio: null });
   });
 
   it('handles <think> + code fence combination', () => {
@@ -144,25 +144,25 @@ Multiple lines here.
 {"bias_score": 22, "controversy_score": 88}
 \`\`\``;
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 22, controversy_score: 88 });
+    expect(result).toEqual({ bias_score: 22, controversy_score: 88, camp_ratio: null });
   });
 
   it('handles extra whitespace around JSON', () => {
     const raw = '   \n  {"bias_score": 50, "controversy_score": 50}  \n  ';
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 50, controversy_score: 50 });
+    expect(result).toEqual({ bias_score: 50, controversy_score: 50, camp_ratio: null });
   });
 
   it('handles zero scores correctly', () => {
     const raw = '{"bias_score": 0, "controversy_score": 0}';
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 0, controversy_score: 0 });
+    expect(result).toEqual({ bias_score: 0, controversy_score: 0, camp_ratio: null });
   });
 
   it('handles boundary value 100', () => {
     const raw = '{"bias_score": 100, "controversy_score": 100}';
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 100, controversy_score: 100 });
+    expect(result).toEqual({ bias_score: 100, controversy_score: 100, camp_ratio: null });
   });
 
   it('uses default for missing bias_score key', () => {
@@ -184,6 +184,62 @@ Multiple lines here.
     result1.bias_score = 999;
     const result2 = parseScoreOutput(null);
     expect(result2.bias_score).toBe(50);
+  });
+
+  // camp_ratio tests
+  it('parses valid camp_ratio from model output', () => {
+    const raw = '{"bias_score": 30, "controversy_score": 60, "camp_ratio": {"green": 50, "white": 20, "blue": 10, "gray": 20}}';
+    const result = parseScoreOutput(raw);
+    expect(result.camp_ratio).toEqual({ green: 50, white: 20, blue: 10, gray: 20 });
+  });
+
+  it('returns null camp_ratio when not present in output', () => {
+    const raw = '{"bias_score": 30, "controversy_score": 60}';
+    const result = parseScoreOutput(raw);
+    expect(result.camp_ratio).toBeNull();
+  });
+
+  it('normalizes camp_ratio when sum is not 100', () => {
+    const raw = '{"bias_score": 50, "controversy_score": 40, "camp_ratio": {"green": 30, "white": 20, "blue": 10, "gray": 40}}';
+    const result = parseScoreOutput(raw);
+    // sum=100, no normalization needed
+    expect(result.camp_ratio).toEqual({ green: 30, white: 20, blue: 10, gray: 40 });
+  });
+
+  it('normalizes camp_ratio when sum exceeds 100', () => {
+    const raw = '{"bias_score": 50, "controversy_score": 40, "camp_ratio": {"green": 50, "white": 30, "blue": 20, "gray": 50}}';
+    const result = parseScoreOutput(raw);
+    // sum=150, scale=100/150=0.667
+    const { green, white, blue, gray } = result.camp_ratio;
+    expect(green + white + blue + gray).toBe(100);
+  });
+
+  it('returns null camp_ratio when all values are zero', () => {
+    const raw = '{"bias_score": 50, "controversy_score": 40, "camp_ratio": {"green": 0, "white": 0, "blue": 0, "gray": 0}}';
+    const result = parseScoreOutput(raw);
+    expect(result.camp_ratio).toBeNull();
+  });
+
+  it('returns null camp_ratio when a key is missing', () => {
+    const raw = '{"bias_score": 50, "controversy_score": 40, "camp_ratio": {"green": 50, "white": 30, "blue": 20}}';
+    const result = parseScoreOutput(raw);
+    expect(result.camp_ratio).toBeNull();
+  });
+
+  it('returns null camp_ratio when values are not numbers', () => {
+    const raw = '{"bias_score": 50, "controversy_score": 40, "camp_ratio": {"green": "high", "white": 30, "blue": 20, "gray": 10}}';
+    const result = parseScoreOutput(raw);
+    expect(result.camp_ratio).toBeNull();
+  });
+
+  it('clamps camp_ratio values to 0-100', () => {
+    const raw = '{"bias_score": 50, "controversy_score": 40, "camp_ratio": {"green": -10, "white": 50, "blue": 150, "gray": 10}}';
+    const result = parseScoreOutput(raw);
+    // After clamping: green=0, white=50, blue=100, gray=10 -> sum=160, normalize
+    const { green, white, blue, gray } = result.camp_ratio;
+    expect(green).toBeGreaterThanOrEqual(0);
+    expect(blue).toBeLessThanOrEqual(100);
+    expect(green + white + blue + gray).toBe(100);
   });
 });
 

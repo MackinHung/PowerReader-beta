@@ -13,6 +13,7 @@ import { submitAnalysisResult } from '../api.js';
 import { getModeLabel } from '../model/inference.js';
 import { createBiasBar } from '../components/bias-bar.js';
 import { createControversyMeter } from '../components/controversy-badge.js';
+import { createCampBar } from '../components/camp-bar.js';
 import { getAuthToken, getUserHash } from '../auth.js';
 import { getBiasCategoryFromScore, getControversyLevelFromScore } from '../utils/score-categories.js';
 
@@ -45,8 +46,16 @@ export function renderResultPreview(container, article, result) {
     container.appendChild(createControversyMeter(result.controversy_score, contLevel));
   }
 
-  // Narrative Points (Pass 2 output)
+  // Camp ratio bar (three-camp stacked bar)
+  if (result.camp_ratio) {
+    container.appendChild(createCampBar(result.camp_ratio));
+  }
+
+  // Narrative Points (Pass 2 output) with knowledge linking
   if (result.points && result.points.length > 0) {
+    const knowledgeEntries = result.knowledgeEntries || [];
+    const highRelevanceEntries = knowledgeEntries.filter(e => (e.score || 0) >= 0.7);
+
     const pointsSection = document.createElement('div');
     pointsSection.className = 'analyze-result__narrative';
 
@@ -58,7 +67,27 @@ export function renderResultPreview(container, article, result) {
     pointsList.className = 'analyze-result__points-list';
     for (const point of result.points) {
       const li = document.createElement('li');
-      li.textContent = point;
+      li.className = 'analyze-result__point';
+
+      const pointText = document.createElement('span');
+      pointText.textContent = point;
+      li.appendChild(pointText);
+
+      // Link matching high-relevance knowledge entries to this point
+      const matched = findMatchingKnowledge(point, highRelevanceEntries);
+      if (matched.length > 0) {
+        const refContainer = document.createElement('span');
+        refContainer.className = 'analyze-result__knowledge-refs';
+        for (const entry of matched) {
+          const badge = document.createElement('span');
+          badge.className = `knowledge-ref-badge knowledge-badge--${entry.type}`;
+          badge.textContent = entry.title || getKnowledgeTypeLabel(entry.type);
+          badge.title = entry.snippet || '';
+          refContainer.appendChild(badge);
+        }
+        li.appendChild(refContainer);
+      }
+
       pointsList.appendChild(li);
     }
     pointsSection.appendChild(pointsList);
@@ -102,44 +131,8 @@ export function renderResultPreview(container, article, result) {
     container.appendChild(phrasesSection);
   }
 
-  // Debug panel: raw prompts and outputs
-  if (result._debug) {
-    const debugSection = document.createElement('details');
-    debugSection.className = 'analyze-result__debug';
-
-    const summary = document.createElement('summary');
-    summary.textContent = 'Debug: Prompt & Raw Output';
-    debugSection.appendChild(summary);
-
-    const debugEntries = [
-      { label: 'Pass 1 System Prompt', value: result._debug.pass1_system },
-      { label: 'User Message (前500字)', value: result._debug.pass1_user },
-      { label: 'Pass 1 Raw Output', value: result._debug.pass1_raw },
-      { label: 'Pass 2 System Prompt', value: result._debug.pass2_system },
-      { label: 'Pass 2 Raw Output', value: result._debug.pass2_raw },
-      { label: 'Parsed Result', value: JSON.stringify({
-        bias_score: result.bias_score,
-        controversy_score: result.controversy_score,
-        points: result.points,
-        mode: result.mode,
-        latency_ms: result.latency_ms
-      }, null, 2) }
-    ];
-
-    for (const entry of debugEntries) {
-      const dt = document.createElement('h4');
-      dt.textContent = entry.label;
-      dt.style.cssText = 'margin-top:12px;font-size:12px;color:#888;';
-      debugSection.appendChild(dt);
-
-      const pre = document.createElement('pre');
-      pre.style.cssText = 'white-space:pre-wrap;word-break:break-all;font-size:11px;background:#f5f5f5;padding:8px;border-radius:4px;max-height:200px;overflow:auto;';
-      pre.textContent = entry.value || '(empty)';
-      debugSection.appendChild(pre);
-    }
-
-    container.appendChild(debugSection);
-  }
+  // Transparency panel: structured L1/L2/L3 analysis basis
+  container.appendChild(renderTransparencyPanel(result));
 
   // Action buttons: Submit or Retry
   const actions = document.createElement('div');
@@ -160,6 +153,182 @@ export function renderResultPreview(container, article, result) {
   actions.appendChild(submitBtn);
   actions.appendChild(retryBtn);
   container.appendChild(actions);
+}
+
+// ── Knowledge type labels ──
+
+const KNOWLEDGE_TYPE_LABELS = {
+  politician: '政治人物',
+  media: '媒體',
+  topic: '議題',
+  term: '名詞',
+  event: '事件'
+};
+
+function getKnowledgeTypeLabel(type) {
+  return KNOWLEDGE_TYPE_LABELS[type] || type;
+}
+
+// ── Transparency panel ──
+
+const ARTICLE_MAX_CHARS = 8400;
+
+/**
+ * Build a production-safe transparency panel showing the L1/L2/L3 analysis structure.
+ * Does NOT expose raw prompt content; shows structured descriptions instead.
+ */
+function renderTransparencyPanel(result) {
+  const details = document.createElement('details');
+  details.className = 'transparency-panel';
+
+  const summary = document.createElement('summary');
+  summary.className = 'transparency-panel__summary';
+  summary.textContent = t('analyze.transparency.toggle');
+  details.appendChild(summary);
+
+  const content = document.createElement('div');
+  content.className = 'transparency-panel__content';
+
+  // Layer 1: System Analysis Framework
+  content.appendChild(renderLayerSection(
+    'L1',
+    t('analyze.transparency.l1_title'),
+    t('analyze.transparency.l1_desc')
+  ));
+
+  // Layer 2: Knowledge Injection
+  const l2Section = renderLayerSection(
+    'L2',
+    t('analyze.transparency.l2_title'),
+    null
+  );
+  const knowledgeEntries = result.knowledgeEntries || [];
+  if (knowledgeEntries.length > 0) {
+    const l2Desc = document.createElement('p');
+    l2Desc.className = 'transparency-panel__layer-desc';
+    l2Desc.textContent = t('analyze.transparency.l2_desc');
+    l2Section.appendChild(l2Desc);
+
+    const knowledgeList = document.createElement('ul');
+    knowledgeList.className = 'transparency-panel__knowledge-list';
+    for (const entry of knowledgeEntries) {
+      const li = document.createElement('li');
+      li.className = 'transparency-panel__knowledge-item';
+
+      const badge = document.createElement('span');
+      badge.className = `knowledge-badge knowledge-badge--${entry.type}`;
+      badge.textContent = getKnowledgeTypeLabel(entry.type);
+      li.appendChild(badge);
+
+      const title = document.createElement('strong');
+      title.textContent = entry.title || '';
+      li.appendChild(title);
+
+      const score = document.createElement('span');
+      score.className = 'transparency-panel__score';
+      score.textContent = `${Math.round((entry.score || 0) * 100)}%`;
+      li.appendChild(score);
+
+      if (entry.snippet) {
+        const snippet = document.createElement('p');
+        snippet.className = 'transparency-panel__snippet';
+        snippet.textContent = entry.snippet;
+        li.appendChild(snippet);
+      }
+
+      knowledgeList.appendChild(li);
+    }
+    l2Section.appendChild(knowledgeList);
+  } else {
+    const emptyMsg = document.createElement('p');
+    emptyMsg.className = 'transparency-panel__layer-desc';
+    emptyMsg.textContent = t('analyze.transparency.l2_empty');
+    l2Section.appendChild(emptyMsg);
+  }
+  content.appendChild(l2Section);
+
+  // Layer 3: Original Article
+  content.appendChild(renderLayerSection(
+    'L3',
+    t('analyze.transparency.l3_title'),
+    t('analyze.transparency.l3_desc', { chars: ARTICLE_MAX_CHARS.toLocaleString() })
+  ));
+
+  details.appendChild(content);
+  return details;
+}
+
+/**
+ * Create a single layer section (L1/L2/L3) for the transparency panel.
+ */
+function renderLayerSection(layerTag, title, description) {
+  const section = document.createElement('div');
+  section.className = 'transparency-panel__layer';
+
+  const header = document.createElement('div');
+  header.className = 'transparency-panel__layer-header';
+
+  const tag = document.createElement('span');
+  tag.className = 'transparency-panel__layer-tag';
+  tag.textContent = layerTag;
+  header.appendChild(tag);
+
+  const titleEl = document.createElement('h4');
+  titleEl.className = 'transparency-panel__layer-title';
+  titleEl.textContent = title;
+  header.appendChild(titleEl);
+
+  section.appendChild(header);
+
+  if (description) {
+    const desc = document.createElement('p');
+    desc.className = 'transparency-panel__layer-desc';
+    desc.textContent = description;
+    section.appendChild(desc);
+  }
+
+  return section;
+}
+
+// ── Knowledge-to-conclusion matching ──
+
+/**
+ * Find knowledge entries whose title or snippet overlaps with a narrative point.
+ * Uses simple keyword overlap (CJK-aware bigram intersection).
+ */
+function findMatchingKnowledge(pointText, knowledgeEntries) {
+  if (!pointText || !knowledgeEntries.length) return [];
+
+  const pointBigrams = extractBigrams(pointText);
+  if (pointBigrams.size === 0) return [];
+
+  const matched = [];
+  for (const entry of knowledgeEntries) {
+    const entryText = (entry.title || '') + (entry.snippet || '');
+    const entryBigrams = extractBigrams(entryText);
+    if (entryBigrams.size === 0) continue;
+
+    const intersection = new Set([...pointBigrams].filter(b => entryBigrams.has(b)));
+    const smaller = Math.min(pointBigrams.size, entryBigrams.size);
+    const overlap = smaller > 0 ? intersection.size / smaller : 0;
+
+    if (overlap >= 0.15) {
+      matched.push(entry);
+    }
+  }
+  return matched;
+}
+
+/**
+ * Extract character bigrams from text (CJK-aware).
+ */
+function extractBigrams(text) {
+  const clean = text.replace(/\s+/g, '');
+  const bigrams = new Set();
+  for (let i = 0; i < clean.length - 1; i++) {
+    bigrams.add(clean.substring(i, i + 2));
+  }
+  return bigrams;
 }
 
 /**
