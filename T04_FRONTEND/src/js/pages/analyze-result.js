@@ -10,11 +10,10 @@
 
 import { submitAnalysisResult } from '../api.js';
 import { getModeLabel } from '../model/inference.js';
-import { createBiasBar } from '../components/bias-bar.js';
 import { createControversyMeter } from '../components/controversy-badge.js';
 import { createCampBar } from '../components/camp-bar.js';
 import { getAuthToken, getUserHash } from '../auth.js';
-import { getBiasCategoryFromScore, getControversyLevelFromScore } from '../utils/score-categories.js';
+import { getControversyLevelFromScore } from '../utils/score-categories.js';
 
 /**
  * Render the analysis result preview with submit/retry buttons.
@@ -33,21 +32,15 @@ export function renderResultPreview(container, article, result) {
   modeLabel.textContent = `${getModeLabel(result.mode)} | ${Math.round(result.latency_ms / 1000)}s`;
   container.appendChild(modeLabel);
 
-  // Bias bar (prefer model-provided category, fallback to local mapping)
-  if (result.bias_score != null) {
-    const biasCategory = result.bias_category || getBiasCategoryFromScore(result.bias_score);
-    container.appendChild(createBiasBar(result.bias_score, biasCategory));
+  // Camp ratio bar (three-camp stacked bar) — replaces bias spectrum bar
+  if (result.camp_ratio) {
+    container.appendChild(createCampBar(result.camp_ratio));
   }
 
   // Controversy meter (prefer model-provided level, fallback to local mapping)
   if (result.controversy_score != null) {
     const contLevel = result.controversy_level || getControversyLevelFromScore(result.controversy_score);
     container.appendChild(createControversyMeter(result.controversy_score, contLevel));
-  }
-
-  // Camp ratio bar (three-camp stacked bar)
-  if (result.camp_ratio) {
-    container.appendChild(createCampBar(result.camp_ratio));
   }
 
   // Narrative Points (Pass 2 output) with knowledge linking

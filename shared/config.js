@@ -162,7 +162,7 @@ export const ANALYSIS = {
   // Controversy score boundaries
   CONTROVERSY_MIN: 0,
   CONTROVERSY_MAX: 100,
-  CONTROVERSY_BOUNDARIES: [5, 15, 50],
+  CONTROVERSY_BOUNDARIES: [20, 40, 60, 80],
   // Categories: low | moderate | high | very_high
 
   // Deduplication (MinHash)

@@ -12,7 +12,7 @@
 
 import { t } from '../../locale/zh-TW.js';
 import { fetchArticles, fetchArticleCluster } from '../api.js';
-import { createBiasBar } from '../components/bias-bar.js';
+import { createCampBar } from '../components/camp-bar.js';
 import { getUserErrorMessage } from '../utils/error.js';
 
 /**
@@ -171,8 +171,11 @@ function renderComparisonCard(list, article, clusterArticles) {
     const biasCell = document.createElement('div');
     biasCell.className = 'compare-card__bias';
     biasCell.setAttribute('role', 'cell');
-    if (clusterArticle.bias_score != null) {
-      biasCell.appendChild(createBiasBar(clusterArticle.bias_score, clusterArticle.bias_category || 'center'));
+    if (clusterArticle.camp_ratio) {
+      const campData = typeof clusterArticle.camp_ratio === 'string'
+        ? JSON.parse(clusterArticle.camp_ratio)
+        : clusterArticle.camp_ratio;
+      biasCell.appendChild(createCampBar(campData));
     }
 
     // Score label

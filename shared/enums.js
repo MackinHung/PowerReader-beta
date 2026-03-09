@@ -147,22 +147,24 @@ export function getBiasCategory(score) {
 // 🔥 Controversy Levels
 // =========================================
 export const CONTROVERSY_LEVELS = {
-  LOW: "low",                    // Score < C1
-  MODERATE: "moderate",          // Score C1-C2
-  HIGH: "high",                  // Score C2-C3
-  VERY_HIGH: "very_high"         // Score > C3
+  NON_POLITICAL: "non_political",       // 0-20: 非政治或日常社會
+  GENERAL_POLICY: "general_policy",     // 21-40: 一般政策
+  PARTISAN_CLASH: "partisan_clash",     // 41-60: 藍綠交鋒
+  CORE_CONFLICT: "core_conflict",       // 61-80: 核心對立議題
+  NATIONAL_SECURITY: "national_security" // 81-100: 國安外交重大爭議
 };
 
 /**
- * Get controversy level from score
- * Boundaries from shared/config.js ANALYSIS.CONTROVERSY_BOUNDARIES
+ * Get controversy level from score (5-level, aligned with prompt)
+ * Boundaries from shared/config.js ANALYSIS.CONTROVERSY_BOUNDARIES [20, 40, 60, 80]
  */
 export function getControversyLevel(score) {
-  const [C1, C2, C3] = ANALYSIS.CONTROVERSY_BOUNDARIES;
-  if (score < C1) return CONTROVERSY_LEVELS.LOW;
-  if (score < C2) return CONTROVERSY_LEVELS.MODERATE;
-  if (score < C3) return CONTROVERSY_LEVELS.HIGH;
-  return CONTROVERSY_LEVELS.VERY_HIGH;
+  const [C1, C2, C3, C4] = ANALYSIS.CONTROVERSY_BOUNDARIES;
+  if (score <= C1) return CONTROVERSY_LEVELS.NON_POLITICAL;
+  if (score <= C2) return CONTROVERSY_LEVELS.GENERAL_POLICY;
+  if (score <= C3) return CONTROVERSY_LEVELS.PARTISAN_CLASH;
+  if (score <= C4) return CONTROVERSY_LEVELS.CORE_CONFLICT;
+  return CONTROVERSY_LEVELS.NATIONAL_SECURITY;
 }
 
 // =========================================

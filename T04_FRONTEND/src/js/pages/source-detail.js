@@ -11,7 +11,7 @@
  */
 
 import { fetchSource } from '../api.js';
-import { createBiasBar } from '../components/bias-bar.js';
+import { createCampBar } from '../components/camp-bar.js';
 import { getUserErrorMessage } from '../utils/error.js';
 
 // Camp colors (inlined from shared/enums.js)
@@ -143,7 +143,12 @@ function renderTendencySummary(tendency) {
   // Bias bar
   const barCell = document.createElement('div');
   barCell.className = 'source-tendency__stat-item source-tendency__stat-item--bar';
-  barCell.appendChild(createBiasBar(tendency.avg_bias_score, ''));
+  // Source tendency uses avg_bias_score — derive approximate camp ratio
+  const avgScore = tendency.avg_bias_score || 50;
+  const greenPct = Math.max(0, Math.round((50 - avgScore) * 2));
+  const bluePct = Math.max(0, Math.round((avgScore - 50) * 2));
+  const whitePct = Math.max(0, 100 - greenPct - bluePct);
+  barCell.appendChild(createCampBar({ green: greenPct, white: whitePct, blue: bluePct, gray: 0 }));
   grid.appendChild(barCell);
 
   // Sample count

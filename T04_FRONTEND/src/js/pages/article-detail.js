@@ -12,7 +12,6 @@
  */
 
 import { fetchArticle } from '../api.js';
-import { createBiasBar } from '../components/bias-bar.js';
 import { createControversyMeter } from '../components/controversy-badge.js';
 import { createCampBar } from '../components/camp-bar.js';
 import { enqueueAnalysis, cancelAnalysis, onQueueChange, getQueueStatus, AnalysisCancelledError } from '../model/queue.js';
@@ -43,13 +42,12 @@ const SOURCE_NAMES = {
   '關鍵評論網': '關鍵評論網', '科技新報': '科技新報', '風傳媒': '風傳媒'
 };
 
-const BIAS_LABELS = {
-  extreme_left: '極左', left: '偏左', center_left: '中間偏左',
-  center: '中立', center_right: '中間偏右', right: '偏右', extreme_right: '極右'
-};
-
-const CONTROVERSY_BADGES = {
-  low: '低度爭議', moderate: '中等爭議', high: '高度爭議', very_high: '極高爭議'
+const CONTROVERSY_LABELS = {
+  non_political: '非政治',
+  general_policy: '一般政策',
+  partisan_clash: '藍綠交鋒',
+  core_conflict: '核心對立',
+  national_security: '國安外交'
 };
 
 // ── Module State ──
@@ -143,29 +141,6 @@ function renderArticleContent(container, article) {
   title.textContent = article.title || '';
   container.appendChild(title);
 
-  if (article.bias_score != null && article.bias_category) {
-    const biasSection = document.createElement('section');
-    biasSection.className = 'article-detail__bias';
-    biasSection.setAttribute('aria-label', `立場分析光譜條，分數 ${article.bias_score}，分類 ${BIAS_LABELS[article.bias_category] || article.bias_category}`);
-    const biasHeading = document.createElement('h3');
-    biasHeading.className = 'section-heading';
-    biasHeading.textContent = '立場分析';
-    biasSection.appendChild(biasHeading);
-    biasSection.appendChild(createBiasBar(article.bias_score, article.bias_category));
-    container.appendChild(biasSection);
-  }
-
-  if (article.controversy_score != null && article.controversy_level) {
-    const controversySection = document.createElement('section');
-    controversySection.className = 'article-detail__controversy';
-    const contHeading = document.createElement('h3');
-    contHeading.className = 'section-heading';
-    contHeading.textContent = CONTROVERSY_BADGES[article.controversy_level] || article.controversy_level;
-    controversySection.appendChild(contHeading);
-    controversySection.appendChild(createControversyMeter(article.controversy_score, article.controversy_level));
-    container.appendChild(controversySection);
-  }
-
   if (article.camp_ratio) {
     const campData = typeof article.camp_ratio === 'string'
       ? JSON.parse(article.camp_ratio)
@@ -174,6 +149,17 @@ function renderArticleContent(container, article) {
     campSection.className = 'article-detail__camp';
     campSection.appendChild(createCampBar(campData));
     container.appendChild(campSection);
+  }
+
+  if (article.controversy_score != null && article.controversy_level) {
+    const controversySection = document.createElement('section');
+    controversySection.className = 'article-detail__controversy';
+    const contHeading = document.createElement('h3');
+    contHeading.className = 'section-heading';
+    contHeading.textContent = CONTROVERSY_LABELS[article.controversy_level] || article.controversy_level;
+    controversySection.appendChild(contHeading);
+    controversySection.appendChild(createControversyMeter(article.controversy_score, article.controversy_level));
+    container.appendChild(controversySection);
   }
 
   if (article.summary) {

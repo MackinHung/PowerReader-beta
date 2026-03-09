@@ -1,37 +1,44 @@
 /**
- * PowerReader - Controversy Badge Component
+ * PowerReader - Controversy Badge & Meter Component
  *
- * Displays controversy level as a colored badge.
- * Colors match THEME_COLORS in shared/enums.js.
- * CSS classes defined in css/article.css (.controversy-badge).
+ * 5-level controversy scale aligned with prompt definition:
+ * 0-20: 非政治或日常社會 (non_political)
+ * 21-40: 一般政策 (general_policy)
+ * 41-60: 藍綠交鋒 (partisan_clash)
+ * 61-80: 核心對立議題 (core_conflict)
+ * 81-100: 國安外交重大爭議 (national_security)
+ *
+ * @copyright MackinHung
+ * @license AGPL-3.0
  */
 
-import { t } from '../../locale/zh-TW.js';
-
-/**
- * Map controversy level key to i18n badge key.
- */
-const LEVEL_I18N = {
-  low: 'controversy.badge.low',
-  moderate: 'controversy.badge.moderate',
-  high: 'controversy.badge.high',
-  very_high: 'controversy.badge.very_high'
+const LEVEL_LABELS = {
+  non_political: '非政治',
+  general_policy: '一般政策',
+  partisan_clash: '藍綠交鋒',
+  core_conflict: '核心對立',
+  national_security: '國安外交',
+  // Legacy 4-level fallback
+  low: '非政治',
+  moderate: '一般政策',
+  high: '藍綠交鋒',
+  very_high: '核心對立'
 };
 
 /**
  * Create a controversy badge element.
  *
  * @param {number} score - Controversy score 0-100
- * @param {string} level - Controversy level key (e.g. "high")
+ * @param {string} level - Controversy level key
  * @returns {HTMLElement} Badge element
  */
 export function createControversyBadge(score, level) {
-  const levelLabel = t(LEVEL_I18N[level] || 'controversy.badge.low');
+  const levelLabel = LEVEL_LABELS[level] || level;
 
   const badge = document.createElement('span');
   badge.className = `controversy-badge controversy-badge--${level}`;
   badge.textContent = levelLabel;
-  badge.setAttribute('aria-label', t('a11y.controversy_badge', { level: levelLabel }));
+  badge.setAttribute('aria-label', `爭議程度：${levelLabel}`);
 
   return badge;
 }
@@ -44,7 +51,7 @@ export function createControversyBadge(score, level) {
  * @returns {HTMLElement} Meter container
  */
 export function createControversyMeter(score, level) {
-  const levelLabel = t(LEVEL_I18N[level] || 'controversy.badge.low');
+  const levelLabel = LEVEL_LABELS[level] || level;
 
   const container = document.createElement('div');
   container.className = 'controversy-meter-wrapper';
@@ -55,7 +62,7 @@ export function createControversyMeter(score, level) {
   meter.setAttribute('aria-valuenow', String(score));
   meter.setAttribute('aria-valuemin', '0');
   meter.setAttribute('aria-valuemax', '100');
-  meter.setAttribute('aria-label', t('a11y.controversy_bar', { score, level: levelLabel }));
+  meter.setAttribute('aria-label', `爭議程度 ${score} 分，${levelLabel}`);
 
   const fill = document.createElement('div');
   fill.className = `controversy-meter__fill controversy-meter__fill--${level}`;

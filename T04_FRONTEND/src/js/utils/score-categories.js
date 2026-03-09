@@ -21,12 +21,17 @@ export function getBiasCategoryFromScore(score) {
   return 'extreme_right';
 }
 
-// Controversy boundaries: [5, 15, 50]
-// Categories: low | moderate | high | very_high
+// Controversy boundaries: [20, 40, 60, 80] — aligned with prompt 5-level scale
+// 0-20: non_political (非政治或日常社會)
+// 21-40: general_policy (一般政策)
+// 41-60: partisan_clash (藍綠交鋒)
+// 61-80: core_conflict (核心對立議題)
+// 81-100: national_security (國安外交重大爭議)
 
 export function getControversyLevelFromScore(score) {
-  if (score < 5) return 'low';
-  if (score < 15) return 'moderate';
-  if (score < 50) return 'high';
-  return 'very_high';
+  if (score <= 20) return 'non_political';
+  if (score <= 40) return 'general_policy';
+  if (score <= 60) return 'partisan_clash';
+  if (score <= 80) return 'core_conflict';
+  return 'national_security';
 }

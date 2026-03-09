@@ -246,21 +246,32 @@ header {
   transition: width 0.3s ease;
 }
 
-.controversy-meter__fill--low {
-  background-color: var(--color-controversy-low);
+/* 5-level controversy (aligned with prompt) */
+.controversy-meter__fill--non_political {
+  background-color: #9E9E9E;  /* gray — 非政治 */
 }
 
-.controversy-meter__fill--moderate {
-  background-color: var(--color-controversy-moderate);
+.controversy-meter__fill--general_policy {
+  background-color: var(--color-controversy-low);  /* green — 一般政策 */
 }
 
-.controversy-meter__fill--high {
-  background-color: var(--color-controversy-high);
+.controversy-meter__fill--partisan_clash {
+  background-color: var(--color-controversy-moderate);  /* yellow — 藍綠交鋒 */
 }
 
-.controversy-meter__fill--very-high {
-  background-color: var(--color-controversy-very-high);
+.controversy-meter__fill--core_conflict {
+  background-color: var(--color-controversy-high);  /* orange — 核心對立 */
 }
+
+.controversy-meter__fill--national_security {
+  background-color: var(--color-controversy-very-high);  /* red — 國安外交 */
+}
+
+/* Legacy 4-level fallback */
+.controversy-meter__fill--low { background-color: #9E9E9E; }
+.controversy-meter__fill--moderate { background-color: var(--color-controversy-low); }
+.controversy-meter__fill--high { background-color: var(--color-controversy-moderate); }
+.controversy-meter__fill--very_high { background-color: var(--color-controversy-high); }
 
 /* ==============================================
    Color-blind safe patterns

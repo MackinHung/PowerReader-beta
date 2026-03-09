@@ -7,7 +7,7 @@
  */
 
 import { t } from '../../locale/zh-TW.js';
-import { createBiasIndicator } from './bias-bar.js';
+import { createCampIndicator } from './camp-bar.js';
 import { createControversyBadge } from './controversy-badge.js';
 
 /**
@@ -115,8 +115,11 @@ export function createArticleCard(article) {
   const footer = document.createElement('div');
   footer.className = 'article-card__footer';
 
-  if (article.bias_score != null && article.bias_category) {
-    footer.appendChild(createBiasIndicator(article.bias_score, article.bias_category));
+  if (article.camp_ratio) {
+    const campData = typeof article.camp_ratio === 'string'
+      ? JSON.parse(article.camp_ratio)
+      : article.camp_ratio;
+    footer.appendChild(createCampIndicator(campData));
   }
 
   if (article.controversy_score != null && article.controversy_level) {
