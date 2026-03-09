@@ -16,7 +16,18 @@
  * @license AGPL-3.0
  */
 
-import { BENCHMARK } from '../../../../shared/config.js';
+// Inlined from shared/config.js BENCHMARK section (cannot import outside src/)
+const BENCHMARK = {
+  BENCHMARK_PROMPT: '分析以下新聞標題的政治立場：總統出席國防展覽',
+  BENCHMARK_MAX_WAIT_MS: 30000,
+  BENCHMARK_GPU_THRESHOLD_MS: 8000,
+  BENCHMARK_CPU_THRESHOLD_MS: 60000,
+  TIMEOUT_GPU_MS: 30000,
+  TIMEOUT_CPU_MS: 120000,
+  TIMEOUT_CPU_SLOW_MS: 180000,
+  LS_BENCHMARK_RESULT: 'pr_benchmark_result',
+  LS_WEBGPU_AVAILABLE: 'pr_webgpu_available',
+};
 
 // =============================================
 // 1. GPU Capability Scan
