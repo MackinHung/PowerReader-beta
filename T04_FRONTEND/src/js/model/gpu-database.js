@@ -139,3 +139,55 @@ export function lookupGPU(deviceName) {
 
   return { vramMB: 0, type: 'unknown' };
 }
+
+// ══════════════════════════════════════════════════
+// Architecture-level fallback
+// ══════════════════════════════════════════════════
+//
+// Chrome's privacy tiering often hides the device name (returns '').
+// When that happens, we can still identify the GPU generation from
+// adapter.info.vendor + adapter.info.architecture and provide a
+// VRAM range for that generation.
+
+/**
+ * @typedef {Object} ArchInfo
+ * @property {string} label - Human-readable architecture name
+ * @property {string} vramRange - VRAM range string (e.g. "6 ~ 11 GB")
+ * @property {string} series - GPU series description
+ */
+
+/** @type {Array<{ vendor: RegExp, arch: RegExp } & ArchInfo>} */
+const ARCH_VRAM_TABLE = [
+  // NVIDIA
+  { vendor: /nvidia/i, arch: /blackwell/i, label: 'NVIDIA Blackwell', vramRange: '8 ~ 32 GB', series: 'RTX 50' },
+  { vendor: /nvidia/i, arch: /ada/i, label: 'NVIDIA Ada Lovelace', vramRange: '8 ~ 24 GB', series: 'RTX 40' },
+  { vendor: /nvidia/i, arch: /ampere/i, label: 'NVIDIA Ampere', vramRange: '8 ~ 24 GB', series: 'RTX 30' },
+  { vendor: /nvidia/i, arch: /turing/i, label: 'NVIDIA Turing', vramRange: '4 ~ 11 GB', series: 'RTX 20 / GTX 16' },
+  { vendor: /nvidia/i, arch: /pascal/i, label: 'NVIDIA Pascal', vramRange: '2 ~ 11 GB', series: 'GTX 10' },
+  // AMD
+  { vendor: /amd/i, arch: /rdna\s*4/i, label: 'AMD RDNA 4', vramRange: '16 GB', series: 'RX 9000' },
+  { vendor: /amd/i, arch: /rdna\s*3/i, label: 'AMD RDNA 3', vramRange: '8 ~ 24 GB', series: 'RX 7000' },
+  { vendor: /amd/i, arch: /rdna\s*2/i, label: 'AMD RDNA 2', vramRange: '4 ~ 16 GB', series: 'RX 6000' },
+  // Intel
+  { vendor: /intel/i, arch: /xe2/i, label: 'Intel Xe2', vramRange: '10 ~ 12 GB', series: 'Arc B' },
+  { vendor: /intel/i, arch: /xe/i, label: 'Intel Xe', vramRange: '6 ~ 16 GB', series: 'Arc A' },
+];
+
+/**
+ * Look up GPU info by vendor + architecture when device name is unavailable.
+ *
+ * @param {string} vendor - adapter.info.vendor
+ * @param {string} architecture - adapter.info.architecture
+ * @returns {ArchInfo|null} Architecture info, or null if no match
+ */
+export function lookupByArch(vendor, architecture) {
+  if (!vendor && !architecture) return null;
+
+  for (const entry of ARCH_VRAM_TABLE) {
+    if (entry.vendor.test(vendor || '') && entry.arch.test(architecture || '')) {
+      return { label: entry.label, vramRange: entry.vramRange, series: entry.series };
+    }
+  }
+
+  return null;
+}

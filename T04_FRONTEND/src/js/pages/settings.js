@@ -309,7 +309,15 @@ async function renderHardwareSection(container) {
   card.appendChild(createInfoRow(t('settings.hw.webgpu_supported'), supportedText, supportedColor));
   card.appendChild(createInfoRow(t('settings.hw.gpu_vendor'), gpuInfo.vendor || '—'));
   card.appendChild(createInfoRow(t('settings.hw.gpu_arch'), gpuInfo.architecture || '—'));
-  card.appendChild(createInfoRow(t('settings.hw.gpu_device'), gpuInfo.device || '—'));
+  // GPU device — use archInfo fallback when device name is hidden by browser
+  if (gpuInfo.device) {
+    card.appendChild(createInfoRow(t('settings.hw.gpu_device'), gpuInfo.device));
+  } else if (gpuInfo.archInfo) {
+    const archLabel = gpuInfo.archInfo.label + ' (' + gpuInfo.archInfo.series + ')';
+    card.appendChild(createInfoRow(t('settings.hw.gpu_device'), archLabel));
+  } else {
+    card.appendChild(createInfoRow(t('settings.hw.gpu_device'), '—'));
+  }
 
   // VRAM display — based on known-GPU lookup (not WebGPU maxBufferSize which caps at 2GB)
   if (gpuInfo.gpuType === 'integrated' || gpuInfo.gpuType === 'unified') {
@@ -317,6 +325,9 @@ async function renderHardwareSection(container) {
   } else if (gpuInfo.vramMB > 0) {
     const vramText = formatVRAM(gpuInfo.vramMB) + ' ' + t('settings.hw.vram_ref');
     card.appendChild(createInfoRow(t('settings.hw.vram'), vramText));
+  } else if (gpuInfo.archInfo) {
+    const rangeText = gpuInfo.archInfo.vramRange + ' ' + t('settings.hw.vram_by_model');
+    card.appendChild(createInfoRow(t('settings.hw.vram'), rangeText));
   } else {
     card.appendChild(createInfoRow(t('settings.hw.vram'), t('settings.hw.vram_unknown')));
   }

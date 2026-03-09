@@ -4,7 +4,7 @@
  * Tests: lookupGPU — GPU device name → VRAM lookup
  */
 import { describe, it, expect } from 'vitest';
-import { lookupGPU } from '../../src/js/model/gpu-database.js';
+import { lookupGPU, lookupByArch } from '../../src/js/model/gpu-database.js';
 
 // ══════════════════════════════════════════════
 // 1. NVIDIA Discrete GPUs
@@ -174,5 +174,48 @@ describe('lookupGPU — Edge Cases', () => {
       expect(typeof result.vramMB).toBe('number');
       expect(typeof result.type).toBe('string');
     }
+  });
+});
+
+// ══════════════════════════════════════════════
+// 6. lookupByArch — Architecture Fallback
+// ══════════════════════════════════════════════
+
+describe('lookupByArch', () => {
+  it('matches NVIDIA turing architecture', () => {
+    const result = lookupByArch('nvidia', 'turing');
+    expect(result).not.toBeNull();
+    expect(result.label).toBe('NVIDIA Turing');
+    expect(result.series).toBe('RTX 20 / GTX 16');
+    expect(result.vramRange).toBe('4 ~ 11 GB');
+  });
+
+  it('matches NVIDIA ampere architecture', () => {
+    const result = lookupByArch('nvidia', 'ampere');
+    expect(result).not.toBeNull();
+    expect(result.label).toBe('NVIDIA Ampere');
+    expect(result.series).toBe('RTX 30');
+  });
+
+  it('matches AMD rdna3 architecture', () => {
+    const result = lookupByArch('amd', 'rdna3');
+    expect(result).not.toBeNull();
+    expect(result.label).toBe('AMD RDNA 3');
+    expect(result.series).toBe('RX 7000');
+  });
+
+  it('returns null for empty vendor and arch', () => {
+    expect(lookupByArch('', '')).toBeNull();
+    expect(lookupByArch(null, null)).toBeNull();
+  });
+
+  it('returns null for unknown architecture', () => {
+    expect(lookupByArch('nvidia', 'future_arch_2030')).toBeNull();
+  });
+
+  it('is case-insensitive', () => {
+    const result = lookupByArch('NVIDIA', 'TURING');
+    expect(result).not.toBeNull();
+    expect(result.label).toBe('NVIDIA Turing');
   });
 });

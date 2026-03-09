@@ -80,6 +80,7 @@ describe('scanGPU', () => {
       device: '',
       vramMB: 0,
       gpuType: 'unknown',
+      archInfo: null,
     });
     // cacheWebGPUFlag(false)
     expect(JSON.parse(localStorage.getItem(LS_WEBGPU_AVAILABLE))).toBe(false);
@@ -190,6 +191,31 @@ describe('scanGPU', () => {
     expect(result.device).toBe('');
     expect(result.vramMB).toBe(0); // No device name → lookup returns unknown
     expect(result.gpuType).toBe('unknown');
+    expect(result.archInfo).toBeNull(); // No vendor/arch either
+  });
+
+  it('provides archInfo fallback when device is empty but vendor+arch are present', async () => {
+    // Simulates Chrome privacy tiering: device hidden, vendor+arch available
+    const adapter = createMockAdapter({
+      vendor: 'nvidia',
+      architecture: 'turing',
+      device: '',
+    });
+    globalThis.navigator.gpu = {
+      requestAdapter: vi.fn().mockResolvedValue(adapter),
+    };
+
+    const result = await scanGPU();
+
+    expect(result.supported).toBe(true);
+    expect(result.device).toBe('');
+    expect(result.vramMB).toBe(0); // Exact lookup fails
+    expect(result.gpuType).toBe('unknown');
+    // Architecture fallback kicks in
+    expect(result.archInfo).not.toBeNull();
+    expect(result.archInfo.label).toBe('NVIDIA Turing');
+    expect(result.archInfo.series).toBe('RTX 20 / GTX 16');
+    expect(result.archInfo.vramRange).toBe('4 ~ 11 GB');
   });
 
   it('returns fallback when requestAdapter throws', async () => {

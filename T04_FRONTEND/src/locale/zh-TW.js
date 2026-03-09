@@ -325,6 +325,7 @@ const messages = {
   'settings.hw.vram_unknown': '未知',
   'settings.hw.vram_shared': '共用系統記憶體',
   'settings.hw.vram_ref': '(參考規格)',
+  'settings.hw.vram_by_model': '(依型號)',
   'settings.hw.bench_title': '效能測試結果',
   'settings.hw.bench_tier': '效能等級',
   'settings.hw.bench_latency': '推理延遲',

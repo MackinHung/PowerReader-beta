@@ -16,7 +16,7 @@
  * @license AGPL-3.0
  */
 
-import { lookupGPU } from './gpu-database.js';
+import { lookupGPU, lookupByArch } from './gpu-database.js';
 
 // Inlined from shared/config.js BENCHMARK section (cannot import outside src/)
 const BENCHMARK = {
@@ -49,7 +49,8 @@ const BENCHMARK = {
  *   architecture: string,
  *   device: string,
  *   vramMB: number,
- *   gpuType: 'discrete'|'integrated'|'unified'|'unknown'
+ *   gpuType: 'discrete'|'integrated'|'unified'|'unknown',
+ *   archInfo: { label: string, vramRange: string, series: string }|null
  * }>}
  */
 export async function scanGPU() {
@@ -60,6 +61,7 @@ export async function scanGPU() {
     device: '',
     vramMB: 0,
     gpuType: 'unknown',
+    archInfo: null,
   };
 
   try {
@@ -88,16 +90,24 @@ export async function scanGPU() {
 
     const deviceName = info.device || info.description || '';
     const gpu = lookupGPU(deviceName);
+    const vendor = info.vendor || '';
+    const architecture = info.architecture || '';
+
+    // When device name is empty/unknown, try architecture-level fallback
+    const archInfo = (gpu.type === 'unknown')
+      ? lookupByArch(vendor, architecture)
+      : null;
 
     cacheWebGPUFlag(true);
 
     return {
       supported: true,
-      vendor: info.vendor || '',
-      architecture: info.architecture || '',
+      vendor,
+      architecture,
       device: deviceName,
       vramMB: gpu.vramMB,
       gpuType: gpu.type,
+      archInfo,
     };
   } catch {
     cacheWebGPUFlag(false);
