@@ -19,7 +19,7 @@ import { enqueueAnalysis, cancelAnalysis, onQueueChange, getQueueStatus, Analysi
 import { renderResultPreview } from './analyze-result.js';
 import { runPreAnalysisChecks } from './analyze-checks.js';
 import { updateStatusUI } from './analyze-engine.js';
-import { loadKnowledgePanel, loadClusterPanel } from './article-panels.js';
+import { loadClusterPanel } from './article-panels.js';
 import { getAutoRunnerStatus } from '../model/auto-runner.js';
 import { runPreDownloadChecks } from '../model/manager.js';
 
@@ -112,7 +112,6 @@ export async function renderArticle(container, params) {
   const article = result.data;
   renderArticleContent(container, article);
 
-  loadKnowledgePanel(container, articleId);
   loadClusterPanel(container, articleId);
   startAutoAnalysis(container, article);
 }
@@ -203,12 +202,6 @@ function renderArticleContent(container, article) {
   analysisSection.className = 'article-detail__analysis';
   analysisSection.setAttribute('aria-label', '立場分析');
   container.appendChild(analysisSection);
-
-  const knowledgeSlot = document.createElement('section');
-  knowledgeSlot.id = 'knowledge-panel';
-  knowledgeSlot.className = 'article-detail__knowledge';
-  knowledgeSlot.setAttribute('aria-label', 'Knowledge Panel');
-  container.appendChild(knowledgeSlot);
 
   const clusterSlot = document.createElement('section');
   clusterSlot.id = 'cluster-panel';

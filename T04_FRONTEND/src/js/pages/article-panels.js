@@ -8,15 +8,22 @@
  * @license AGPL-3.0
  */
 
-import { t } from '../../locale/zh-TW.js';
 import { fetchArticleKnowledge, fetchArticleCluster } from '../api.js';
 
 /**
  * Get news source display name.
  */
+const SOURCE_NAMES = {
+  liberty_times: '自由時報', united_daily_news: '聯合報', cna: '中央社',
+  pts: '公視新聞', storm_media: '風傳媒', the_reporter: '報導者',
+  the_news_lens: '關鍵評論網', china_times: '中國時報',
+  '自由時報': '自由時報', '聯合報': '聯合報', '中央社': '中央社',
+  '三立新聞': '三立新聞', 'ETtoday新聞雲': 'ETtoday新聞雲',
+  '東森新聞': '東森新聞', '新頭殼': '新頭殼', '公視新聞': '公視新聞'
+};
+
 function getSourceName(sourceKey) {
-  const label = t(`source.name.${sourceKey}`);
-  return label.startsWith('source.name.') ? sourceKey : label;
+  return SOURCE_NAMES[sourceKey] || sourceKey;
 }
 
 /**
@@ -54,7 +61,7 @@ export async function loadKnowledgePanel(container, articleId) {
 
   const summary = document.createElement('summary');
   summary.className = 'knowledge-panel__summary';
-  summary.textContent = t('article.knowledge.summary', { count: relevantEntries.length });
+  summary.textContent = `知識參考 (${relevantEntries.length} 筆)`;
   details.appendChild(summary);
 
   const list = document.createElement('ul');
@@ -102,12 +109,12 @@ export async function loadClusterPanel(container, articleId) {
 
   const heading = document.createElement('h3');
   heading.className = 'section-heading';
-  heading.textContent = t('nav.title.compare');
+  heading.textContent = '跨媒體比較';
   slot.appendChild(heading);
 
   const desc = document.createElement('p');
   desc.className = 'cluster-panel__desc';
-  desc.textContent = t('common.label.source_count', { count: result.data.articles.length });
+  desc.textContent = `${result.data.articles.length} 家媒體報導同一事件`;
   slot.appendChild(desc);
 
   const list = document.createElement('div');
