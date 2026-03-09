@@ -167,9 +167,12 @@ function renderArticleContent(container, article) {
   }
 
   if (article.camp_ratio) {
+    const campData = typeof article.camp_ratio === 'string'
+      ? JSON.parse(article.camp_ratio)
+      : article.camp_ratio;
     const campSection = document.createElement('section');
     campSection.className = 'article-detail__camp';
-    campSection.appendChild(createCampBar(article.camp_ratio));
+    campSection.appendChild(createCampBar(campData));
     container.appendChild(campSection);
   }
 

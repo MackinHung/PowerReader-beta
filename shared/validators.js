@@ -129,6 +129,24 @@ export function validateAnalysis(analysis) {
   if (!isNonEmptyString(analysis.prompt_version)) errors.push('prompt_version is required');
   if (!isNonEmptyString(analysis.user_hash)) errors.push('user_hash is required');
 
+  // Optional: camp_ratio validation ({green, white, blue, gray}, sum ≈ 100)
+  if (analysis.camp_ratio != null) {
+    if (typeof analysis.camp_ratio !== 'object' || Array.isArray(analysis.camp_ratio)) {
+      errors.push('camp_ratio must be an object with green/white/blue/gray');
+    } else {
+      const { green, white, blue, gray } = analysis.camp_ratio;
+      const camps = [green, white, blue, gray];
+      if (camps.some(v => typeof v !== 'number' || v < 0 || v > 100)) {
+        errors.push('camp_ratio values must be numbers 0-100');
+      } else {
+        const sum = camps.reduce((a, b) => a + b, 0);
+        if (sum < 90 || sum > 110) {
+          errors.push('camp_ratio values must sum to approximately 100');
+        }
+      }
+    }
+  }
+
   return { valid: errors.length === 0, errors };
 }
 

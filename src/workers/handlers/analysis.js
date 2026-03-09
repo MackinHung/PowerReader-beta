@@ -97,17 +97,20 @@ export async function createAnalysis(request, env, ctx, { params, user }) {
   // Quality gate validation (4-layer: format, range, consistency, duplicate)
   const { result: quality_gate_result, scores: quality_scores } = runQualityGates(body);
 
+  // Serialize camp_ratio if provided
+  const campRatioJson = body.camp_ratio ? JSON.stringify(body.camp_ratio) : null;
+
   // Insert analysis (using authenticated user_hash, not body.user_hash)
   await env.DB.prepare(`
     INSERT INTO analyses (article_id, user_hash, bias_score, bias_category,
       controversy_score, controversy_level, reasoning, key_phrases,
-      quality_gate_result, quality_scores, prompt_version)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      quality_gate_result, quality_scores, prompt_version, camp_ratio)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     article_id, user_hash, body.bias_score, bias_category,
     body.controversy_score, controversy_level, body.reasoning,
     JSON.stringify(body.key_phrases), quality_gate_result,
-    JSON.stringify(quality_scores), body.prompt_version
+    JSON.stringify(quality_scores), body.prompt_version, campRatioJson
   ).run();
 
   // Update article analysis count + user daily count (batch for efficiency)
@@ -117,12 +120,13 @@ export async function createAnalysis(request, env, ctx, { params, user }) {
         analysis_count = analysis_count + 1,
         bias_score = ?, bias_category = ?,
         controversy_score = ?, controversy_level = ?,
+        camp_ratio = COALESCE(?, camp_ratio),
         updated_at = ?
       WHERE article_id = ?
     `).bind(
       body.bias_score, bias_category,
       body.controversy_score, controversy_level,
-      nowISO(), article_id
+      campRatioJson, nowISO(), article_id
     ),
     env.DB.prepare(`
       UPDATE users SET
@@ -200,6 +204,7 @@ export async function createAnalysis(request, env, ctx, { params, user }) {
       bias_category,
       controversy_score: body.controversy_score,
       controversy_level,
+      camp_ratio: body.camp_ratio || null,
       quality_gate_result,
       reward: pointsData
     },
@@ -215,7 +220,7 @@ export async function getAnalyses(request, env, ctx, { params }) {
 
   const rows = await env.DB.prepare(`
     SELECT bias_score, bias_category, controversy_score, controversy_level,
-      reasoning, key_phrases, quality_gate_result, prompt_version, created_at
+      reasoning, key_phrases, quality_gate_result, prompt_version, camp_ratio, created_at
     FROM analyses WHERE article_id = ? ORDER BY created_at DESC
   `).bind(article_id).all();
 
@@ -227,7 +232,8 @@ export async function getAnalyses(request, env, ctx, { params }) {
         reasoning: row.reasoning ? escapeHtml(row.reasoning) : row.reasoning,
         key_phrases: JSON.parse(row.key_phrases || '[]').map(kp =>
           typeof kp === 'string' ? escapeHtml(kp) : kp
-        )
+        ),
+        camp_ratio: row.camp_ratio ? JSON.parse(row.camp_ratio) : null
       })),
       total: rows.results?.length || 0
     },

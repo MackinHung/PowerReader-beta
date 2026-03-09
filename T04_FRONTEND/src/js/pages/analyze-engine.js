@@ -8,7 +8,6 @@
  * @license AGPL-3.0
  */
 
-import { t } from '../../locale/zh-TW.js';
 import { fetchArticleKnowledge } from '../api.js';
 import { runAnalysis } from '../model/inference.js';
 
@@ -42,7 +41,7 @@ export async function executeAnalysis(article, statusArea, resultArea, renderRes
 
     const errMsg = document.createElement('p');
     errMsg.className = 'error-state';
-    errMsg.textContent = t('error.model.inference_failed');
+    errMsg.textContent = '分析失敗，正在切換至伺服器模式...';
     statusArea.appendChild(errMsg);
 
     // Show error detail for debugging
@@ -53,7 +52,7 @@ export async function executeAnalysis(article, statusArea, resultArea, renderRes
 
     const retryBtn = document.createElement('button');
     retryBtn.className = 'btn btn--primary';
-    retryBtn.textContent = t('common.button.retry');
+    retryBtn.textContent = '重試';
     retryBtn.addEventListener('click', () => {
       statusArea.innerHTML = '';
       executeAnalysis(article, statusArea, resultArea, renderResultFn);
@@ -97,20 +96,20 @@ export function updateStatusUI(statusArea, stage, elapsedMs, extra) {
 
   // ── Phase 2: Analysis ──
   const stageMessages = {
-    preparing: t('model.inference.preparing'),
-    running: t('model.inference.running'),
-    generating: t('model.inference.generating'),
-    pass1_running: t('model.inference.pass1_running'),
-    pass1_done: t('model.inference.pass1_done'),
-    pass2_running: t('model.inference.pass2_running'),
-    pass2_done: t('model.inference.pass2_done'),
-    fallback_to_server: t('error.model.inference_failed')
+    preparing: '正在組裝提示詞...',
+    running: 'AI 分析中...',
+    generating: '產生結果...',
+    pass1_running: 'Pass 1/2: 分數分析中...',
+    pass1_done: 'Pass 1 完成，開始論述分析...',
+    pass2_running: 'Pass 2/2: 論述重點分析中...',
+    pass2_done: '分析完成',
+    fallback_to_server: '分析失敗，正在切換至伺服器模式...'
   };
 
   // Stage label
   const msg = document.createElement('p');
   msg.className = 'analyze-status__message';
-  msg.textContent = stageMessages[stage] || t('model.inference.running');
+  msg.textContent = stageMessages[stage] || 'AI 分析中...';
   statusArea.appendChild(msg);
 
   // Pass indicator (1/2 or 2/2)
@@ -127,7 +126,7 @@ export function updateStatusUI(statusArea, stage, elapsedMs, extra) {
   const progress = document.createElement('div');
   progress.className = 'analyze-status__progress';
   progress.setAttribute('role', 'progressbar');
-  progress.setAttribute('aria-label', t('a11y.status.loading'));
+  progress.setAttribute('aria-label', '內容載入中，請稍候');
   statusArea.appendChild(progress);
 
   // Elapsed time
@@ -144,13 +143,13 @@ function renderDownloadUI(container, extra, elapsedMs) {
   // Heading
   const heading = document.createElement('h3');
   heading.className = 'analyze-download__heading';
-  heading.textContent = t('model.download.heading');
+  heading.textContent = '下載 AI 模型';
   container.appendChild(heading);
 
   // Subtitle
   const subtitle = document.createElement('p');
   subtitle.className = 'analyze-download__subtitle';
-  subtitle.textContent = t('model.download.first_time_hint');
+  subtitle.textContent = '首次使用需下載模型 (約 4.5GB)，下載完成後將自動開始分析';
   container.appendChild(subtitle);
 
   // Progress percentage
@@ -203,7 +202,7 @@ function parseDownloadDetail(text) {
   const chunkMatch = text.match(/\[(\d+)\/(\d+)\]/);
   const mbMatch = text.match(/(\d+)MB/);
   if (chunkMatch && mbMatch) {
-    return `${chunkMatch[1]} / ${chunkMatch[2]} ${t('model.download.chunks')} · ${mbMatch[1]}MB`;
+    return `${chunkMatch[1]} / ${chunkMatch[2]} 區塊 · ${mbMatch[1]}MB`;
   }
   if (mbMatch) {
     return `${mbMatch[1]}MB`;

@@ -340,6 +340,7 @@ async function submitAnalysis(article, result, container) {
     reasoning: result.reasoning || '',
     key_phrases: result.key_phrases || [],
     narrative_points: result.points || [],
+    camp_ratio: result.camp_ratio || null,
     prompt_version: result.prompt_version || 'v3.0.0',
     analysis_duration_ms: result.latency_ms || 0,
     inference_mode: result.mode || 'unknown',
