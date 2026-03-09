@@ -2,7 +2,7 @@ name: Deploy to Cloudflare
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   workflow_dispatch:
     inputs:
       environment:
@@ -44,7 +44,7 @@ jobs:
   deploy-pages:
     needs: lint-and-test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     permissions:
       contents: read
       deployments: write
@@ -65,7 +65,7 @@ jobs:
   deploy-workers:
     needs: lint-and-test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     outputs:
       # 記錄當前與前一個 commit SHA，供回滾使用
       current_sha: ${{ steps.track-commits.outputs.current_sha }}
