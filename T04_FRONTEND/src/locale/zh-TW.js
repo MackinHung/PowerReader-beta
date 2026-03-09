@@ -311,7 +311,39 @@ const messages = {
   'settings.analysis_mode.title': '分析模式',
 
   // ==============================================
-  // Settings Page
+  // Settings Page — Hardware Detection
+  // ==============================================
+  'settings.hw.title': '硬體偵測',
+  'settings.hw.gpu_info': 'GPU 資訊',
+  'settings.hw.webgpu_supported': 'WebGPU 支援',
+  'settings.hw.webgpu_yes': '支援',
+  'settings.hw.webgpu_no': '不支援',
+  'settings.hw.gpu_vendor': 'GPU 廠商',
+  'settings.hw.gpu_arch': 'GPU 架構',
+  'settings.hw.gpu_device': 'GPU 裝置',
+  'settings.hw.vram': '預估 VRAM',
+  'settings.hw.vram_unknown': '無法偵測',
+  'settings.hw.bench_title': '效能測試結果',
+  'settings.hw.bench_tier': '效能等級',
+  'settings.hw.bench_latency': '推理延遲',
+  'settings.hw.bench_time': '測試時間',
+  'settings.hw.bench_none': '尚未執行效能測試',
+  'settings.hw.mode_gpu': 'GPU 模式 (高速)',
+  'settings.hw.mode_cpu': 'CPU 模式 (標準)',
+  'settings.hw.mode_none': '無法本地推理',
+  'settings.hw.btn_redetect': '重新偵測硬體',
+  'settings.hw.btn_benchmark': '執行效能測試',
+  'settings.hw.btn_benchmarking': '測試中...',
+  'settings.hw.stage_init': '正在初始化...',
+  'settings.hw.stage_scanning': '正在掃描 GPU...',
+  'settings.hw.stage_loading': '正在載入模型...',
+  'settings.hw.stage_running': '正在執行推理測試...',
+  'settings.hw.stage_done': '測試完成',
+  'settings.hw.stage_error': '測試失敗',
+  'settings.hw.error_prefix': '測試失敗: {message}',
+
+  // ==============================================
+  // Settings Page — Cache / Display / About
   // ==============================================
   'settings.cache.title': '快取管理',
   'settings.cache.usage': '儲存空間: {used} MB / {total} MB',

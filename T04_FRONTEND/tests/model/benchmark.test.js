@@ -20,18 +20,34 @@ const LS_WEBGPU_AVAILABLE = 'pr_webgpu_available';
 
 // ── Helper: build a mock GPU adapter ──
 
+/**
+ * Create mock adapter using adapter.info property (modern Chrome 121+).
+ * @param {Object} overrides
+ * @param {boolean} [overrides.useLegacyAPI] - If true, use requestAdapterInfo() instead of .info
+ */
 function createMockAdapter(overrides = {}) {
-  return {
-    requestAdapterInfo: vi.fn().mockResolvedValue({
-      vendor: overrides.vendor ?? 'nvidia',
-      architecture: overrides.architecture ?? 'ampere',
-      device: overrides.device ?? 'RTX 3060',
-      description: overrides.description ?? '',
-    }),
+  const infoObj = {
+    vendor: overrides.vendor ?? 'nvidia',
+    architecture: overrides.architecture ?? 'ampere',
+    device: overrides.device ?? 'RTX 3060',
+    description: overrides.description ?? '',
+  };
+
+  const adapter = {
     limits: {
       maxBufferSize: overrides.maxBufferSize ?? (6 * 1024 * 1024 * 1024), // 6 GB
     },
   };
+
+  if (overrides.useLegacyAPI) {
+    // Legacy: only requestAdapterInfo() method, no .info property
+    adapter.requestAdapterInfo = vi.fn().mockResolvedValue(infoObj);
+  } else {
+    // Modern: .info sync property (Chrome 121+)
+    adapter.info = infoObj;
+  }
+
+  return adapter;
 }
 
 // ── Setup / Teardown ──
@@ -102,13 +118,6 @@ describe('scanGPU', () => {
 
   it('falls back to info.description when info.device is empty', async () => {
     const adapter = createMockAdapter({ device: '', description: 'Fallback Device' });
-    // Override requestAdapterInfo to return device='' so fallback to description
-    adapter.requestAdapterInfo = vi.fn().mockResolvedValue({
-      vendor: 'amd',
-      architecture: 'rdna3',
-      device: '',
-      description: 'Fallback Device',
-    });
     globalThis.navigator.gpu = {
       requestAdapter: vi.fn().mockResolvedValue(adapter),
     };
@@ -116,6 +125,67 @@ describe('scanGPU', () => {
     const result = await scanGPU();
 
     expect(result.device).toBe('Fallback Device');
+  });
+
+  it('uses adapter.info sync property (modern Chrome 121+)', async () => {
+    const adapter = createMockAdapter({
+      vendor: 'nvidia',
+      architecture: 'ada',
+      device: 'RTX 4090',
+      maxBufferSize: 16 * 1024 * 1024 * 1024,
+    });
+    // Verify adapter.info is used, not requestAdapterInfo
+    expect(adapter.info).toBeDefined();
+    expect(adapter.requestAdapterInfo).toBeUndefined();
+
+    globalThis.navigator.gpu = {
+      requestAdapter: vi.fn().mockResolvedValue(adapter),
+    };
+
+    const result = await scanGPU();
+
+    expect(result.supported).toBe(true);
+    expect(result.vendor).toBe('nvidia');
+    expect(result.device).toBe('RTX 4090');
+    expect(result.estimatedVRAM_MB).toBe(16384);
+  });
+
+  it('falls back to requestAdapterInfo when adapter.info is unavailable (legacy)', async () => {
+    const adapter = createMockAdapter({
+      useLegacyAPI: true,
+      vendor: 'amd',
+      architecture: 'rdna3',
+      device: 'RX 7900',
+    });
+    expect(adapter.info).toBeUndefined();
+
+    globalThis.navigator.gpu = {
+      requestAdapter: vi.fn().mockResolvedValue(adapter),
+    };
+
+    const result = await scanGPU();
+
+    expect(result.supported).toBe(true);
+    expect(result.vendor).toBe('amd');
+    expect(result.device).toBe('RX 7900');
+    expect(adapter.requestAdapterInfo).toHaveBeenCalled();
+  });
+
+  it('still reports supported=true when both info APIs fail', async () => {
+    const adapter = {
+      // No .info property, no requestAdapterInfo — simulates unknown future API change
+      limits: { maxBufferSize: 4 * 1024 * 1024 * 1024 },
+    };
+    globalThis.navigator.gpu = {
+      requestAdapter: vi.fn().mockResolvedValue(adapter),
+    };
+
+    const result = await scanGPU();
+
+    expect(result.supported).toBe(true);
+    expect(result.vendor).toBe('');
+    expect(result.device).toBe('');
+    expect(result.estimatedVRAM_MB).toBe(4096);
   });
 
   it('returns fallback when requestAdapter throws', async () => {

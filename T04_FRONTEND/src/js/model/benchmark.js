@@ -66,7 +66,18 @@ export async function scanGPU() {
       return fallback;
     }
 
-    const info = await adapter.requestAdapterInfo();
+    // adapter.info (sync property, Chrome 121+) replaces deprecated requestAdapterInfo()
+    let info = { vendor: '', architecture: '', device: '', description: '' };
+    try {
+      if (adapter.info) {
+        info = adapter.info;
+      } else if (typeof adapter.requestAdapterInfo === 'function') {
+        info = await adapter.requestAdapterInfo();
+      }
+    } catch {
+      // Info retrieval failed — adapter still works, just no details
+    }
+
     const maxBuffer = adapter.limits.maxBufferSize || 0;
     const estimatedVRAM_MB = Math.round(maxBuffer / (1024 * 1024));
 

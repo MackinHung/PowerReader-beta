@@ -17,6 +17,9 @@ import {
   onAutoRunnerUpdate, isAutoModeEnabled, setAnalysisMode
 } from '../model/auto-runner.js';
 import { isAuthenticated } from '../auth.js';
+import {
+  formatVRAM, formatBenchmarkDate, formatBenchmarkMode, createInfoRow
+} from './settings-helpers.js';
 
 /**
  * Render settings page.
@@ -273,46 +276,6 @@ async function renderModelSection(container) {
 }
 
 /**
- * Create a label-value info row element.
- * @param {string} label
- * @param {string} value
- * @param {string} [color]
- * @returns {HTMLElement}
- */
-function createInfoRow(label, value, color) {
-  const row = document.createElement('div');
-  row.className = 'settings-about__row';
-
-  const labelEl = document.createElement('span');
-  labelEl.className = 'settings-about__label';
-  labelEl.textContent = label;
-
-  const valueEl = document.createElement('span');
-  valueEl.className = 'settings-about__value';
-  valueEl.textContent = value;
-  if (color) valueEl.style.color = color;
-
-  row.appendChild(labelEl);
-  row.appendChild(valueEl);
-  return row;
-}
-
-/**
- * Format mode label for benchmark result display.
- * @param {string} mode - 'gpu' | 'cpu' | 'none'
- * @returns {{ text: string, color: string }}
- */
-function formatBenchmarkMode(mode) {
-  if (mode === 'gpu') {
-    return { text: 'GPU 模式 (高速)', color: 'var(--color-controversy-low)' };
-  }
-  if (mode === 'cpu') {
-    return { text: 'CPU 模式 (標準)', color: 'var(--color-text-secondary)' };
-  }
-  return { text: '無法本地推理', color: 'var(--color-bias-extreme)' };
-}
-
-/**
  * Render hardware detection section.
  * @param {HTMLElement} container
  */
@@ -322,7 +285,7 @@ async function renderHardwareSection(container) {
 
   const heading = document.createElement('h3');
   heading.className = 'section-heading';
-  heading.textContent = '硬體偵測';
+  heading.textContent = t('settings.hw.title');
   section.appendChild(heading);
 
   const card = document.createElement('div');
@@ -331,7 +294,7 @@ async function renderHardwareSection(container) {
   // --- GPU Info ---
   const gpuTitle = document.createElement('p');
   gpuTitle.className = 'settings-card__title';
-  gpuTitle.textContent = 'GPU 資訊';
+  gpuTitle.textContent = t('settings.hw.gpu_info');
   card.appendChild(gpuTitle);
 
   const gpuInfo = await scanGPU();
@@ -339,34 +302,33 @@ async function renderHardwareSection(container) {
   const supportedColor = gpuInfo.supported
     ? 'var(--color-controversy-low)'
     : 'var(--color-bias-extreme)';
-  const supportedText = gpuInfo.supported ? '✓ 支援' : '✗ 不支援';
+  const supportedText = gpuInfo.supported
+    ? t('settings.hw.webgpu_yes')
+    : t('settings.hw.webgpu_no');
 
-  card.appendChild(createInfoRow('WebGPU 支援', supportedText, supportedColor));
-  card.appendChild(createInfoRow('GPU 廠商', gpuInfo.vendor || '—'));
-  card.appendChild(createInfoRow('GPU 架構', gpuInfo.architecture || '—'));
-  card.appendChild(createInfoRow('GPU 裝置', gpuInfo.device || '—'));
-  card.appendChild(createInfoRow(
-    '預估 VRAM',
-    gpuInfo.estimatedVRAM_MB ? `${gpuInfo.estimatedVRAM_MB} MB` : '無法偵測'
-  ));
+  card.appendChild(createInfoRow(t('settings.hw.webgpu_supported'), supportedText, supportedColor));
+  card.appendChild(createInfoRow(t('settings.hw.gpu_vendor'), gpuInfo.vendor || '—'));
+  card.appendChild(createInfoRow(t('settings.hw.gpu_arch'), gpuInfo.architecture || '—'));
+  card.appendChild(createInfoRow(t('settings.hw.gpu_device'), gpuInfo.device || '—'));
+  card.appendChild(createInfoRow(t('settings.hw.vram'), formatVRAM(gpuInfo.estimatedVRAM_MB)));
 
   // --- Benchmark Result ---
   const benchTitle = document.createElement('p');
   benchTitle.className = 'settings-card__title';
   benchTitle.style.marginTop = '1rem';
-  benchTitle.textContent = '效能測試結果';
+  benchTitle.textContent = t('settings.hw.bench_title');
   card.appendChild(benchTitle);
 
   const cached = getCachedBenchmark();
   if (cached) {
     const { text: modeText, color: modeColor } = formatBenchmarkMode(cached.mode);
-    card.appendChild(createInfoRow('效能等級', modeText, modeColor));
-    card.appendChild(createInfoRow('推理延遲', `${cached.latency_ms} ms`));
-    card.appendChild(createInfoRow('測試時間', cached.tested_at));
+    card.appendChild(createInfoRow(t('settings.hw.bench_tier'), modeText, modeColor));
+    card.appendChild(createInfoRow(t('settings.hw.bench_latency'), `${cached.latency_ms} ms`));
+    card.appendChild(createInfoRow(t('settings.hw.bench_time'), formatBenchmarkDate(cached.tested_at)));
   } else {
     const noResultEl = document.createElement('p');
     noResultEl.className = 'settings-card__subtitle';
-    noResultEl.textContent = '尚未執行效能測試';
+    noResultEl.textContent = t('settings.hw.bench_none');
     card.appendChild(noResultEl);
   }
 
@@ -383,7 +345,7 @@ async function renderHardwareSection(container) {
   // Re-detect hardware button
   const redetectBtn = document.createElement('button');
   redetectBtn.className = 'btn btn--secondary';
-  redetectBtn.textContent = '重新偵測硬體';
+  redetectBtn.textContent = t('settings.hw.btn_redetect');
   redetectBtn.addEventListener('click', () => {
     clearBenchmark();
     renderSettings(container.parentElement || container);
@@ -393,35 +355,37 @@ async function renderHardwareSection(container) {
   // Run benchmark button
   const benchmarkBtn = document.createElement('button');
   benchmarkBtn.className = 'btn btn--primary';
-  benchmarkBtn.textContent = '執行效能測試';
+  benchmarkBtn.textContent = t('settings.hw.btn_benchmark');
   benchmarkBtn.addEventListener('click', async () => {
     benchmarkBtn.disabled = true;
-    benchmarkBtn.textContent = '測試中...';
+    benchmarkBtn.textContent = t('settings.hw.btn_benchmarking');
     redetectBtn.disabled = true;
     statusEl.style.display = 'block';
-    statusEl.textContent = '正在初始化...';
+    statusEl.textContent = t('settings.hw.stage_init');
 
     try {
+      const stageKeys = {
+        scanning_gpu: 'settings.hw.stage_scanning',
+        loading_engine: 'settings.hw.stage_loading',
+        running_inference: 'settings.hw.stage_running',
+        done: 'settings.hw.stage_done',
+        error: 'settings.hw.stage_error',
+      };
+
       await runBenchmark(
         () => getWebLLMEngine(),
         (progress) => {
-            const stageLabels = {
-              scanning_gpu: '正在掃描 GPU...',
-              loading_engine: '正在載入模型...',
-              running_inference: '正在執行推理測試...',
-              done: '測試完成',
-              error: '測試失敗'
-            };
-            statusEl.textContent = stageLabels[progress.stage] || progress.stage;
-          }
+          const key = stageKeys[progress.stage];
+          statusEl.textContent = key ? t(key) : progress.stage;
+        }
       );
       renderSettings(container.parentElement || container);
     } catch (err) {
       console.error('[Settings] Benchmark failed:', err);
-      statusEl.textContent = `測試失敗: ${err.message || '未知錯誤'}`;
+      statusEl.textContent = t('settings.hw.error_prefix', { message: err.message || '未知錯誤' });
       statusEl.style.color = 'var(--color-bias-extreme)';
       benchmarkBtn.disabled = false;
-      benchmarkBtn.textContent = '執行效能測試';
+      benchmarkBtn.textContent = t('settings.hw.btn_benchmark');
       redetectBtn.disabled = false;
     }
   });
