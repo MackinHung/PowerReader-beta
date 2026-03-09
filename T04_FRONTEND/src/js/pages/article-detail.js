@@ -213,7 +213,7 @@ function renderArticleContent(container, article) {
   container.appendChild(clusterSlot);
 }
 
-// ── Auto-Analysis ──
+// ── Analysis (Manual Trigger) ──
 
 async function startAutoAnalysis(container, article) {
   const section = container.querySelector('#analysis-section');
@@ -231,13 +231,54 @@ async function startAutoAnalysis(container, article) {
     return;
   }
 
-  // If auto-runner is active, show info banner instead of auto-enqueuing
+  // If auto-runner is active, show info banner with manual override
   const runnerStatus = getAutoRunnerStatus();
   if (runnerStatus.running) {
     _renderAutoRunnerBanner(section, article);
     return;
   }
 
+  // Show manual analysis button (user clicks to start)
+  renderManualAnalyzeButton(section, article);
+}
+
+/**
+ * Show a prominent manual "分析此文章" button.
+ * When clicked, runs pre-analysis checks and proceeds through gates.
+ */
+function renderManualAnalyzeButton(section, article) {
+  section.innerHTML = '';
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'article-detail__analyze-trigger';
+
+  const heading = document.createElement('h3');
+  heading.className = 'section-heading';
+  heading.textContent = 'AI 立場分析';
+  wrapper.appendChild(heading);
+
+  const desc = document.createElement('p');
+  desc.className = 'analyze-trigger__desc';
+  desc.textContent = '使用您的 GPU 在本機分析此文章的媒體立場與爭議程度';
+  wrapper.appendChild(desc);
+
+  const btn = document.createElement('button');
+  btn.className = 'btn btn--primary btn--large';
+  btn.textContent = '分析此文章';
+  btn.addEventListener('click', () => {
+    btn.disabled = true;
+    btn.textContent = '檢查中...';
+    proceedToAnalysis(section, article);
+  });
+  wrapper.appendChild(btn);
+
+  section.appendChild(wrapper);
+}
+
+/**
+ * Run pre-analysis checks and proceed through download/consent gates.
+ */
+async function proceedToAnalysis(section, article) {
   const checks = await runPreAnalysisChecks(article);
   if (!checks.canAnalyze) {
     renderAnalysisBlocked(section, checks, article);
