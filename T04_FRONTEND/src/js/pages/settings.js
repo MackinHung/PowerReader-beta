@@ -266,7 +266,7 @@ async function renderModelSection(container) {
     await deleteModel();
     localStorage.removeItem('powerreader_webllm_cached');
     clearCacheBtn.textContent = t('model.cache.cleared', { mb: String(freedMB) });
-    setTimeout(() => renderSettings(container.parentElement || container), 1500);
+    setTimeout(() => renderSettings(container), 1500);
   });
   actionsRow.appendChild(clearCacheBtn);
 
@@ -348,7 +348,7 @@ async function renderHardwareSection(container) {
   redetectBtn.textContent = t('settings.hw.btn_redetect');
   redetectBtn.addEventListener('click', () => {
     clearBenchmark();
-    renderSettings(container.parentElement || container);
+    renderSettings(container);
   });
   actionsRow.appendChild(redetectBtn);
 
@@ -373,13 +373,15 @@ async function renderHardwareSection(container) {
       };
 
       await runBenchmark(
-        () => getWebLLMEngine(),
+        () => getWebLLMEngine((p) => {
+          statusEl.textContent = t('model.inference.loading_model_pct', { text: p.text || '' });
+        }),
         (progress) => {
           const key = stageKeys[progress.stage];
           statusEl.textContent = key ? t(key) : progress.stage;
         }
       );
-      renderSettings(container.parentElement || container);
+      renderSettings(container);
     } catch (err) {
       console.error('[Settings] Benchmark failed:', err);
       statusEl.textContent = t('settings.hw.error_prefix', { message: err.message || '未知錯誤' });
@@ -486,7 +488,7 @@ async function renderCacheSection(container) {
     } catch (e) {
       console.error('[Settings] Clear cache failed:', e);
     }
-    renderSettings(container.parentElement || container);
+    renderSettings(container);
   });
   card.appendChild(clearBtn);
   section.appendChild(card);

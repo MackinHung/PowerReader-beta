@@ -321,7 +321,7 @@ const messages = {
   'settings.hw.gpu_vendor': 'GPU 廠商',
   'settings.hw.gpu_arch': 'GPU 架構',
   'settings.hw.gpu_device': 'GPU 裝置',
-  'settings.hw.vram': '預估 VRAM',
+  'settings.hw.vram': '最大緩衝區',
   'settings.hw.vram_unknown': '無法偵測',
   'settings.hw.bench_title': '效能測試結果',
   'settings.hw.bench_tier': '效能等級',
