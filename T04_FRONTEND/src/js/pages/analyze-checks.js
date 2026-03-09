@@ -8,36 +8,22 @@
  * @license AGPL-3.0
  */
 
-import { t } from '../../locale/zh-TW.js';
 import { detectBestMode, INFERENCE_MODES } from '../model/inference.js';
 import { isAuthenticated } from '../auth.js';
-import { getCachedBenchmark, scanGPU } from '../model/benchmark.js';
 
 // Analysis deadline: 72 hours from publish
 const DEADLINE_HOURS = 72;
-const MIN_VRAM_MB = 4500;
 
 /**
  * Run all pre-analysis checks and return {canAnalyze, issues, modelReady, bestMode}.
+ *
+ * Simplified: no benchmark gate. If WebGPU exists, let the user try.
+ * WebLLM will report a clear error if the GPU can't handle it.
  */
 export async function runPreAnalysisChecks(article) {
   const issues = [];
 
-  // 0. GPU capability gate (before model check)
-  const benchmark = getCachedBenchmark();
-  const gpuInfo = await scanGPU();
-
-  if (!gpuInfo.supported) {
-    issues.push({ type: 'gpu', message: t('auto_analysis.error.no_webgpu') });
-  } else if (benchmark && benchmark.mode === 'none') {
-    issues.push({ type: 'gpu', message: t('auto_analysis.error.vram_insufficient') });
-  } else if (!benchmark && gpuInfo.vramMB > 0 && gpuInfo.vramMB < MIN_VRAM_MB) {
-    issues.push({ type: 'gpu', message: t('auto_analysis.error.vram_insufficient') });
-  } else if (!benchmark && gpuInfo.vramMB === 0) {
-    issues.push({ type: 'benchmark_needed', message: t('auto_analysis.error.benchmark_needed') });
-  }
-
-  // 1. Check model / inference mode
+  // 0. Check model / inference mode
   const bestMode = await detectBestMode();
 
   // WebGPU mode: WebLLM handles model download automatically via CreateMLCEngine()
@@ -46,33 +32,33 @@ export async function runPreAnalysisChecks(article) {
   // Only block if NO inference mode is available (no WebGPU + no server).
   const modelReady = bestMode === INFERENCE_MODES.WEBGPU || bestMode === INFERENCE_MODES.SERVER;
   if (!modelReady) {
-    issues.push({ type: 'model', message: t('error.webgpu.not_supported') });
+    issues.push({ type: 'model', message: '您的瀏覽器不支援 WebGPU，無法執行本機分析' });
   }
 
-  // 2. Check cooldown
+  // 1. Check cooldown
   const cooldown = getCooldownState();
   if (cooldown.active) {
     issues.push({
       type: 'cooldown',
-      message: t('reward.cooldown.active'),
+      message: '分析冷卻中，請稍後再試',
       remaining: cooldown.remainingMinutes
     });
   }
 
-  // 3. Check 72h deadline
+  // 2. Check 72h deadline
   if (article.published_at) {
     const publishTime = new Date(article.published_at).getTime();
     const deadlineTime = publishTime + DEADLINE_HOURS * 60 * 60 * 1000;
     const remaining = deadlineTime - Date.now();
 
     if (remaining <= 0) {
-      issues.push({ type: 'deadline', message: t('article.deadline.expired') });
+      issues.push({ type: 'deadline', message: '此文章已超過 72 小時分析期限' });
     }
   }
 
-  // 4. Check login (required for analysis submission)
+  // 3. Check login (required for analysis submission)
   if (!isAuthenticated()) {
-    issues.push({ type: 'auth', message: t('login.prompt') });
+    issues.push({ type: 'auth', message: '請先登入以提交分析結果' });
   }
 
   return { canAnalyze: issues.length === 0, issues, modelReady, bestMode };
@@ -104,7 +90,7 @@ export function renderBlockedState(container, checks, article, reRender) {
 
   const heading = document.createElement('h2');
   heading.className = 'page-title';
-  heading.textContent = t('nav.title.analyze');
+  heading.textContent = '立場分析';
   wrapper.appendChild(heading);
 
   const articleTitle = document.createElement('h3');
@@ -123,7 +109,7 @@ export function renderBlockedState(container, checks, article, reRender) {
     if (issue.type === 'cooldown' && issue.remaining) {
       const timer = document.createElement('p');
       timer.className = 'cooldown-timer';
-      timer.textContent = t('reward.cooldown.remaining', { minutes: issue.remaining });
+      timer.textContent = `冷卻中，${issue.remaining} 分鐘後可再次分析`;
       item.appendChild(timer);
 
       const intervalId = setInterval(() => {
@@ -133,37 +119,16 @@ export function renderBlockedState(container, checks, article, reRender) {
           timer.textContent = '';
           reRender();
         } else {
-          timer.textContent = t('reward.cooldown.remaining', { minutes: state.remainingMinutes });
+          timer.textContent = `冷卻中，${state.remainingMinutes} 分鐘後可再次分析`;
         }
       }, 60000);
-    }
-
-    // Model not downloaded — show download button
-    if (issue.type === 'model') {
-      const dlBtn = document.createElement('button');
-      dlBtn.className = 'btn btn--primary';
-      dlBtn.textContent = t('model.download.button');
-      dlBtn.addEventListener('click', () => { window.location.hash = '#/settings'; });
-      item.appendChild(dlBtn);
-    }
-
-    // GPU not supported — informational only
-    // (no action button, just a message)
-
-    // Benchmark needed — show settings button
-    if (issue.type === 'benchmark_needed') {
-      const benchBtn = document.createElement('button');
-      benchBtn.className = 'btn btn--primary';
-      benchBtn.textContent = t('settings.hw.btn_benchmark');
-      benchBtn.addEventListener('click', () => { window.location.hash = '#/settings'; });
-      item.appendChild(benchBtn);
     }
 
     // Not logged in — show login button
     if (issue.type === 'auth') {
       const loginBtn = document.createElement('button');
       loginBtn.className = 'btn btn--primary';
-      loginBtn.textContent = t('login.google_oauth');
+      loginBtn.textContent = '使用 Google 帳號登入';
       loginBtn.addEventListener('click', () => {
         localStorage.setItem('powerreader_return_url', `#/analyze/${article.article_id}`);
         window.location.hash = '#/profile';
@@ -177,7 +142,7 @@ export function renderBlockedState(container, checks, article, reRender) {
   // Back button
   const backBtn = document.createElement('button');
   backBtn.className = 'btn btn--text';
-  backBtn.textContent = t('nav.button.back');
+  backBtn.textContent = '返回';
   backBtn.addEventListener('click', () => { window.location.hash = `#/article/${article.article_id}`; });
   wrapper.appendChild(backBtn);
 

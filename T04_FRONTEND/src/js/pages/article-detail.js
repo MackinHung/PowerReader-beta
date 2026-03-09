@@ -345,14 +345,6 @@ function renderAnalysisBlocked(section, checks, article) {
       item.appendChild(loginBtn);
     }
 
-    if (issue.type === 'benchmark_needed') {
-      const benchBtn = document.createElement('button');
-      benchBtn.className = 'btn btn--primary';
-      benchBtn.textContent = '執行效能測試';
-      benchBtn.addEventListener('click', () => { window.location.hash = '#/settings'; });
-      item.appendChild(benchBtn);
-    }
-
     section.appendChild(item);
   }
 }
