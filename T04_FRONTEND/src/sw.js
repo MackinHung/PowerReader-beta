@@ -5,7 +5,7 @@
  * TTL and cache settings sourced from shared/config.js (CLOUDFLARE.KV_STATIC_TTL).
  */
 
-const STATIC_CACHE_NAME = 'static-v19';
+const STATIC_CACHE_NAME = 'static-v20';
 const STATIC_CACHE_TTL_MS = 864000 * 1000; // 10 days (config.js CLOUDFLARE.KV_STATIC_TTL)
 const MAX_SYNC_RETRIES = 5;
 
@@ -19,6 +19,7 @@ const STATIC_ASSETS = [
   '/css/profile.css',
   '/css/settings.css',
   '/css/onboarding.css',
+  '/css/auto-runner.css',
   // JS - core
   '/js/app.js',
   '/js/db.js',
@@ -36,6 +37,12 @@ const STATIC_ASSETS = [
   '/js/model/inference.js',
   '/js/model/prompt.js',
   '/js/model/output-parser.js',
+  '/js/model/queue.js',
+  '/js/model/auto-runner.js',
+  '/js/model/benchmark.js',
+  // JS - components (new)
+  '/js/components/auto-runner-status.js',
+  '/js/pages/article-panels.js',
   // JS - pages
   '/js/pages/home.js',
   '/js/pages/article-detail.js',
