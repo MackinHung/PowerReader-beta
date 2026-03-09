@@ -11,7 +11,6 @@
  * @license AGPL-3.0
  */
 
-import { t } from '../../locale/zh-TW.js';
 import { fetchArticle } from '../api.js';
 import { createBiasBar } from '../components/bias-bar.js';
 import { createControversyMeter } from '../components/controversy-badge.js';
@@ -27,6 +26,31 @@ import { runPreDownloadChecks } from '../model/manager.js';
 // ── Constants ──
 
 const CONSENT_KEY = 'powerreader_auto_consent';
+
+// Source display names
+const SOURCE_NAMES = {
+  liberty_times: '自由時報', taiwan_apple_daily: '蘋果日報',
+  china_times: '中國時報', united_daily_news: '聯合報',
+  common_wealth: '天下雜誌', business_weekly: '商業週刊',
+  the_news_lens: '關鍵評論網', the_reporter: '報導者',
+  cna: '中央社', pts: '公視新聞',
+  economic_daily_news: '經濟日報', commercial_times: '工商時報',
+  inside: 'Inside', technews: '科技新報', ithome: 'iThome',
+  rew_causas: '新新聞', storm_media: '風傳媒',
+  '自由時報': '自由時報', '聯合報': '聯合報', '中央社': '中央社',
+  '三立新聞': '三立新聞', 'ETtoday新聞雲': 'ETtoday新聞雲',
+  '東森新聞': '東森新聞', '新頭殼': '新頭殼', '公視新聞': '公視新聞',
+  '關鍵評論網': '關鍵評論網', '科技新報': '科技新報', '風傳媒': '風傳媒'
+};
+
+const BIAS_LABELS = {
+  extreme_left: '極左', left: '偏左', center_left: '中間偏左',
+  center: '中立', center_right: '中間偏右', right: '偏右', extreme_right: '極右'
+};
+
+const CONTROVERSY_BADGES = {
+  low: '低度爭議', moderate: '中等爭議', high: '高度爭議', very_high: '極高爭議'
+};
 
 // ── Module State ──
 
@@ -46,8 +70,7 @@ function formatDate(isoDate) {
 }
 
 function getSourceName(sourceKey) {
-  const label = t(`source.name.${sourceKey}`);
-  return label.startsWith('source.name.') ? sourceKey : label;
+  return SOURCE_NAMES[sourceKey] || sourceKey;
 }
 
 /**
@@ -75,14 +98,14 @@ export async function renderArticle(container, params) {
   const loadingEl = document.createElement('div');
   loadingEl.className = 'loading-state';
   loadingEl.setAttribute('role', 'status');
-  loadingEl.textContent = t('common.label.loading');
+  loadingEl.textContent = '載入中...';
   container.appendChild(loadingEl);
 
   const result = await fetchArticle(articleId);
   container.innerHTML = '';
 
   if (!result.success) {
-    renderDetailError(container, result.error?.message || t('error.message.generic'));
+    renderDetailError(container, result.error?.message || '系統錯誤，請稍後再試');
     return;
   }
 
@@ -99,7 +122,7 @@ export async function renderArticle(container, params) {
 function renderArticleContent(container, article) {
   const backBtn = document.createElement('button');
   backBtn.className = 'btn btn--text article-detail__back';
-  backBtn.textContent = t('nav.button.back');
+  backBtn.textContent = '返回';
   backBtn.addEventListener('click', () => { window.location.hash = '#/'; });
   container.appendChild(backBtn);
 
@@ -124,13 +147,10 @@ function renderArticleContent(container, article) {
   if (article.bias_score != null && article.bias_category) {
     const biasSection = document.createElement('section');
     biasSection.className = 'article-detail__bias';
-    biasSection.setAttribute('aria-label', t('a11y.bias_bar', {
-      score: article.bias_score,
-      category: t(`bias.label.${article.bias_category}`)
-    }));
+    biasSection.setAttribute('aria-label', `立場分析光譜條，分數 ${article.bias_score}，分類 ${BIAS_LABELS[article.bias_category] || article.bias_category}`);
     const biasHeading = document.createElement('h3');
     biasHeading.className = 'section-heading';
-    biasHeading.textContent = t('nav.title.analyze');
+    biasHeading.textContent = '立場分析';
     biasSection.appendChild(biasHeading);
     biasSection.appendChild(createBiasBar(article.bias_score, article.bias_category));
     container.appendChild(biasSection);
@@ -141,7 +161,7 @@ function renderArticleContent(container, article) {
     controversySection.className = 'article-detail__controversy';
     const contHeading = document.createElement('h3');
     contHeading.className = 'section-heading';
-    contHeading.textContent = t('controversy.badge.' + article.controversy_level);
+    contHeading.textContent = CONTROVERSY_BADGES[article.controversy_level] || article.controversy_level;
     controversySection.appendChild(contHeading);
     controversySection.appendChild(createControversyMeter(article.controversy_score, article.controversy_level));
     container.appendChild(controversySection);
@@ -171,8 +191,8 @@ function renderArticleContent(container, article) {
     link.href = article.url || article.primary_url;
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
-    link.textContent = t('common.button.go_original');
-    link.setAttribute('aria-label', t('a11y.button.go_original'));
+    link.textContent = '前往原文';
+    link.setAttribute('aria-label', '在新視窗開啟原文連結');
     linkWrapper.appendChild(link);
     container.appendChild(linkWrapper);
   }
@@ -181,7 +201,7 @@ function renderArticleContent(container, article) {
   const analysisSection = document.createElement('section');
   analysisSection.id = 'analysis-section';
   analysisSection.className = 'article-detail__analysis';
-  analysisSection.setAttribute('aria-label', t('nav.title.analyze'));
+  analysisSection.setAttribute('aria-label', '立場分析');
   container.appendChild(analysisSection);
 
   const knowledgeSlot = document.createElement('section');
@@ -254,12 +274,12 @@ function _renderAutoRunnerBanner(section, article) {
 
   const text = document.createElement('span');
   text.className = 'auto-runner-article-info__text';
-  text.textContent = t('auto_runner.auto_in_progress');
+  text.textContent = '自動分析進行中';
   banner.appendChild(text);
 
   const overrideBtn = document.createElement('button');
   overrideBtn.className = 'btn btn--secondary';
-  overrideBtn.textContent = t('auto_runner.override_button');
+  overrideBtn.textContent = '手動分析此文章';
   overrideBtn.addEventListener('click', () => {
     enqueueAndTrack(section, article);
   });
@@ -280,7 +300,7 @@ function renderAnalysisBlocked(section, checks, article) {
     if (issue.type === 'auth') {
       const loginBtn = document.createElement('button');
       loginBtn.className = 'btn btn--primary';
-      loginBtn.textContent = t('login.google_oauth');
+      loginBtn.textContent = '使用 Google 帳號登入';
       loginBtn.addEventListener('click', () => {
         localStorage.setItem('powerreader_return_url', `#/article/${article.article_id}`);
         window.location.hash = '#/profile';
@@ -291,7 +311,7 @@ function renderAnalysisBlocked(section, checks, article) {
     if (issue.type === 'benchmark_needed') {
       const benchBtn = document.createElement('button');
       benchBtn.className = 'btn btn--primary';
-      benchBtn.textContent = t('settings.hw.btn_benchmark');
+      benchBtn.textContent = '執行效能測試';
       benchBtn.addEventListener('click', () => { window.location.hash = '#/settings'; });
       item.appendChild(benchBtn);
     }
@@ -304,12 +324,12 @@ async function renderDownloadConfirmation(section, article) {
   section.innerHTML = '';
   const heading = document.createElement('h3');
   heading.className = 'analyze-download__heading';
-  heading.textContent = t('model.download.confirm_heading');
+  heading.textContent = '首次使用需下載 AI 模型';
   section.appendChild(heading);
 
   const desc = document.createElement('p');
   desc.className = 'analyze-download__subtitle';
-  desc.textContent = t('model.download.confirm_desc');
+  desc.textContent = '分析功能需要下載約 4.5GB 的 AI 模型至瀏覽器，下載後可離線使用。建議使用 WiFi 下載。';
   section.appendChild(desc);
 
   // Device condition checks
@@ -317,9 +337,9 @@ async function renderDownloadConfirmation(section, article) {
   const checkList = document.createElement('ul');
   checkList.className = 'analyze-download__checks';
   const checkLabels = {
-    wifi: t('model.download.check_wifi'),
-    battery: t('model.download.check_battery'),
-    storage: t('model.download.check_storage')
+    wifi: '網路連線',
+    battery: '電量充足',
+    storage: '儲存空間'
   };
   let hasWarning = false;
   for (const check of checks) {
@@ -337,20 +357,20 @@ async function renderDownloadConfirmation(section, article) {
   // Size hint
   const sizeHint = document.createElement('p');
   sizeHint.className = 'analyze-download__size-hint';
-  sizeHint.textContent = t('auto_analysis.download.size_hint');
+  sizeHint.textContent = '模型大小: 約 4.5GB';
   section.appendChild(sizeHint);
 
   // Warning if any check failed
   if (hasWarning) {
     const warn = document.createElement('p');
     warn.className = 'analyze-download__warning';
-    warn.textContent = t('model.download.cellular_warning');
+    warn.textContent = '偵測到行動網路連線，下載 4.5GB 模型可能產生大量數據費用。';
     section.appendChild(warn);
   }
 
   const confirmBtn = document.createElement('button');
   confirmBtn.className = 'btn btn--primary';
-  confirmBtn.textContent = t('model.download.confirm_start');
+  confirmBtn.textContent = '確認下載並分析';
   confirmBtn.addEventListener('click', () => { enqueueAndTrack(section, article); });
   section.appendChild(confirmBtn);
 }
@@ -363,17 +383,17 @@ function renderConsentDialog(section, article) {
 
   const heading = document.createElement('h3');
   heading.className = 'analyze-consent__heading';
-  heading.textContent = t('auto_analysis.consent.title');
+  heading.textContent = '自動分析說明';
   section.appendChild(heading);
 
   const desc = document.createElement('p');
   desc.className = 'analyze-consent__desc';
-  desc.textContent = t('auto_analysis.consent.desc');
+  desc.textContent = 'PowerReader 會使用您的 GPU 自動分析文章立場。過程約 15 秒，完全在您的裝置上執行，不會上傳原文。';
   section.appendChild(desc);
 
   const confirmBtn = document.createElement('button');
   confirmBtn.className = 'btn btn--primary';
-  confirmBtn.textContent = t('auto_analysis.consent.confirm');
+  confirmBtn.textContent = '了解，開始分析';
   confirmBtn.addEventListener('click', () => {
     localStorage.setItem(CONSENT_KEY, '1');
     enqueueAndTrack(section, article);
@@ -421,14 +441,14 @@ function renderWaitingStatus(section, position) {
   const msg = document.createElement('p');
   msg.className = 'analyze-status__message';
   msg.textContent = position
-    ? t('article.analyze.queued', { position })
-    : t('article.analyze.waiting');
+    ? `排隊等待中 (第 ${position} 順位)...`
+    : '準備分析中...';
   section.appendChild(msg);
 
   const progress = document.createElement('div');
   progress.className = 'analyze-status__progress';
   progress.setAttribute('role', 'progressbar');
-  progress.setAttribute('aria-label', t('a11y.status.loading'));
+  progress.setAttribute('aria-label', '內容載入中，請稍候');
   section.appendChild(progress);
 }
 
@@ -436,7 +456,7 @@ function renderAnalysisError(section, err, article) {
   section.innerHTML = '';
   const errMsg = document.createElement('p');
   errMsg.className = 'error-state';
-  errMsg.textContent = t('error.model.inference_failed');
+  errMsg.textContent = '分析失敗，正在切換至伺服器模式...';
   section.appendChild(errMsg);
 
   if (err.message) {
@@ -448,7 +468,7 @@ function renderAnalysisError(section, err, article) {
 
   const retryBtn = document.createElement('button');
   retryBtn.className = 'btn btn--primary';
-  retryBtn.textContent = t('common.button.retry');
+  retryBtn.textContent = '重試';
   retryBtn.addEventListener('click', () => { enqueueAndTrack(section, article); });
   section.appendChild(retryBtn);
 }
@@ -462,7 +482,7 @@ function renderDetailError(container, message) {
 
   const backBtn = document.createElement('button');
   backBtn.className = 'btn btn--text';
-  backBtn.textContent = t('nav.button.back');
+  backBtn.textContent = '返回';
   backBtn.addEventListener('click', () => { window.location.hash = '#/'; });
 
   const text = document.createElement('p');

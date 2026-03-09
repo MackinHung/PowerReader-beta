@@ -11,8 +11,6 @@
  * @license AGPL-3.0
  */
 
-import { t } from '../../locale/zh-TW.js';
-
 // Inlined from shared/enums.js CAMP_COLORS (cannot import from shared/)
 const CAMP_COLORS = {
   green: '#2E7D32',
@@ -22,6 +20,13 @@ const CAMP_COLORS = {
 };
 
 const CAMP_ORDER = ['green', 'white', 'blue', 'gray'];
+
+const CAMP_LABELS = {
+  green: '泛綠',
+  white: '中立',
+  blue: '泛藍',
+  gray: '非政治'
+};
 
 /**
  * Create a camp ratio stacked bar element.
@@ -39,19 +44,14 @@ export function createCampBar(ratio) {
   // Heading
   const heading = document.createElement('h4');
   heading.className = 'camp-bar__heading';
-  heading.textContent = t('camp.bar.title');
+  heading.textContent = '陣營比例';
   wrapper.appendChild(heading);
 
   // Stacked bar
   const bar = document.createElement('div');
   bar.className = 'camp-bar';
   bar.setAttribute('role', 'img');
-  bar.setAttribute('aria-label', t('a11y.camp_bar', {
-    green: ratio.green,
-    white: ratio.white,
-    blue: ratio.blue,
-    gray: ratio.gray
-  }));
+  bar.setAttribute('aria-label', `陣營比例：泛綠 ${ratio.green}%、中立 ${ratio.white}%、泛藍 ${ratio.blue}%、非政治 ${ratio.gray}%`);
 
   for (const camp of CAMP_ORDER) {
     const pct = ratio[camp];
@@ -67,7 +67,7 @@ export function createCampBar(ratio) {
       segment.textContent = `${pct}%`;
     }
 
-    segment.setAttribute('title', `${t(`camp.label.${camp}`)}: ${pct}%`);
+    segment.setAttribute('title', `${CAMP_LABELS[camp] || camp}: ${pct}%`);
     bar.appendChild(segment);
   }
 
@@ -89,7 +89,7 @@ export function createCampBar(ratio) {
     dot.style.backgroundColor = CAMP_COLORS[camp];
 
     const label = document.createElement('span');
-    label.textContent = `${t(`camp.label.${camp}`)} ${pct}%`;
+    label.textContent = `${CAMP_LABELS[camp] || camp} ${pct}%`;
 
     item.appendChild(dot);
     item.appendChild(label);
@@ -122,13 +122,8 @@ export function createCampIndicator(ratio) {
 
   const el = document.createElement('span');
   el.className = `camp-indicator camp-indicator--${dominant}`;
-  el.textContent = t(`camp.label.${dominant}`);
-  el.setAttribute('aria-label', t('a11y.camp_bar', {
-    green: ratio.green,
-    white: ratio.white,
-    blue: ratio.blue,
-    gray: ratio.gray
-  }));
+  el.textContent = CAMP_LABELS[dominant] || dominant;
+  el.setAttribute('aria-label', `陣營比例：泛綠 ${ratio.green}%、中立 ${ratio.white}%、泛藍 ${ratio.blue}%、非政治 ${ratio.gray}%`);
 
   return el;
 }

@@ -10,7 +10,6 @@
  * @license AGPL-3.0
  */
 
-import { t } from '../../locale/zh-TW.js';
 import { fetchBlindspotEvents } from '../api.js';
 import { getUserErrorMessage } from '../utils/error.js';
 
@@ -29,6 +28,33 @@ const CAMP_COLORS = {
   blue: '#1565C0'
 };
 
+const CAMP_LABELS = {
+  green: '泛綠',
+  white: '中立',
+  blue: '泛藍'
+};
+
+const FILTER_LABELS = {
+  all: '全部',
+  green_only: '僅泛綠報導',
+  blue_only: '僅泛藍報導',
+  white_missing: '缺乏中立報導',
+  imbalanced: '報導失衡'
+};
+
+const TYPE_LABELS = {
+  green_only: '僅泛綠報導',
+  blue_only: '僅泛藍報導',
+  white_missing: '缺乏中立報導',
+  imbalanced: '報導失衡'
+};
+
+const MISSING_CAMP_LABELS = {
+  pan_green: '泛綠',
+  pan_blue: '泛藍',
+  pan_white: '中立'
+};
+
 const FILTER_TYPES = [null, 'green_only', 'blue_only', 'white_missing', 'imbalanced'];
 
 /**
@@ -41,12 +67,12 @@ export async function renderBlindspot(container) {
   // Title
   const title = document.createElement('h2');
   title.className = 'page-title';
-  title.textContent = t('nav.title.blindspot');
+  title.textContent = '報導盲區';
   container.appendChild(title);
 
   const desc = document.createElement('p');
   desc.className = 'blindspot-page__desc';
-  desc.textContent = t('blindspot.desc');
+  desc.textContent = '偵測只有單一陣營媒體報導的事件，揭示資訊盲區';
   container.appendChild(desc);
 
   // Filter bar
@@ -62,8 +88,8 @@ export async function renderBlindspot(container) {
     btn.className = 'blindspot-filter__btn';
     if (filterType === null) btn.classList.add('blindspot-filter__btn--active');
     btn.textContent = filterType
-      ? t(`blindspot.filter.${filterType}`)
-      : t('blindspot.filter.all');
+      ? (FILTER_LABELS[filterType] || filterType)
+      : FILTER_LABELS.all;
     btn.setAttribute('data-filter', filterType || 'all');
 
     btn.addEventListener('click', () => {
@@ -100,7 +126,7 @@ async function loadEvents(listEl, typeFilter) {
   const loadingEl = document.createElement('div');
   loadingEl.className = 'loading-state';
   loadingEl.setAttribute('role', 'status');
-  loadingEl.textContent = t('common.label.loading');
+  loadingEl.textContent = '載入中...';
   listEl.appendChild(loadingEl);
 
   const opts = { page: 1, limit: 50 };
@@ -123,7 +149,7 @@ async function loadEvents(listEl, typeFilter) {
   if (events.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
-    empty.textContent = t('blindspot.empty');
+    empty.textContent = '目前沒有偵測到報導盲區';
     listEl.appendChild(empty);
     return;
   }
@@ -143,7 +169,7 @@ function renderBlindspotCard(event) {
   // Type badge
   const badge = document.createElement('span');
   badge.className = 'blindspot-card__badge';
-  badge.textContent = t(`blindspot.type.${event.blindspot_type}`);
+  badge.textContent = TYPE_LABELS[event.blindspot_type] || event.blindspot_type;
   card.appendChild(badge);
 
   // Event title
@@ -156,9 +182,8 @@ function renderBlindspotCard(event) {
   if (event.missing_camp) {
     const missing = document.createElement('p');
     missing.className = 'blindspot-card__missing';
-    missing.textContent = t('blindspot.missing_camp', {
-      camp: t(`blindspot.camp.${event.missing_camp}`)
-    });
+    const campName = MISSING_CAMP_LABELS[event.missing_camp] || event.missing_camp;
+    missing.textContent = `缺少${campName}觀點`;
     card.appendChild(missing);
   }
 
@@ -176,11 +201,11 @@ function renderBlindspotCard(event) {
   meta.className = 'blindspot-card__meta';
 
   const articleCount = document.createElement('span');
-  articleCount.textContent = t('blindspot.article_count', { count: event.article_count });
+  articleCount.textContent = `${event.article_count} 篇報導`;
   meta.appendChild(articleCount);
 
   const sourceCount = document.createElement('span');
-  sourceCount.textContent = t('blindspot.source_count', { count: event.source_count });
+  sourceCount.textContent = `${event.source_count} 家媒體`;
   meta.appendChild(sourceCount);
 
   if (event.detected_at) {
@@ -217,7 +242,7 @@ function renderDistributionBar(dist, total) {
     if (pct >= 15) {
       segment.textContent = `${count}`;
     }
-    segment.setAttribute('title', `${t(`camp.label.${camp}`)}: ${count} (${pct}%)`);
+    segment.setAttribute('title', `${CAMP_LABELS[camp] || camp}: ${count} (${pct}%)`);
     bar.appendChild(segment);
   }
 
@@ -239,7 +264,7 @@ function renderDistributionBar(dist, total) {
     dot.style.backgroundColor = color;
 
     const label = document.createElement('span');
-    label.textContent = `${t(`camp.label.${camp}`)} ${count}`;
+    label.textContent = `${CAMP_LABELS[camp] || camp} ${count}`;
 
     item.appendChild(dot);
     item.appendChild(label);

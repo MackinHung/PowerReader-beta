@@ -10,7 +10,6 @@
  * @license AGPL-3.0
  */
 
-import { t } from '../../locale/zh-TW.js';
 import { fetchSource } from '../api.js';
 import { createBiasBar } from '../components/bias-bar.js';
 import { getUserErrorMessage } from '../utils/error.js';
@@ -20,6 +19,40 @@ const CAMP_COLORS = {
   green: '#2E7D32',
   white: '#757575',
   blue: '#1565C0'
+};
+
+const CAMP_LABELS = {
+  green: '泛綠',
+  white: '中立',
+  blue: '泛藍'
+};
+
+const TENDENCY_CAMP_LABELS = {
+  pan_green: '偏泛綠',
+  pan_white: '中立',
+  pan_blue: '偏泛藍'
+};
+
+const CONFIDENCE_LABELS = {
+  high: '高信心度',
+  mid: '中信心度',
+  low: '低信心度'
+};
+
+// Source display names
+const SOURCE_NAMES = {
+  liberty_times: '自由時報', taiwan_apple_daily: '蘋果日報',
+  china_times: '中國時報', united_daily_news: '聯合報',
+  common_wealth: '天下雜誌', business_weekly: '商業週刊',
+  the_news_lens: '關鍵評論網', the_reporter: '報導者',
+  cna: '中央社', pts: '公視新聞',
+  economic_daily_news: '經濟日報', commercial_times: '工商時報',
+  inside: 'Inside', technews: '科技新報', ithome: 'iThome',
+  rew_causas: '新新聞', storm_media: '風傳媒',
+  '自由時報': '自由時報', '聯合報': '聯合報', '中央社': '中央社',
+  '三立新聞': '三立新聞', 'ETtoday新聞雲': 'ETtoday新聞雲',
+  '東森新聞': '東森新聞', '新頭殼': '新頭殼', '公視新聞': '公視新聞',
+  '關鍵評論網': '關鍵評論網', '科技新報': '科技新報', '風傳媒': '風傳媒'
 };
 
 /**
@@ -34,7 +67,7 @@ export async function renderSourceDetail(container, params) {
   // Back button
   const backBtn = document.createElement('button');
   backBtn.className = 'btn btn--text source-detail__back';
-  backBtn.textContent = t('nav.button.back');
+  backBtn.textContent = '返回';
   backBtn.addEventListener('click', () => { window.history.back(); });
   container.appendChild(backBtn);
 
@@ -42,7 +75,7 @@ export async function renderSourceDetail(container, params) {
   const loadingEl = document.createElement('div');
   loadingEl.className = 'loading-state';
   loadingEl.setAttribute('role', 'status');
-  loadingEl.textContent = t('common.label.loading');
+  loadingEl.textContent = '載入中...';
   container.appendChild(loadingEl);
 
   const result = await fetchSource(sourceKey);
@@ -62,8 +95,7 @@ export async function renderSourceDetail(container, params) {
   // Source name
   const heading = document.createElement('h2');
   heading.className = 'page-title';
-  const displayName = t(`source.name.${data.source}`);
-  heading.textContent = displayName.startsWith('source.name.') ? data.source : displayName;
+  heading.textContent = SOURCE_NAMES[data.source] || data.source;
   container.appendChild(heading);
 
   // Tendency summary card
@@ -95,7 +127,7 @@ function renderTendencySummary(tendency) {
   // Camp badge
   const campBadge = document.createElement('span');
   campBadge.className = `source-tendency__camp source-tendency__camp--${tendency.camp}`;
-  campBadge.textContent = t(`source.tendency.camp.${tendency.camp}`);
+  campBadge.textContent = TENDENCY_CAMP_LABELS[tendency.camp] || tendency.camp;
   card.appendChild(campBadge);
 
   // Stats grid
@@ -104,7 +136,7 @@ function renderTendencySummary(tendency) {
 
   // Average score
   grid.appendChild(createStatItem(
-    t('source.tendency.avg_score'),
+    '平均分數',
     String(tendency.avg_bias_score)
   ));
 
@@ -116,14 +148,14 @@ function renderTendencySummary(tendency) {
 
   // Sample count
   grid.appendChild(createStatItem(
-    t('source.tendency.sample_count'),
+    '樣本數',
     String(tendency.sample_count)
   ));
 
   // Confidence
   grid.appendChild(createStatItem(
-    t(`source.tendency.confidence.${tendency.confidence}`),
-    t('source.tendency.window', { days: tendency.window_days })
+    CONFIDENCE_LABELS[tendency.confidence] || tendency.confidence,
+    `近 ${tendency.window_days} 天`
   ));
 
   card.appendChild(grid);
@@ -158,7 +190,7 @@ function renderCampDistribution(dist) {
   section.className = 'source-detail__section';
 
   const heading = document.createElement('h3');
-  heading.textContent = t('source.tendency.distribution');
+  heading.textContent = '陣營分布';
   section.appendChild(heading);
 
   const total = (dist.green || 0) + (dist.white || 0) + (dist.blue || 0);
@@ -179,7 +211,7 @@ function renderCampDistribution(dist) {
     if (pct >= 12) {
       segment.textContent = `${pct}%`;
     }
-    segment.setAttribute('title', `${t(`camp.label.${camp}`)}: ${count} (${pct}%)`);
+    segment.setAttribute('title', `${CAMP_LABELS[camp] || camp}: ${count} (${pct}%)`);
     bar.appendChild(segment);
   }
 
@@ -200,7 +232,7 @@ function renderCampDistribution(dist) {
     dot.style.backgroundColor = color;
 
     const label = document.createElement('span');
-    label.textContent = `${t(`camp.label.${camp}`)} ${count} (${Math.round((count / total) * 100)}%)`;
+    label.textContent = `${CAMP_LABELS[camp] || camp} ${count} (${Math.round((count / total) * 100)}%)`;
 
     item.appendChild(dot);
     item.appendChild(label);
@@ -219,7 +251,7 @@ function renderMonthlyTrend(trend) {
   section.className = 'source-detail__section';
 
   const heading = document.createElement('h3');
-  heading.textContent = t('source.tendency.trend_title');
+  heading.textContent = '月度趨勢';
   section.appendChild(heading);
 
   const chart = document.createElement('div');
@@ -269,7 +301,7 @@ function renderRecentArticles(articles) {
   section.className = 'source-detail__section';
 
   const heading = document.createElement('h3');
-  heading.textContent = t('source.tendency.recent_title');
+  heading.textContent = '近期文章';
   section.appendChild(heading);
 
   const list = document.createElement('ul');

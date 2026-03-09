@@ -8,7 +8,6 @@
  * @license AGPL-3.0
  */
 
-import { t } from '../../locale/zh-TW.js';
 import { submitAnalysisResult } from '../api.js';
 import { getModeLabel } from '../model/inference.js';
 import { createBiasBar } from '../components/bias-bar.js';
@@ -25,7 +24,7 @@ export function renderResultPreview(container, article, result) {
 
   const heading = document.createElement('h3');
   heading.className = 'section-heading';
-  heading.textContent = t('analyze.result_preview');
+  heading.textContent = '分析結果預覽';
   container.appendChild(heading);
 
   // Mode indicator
@@ -60,7 +59,7 @@ export function renderResultPreview(container, article, result) {
     pointsSection.className = 'analyze-result__narrative';
 
     const pointsHeading = document.createElement('h4');
-    pointsHeading.textContent = t('analyze.narrative_points');
+    pointsHeading.textContent = '論述重點';
     pointsSection.appendChild(pointsHeading);
 
     const pointsList = document.createElement('ol');
@@ -100,7 +99,7 @@ export function renderResultPreview(container, article, result) {
     reasonSection.className = 'analyze-result__reasoning';
 
     const reasonHeading = document.createElement('h4');
-    reasonHeading.textContent = t('analyze.reasoning');
+    reasonHeading.textContent = '分析推理';
     reasonSection.appendChild(reasonHeading);
 
     const reasonText = document.createElement('p');
@@ -116,7 +115,7 @@ export function renderResultPreview(container, article, result) {
     phrasesSection.className = 'analyze-result__phrases';
 
     const phrasesHeading = document.createElement('h4');
-    phrasesHeading.textContent = t('analyze.key_phrases');
+    phrasesHeading.textContent = '關鍵詞';
     phrasesSection.appendChild(phrasesHeading);
 
     const phrasesList = document.createElement('div');
@@ -140,12 +139,12 @@ export function renderResultPreview(container, article, result) {
 
   const submitBtn = document.createElement('button');
   submitBtn.className = 'btn btn--primary';
-  submitBtn.textContent = t('common.button.submit');
+  submitBtn.textContent = '提交';
   submitBtn.addEventListener('click', () => submitAnalysis(article, result, container));
 
   const retryBtn = document.createElement('button');
   retryBtn.className = 'btn btn--secondary';
-  retryBtn.textContent = t('common.button.retry');
+  retryBtn.textContent = '重試';
   retryBtn.addEventListener('click', () => {
     window.location.hash = `#/analyze/${article.article_id}`;
   });
@@ -183,7 +182,7 @@ function renderTransparencyPanel(result) {
 
   const summary = document.createElement('summary');
   summary.className = 'transparency-panel__summary';
-  summary.textContent = t('analyze.transparency.toggle');
+  summary.textContent = '查看分析依據';
   details.appendChild(summary);
 
   const content = document.createElement('div');
@@ -192,21 +191,21 @@ function renderTransparencyPanel(result) {
   // Layer 1: System Analysis Framework
   content.appendChild(renderLayerSection(
     'L1',
-    t('analyze.transparency.l1_title'),
-    t('analyze.transparency.l1_desc')
+    '系統分析框架',
+    'AI 依照預設的台灣政治光譜定義 (0=泛綠 ~ 100=泛藍) 與爭議度量表進行量化評分，再以論述分析框架產生重點摘要。'
   ));
 
   // Layer 2: Knowledge Injection
   const l2Section = renderLayerSection(
     'L2',
-    t('analyze.transparency.l2_title'),
+    '背景知識注入',
     null
   );
   const knowledgeEntries = result.knowledgeEntries || [];
   if (knowledgeEntries.length > 0) {
     const l2Desc = document.createElement('p');
     l2Desc.className = 'transparency-panel__layer-desc';
-    l2Desc.textContent = t('analyze.transparency.l2_desc');
+    l2Desc.textContent = '以下知識條目在分析時被注入給 AI 作為參考依據，AI 自行判斷哪些與本文相關。';
     l2Section.appendChild(l2Desc);
 
     const knowledgeList = document.createElement('ul');
@@ -242,7 +241,7 @@ function renderTransparencyPanel(result) {
   } else {
     const emptyMsg = document.createElement('p');
     emptyMsg.className = 'transparency-panel__layer-desc';
-    emptyMsg.textContent = t('analyze.transparency.l2_empty');
+    emptyMsg.textContent = '本次分析未使用額外背景知識。';
     l2Section.appendChild(emptyMsg);
   }
   content.appendChild(l2Section);
@@ -250,8 +249,8 @@ function renderTransparencyPanel(result) {
   // Layer 3: Original Article
   content.appendChild(renderLayerSection(
     'L3',
-    t('analyze.transparency.l3_title'),
-    t('analyze.transparency.l3_desc', { chars: ARTICLE_MAX_CHARS.toLocaleString() })
+    '原始文章',
+    `新聞原文 (標題 + 摘要 + 內文) 作為分析輸入，截取前 ${ARTICLE_MAX_CHARS.toLocaleString()} 字。`
   ));
 
   details.appendChild(content);
@@ -376,10 +375,10 @@ async function submitAnalysis(article, result, container) {
     if (data.success) {
       renderSubmitSuccess(container, false, data.data?.reward);
     } else {
-      renderSubmitError(container, data.error?.message || t('error.message.generic'), article, result);
+      renderSubmitError(container, data.error?.message || '系統錯誤，請稍後再試', article, result);
     }
   } catch (err) {
-    renderSubmitError(container, t('error.network.offline'), article, result);
+    renderSubmitError(container, '網路連線中斷，請檢查網路設定', article, result);
   }
 }
 
@@ -390,7 +389,7 @@ function renderSubmitSuccess(container, isQueued, reward) {
   msg.className = 'analyze-success';
 
   const text = document.createElement('p');
-  text.textContent = isQueued ? t('pwa.sync.saved_offline') : t('analyze.submit_success');
+  text.textContent = isQueued ? '已保存，連線後自動提交' : '分析已成功提交';
   msg.appendChild(text);
 
   // Show reward feedback if points were awarded
@@ -400,24 +399,18 @@ function renderSubmitSuccess(container, isQueued, reward) {
 
     const pointsAwarded = document.createElement('p');
     pointsAwarded.className = 'analyze-success__points';
-    pointsAwarded.textContent = t('reward.points_awarded', {
-      points: (reward.points_awarded_cents / 100).toFixed(2)
-    });
+    pointsAwarded.textContent = `+${(reward.points_awarded_cents / 100).toFixed(2)} 點`;
     rewardCard.appendChild(pointsAwarded);
 
     const totalPoints = document.createElement('p');
     totalPoints.className = 'analyze-success__total';
-    totalPoints.textContent = t('reward.total_points', {
-      points: reward.display_points || '0.00'
-    });
+    totalPoints.textContent = `總點數: ${reward.display_points || '0.00'}`;
     rewardCard.appendChild(totalPoints);
 
     if (reward.vote_rights > 0) {
       const votes = document.createElement('p');
       votes.className = 'analyze-success__votes';
-      votes.textContent = t('reward.vote_power', {
-        votes: String(reward.vote_rights)
-      });
+      votes.textContent = `投票權: ${reward.vote_rights} 票`;
       rewardCard.appendChild(votes);
     }
 
@@ -429,13 +422,13 @@ function renderSubmitSuccess(container, isQueued, reward) {
 
   const homeBtn = document.createElement('button');
   homeBtn.className = 'btn btn--primary';
-  homeBtn.textContent = t('nav.button.home');
+  homeBtn.textContent = '首頁';
   homeBtn.addEventListener('click', () => { window.location.hash = '#/'; });
   actions.appendChild(homeBtn);
 
   const profileBtn = document.createElement('button');
   profileBtn.className = 'btn btn--secondary';
-  profileBtn.textContent = t('nav.title.profile');
+  profileBtn.textContent = '個人資料';
   profileBtn.addEventListener('click', () => { window.location.hash = '#/profile'; });
   actions.appendChild(profileBtn);
 
@@ -455,7 +448,7 @@ function renderSubmitError(container, message, article, result) {
 
   const retryBtn = document.createElement('button');
   retryBtn.className = 'btn btn--primary';
-  retryBtn.textContent = t('common.button.retry');
+  retryBtn.textContent = '重試';
   retryBtn.addEventListener('click', () => submitAnalysis(article, result, container));
   msg.appendChild(retryBtn);
 

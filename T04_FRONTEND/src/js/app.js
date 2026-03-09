@@ -10,7 +10,6 @@
  *   6. First-visit onboarding check
  */
 
-import { t } from '../locale/zh-TW.js';
 import { openDB, cleanExpiredCache, requestPersistentStorage } from './db.js';
 import { renderHome } from './pages/home.js';
 import { renderArticle } from './pages/article-detail.js';
@@ -24,16 +23,7 @@ import { renderSourceDetail } from './pages/source-detail.js';
 import { setAuthCredentials } from './auth.js';
 import { mountAutoRunnerStatus } from './components/auto-runner-status.js';
 
-// --------------------------------------------------
-// i18n: apply translations to data-i18n elements
-// --------------------------------------------------
-function applyI18n() {
-  const elements = document.querySelectorAll('[data-i18n]');
-  for (const el of elements) {
-    const key = el.getAttribute('data-i18n');
-    el.textContent = t(key);
-  }
-}
+// i18n removed — all UI text is hardcoded Chinese in HTML/JS
 
 // --------------------------------------------------
 // Online / Offline handling
@@ -196,12 +186,12 @@ function handleAuthCallback(container) {
   } else {
     const msg = document.createElement('p');
     msg.className = 'error-state';
-    msg.textContent = t('login.failed');
+    msg.textContent = '登入失敗，請稍後再試';
     container.appendChild(msg);
 
     const homeBtn = document.createElement('button');
     homeBtn.className = 'btn btn--primary';
-    homeBtn.textContent = t('nav.button.home');
+    homeBtn.textContent = '首頁';
     homeBtn.addEventListener('click', () => { window.location.hash = '#/'; });
     container.appendChild(homeBtn);
   }
@@ -236,11 +226,11 @@ function showSyncFailureBanner(count) {
   banner.setAttribute('role', 'alert');
 
   const msg = document.createElement('span');
-  msg.textContent = t('pwa.sync.failed_permanent');
+  msg.textContent = '同步失敗次數過多，此筆資料需手動重新提交';
 
   const retryBtn = document.createElement('button');
   retryBtn.className = 'btn btn--text';
-  retryBtn.textContent = t('pwa.sync.retry_button');
+  retryBtn.textContent = '重新提交';
   retryBtn.addEventListener('click', async () => {
     // Re-register background sync
     if ('serviceWorker' in navigator) {
@@ -254,7 +244,7 @@ function showSyncFailureBanner(count) {
 
   const dismissBtn = document.createElement('button');
   dismissBtn.className = 'btn btn--text';
-  dismissBtn.textContent = t('pwa.sync.discard_button');
+  dismissBtn.textContent = '捨棄';
   dismissBtn.addEventListener('click', () => {
     banner.remove();
   });
@@ -277,8 +267,7 @@ async function initApp() {
       .catch((err) => console.error('[SW] Registration failed:', err));
   }
 
-  // 1. Apply i18n translations
-  applyI18n();
+  // 1. i18n removed — all UI text is hardcoded in HTML/JS
 
   // 2. Request persistent storage
   await requestPersistentStorage();
