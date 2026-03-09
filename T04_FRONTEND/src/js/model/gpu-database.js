@@ -191,3 +191,110 @@ export function lookupByArch(vendor, architecture) {
 
   return null;
 }
+
+// ══════════════════════════════════════════════════
+// GPU picker — options grouped by architecture
+// ══════════════════════════════════════════════════
+
+/** @type {Object<string, Array<{ name: string, vramMB: number }>>} */
+const ARCH_GPU_OPTIONS = {
+  blackwell: [
+    { name: 'RTX 5090', vramMB: 32768 },
+    { name: 'RTX 5080', vramMB: 16384 },
+    { name: 'RTX 5070 Ti', vramMB: 16384 },
+    { name: 'RTX 5070', vramMB: 12288 },
+    { name: 'RTX 5060 Ti', vramMB: 16384 },
+    { name: 'RTX 5060', vramMB: 8192 },
+  ],
+  ada: [
+    { name: 'RTX 4090', vramMB: 24576 },
+    { name: 'RTX 4080 SUPER', vramMB: 16384 },
+    { name: 'RTX 4080', vramMB: 16384 },
+    { name: 'RTX 4070 Ti SUPER', vramMB: 16384 },
+    { name: 'RTX 4070 Ti', vramMB: 12288 },
+    { name: 'RTX 4070 SUPER', vramMB: 12288 },
+    { name: 'RTX 4070', vramMB: 12288 },
+    { name: 'RTX 4060 Ti', vramMB: 8192 },
+    { name: 'RTX 4060', vramMB: 8192 },
+  ],
+  ampere: [
+    { name: 'RTX 3090 Ti', vramMB: 24576 },
+    { name: 'RTX 3090', vramMB: 24576 },
+    { name: 'RTX 3080 Ti', vramMB: 12288 },
+    { name: 'RTX 3080', vramMB: 10240 },
+    { name: 'RTX 3070 Ti', vramMB: 8192 },
+    { name: 'RTX 3070', vramMB: 8192 },
+    { name: 'RTX 3060 Ti', vramMB: 8192 },
+    { name: 'RTX 3060', vramMB: 12288 },
+    { name: 'RTX 3050', vramMB: 8192 },
+  ],
+  turing: [
+    { name: 'RTX 2080 Ti', vramMB: 11264 },
+    { name: 'RTX 2080 SUPER', vramMB: 8192 },
+    { name: 'RTX 2080', vramMB: 8192 },
+    { name: 'RTX 2070 SUPER', vramMB: 8192 },
+    { name: 'RTX 2070', vramMB: 8192 },
+    { name: 'RTX 2060 SUPER', vramMB: 8192 },
+    { name: 'RTX 2060', vramMB: 6144 },
+    { name: 'GTX 1660 Ti', vramMB: 6144 },
+    { name: 'GTX 1660 SUPER', vramMB: 6144 },
+    { name: 'GTX 1660', vramMB: 6144 },
+    { name: 'GTX 1650 SUPER', vramMB: 4096 },
+    { name: 'GTX 1650', vramMB: 4096 },
+  ],
+  pascal: [
+    { name: 'GTX 1080 Ti', vramMB: 11264 },
+    { name: 'GTX 1080', vramMB: 8192 },
+    { name: 'GTX 1070 Ti', vramMB: 8192 },
+    { name: 'GTX 1070', vramMB: 8192 },
+    { name: 'GTX 1060', vramMB: 6144 },
+    { name: 'GTX 1050 Ti', vramMB: 4096 },
+    { name: 'GTX 1050', vramMB: 2048 },
+  ],
+  rdna4: [
+    { name: 'RX 9070 XT', vramMB: 16384 },
+    { name: 'RX 9070', vramMB: 16384 },
+  ],
+  rdna3: [
+    { name: 'RX 7900 XTX', vramMB: 24576 },
+    { name: 'RX 7900 XT', vramMB: 20480 },
+    { name: 'RX 7900 GRE', vramMB: 16384 },
+    { name: 'RX 7800 XT', vramMB: 16384 },
+    { name: 'RX 7700 XT', vramMB: 12288 },
+    { name: 'RX 7600 XT', vramMB: 16384 },
+    { name: 'RX 7600', vramMB: 8192 },
+  ],
+  rdna2: [
+    { name: 'RX 6950 XT', vramMB: 16384 },
+    { name: 'RX 6900 XT', vramMB: 16384 },
+    { name: 'RX 6800 XT', vramMB: 16384 },
+    { name: 'RX 6800', vramMB: 16384 },
+    { name: 'RX 6750 XT', vramMB: 12288 },
+    { name: 'RX 6700 XT', vramMB: 12288 },
+    { name: 'RX 6600 XT', vramMB: 8192 },
+    { name: 'RX 6600', vramMB: 8192 },
+    { name: 'RX 6500 XT', vramMB: 4096 },
+  ],
+  xe2: [
+    { name: 'Arc B580', vramMB: 12288 },
+    { name: 'Arc B570', vramMB: 10240 },
+  ],
+  xe: [
+    { name: 'Arc A770', vramMB: 16384 },
+    { name: 'Arc A750', vramMB: 8192 },
+    { name: 'Arc A580', vramMB: 8192 },
+    { name: 'Arc A380', vramMB: 6144 },
+  ],
+};
+
+/**
+ * Get the list of GPU options for a given architecture (for user picker).
+ *
+ * @param {string} architecture - adapter.info.architecture (e.g. 'turing')
+ * @returns {Array<{ name: string, vramMB: number }>|null}
+ */
+export function getGPUOptionsForArch(architecture) {
+  if (!architecture) return null;
+  const key = architecture.toLowerCase().replace(/\s+/g, '');
+  return ARCH_GPU_OPTIONS[key] || null;
+}

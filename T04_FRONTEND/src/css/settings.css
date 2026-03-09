@@ -183,6 +183,42 @@
 }
 
 /* ==============================================
+   GPU Picker
+   ============================================== */
+.settings-gpu-picker {
+  margin-top: var(--spacing-sm);
+}
+
+.settings-gpu-picker__panel {
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.settings-gpu-picker__panel.u-hidden {
+  display: none;
+}
+
+.settings-gpu-picker__select {
+  width: 100%;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--text-body);
+}
+
+.btn--small {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--text-small);
+}
+
+/* ==============================================
    Responsive: wider source column
    ============================================== */
 @media (min-width: 480px) {

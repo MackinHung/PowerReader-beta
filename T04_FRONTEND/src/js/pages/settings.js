@@ -11,7 +11,8 @@ import { t } from '../../locale/zh-TW.js';
 import { openDB } from '../db.js';
 import { isModelDownloaded, deleteModel } from '../model/manager.js';
 import { detectBestMode, getModeLabel, clearAllModelCaches, getWebLLMEngine } from '../model/inference.js';
-import { scanGPU, runBenchmark, getCachedBenchmark, clearBenchmark } from '../model/benchmark.js';
+import { scanGPU, runBenchmark, getCachedBenchmark, clearBenchmark, getUserGPUSelection, saveUserGPUSelection } from '../model/benchmark.js';
+import { getGPUOptionsForArch } from '../model/gpu-database.js';
 import {
   startAutoRunner, stopAutoRunner, getAutoRunnerStatus,
   onAutoRunnerUpdate, isAutoModeEnabled, setAnalysisMode
@@ -298,6 +299,7 @@ async function renderHardwareSection(container) {
   card.appendChild(gpuTitle);
 
   const gpuInfo = await scanGPU();
+  const userOverride = getUserGPUSelection();
 
   const supportedColor = gpuInfo.supported
     ? 'var(--color-controversy-low)'
@@ -309,27 +311,36 @@ async function renderHardwareSection(container) {
   card.appendChild(createInfoRow(t('settings.hw.webgpu_supported'), supportedText, supportedColor));
   card.appendChild(createInfoRow(t('settings.hw.gpu_vendor'), gpuInfo.vendor || '—'));
   card.appendChild(createInfoRow(t('settings.hw.gpu_arch'), gpuInfo.architecture || '—'));
-  // GPU device — use archInfo fallback when device name is hidden by browser
-  if (gpuInfo.device) {
-    card.appendChild(createInfoRow(t('settings.hw.gpu_device'), gpuInfo.device));
-  } else if (gpuInfo.archInfo) {
-    const archLabel = gpuInfo.archInfo.label + ' (' + gpuInfo.archInfo.series + ')';
-    card.appendChild(createInfoRow(t('settings.hw.gpu_device'), archLabel));
-  } else {
-    card.appendChild(createInfoRow(t('settings.hw.gpu_device'), '—'));
-  }
 
-  // VRAM display — based on known-GPU lookup (not WebGPU maxBufferSize which caps at 2GB)
-  if (gpuInfo.gpuType === 'integrated' || gpuInfo.gpuType === 'unified') {
-    card.appendChild(createInfoRow(t('settings.hw.vram'), t('settings.hw.vram_shared')));
-  } else if (gpuInfo.vramMB > 0) {
+  // GPU device + VRAM — priority: user override > exact lookup > arch fallback
+  if (userOverride) {
+    // User previously selected their GPU from the picker
+    card.appendChild(createInfoRow(t('settings.hw.gpu_device'), userOverride.device));
+    const vramText = formatVRAM(userOverride.vramMB) + ' ' + t('settings.hw.vram_confirmed');
+    card.appendChild(createInfoRow(t('settings.hw.vram'), vramText));
+  } else if (gpuInfo.device && gpuInfo.vramMB > 0) {
+    // Browser provided device name and exact VRAM lookup matched
+    card.appendChild(createInfoRow(t('settings.hw.gpu_device'), gpuInfo.device));
     const vramText = formatVRAM(gpuInfo.vramMB) + ' ' + t('settings.hw.vram_ref');
     card.appendChild(createInfoRow(t('settings.hw.vram'), vramText));
+  } else if (gpuInfo.gpuType === 'integrated' || gpuInfo.gpuType === 'unified') {
+    card.appendChild(createInfoRow(t('settings.hw.gpu_device'), gpuInfo.device || '—'));
+    card.appendChild(createInfoRow(t('settings.hw.vram'), t('settings.hw.vram_shared')));
   } else if (gpuInfo.archInfo) {
+    // Device name hidden by browser, show arch + range
+    const archLabel = gpuInfo.archInfo.label + ' (' + gpuInfo.archInfo.series + ')';
+    card.appendChild(createInfoRow(t('settings.hw.gpu_device'), archLabel));
     const rangeText = gpuInfo.archInfo.vramRange + ' ' + t('settings.hw.vram_by_model');
     card.appendChild(createInfoRow(t('settings.hw.vram'), rangeText));
   } else {
+    card.appendChild(createInfoRow(t('settings.hw.gpu_device'), gpuInfo.device || '—'));
     card.appendChild(createInfoRow(t('settings.hw.vram'), t('settings.hw.vram_unknown')));
+  }
+
+  // GPU picker — show when device is unknown and architecture options exist
+  const needsPicker = !userOverride && !gpuInfo.device && gpuInfo.archInfo;
+  if (needsPicker || userOverride) {
+    renderGPUPicker(card, gpuInfo, container);
   }
 
   // --- Benchmark Result ---
@@ -416,6 +427,84 @@ async function renderHardwareSection(container) {
   card.appendChild(actionsRow);
   section.appendChild(card);
   container.appendChild(section);
+}
+
+/**
+ * Render inline GPU picker for users whose device name is hidden by browser.
+ * Shows a help hint + dropdown filtered to the detected architecture.
+ */
+function renderGPUPicker(card, gpuInfo, container) {
+  const userOverride = getUserGPUSelection();
+  const options = getGPUOptionsForArch(gpuInfo.architecture);
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'settings-gpu-picker';
+
+  // Toggle button
+  const toggleBtn = document.createElement('button');
+  toggleBtn.className = 'btn btn--secondary btn--small';
+  toggleBtn.textContent = userOverride
+    ? t('settings.hw.gpu_picker_change')
+    : t('settings.hw.gpu_picker_btn');
+  wrapper.appendChild(toggleBtn);
+
+  // Expandable picker area (hidden initially)
+  const pickerArea = document.createElement('div');
+  pickerArea.className = 'settings-gpu-picker__panel u-hidden';
+
+  // Help hint
+  const hint = document.createElement('p');
+  hint.className = 'settings-card__hint';
+  hint.textContent = t('settings.hw.gpu_picker_hint');
+  pickerArea.appendChild(hint);
+
+  // Dropdown
+  if (options && options.length > 0) {
+    const select = document.createElement('select');
+    select.className = 'settings-gpu-picker__select';
+
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = t('settings.hw.gpu_picker_placeholder');
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    select.appendChild(placeholder);
+
+    for (const gpu of options) {
+      const opt = document.createElement('option');
+      opt.value = JSON.stringify({ device: gpu.name, vramMB: gpu.vramMB });
+      opt.textContent = gpu.name + ' (' + formatVRAM(gpu.vramMB) + ')';
+      select.appendChild(opt);
+    }
+    pickerArea.appendChild(select);
+
+    // Save button
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'btn btn--primary btn--small';
+    saveBtn.textContent = t('settings.hw.gpu_picker_save');
+    saveBtn.disabled = true;
+    saveBtn.addEventListener('click', () => {
+      const chosen = JSON.parse(select.value);
+      saveUserGPUSelection(chosen.device, chosen.vramMB);
+      renderSettings(container);
+    });
+    select.addEventListener('change', () => {
+      saveBtn.disabled = !select.value;
+    });
+    pickerArea.appendChild(saveBtn);
+  } else {
+    const noOptions = document.createElement('p');
+    noOptions.className = 'settings-card__hint';
+    noOptions.textContent = t('settings.hw.gpu_picker_no_options');
+    pickerArea.appendChild(noOptions);
+  }
+
+  toggleBtn.addEventListener('click', () => {
+    pickerArea.classList.toggle('u-hidden');
+  });
+
+  wrapper.appendChild(pickerArea);
+  card.appendChild(wrapper);
 }
 
 /**

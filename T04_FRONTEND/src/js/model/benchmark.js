@@ -29,6 +29,7 @@ const BENCHMARK = {
   TIMEOUT_CPU_SLOW_MS: 180000,
   LS_BENCHMARK_RESULT: 'pr_benchmark_result',
   LS_WEBGPU_AVAILABLE: 'pr_webgpu_available',
+  LS_GPU_OVERRIDE: 'pr_gpu_override',
 };
 
 // =============================================
@@ -210,8 +211,46 @@ export function clearBenchmark() {
   try {
     localStorage.removeItem(BENCHMARK.LS_BENCHMARK_RESULT);
     localStorage.removeItem(BENCHMARK.LS_WEBGPU_AVAILABLE);
+    localStorage.removeItem(BENCHMARK.LS_GPU_OVERRIDE);
   } catch {
     // localStorage may be unavailable (private browsing)
+  }
+}
+
+// =============================================
+// 4b. User GPU Selection Override
+// =============================================
+
+/**
+ * Save user's manually-selected GPU model to localStorage.
+ * Used when browser hides the device name and user picks from a list.
+ *
+ * @param {string} device - GPU display name (e.g. "RTX 2060")
+ * @param {number} vramMB - VRAM in MB
+ */
+export function saveUserGPUSelection(device, vramMB) {
+  try {
+    localStorage.setItem(
+      BENCHMARK.LS_GPU_OVERRIDE,
+      JSON.stringify({ device, vramMB })
+    );
+  } catch {
+    // localStorage may be unavailable
+  }
+}
+
+/**
+ * Read user's manually-selected GPU from localStorage.
+ *
+ * @returns {{ device: string, vramMB: number }|null}
+ */
+export function getUserGPUSelection() {
+  try {
+    const raw = localStorage.getItem(BENCHMARK.LS_GPU_OVERRIDE);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
   }
 }
 
