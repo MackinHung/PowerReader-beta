@@ -5,7 +5,7 @@
  * TTL and cache settings sourced from shared/config.js (CLOUDFLARE.KV_STATIC_TTL).
  */
 
-const STATIC_CACHE_NAME = 'static-v25';
+const STATIC_CACHE_NAME = 'static-v26';
 const STATIC_CACHE_TTL_MS = 864000 * 1000; // 10 days (config.js CLOUDFLARE.KV_STATIC_TTL)
 const MAX_SYNC_RETRIES = 5;
 
@@ -28,6 +28,7 @@ const STATIC_ASSETS = [
   '/js/utils/sanitize.js',
   '/js/utils/error.js',
   '/js/utils/score-categories.js',
+  '/js/utils/device-detect.js',
   // JS - components
   '/js/components/bias-bar.js',
   '/js/components/controversy-badge.js',

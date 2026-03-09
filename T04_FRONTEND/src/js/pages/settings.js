@@ -21,6 +21,7 @@ import { isAuthenticated } from '../auth.js';
 import {
   formatVRAM, formatBenchmarkDate, formatBenchmarkMode, createInfoRow
 } from './settings-helpers.js';
+import { isMobileDevice, getBrowserInfo } from '../utils/device-detect.js';
 
 /**
  * Render settings page.
@@ -100,9 +101,16 @@ function renderAnalysisModeSection(container) {
     }
   }
 
+  const mobileBlocked = isMobileDevice();
   updateToggleUI(isAutoModeEnabled());
 
+  if (mobileBlocked) {
+    autoBtn.disabled = true;
+    autoBtn.title = t('auto_runner.error.mobile_blocked');
+  }
+
   autoBtn.addEventListener('click', () => {
+    if (mobileBlocked) return;
     setAnalysisMode('auto');
     updateToggleUI(true);
   });
@@ -182,7 +190,7 @@ function renderAnalysisModeSection(container) {
 
       actionBtn.textContent = t('auto_runner.start');
       actionBtn.className = 'btn btn--primary';
-      actionBtn.disabled = !isAuthenticated();
+      actionBtn.disabled = !isAuthenticated() || mobileBlocked;
       actionBtn.onclick = () => startAutoRunner();
     }
   }
@@ -308,7 +316,31 @@ async function renderHardwareSection(container) {
     ? t('settings.hw.webgpu_yes')
     : t('settings.hw.webgpu_no');
 
+  // Device type detection
+  const mobile = isMobileDevice();
+  const deviceTypeText = mobile ? t('device.type.mobile') : t('device.type.desktop');
+  const deviceTypeColor = mobile ? 'var(--color-bias-extreme)' : 'var(--color-controversy-low)';
+  card.appendChild(createInfoRow(t('settings.hw.device_type'), deviceTypeText, deviceTypeColor));
+
   card.appendChild(createInfoRow(t('settings.hw.webgpu_supported'), supportedText, supportedColor));
+
+  // Mobile warning or desktop browser hint
+  if (mobile) {
+    const warningEl = document.createElement('p');
+    warningEl.className = 'settings-card__hint';
+    warningEl.style.color = 'var(--color-bias-extreme)';
+    warningEl.textContent = t('device.mobile_warning');
+    card.appendChild(warningEl);
+  } else if (!gpuInfo.supported) {
+    const browserInfo = getBrowserInfo();
+    if (browserInfo.message) {
+      const hintEl = document.createElement('p');
+      hintEl.className = 'settings-card__hint';
+      hintEl.textContent = t(browserInfo.message);
+      card.appendChild(hintEl);
+    }
+  }
+
   card.appendChild(createInfoRow(t('settings.hw.gpu_vendor'), gpuInfo.vendor || '—'));
   card.appendChild(createInfoRow(t('settings.hw.gpu_arch'), gpuInfo.architecture || '—'));
 

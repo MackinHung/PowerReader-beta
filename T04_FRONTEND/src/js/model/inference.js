@@ -24,6 +24,7 @@ import {
 } from './prompt.js';
 import { parseScoreOutput, parseNarrativeOutput } from './output-parser.js';
 import { getCachedBenchmark, getTimeoutForTier, scanGPU } from './benchmark.js';
+import { isMobileDevice } from '../utils/device-detect.js';
 
 // =============================================
 // Configuration
@@ -185,6 +186,9 @@ export async function hasWebGPU() {
  * @returns {Promise<string>} INFERENCE_MODES value
  */
 export async function detectBestMode() {
+  // Mobile devices → always server mode (4.5GB model too large)
+  if (isMobileDevice()) return INFERENCE_MODES.SERVER;
+
   // Check cached benchmark first
   const cached = getCachedBenchmark();
   if (cached && cached.mode) {

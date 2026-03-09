@@ -304,6 +304,7 @@ const messages = {
   'auto_runner.error.model_not_ready': '請先下載 AI 模型',
   'auto_runner.error.consecutive_failures': '連續失敗 {count} 次，已自動停止',
   'auto_runner.error.rate_limited': '伺服器限流，已自動停止',
+  'auto_runner.error.mobile_blocked': '行動裝置不支援自動分析，請使用手動分析',
   'auto_runner.error.no_articles': '沒有可分析的文章',
   'auto_runner.last_run': '上次結果: {analyzed} 篇分析, {skipped} 篇跳過, {failed} 篇失敗',
   'auto_runner.override_button': '手動分析此文章',
@@ -351,6 +352,15 @@ const messages = {
   'settings.hw.stage_done': '測試完成',
   'settings.hw.stage_error': '測試失敗',
   'settings.hw.error_prefix': '測試失敗: {message}',
+  'settings.hw.device_type': '裝置類型',
+
+  // Device detection
+  'device.type.mobile': '行動裝置',
+  'device.type.desktop': '桌面電腦',
+  'device.mobile_warning': '行動裝置記憶體不足，本地推理已停用，將使用伺服器模式分析',
+  'device.browser_hint': '建議使用 Chrome 113 以上版本以獲得最佳體驗',
+  'device.browser_firefox_hint': 'Firefox 需手動啟用 WebGPU (dom.webgpu.enabled)',
+  'device.browser_safari_hint': 'Safari 暫不支援 WebGPU',
 
   // ==============================================
   // Settings Page — Cache / Display / About

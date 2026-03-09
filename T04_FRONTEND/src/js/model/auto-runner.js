@@ -18,6 +18,7 @@ import { openDB } from '../db.js';
 import { t } from '../../locale/zh-TW.js';
 import { createEventEmitter } from '../utils/event-emitter.js';
 import { promisifyRequest, promisifyTransaction } from '../utils/idb-helpers.js';
+import { isMobileDevice } from '../utils/device-detect.js';
 
 // ── Constants ──
 
@@ -95,6 +96,12 @@ export function setAnalysisMode(mode) {
  */
 export async function startAutoRunner() {
   if (_running) return;
+
+  if (isMobileDevice()) {
+    _stopReason = t('auto_runner.error.mobile_blocked');
+    _notify();
+    return;
+  }
 
   if (!isAuthenticated()) {
     _stopReason = t('auto_runner.error.not_logged_in');
