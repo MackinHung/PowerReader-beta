@@ -285,6 +285,32 @@ const messages = {
   'compare.spread': '立場分歧: {spread} 分',
 
   // ==============================================
+  // Auto Runner
+  // ==============================================
+  'auto_runner.title': '自動分析',
+  'auto_runner.mode.auto': '自動模式',
+  'auto_runner.mode.manual': '手動模式',
+  'auto_runner.start': '開始自動分析',
+  'auto_runner.stop': '停止',
+  'auto_runner.stopping': '停止中...',
+  'auto_runner.status.running': '自動分析進行中',
+  'auto_runner.status.pausing': '暫停中 ({seconds}s)',
+  'auto_runner.status.stopped': '已停止',
+  'auto_runner.status.idle': '閒置',
+  'auto_runner.progress.analyzed': '已分析',
+  'auto_runner.progress.skipped': '跳過',
+  'auto_runner.progress.failed': '失敗',
+  'auto_runner.error.not_logged_in': '請先登入才能使用自動分析',
+  'auto_runner.error.model_not_ready': '請先下載 AI 模型',
+  'auto_runner.error.consecutive_failures': '連續失敗 {count} 次，已自動停止',
+  'auto_runner.error.rate_limited': '伺服器限流，已自動停止',
+  'auto_runner.error.no_articles': '沒有可分析的文章',
+  'auto_runner.last_run': '上次結果: {analyzed} 篇分析, {skipped} 篇跳過, {failed} 篇失敗',
+  'auto_runner.override_button': '手動分析此文章',
+  'auto_runner.auto_in_progress': '自動分析進行中',
+  'settings.analysis_mode.title': '分析模式',
+
+  // ==============================================
   // Settings Page
   // ==============================================
   'settings.cache.title': '快取管理',

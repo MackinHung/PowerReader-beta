@@ -20,6 +20,7 @@ import { renderCompare } from './pages/compare.js';
 import { renderSettings } from './pages/settings.js';
 import { renderOnboarding } from './pages/onboarding.js';
 import { setAuthCredentials } from './auth.js';
+import { mountAutoRunnerStatus } from './components/auto-runner-status.js';
 
 // --------------------------------------------------
 // i18n: apply translations to data-i18n elements
@@ -281,6 +282,9 @@ async function initApp() {
 
   // 5. SW message listener
   setupSWMessageListener();
+
+  // 5.5 Mount auto-runner floating status bar
+  mountAutoRunnerStatus();
 
   // 6. Check for first-visit onboarding (BEFORE routing to avoid race condition)
   checkOnboarding();

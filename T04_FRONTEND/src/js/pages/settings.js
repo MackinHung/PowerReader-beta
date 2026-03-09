@@ -12,6 +12,11 @@ import { openDB } from '../db.js';
 import { isModelDownloaded, deleteModel } from '../model/manager.js';
 import { detectBestMode, getModeLabel, clearAllModelCaches, getWebLLMEngine } from '../model/inference.js';
 import { scanGPU, runBenchmark, getCachedBenchmark, clearBenchmark } from '../model/benchmark.js';
+import {
+  startAutoRunner, stopAutoRunner, getAutoRunnerStatus,
+  onAutoRunnerUpdate, isAutoModeEnabled, setAnalysisMode
+} from '../model/auto-runner.js';
+import { isAuthenticated } from '../auth.js';
 
 /**
  * Render settings page.
@@ -29,6 +34,9 @@ export async function renderSettings(container) {
   // Model management section
   await renderModelSection(container);
 
+  // Analysis mode section (auto/manual toggle + controls)
+  renderAnalysisModeSection(container);
+
   // Hardware detection section
   await renderHardwareSection(container);
 
@@ -43,6 +51,155 @@ export async function renderSettings(container) {
 
   // About section
   renderAboutSection(container);
+}
+
+let _analysisModeObserver = null;
+let _analysisModeUnsub = null;
+
+/**
+ * Render analysis mode section: auto/manual toggle, start/stop, stats.
+ */
+function renderAnalysisModeSection(container) {
+  // Clean up previous instance
+  if (_analysisModeUnsub) { _analysisModeUnsub(); _analysisModeUnsub = null; }
+  if (_analysisModeObserver) { _analysisModeObserver.disconnect(); _analysisModeObserver = null; }
+  const section = document.createElement('section');
+  section.className = 'settings-section';
+
+  const heading = document.createElement('h3');
+  heading.className = 'section-heading';
+  heading.textContent = t('settings.analysis_mode.title');
+  section.appendChild(heading);
+
+  const card = document.createElement('div');
+  card.className = 'settings-card';
+
+  // Mode toggle (auto / manual)
+  const toggleRow = document.createElement('div');
+  toggleRow.className = 'auto-runner-settings__mode-toggle';
+
+  const autoBtn = document.createElement('button');
+  autoBtn.className = 'auto-runner-settings__mode-btn';
+  autoBtn.textContent = t('auto_runner.mode.auto');
+
+  const manualBtn = document.createElement('button');
+  manualBtn.className = 'auto-runner-settings__mode-btn';
+  manualBtn.textContent = t('auto_runner.mode.manual');
+
+  function updateToggleUI(isAuto) {
+    if (isAuto) {
+      autoBtn.classList.add('auto-runner-settings__mode-btn--active');
+      manualBtn.classList.remove('auto-runner-settings__mode-btn--active');
+    } else {
+      manualBtn.classList.add('auto-runner-settings__mode-btn--active');
+      autoBtn.classList.remove('auto-runner-settings__mode-btn--active');
+    }
+  }
+
+  updateToggleUI(isAutoModeEnabled());
+
+  autoBtn.addEventListener('click', () => {
+    setAnalysisMode('auto');
+    updateToggleUI(true);
+  });
+
+  manualBtn.addEventListener('click', () => {
+    setAnalysisMode('manual');
+    updateToggleUI(false);
+  });
+
+  toggleRow.appendChild(autoBtn);
+  toggleRow.appendChild(manualBtn);
+  card.appendChild(toggleRow);
+
+  // Stats grid (live-updated)
+  const statsGrid = document.createElement('div');
+  statsGrid.className = 'auto-runner-settings__stats';
+  card.appendChild(statsGrid);
+
+  // Status text
+  const statusEl = document.createElement('p');
+  statusEl.className = 'settings-card__subtitle';
+  card.appendChild(statusEl);
+
+  // Action button
+  const actionBtn = document.createElement('button');
+  actionBtn.className = 'btn btn--primary';
+  card.appendChild(actionBtn);
+
+  function renderRunnerState(status) {
+    // Stats grid
+    statsGrid.innerHTML = '';
+    const statItems = [
+      { value: status.analyzed, label: t('auto_runner.progress.analyzed'), cls: 'auto-runner-settings__stat--success' },
+      { value: status.skipped, label: t('auto_runner.progress.skipped'), cls: 'auto-runner-settings__stat--skip' },
+      { value: status.failed, label: t('auto_runner.progress.failed'), cls: 'auto-runner-settings__stat--fail' }
+    ];
+
+    for (const item of statItems) {
+      const stat = document.createElement('div');
+      stat.className = `auto-runner-settings__stat ${item.cls}`;
+      const val = document.createElement('span');
+      val.className = 'auto-runner-settings__stat-value';
+      val.textContent = String(item.value);
+      const lbl = document.createElement('span');
+      lbl.className = 'auto-runner-settings__stat-label';
+      lbl.textContent = item.label;
+      stat.appendChild(val);
+      stat.appendChild(lbl);
+      statsGrid.appendChild(stat);
+    }
+
+    // Status + button
+    if (status.running) {
+      const title = status.currentArticle?.title || '';
+      statusEl.textContent = status.stopping
+        ? t('auto_runner.stopping')
+        : title.length > 40 ? title.slice(0, 40) + '…' : title;
+
+      actionBtn.textContent = status.stopping
+        ? t('auto_runner.stopping')
+        : t('auto_runner.stop');
+      actionBtn.className = 'btn btn--secondary';
+      actionBtn.disabled = status.stopping;
+      actionBtn.onclick = () => stopAutoRunner();
+    } else {
+      if (status.stopReason) {
+        statusEl.textContent = status.stopReason;
+      } else if (status.analyzed > 0 || status.skipped > 0 || status.failed > 0) {
+        statusEl.textContent = t('auto_runner.last_run', {
+          analyzed: String(status.analyzed),
+          skipped: String(status.skipped),
+          failed: String(status.failed)
+        });
+      } else {
+        statusEl.textContent = t('auto_runner.status.idle');
+      }
+
+      actionBtn.textContent = t('auto_runner.start');
+      actionBtn.className = 'btn btn--primary';
+      actionBtn.disabled = !isAuthenticated();
+      actionBtn.onclick = () => startAutoRunner();
+    }
+  }
+
+  // Initial render
+  renderRunnerState(getAutoRunnerStatus());
+
+  // Live updates
+  _analysisModeUnsub = onAutoRunnerUpdate(renderRunnerState);
+
+  // Clean up subscription when section is removed from DOM
+  _analysisModeObserver = new MutationObserver(() => {
+    if (!document.contains(section)) {
+      if (_analysisModeUnsub) { _analysisModeUnsub(); _analysisModeUnsub = null; }
+      if (_analysisModeObserver) { _analysisModeObserver.disconnect(); _analysisModeObserver = null; }
+    }
+  });
+  _analysisModeObserver.observe(document.body, { childList: true, subtree: true });
+
+  section.appendChild(card);
+  container.appendChild(section);
 }
 
 /**

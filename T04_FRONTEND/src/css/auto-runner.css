@@ -1,0 +1,220 @@
+/**
+ * PowerReader - Auto Runner Styles
+ *
+ * Floating status bar + settings section.
+ * Uses CSS custom properties from main.css :root.
+ */
+
+/* ==============================================
+   Floating Status Bar
+   ============================================== */
+.auto-runner-float {
+  position: fixed;
+  bottom: 60px; /* above bottom-nav */
+  left: 0;
+  right: 0;
+  z-index: 899;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
+  background-color: var(--color-bg-secondary);
+  border-top: 1px solid var(--color-border);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+  min-height: 44px;
+}
+
+.auto-runner-float__info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.auto-runner-float__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.auto-runner-float__dot--active {
+  background-color: #22c55e;
+  animation: auto-runner-pulse 1.5s ease-in-out infinite;
+}
+
+.auto-runner-float__dot--pausing {
+  background-color: #eab308;
+  animation: auto-runner-pulse 2s ease-in-out infinite;
+}
+
+@keyframes auto-runner-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.auto-runner-float__title {
+  font-size: var(--text-small);
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auto-runner-float__counters {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.auto-runner-float__badge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.auto-runner-float__badge--success {
+  background-color: rgba(34, 197, 94, 0.15);
+  color: #16a34a;
+}
+
+.auto-runner-float__badge--skip {
+  background-color: rgba(234, 179, 8, 0.15);
+  color: #a16207;
+}
+
+.auto-runner-float__badge--fail {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+}
+
+.auto-runner-float__stop {
+  flex-shrink: 0;
+  font-size: var(--text-small);
+  padding: 4px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.auto-runner-float__stop:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+  border-color: #dc2626;
+}
+
+.auto-runner-float__stop:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==============================================
+   Settings Page: Analysis Mode Section
+   ============================================== */
+.auto-runner-settings__mode-toggle {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: var(--spacing-md);
+}
+
+.auto-runner-settings__mode-btn {
+  flex: 1;
+  padding: var(--spacing-sm);
+  font-size: var(--text-body);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+  color: var(--color-text-secondary);
+}
+
+.auto-runner-settings__mode-btn--active {
+  background-color: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+}
+
+.auto-runner-settings__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.auto-runner-settings__stat {
+  text-align: center;
+  padding: var(--spacing-sm);
+  background-color: var(--color-bg);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+}
+
+.auto-runner-settings__stat-value {
+  font-size: var(--text-h3);
+  font-weight: 700;
+  display: block;
+}
+
+.auto-runner-settings__stat-label {
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+}
+
+.auto-runner-settings__stat--success .auto-runner-settings__stat-value {
+  color: #16a34a;
+}
+
+.auto-runner-settings__stat--skip .auto-runner-settings__stat-value {
+  color: #a16207;
+}
+
+.auto-runner-settings__stat--fail .auto-runner-settings__stat-value {
+  color: #dc2626;
+}
+
+/* Article detail: auto-runner info banner */
+.auto-runner-article-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 8px;
+  margin-bottom: var(--spacing-md);
+}
+
+.auto-runner-article-info__text {
+  font-size: var(--text-small);
+  color: #16a34a;
+  font-weight: 500;
+}
+
+/* ==============================================
+   Responsive
+   ============================================== */
+@media (max-width: 360px) {
+  .auto-runner-float {
+    padding: var(--spacing-xs);
+    gap: 4px;
+  }
+
+  .auto-runner-float__badge {
+    font-size: 10px;
+    padding: 1px 4px;
+  }
+
+  .auto-runner-settings__stats {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+  }
+}

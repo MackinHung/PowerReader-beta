@@ -13,7 +13,7 @@
  */
 
 const DB_NAME = 'PowerReader';       // config.js FRONTEND.INDEXEDDB_NAME
-const DB_VERSION = 1;                // config.js FRONTEND.INDEXEDDB_VERSION
+const DB_VERSION = 2;                // config.js FRONTEND.INDEXEDDB_VERSION
 const CACHE_DAYS = 10;               // config.js FRONTEND.INDEXEDDB_CACHE_DAYS
 
 /**
@@ -65,6 +65,13 @@ export function openDB() {
         const models = db.createObjectStore('model_files', { keyPath: 'key' });
         models.createIndex('by_stored_at', 'stored_at', { unique: false });
       }
+
+      // 6. auto_runner_history (v2)
+      if (!db.objectStoreNames.contains('auto_runner_history')) {
+        const history = db.createObjectStore('auto_runner_history', { keyPath: 'article_id' });
+        history.createIndex('by_status', 'status', { unique: false });
+        history.createIndex('by_analyzed_at', 'analyzed_at', { unique: false });
+      }
     };
   });
 }
@@ -76,9 +83,11 @@ export function openDB() {
 export async function cleanExpiredCache() {
   const db = await openDB();
   const cutoff = new Date(Date.now() - CACHE_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const cutoff30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
   await cleanStoreByIndex(db, 'articles', 'by_cached_at', cutoff);
   await cleanStoreByIndex(db, 'cached_results', 'by_cached_at', cutoff);
+  await cleanStoreByIndex(db, 'auto_runner_history', 'by_analyzed_at', cutoff30d);
 
   db.close();
 }

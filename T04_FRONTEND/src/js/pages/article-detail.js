@@ -20,6 +20,7 @@ import { renderResultPreview } from './analyze-result.js';
 import { runPreAnalysisChecks } from './analyze-checks.js';
 import { updateStatusUI } from './analyze-engine.js';
 import { loadKnowledgePanel, loadClusterPanel } from './article-panels.js';
+import { getAutoRunnerStatus } from '../model/auto-runner.js';
 
 // ── Module State ──
 
@@ -189,6 +190,13 @@ async function startAutoAnalysis(container, article) {
   const section = container.querySelector('#analysis-section');
   if (!section) return;
 
+  // If auto-runner is active, show info banner instead of auto-enqueuing
+  const runnerStatus = getAutoRunnerStatus();
+  if (runnerStatus.running) {
+    _renderAutoRunnerBanner(section, article);
+    return;
+  }
+
   const checks = await runPreAnalysisChecks(article);
   if (!checks.canAnalyze) {
     renderAnalysisBlocked(section, checks, article);
@@ -202,6 +210,31 @@ async function startAutoAnalysis(container, article) {
   }
 
   enqueueAndTrack(section, article);
+}
+
+/**
+ * Show banner when auto-runner is active, with manual override button.
+ */
+function _renderAutoRunnerBanner(section, article) {
+  section.innerHTML = '';
+
+  const banner = document.createElement('div');
+  banner.className = 'auto-runner-article-info';
+
+  const text = document.createElement('span');
+  text.className = 'auto-runner-article-info__text';
+  text.textContent = t('auto_runner.auto_in_progress');
+  banner.appendChild(text);
+
+  const overrideBtn = document.createElement('button');
+  overrideBtn.className = 'btn btn--secondary';
+  overrideBtn.textContent = t('auto_runner.override_button');
+  overrideBtn.addEventListener('click', () => {
+    enqueueAndTrack(section, article);
+  });
+  banner.appendChild(overrideBtn);
+
+  section.appendChild(banner);
 }
 
 function renderAnalysisBlocked(section, checks, article) {
