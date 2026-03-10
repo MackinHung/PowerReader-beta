@@ -103,7 +103,7 @@ function getMissingCamp(type) {
 // ========================================
 // Title bigram Jaccard (CJK, same as articles.js)
 // ========================================
-const CLUSTER_JACCARD_THRESHOLD = 0.45;
+const CLUSTER_JACCARD_THRESHOLD = 0.25;
 
 function titleBigrams(title) {
   if (!title) return new Set();

@@ -12,6 +12,7 @@
 
 import { jsonResponse } from '../../../shared/response.js';
 import { escapeHtml } from '../../../shared/utils.js';
+import { scanBlindspots, updateSourceTendency } from './cron-blindspot.js';
 
 // Valid blindspot types (whitelist for SQL injection prevention)
 const VALID_TYPES = ['green_only', 'blue_only', 'white_missing', 'imbalanced'];
@@ -68,6 +69,20 @@ export async function getBlindspotEvents(request, env, ctx, { url }) {
       blindspot_events: events,
       pagination: { page, limit, total, total_pages: Math.ceil(total / limit) }
     },
+    error: null
+  });
+}
+
+/**
+ * POST /api/v1/blindspot/scan — Admin trigger for blindspot scan + source tendency
+ */
+export async function triggerBlindspotScan(request, env) {
+  await scanBlindspots(env);
+  await updateSourceTendency(env);
+
+  return jsonResponse(200, {
+    success: true,
+    data: { message: 'Blindspot scan and source tendency update completed' },
     error: null
   });
 }

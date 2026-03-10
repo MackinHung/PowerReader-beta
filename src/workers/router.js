@@ -21,7 +21,7 @@ import { googleAuth, googleOAuthCallback, getMe, deleteMe, exportMe, getContribu
 import { getPoints } from './handlers/points.js';
 import { submitReward, recordFailure, getRewardsSummary } from './handlers/rewards.js';
 import { healthCheck, readinessCheck, getMetrics, getUsage } from './handlers/health.js';
-import { getBlindspotEvents } from './handlers/blindspot.js';
+import { getBlindspotEvents, triggerBlindspotScan } from './handlers/blindspot.js';
 import { getSources, getSource } from './handlers/sources.js';
 import { submitArticleFeedback, getArticleFeedbackStats } from './handlers/feedback.js';
 import { reportArticle, reportAnalysis } from './handlers/reports.js';
@@ -95,7 +95,8 @@ const ROUTES = [
   ['GET', '/api/v1/events/:cluster_id',  getEventDetail, { auth: 'none', rateLimit: true, cache: `public, max-age=${CLOUDFLARE.CDN_NEWS_LIST_TTL}` }],
 
   // Blindspot API (v2.0 — camp imbalance detection)
-  ['GET', '/api/v1/blindspot/events', getBlindspotEvents, { auth: 'none', rateLimit: true, cache: `public, max-age=${CLOUDFLARE.CDN_NEWS_LIST_TTL}` }],
+  ['GET',  '/api/v1/blindspot/events', getBlindspotEvents,    { auth: 'none',    rateLimit: true,  cache: `public, max-age=${CLOUDFLARE.CDN_NEWS_LIST_TTL}` }],
+  ['POST', '/api/v1/blindspot/scan',   triggerBlindspotScan,  { auth: 'service', rateLimit: false, cache: 'no-store' }],
 
   // Source Transparency API (v2.0 — dynamic media tendency)
   ['GET', '/api/v1/sources',          getSources, { auth: 'none', rateLimit: true, cache: `public, max-age=${CLOUDFLARE.CDN_NEWS_LIST_TTL}` }],
