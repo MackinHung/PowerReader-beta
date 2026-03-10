@@ -130,12 +130,109 @@
   margin-bottom: var(--spacing-sm);
 }
 
+.blindspot-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.blindspot-card__arrow {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  transition: transform 0.2s;
+}
+
+.blindspot-card--expanded {
+  border-left-width: 5px;
+}
+
 .blindspot-card__meta {
   display: flex;
   gap: var(--spacing-md);
   font-size: var(--text-small);
   color: var(--color-text-secondary);
   margin-top: var(--spacing-sm);
+}
+
+/* Expandable article list */
+.blindspot-card__articles {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.blindspot-card__loading,
+.blindspot-card__empty {
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: var(--spacing-sm) 0;
+}
+
+.blindspot-articles {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.blindspot-articles__item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.blindspot-articles__item:last-child {
+  border-bottom: none;
+}
+
+.blindspot-articles__camp-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.blindspot-articles__source {
+  flex-shrink: 0;
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  min-width: 80px;
+}
+
+.blindspot-articles__link {
+  flex: 1;
+  font-size: var(--text-caption);
+  color: var(--color-text);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.blindspot-articles__link:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.blindspot-articles__status {
+  flex-shrink: 0;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.blindspot-articles__status--done {
+  background: #E8F5E9;
+  color: #2E7D32;
+}
+
+.blindspot-articles__status--pending {
+  background: #FFF3E0;
+  color: #E65100;
 }
 
 /* ==============================================

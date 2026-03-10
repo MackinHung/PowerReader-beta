@@ -170,19 +170,21 @@ export async function scanBlindspots(env) {
     const blindspotType = detectBlindspot(campCounts);
     if (!blindspotType) continue;
 
-    // Upsert into blindspot_events
+    // Upsert into blindspot_events (with article_ids for drill-down)
     const clusterId = `bs_${hashCluster(cluster.articles[0].title)}`;
+    const articleIds = cluster.articles.map(a => a.article_id);
     await env.DB.prepare(`
       INSERT INTO blindspot_events
         (cluster_id, representative_title, blindspot_type, camp_distribution,
-         missing_camp, article_count, source_count, detected_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+         missing_camp, article_count, source_count, article_ids, detected_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       ON CONFLICT(cluster_id) DO UPDATE SET
         blindspot_type = excluded.blindspot_type,
         camp_distribution = excluded.camp_distribution,
         missing_camp = excluded.missing_camp,
         article_count = excluded.article_count,
         source_count = excluded.source_count,
+        article_ids = excluded.article_ids,
         detected_at = excluded.detected_at
     `).bind(
       clusterId,
@@ -191,7 +193,8 @@ export async function scanBlindspots(env) {
       JSON.stringify(campCounts),
       getMissingCamp(blindspotType),
       cluster.articles.length,
-      sources.size
+      sources.size,
+      JSON.stringify(articleIds)
     ).run();
   }
 

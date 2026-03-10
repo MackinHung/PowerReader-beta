@@ -10,7 +10,7 @@
  * @license AGPL-3.0
  */
 
-import { fetchBlindspotEvents } from '../api.js';
+import { fetchBlindspotEvents, fetchArticle } from '../api.js';
 import { getUserErrorMessage } from '../utils/error.js';
 
 // Blindspot type → CSS modifier class
@@ -29,30 +29,38 @@ const CAMP_COLORS = {
 };
 
 const CAMP_LABELS = {
-  green: '泛綠',
-  white: '中立',
-  blue: '泛藍'
+  green: '民進黨(綠)',
+  white: '民眾黨(白)',
+  blue: '國民黨(藍)'
 };
 
 const FILTER_LABELS = {
   all: '全部',
-  green_only: '僅泛綠報導',
-  blue_only: '僅泛藍報導',
+  green_only: '僅綠營報導',
+  blue_only: '僅藍營報導',
   white_missing: '缺乏中立報導',
   imbalanced: '報導失衡'
 };
 
 const TYPE_LABELS = {
-  green_only: '僅泛綠報導',
-  blue_only: '僅泛藍報導',
+  green_only: '僅綠營報導',
+  blue_only: '僅藍營報導',
   white_missing: '缺乏中立報導',
   imbalanced: '報導失衡'
 };
 
 const MISSING_CAMP_LABELS = {
-  pan_green: '泛綠',
-  pan_blue: '泛藍',
-  pan_white: '中立'
+  pan_green: '民進黨(綠)',
+  pan_blue: '國民黨(藍)',
+  pan_white: '民眾黨(白)'
+};
+
+// Source → camp mapping (mirrors cron-blindspot.js SOURCE_CAMP)
+const SOURCE_CAMP = {
+  '自由時報': 'green', '三立新聞': 'green', '新頭殼': 'green', '匯流新聞': 'green',
+  '中央社': 'white', '公視新聞': 'white', '關鍵評論網': 'white', '台視新聞': 'white',
+  '鏡週刊': 'white', 'iThome': 'white', '科技新報': 'white', '風傳媒': 'white',
+  '聯合報': 'blue', 'ETtoday新聞雲': 'blue', '東森新聞': 'blue', '中視新聞': 'blue'
 };
 
 const FILTER_TYPES = [null, 'green_only', 'blue_only', 'white_missing', 'imbalanced'];
@@ -160,17 +168,30 @@ async function loadEvents(listEl, typeFilter) {
 }
 
 /**
- * Render a single blindspot event card.
+ * Render a single blindspot event card (expandable on click).
  */
 function renderBlindspotCard(event) {
   const card = document.createElement('section');
   card.className = `blindspot-card ${TYPE_CLASSES[event.blindspot_type] || ''}`;
+  card.style.cursor = 'pointer';
+
+  // Header area (always visible)
+  const header = document.createElement('div');
+  header.className = 'blindspot-card__header';
 
   // Type badge
   const badge = document.createElement('span');
   badge.className = 'blindspot-card__badge';
   badge.textContent = TYPE_LABELS[event.blindspot_type] || event.blindspot_type;
-  card.appendChild(badge);
+  header.appendChild(badge);
+
+  // Expand arrow
+  const arrow = document.createElement('span');
+  arrow.className = 'blindspot-card__arrow';
+  arrow.textContent = '\u25BC';
+  header.appendChild(arrow);
+
+  card.appendChild(header);
 
   // Event title
   const heading = document.createElement('h3');
@@ -216,7 +237,95 @@ function renderBlindspotCard(event) {
 
   card.appendChild(meta);
 
+  // Expandable article list (hidden by default)
+  const articleList = document.createElement('div');
+  articleList.className = 'blindspot-card__articles';
+  articleList.hidden = true;
+  card.appendChild(articleList);
+
+  // Click to expand/collapse
+  let loaded = false;
+  card.addEventListener('click', async (e) => {
+    // Don't collapse when clicking article links
+    if (e.target.closest('a')) return;
+
+    const isExpanded = !articleList.hidden;
+    articleList.hidden = isExpanded;
+    arrow.textContent = isExpanded ? '\u25BC' : '\u25B2';
+    card.classList.toggle('blindspot-card--expanded', !isExpanded);
+
+    if (!loaded && !isExpanded && event.article_ids?.length > 0) {
+      loaded = true;
+      articleList.innerHTML = '<p class="blindspot-card__loading">載入文章中...</p>';
+      await loadClusterArticles(articleList, event.article_ids);
+    }
+  });
+
   return card;
+}
+
+/**
+ * Load and render articles for a blindspot cluster.
+ */
+async function loadClusterArticles(container, articleIds) {
+  container.innerHTML = '';
+
+  const results = await Promise.all(
+    articleIds.map(id => fetchArticle(id))
+  );
+
+  const list = document.createElement('ul');
+  list.className = 'blindspot-articles';
+
+  for (const result of results) {
+    if (!result.success) continue;
+    const article = result.data?.article || result.data;
+    if (!article) continue;
+
+    const li = document.createElement('li');
+    li.className = 'blindspot-articles__item';
+
+    // Camp dot
+    const camp = SOURCE_CAMP[article.source];
+    if (camp) {
+      const dot = document.createElement('span');
+      dot.className = 'blindspot-articles__camp-dot';
+      dot.style.backgroundColor = CAMP_COLORS[camp];
+      dot.setAttribute('title', CAMP_LABELS[camp] || camp);
+      li.appendChild(dot);
+    }
+
+    // Source label
+    const source = document.createElement('span');
+    source.className = 'blindspot-articles__source';
+    source.textContent = article.source || '';
+    li.appendChild(source);
+
+    // Title link → article detail page
+    const link = document.createElement('a');
+    link.className = 'blindspot-articles__link';
+    link.href = `#/article/${article.article_id}`;
+    link.textContent = article.title || '';
+    li.appendChild(link);
+
+    // Analysis status
+    const status = document.createElement('span');
+    status.className = 'blindspot-articles__status';
+    status.textContent = article.analysis_count > 0 ? '已分析' : '未分析';
+    status.classList.add(article.analysis_count > 0
+      ? 'blindspot-articles__status--done'
+      : 'blindspot-articles__status--pending');
+    li.appendChild(status);
+
+    list.appendChild(li);
+  }
+
+  if (list.children.length === 0) {
+    container.innerHTML = '<p class="blindspot-card__empty">無法載入文章資料</p>';
+    return;
+  }
+
+  container.appendChild(list);
 }
 
 /**

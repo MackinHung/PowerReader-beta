@@ -46,7 +46,7 @@ export async function getBlindspotEvents(request, env, ctx, { url }) {
   // Fetch page (newest first)
   const rows = await env.DB.prepare(`
     SELECT id, cluster_id, representative_title, blindspot_type,
-           camp_distribution, missing_camp, article_count, source_count, detected_at
+           camp_distribution, missing_camp, article_count, source_count, article_ids, detected_at
     FROM blindspot_events ${whereClause}
     ORDER BY detected_at DESC
     LIMIT ? OFFSET ?
@@ -60,6 +60,7 @@ export async function getBlindspotEvents(request, env, ctx, { url }) {
     missing_camp: row.missing_camp,
     article_count: row.article_count,
     source_count: row.source_count,
+    article_ids: safeJsonParse(row.article_ids, []),
     detected_at: row.detected_at
   }));
 
