@@ -29,6 +29,31 @@ const BLINDSPOT_TYPES = {
   IMBALANCED: 'imbalanced'
 };
 
+// Static source-to-camp mapping based on known editorial tendency.
+// Used as fallback when articles lack bias_score (no user analysis yet).
+// As user analyses accumulate, bias_score takes priority over this static map.
+const SOURCE_CAMP = {
+  // Pan-Green (民進黨/泛綠)
+  '自由時報': 'green',
+  '三立新聞': 'green',
+  '新頭殼': 'green',
+  '匯流新聞': 'green',
+  // Neutral / Center (民眾黨/中立)
+  '中央社': 'white',
+  '公視新聞': 'white',
+  '關鍵評論網': 'white',
+  '台視新聞': 'white',
+  '鏡週刊': 'white',
+  'iThome': 'white',
+  '科技新報': 'white',
+  // Pan-Blue (國民黨/泛藍)
+  '聯合報': 'blue',
+  'ETtoday新聞雲': 'blue',
+  '東森新聞': 'blue',
+  '中視新聞': 'blue',
+  '風傳媒': 'white'
+};
+
 /**
  * Detect blindspot type from camp counts.
  * Mirror of shared/enums.js detectBlindspot().
@@ -56,6 +81,13 @@ function getCamp(biasScore) {
   if (biasScore <= THREE_CAMP.GREEN_MAX) return 'green';
   if (biasScore >= THREE_CAMP.BLUE_MIN) return 'blue';
   return 'white';
+}
+
+/**
+ * Get camp from source name using static mapping (fallback for unanalyzed articles).
+ */
+function getSourceCamp(source) {
+  return SOURCE_CAMP[source] || null;
 }
 
 /**
@@ -97,14 +129,17 @@ function jaccardSimilarity(setA, setB) {
  * Scan recent articles and detect blindspot events.
  * Strategy: cluster articles by title similarity (Jaccard >=0.45, ±48h),
  * then check camp distribution per cluster.
+ *
+ * Camp determination priority:
+ *   1. bias_score from user analysis (if available)
+ *   2. SOURCE_CAMP static mapping (fallback for unanalyzed articles)
  */
 export async function scanBlindspots(env) {
-  // Fetch articles from last 48h that have bias_score
+  // Fetch articles from last 48h (all articles, not just analyzed ones)
   const rows = await env.DB.prepare(`
     SELECT article_id, title, source, bias_score, published_at
     FROM articles
-    WHERE bias_score IS NOT NULL
-      AND datetime(published_at) >= datetime('now', '-2 days')
+    WHERE datetime(published_at) >= datetime('now', '-2 days')
     ORDER BY published_at DESC
     LIMIT 500
   `).all();
@@ -123,7 +158,11 @@ export async function scanBlindspots(env) {
     const sources = new Set();
 
     for (const art of cluster.articles) {
-      const camp = getCamp(art.bias_score);
+      // Priority: bias_score from analysis > source static mapping
+      const camp = art.bias_score != null
+        ? getCamp(art.bias_score)
+        : getSourceCamp(art.source);
+      if (!camp) continue; // Unknown source, skip
       campCounts[camp]++;
       sources.add(art.source);
     }
@@ -208,12 +247,14 @@ function hashCluster(title) {
 /**
  * Update source tendency table with 30-day rolling average.
  * Called daily at midnight UTC.
+ *
+ * Priority: actual analysis data > static SOURCE_CAMP baseline.
+ * When no analysis data exists, seeds from static map with confidence='baseline'.
  */
 export async function updateSourceTendency(env) {
   const { TENDENCY_WINDOW_DAYS, MIN_SAMPLES, GREEN_MAX, BLUE_MIN } = THREE_CAMP;
 
-  // Compute 30-day AVG(bias_score) and COUNT per source
-  // TENDENCY_WINDOW_DAYS is a hardcoded constant (30), safe for template literal
+  // Compute 30-day AVG(bias_score) and COUNT per source (from analyzed articles)
   const windowModifier = `-${TENDENCY_WINDOW_DAYS} days`;
   const rows = await env.DB.prepare(`
     SELECT
@@ -227,9 +268,12 @@ export async function updateSourceTendency(env) {
     HAVING sample_count >= 1
   `).bind(windowModifier).all();
 
+  const sourcesWithData = new Set();
+
   for (const row of (rows.results || [])) {
     const avgBias = row.avg_bias;
     const sampleCount = row.sample_count;
+    sourcesWithData.add(row.source);
 
     // Determine camp from average
     let camp;
@@ -255,6 +299,34 @@ export async function updateSourceTendency(env) {
         last_updated = excluded.last_updated
     `).bind(
       row.source, avgBias, camp, sampleCount, confidence, TENDENCY_WINDOW_DAYS
+    ).run();
+  }
+
+  // Seed sources that have no analysis data from static SOURCE_CAMP map
+  const STATIC_BIAS = { green: 30, white: 50, blue: 70 };
+  for (const [source, camp] of Object.entries(SOURCE_CAMP)) {
+    if (sourcesWithData.has(source)) continue;
+
+    // Count articles from this source (even without bias_score)
+    const countRow = await env.DB.prepare(
+      'SELECT COUNT(*) AS cnt FROM articles WHERE source = ?'
+    ).bind(source).first();
+    const articleCount = countRow?.cnt || 0;
+    if (articleCount === 0) continue;
+
+    const panCamp = camp === 'green' ? 'pan_green' : camp === 'blue' ? 'pan_blue' : 'pan_white';
+
+    await env.DB.prepare(`
+      INSERT INTO source_tendency (source, avg_bias_score, camp, sample_count, confidence, window_days, last_updated)
+      VALUES (?, ?, ?, ?, 'baseline', ?, datetime('now'))
+      ON CONFLICT(source) DO UPDATE SET
+        avg_bias_score = CASE WHEN source_tendency.confidence = 'baseline' THEN excluded.avg_bias_score ELSE source_tendency.avg_bias_score END,
+        camp = CASE WHEN source_tendency.confidence = 'baseline' THEN excluded.camp ELSE source_tendency.camp END,
+        sample_count = CASE WHEN source_tendency.confidence = 'baseline' THEN excluded.sample_count ELSE source_tendency.sample_count END,
+        confidence = CASE WHEN source_tendency.confidence = 'baseline' THEN excluded.confidence ELSE source_tendency.confidence END,
+        last_updated = excluded.last_updated
+    `).bind(
+      source, STATIC_BIAS[camp], panCamp, articleCount, TENDENCY_WINDOW_DAYS
     ).run();
   }
 }
