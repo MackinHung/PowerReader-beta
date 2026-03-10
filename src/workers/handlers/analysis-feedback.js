@@ -48,10 +48,22 @@ export async function submitAnalysisFeedback(request, env, ctx, { params, user }
     });
   }
 
-  // Upsert feedback (INSERT OR REPLACE handles both new and update cases)
+  // Check if user already submitted feedback (one-time only, no retraction)
+  const existing = await env.DB.prepare(
+    'SELECT id FROM analysis_feedback WHERE analysis_id = ? AND user_hash = ?'
+  ).bind(analysis_id, user_hash).first();
+
+  if (existing) {
+    return jsonResponse(409, {
+      success: false,
+      data: null,
+      error: { type: 'already_submitted', message: '您已提交過回饋' },
+    });
+  }
+
   const now = nowISO();
   await env.DB.prepare(`
-    INSERT OR REPLACE INTO analysis_feedback (analysis_id, user_hash, type, created_at)
+    INSERT INTO analysis_feedback (analysis_id, user_hash, type, created_at)
     VALUES (?, ?, ?, ?)
   `).bind(analysis_id, user_hash, body.type, now).run();
 

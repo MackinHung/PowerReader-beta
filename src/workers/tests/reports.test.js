@@ -143,7 +143,7 @@ describe('reportArticle', () => {
     // Insert succeeds
     env._mocks.run.mockResolvedValueOnce({});
 
-    const request = createRequest({ reason: 'biased', description: 'Very biased article' });
+    const request = createRequest({ reason: 'data_abnormal', description: 'Data issue' });
     const result = await reportArticle(request, env, {}, {
       params: { article_id: 'abc123' },
       user: { user_hash: 'user1' },
@@ -153,7 +153,7 @@ describe('reportArticle', () => {
     expect(result.body.success).toBe(true);
     expect(result.body.data.target_type).toBe('article');
     expect(result.body.data.target_id).toBe('abc123');
-    expect(result.body.data.reason).toBe('biased');
+    expect(result.body.data.reason).toBe('data_abnormal');
   });
 
   it('submits report without optional description', async () => {
@@ -162,7 +162,7 @@ describe('reportArticle', () => {
     env._mocks.first.mockResolvedValueOnce(null);
     env._mocks.run.mockResolvedValueOnce({});
 
-    const request = createRequest({ reason: 'spam' });
+    const request = createRequest({ reason: 'analysis_inaccurate' });
     const result = await reportArticle(request, env, {}, {
       params: { article_id: 'abc123' },
       user: { user_hash: 'user1' },
@@ -170,7 +170,7 @@ describe('reportArticle', () => {
 
     expect(result.status).toBe(201);
     expect(result.body.success).toBe(true);
-    expect(result.body.data.reason).toBe('spam');
+    expect(result.body.data.reason).toBe('analysis_inaccurate');
   });
 
   it('uses authenticated user_hash from JWT, not from body', async () => {
@@ -276,7 +276,7 @@ describe('reportAnalysis', () => {
     // Insert succeeds
     env._mocks.run.mockResolvedValueOnce({});
 
-    const request = createRequest({ reason: 'offensive', description: 'Contains hate speech' });
+    const request = createRequest({ reason: 'analysis_abnormal', description: 'Abnormal analysis result' });
     const result = await reportAnalysis(request, env, {}, {
       params: { analysis_id: '42' },
       user: { user_hash: 'user1' },
@@ -286,7 +286,7 @@ describe('reportAnalysis', () => {
     expect(result.body.success).toBe(true);
     expect(result.body.data.target_type).toBe('analysis');
     expect(result.body.data.target_id).toBe('42');
-    expect(result.body.data.reason).toBe('offensive');
+    expect(result.body.data.reason).toBe('analysis_abnormal');
   });
 });
 
@@ -350,7 +350,9 @@ describe('submitAnalysisFeedback', () => {
     validateFeedback.mockReturnValue({ valid: true, errors: [] });
     // Analysis exists
     env._mocks.first.mockResolvedValueOnce({ id: 42 });
-    // Upsert succeeds
+    // No existing feedback
+    env._mocks.first.mockResolvedValueOnce(null);
+    // Insert succeeds
     env._mocks.run.mockResolvedValueOnce({});
 
     const request = createRequest({ type: 'like' });
@@ -365,10 +367,12 @@ describe('submitAnalysisFeedback', () => {
     expect(result.body.data.analysis_id).toBe('42');
   });
 
-  it('upserts when changing from like to dislike', async () => {
+  it('returns 409 when user already submitted feedback (no retraction)', async () => {
     validateFeedback.mockReturnValue({ valid: true, errors: [] });
+    // Analysis exists
     env._mocks.first.mockResolvedValueOnce({ id: 42 });
-    env._mocks.run.mockResolvedValueOnce({});
+    // Existing feedback found
+    env._mocks.first.mockResolvedValueOnce({ id: 1 });
 
     const request = createRequest({ type: 'dislike' });
     const result = await submitAnalysisFeedback(request, env, {}, {
@@ -376,18 +380,15 @@ describe('submitAnalysisFeedback', () => {
       user: { user_hash: 'user1' },
     });
 
-    // Should use INSERT OR REPLACE for upsert
-    const sqlCall = env._mocks.prepare.mock.calls.find(
-      (c) => typeof c[0] === 'string' && c[0].includes('INSERT OR REPLACE'),
-    );
-    expect(sqlCall).toBeTruthy();
-    expect(result.status).toBe(200);
-    expect(result.body.data.type).toBe('dislike');
+    expect(result.status).toBe(409);
+    expect(result.body.success).toBe(false);
+    expect(result.body.error.type).toBe('already_submitted');
   });
 
   it('uses authenticated user_hash from JWT, not from body', async () => {
     validateFeedback.mockReturnValue({ valid: true, errors: [] });
     env._mocks.first.mockResolvedValueOnce({ id: 42 });
+    env._mocks.first.mockResolvedValueOnce(null);
     env._mocks.run.mockResolvedValueOnce({});
 
     const request = createRequest({ type: 'like', user_hash: 'spoofed' });

@@ -53,9 +53,21 @@ export async function submitArticleFeedback(request, env, ctx, { params, user })
     });
   }
 
-  // Upsert feedback (INSERT OR REPLACE on UNIQUE(article_id, user_hash))
+  // Check if user already submitted feedback (one-time only, no retraction)
+  const existing = await env.DB.prepare(
+    'SELECT id FROM article_feedback WHERE article_id = ? AND user_hash = ?'
+  ).bind(article_id, user_hash).first();
+
+  if (existing) {
+    return jsonResponse(409, {
+      success: false,
+      data: null,
+      error: { type: 'already_submitted', message: '您已提交過回饋' },
+    });
+  }
+
   await env.DB.prepare(
-    `INSERT OR REPLACE INTO article_feedback (article_id, user_hash, type, created_at)
+    `INSERT INTO article_feedback (article_id, user_hash, type, created_at)
      VALUES (?, ?, ?, ?)`
   ).bind(article_id, user_hash, body.type, nowISO()).run();
 

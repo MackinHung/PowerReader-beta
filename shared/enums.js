@@ -436,11 +436,11 @@ export const FEEDBACK_TYPES = {
 // 🚩 Report Reasons
 // =========================================
 export const REPORT_REASONS = {
-  INACCURATE: "inaccurate",   // 資料不準確
-  BIASED: "biased",           // 明顯偏頗
-  SPAM: "spam",               // 垃圾內容
-  OFFENSIVE: "offensive",     // 攻擊性內容
-  OTHER: "other"              // 其他
+  ANALYSIS_INACCURATE: "analysis_inaccurate",   // 分析不準確
+  ANALYSIS_ABNORMAL: "analysis_abnormal",       // 分析異常
+  CANNOT_ANALYZE: "cannot_analyze",             // 無法分析
+  DATA_ABNORMAL: "data_abnormal",               // 資料異常
+  OTHER: "other"                                // 其它
 };
 
 export const REPORT_STATUS = {

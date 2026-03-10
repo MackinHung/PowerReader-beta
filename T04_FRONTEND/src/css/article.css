@@ -426,6 +426,16 @@
   border-color: #D32F2F;
 }
 
+.feedback-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.feedback-btn--active:disabled {
+  opacity: 1;
+}
+
 .feedback-btn__icon {
   font-size: 10px;
   line-height: 1;

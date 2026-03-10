@@ -585,7 +585,7 @@ function renderDetailError(container, message) {
 
 // ── Feedback + Report ──
 
-const REPORT_REASONS = ['inaccurate', 'biased', 'spam', 'offensive', 'other'];
+const REPORT_REASONS = ['analysis_inaccurate', 'analysis_abnormal', 'cannot_analyze', 'data_abnormal', 'other'];
 
 /**
  * Load and render feedback section (like/dislike + report).
@@ -650,10 +650,15 @@ async function loadFeedbackSection(container, articleId) {
     likeCount.textContent = String(stats.data.likes || 0);
     dislikeCountEl.textContent = String(stats.data.dislikes || 0);
 
-    if (stats.data.user_feedback === 'like') {
-      likeBtn.classList.add('feedback-btn--active');
-    } else if (stats.data.user_feedback === 'dislike') {
-      dislikeBtn.classList.add('feedback-btn--active');
+    if (stats.data.user_feedback) {
+      // Already submitted — lock both buttons
+      likeBtn.disabled = true;
+      dislikeBtn.disabled = true;
+      if (stats.data.user_feedback === 'like') {
+        likeBtn.classList.add('feedback-btn--active');
+      } else {
+        dislikeBtn.classList.add('feedback-btn--active');
+      }
     }
   }
 
@@ -669,22 +674,36 @@ async function handleFeedbackClick(articleId, type, likeBtn, dislikeBtn, likeCou
     return;
   }
 
+  // Disable both buttons immediately to prevent double-click
+  likeBtn.disabled = true;
+  dislikeBtn.disabled = true;
+
   const token = getAuthToken();
   const result = await submitArticleFeedback(articleId, type, token);
 
   if (result.success) {
     showFeedbackMessage(msgEl, t('feedback.submit_success'), 'success');
 
-    // Re-fetch stats to update counts
+    // Update counts and lock buttons permanently
     const stats = await fetchArticleFeedbackStats(articleId);
     if (stats.success && stats.data) {
       likeCountEl.textContent = String(stats.data.likes || 0);
       dislikeCountEl.textContent = String(stats.data.dislikes || 0);
 
-      likeBtn.classList.toggle('feedback-btn--active', stats.data.user_feedback === 'like');
-      dislikeBtn.classList.toggle('feedback-btn--active', stats.data.user_feedback === 'dislike');
+      if (stats.data.user_feedback === 'like') {
+        likeBtn.classList.add('feedback-btn--active');
+      } else if (stats.data.user_feedback === 'dislike') {
+        dislikeBtn.classList.add('feedback-btn--active');
+      }
     }
+    // Buttons remain disabled — one-time only
+  } else if (result.error?.type === 'already_submitted') {
+    showFeedbackMessage(msgEl, t('feedback.already_submitted'), 'warning');
+    // Buttons remain disabled
   } else {
+    // Re-enable on error so user can retry
+    likeBtn.disabled = false;
+    dislikeBtn.disabled = false;
     const msg = result.error?.message || t('feedback.submit_error');
     showFeedbackMessage(msgEl, msg, 'error');
   }

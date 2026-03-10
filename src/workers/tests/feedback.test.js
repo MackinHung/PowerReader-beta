@@ -91,7 +91,9 @@ describe('submitArticleFeedback', () => {
     validateFeedback.mockReturnValue({ valid: true, errors: [] });
     // Article exists
     env._mocks.first.mockResolvedValueOnce({ article_id: 'abc123' });
-    // Upsert succeeds
+    // No existing feedback
+    env._mocks.first.mockResolvedValueOnce(null);
+    // Insert succeeds
     env._mocks.run.mockResolvedValueOnce({});
 
     const request = createRequest({ type: 'like' });
@@ -109,6 +111,7 @@ describe('submitArticleFeedback', () => {
   it('submits a dislike successfully', async () => {
     validateFeedback.mockReturnValue({ valid: true, errors: [] });
     env._mocks.first.mockResolvedValueOnce({ article_id: 'abc123' });
+    env._mocks.first.mockResolvedValueOnce(null);
     env._mocks.run.mockResolvedValueOnce({});
 
     const request = createRequest({ type: 'dislike' });
@@ -122,10 +125,12 @@ describe('submitArticleFeedback', () => {
     expect(result.body.data.type).toBe('dislike');
   });
 
-  it('upserts when user already has feedback (updates type)', async () => {
+  it('returns 409 when user already submitted feedback (no retraction)', async () => {
     validateFeedback.mockReturnValue({ valid: true, errors: [] });
+    // Article exists
     env._mocks.first.mockResolvedValueOnce({ article_id: 'abc123' });
-    env._mocks.run.mockResolvedValueOnce({});
+    // Existing feedback found
+    env._mocks.first.mockResolvedValueOnce({ id: 1 });
 
     const request = createRequest({ type: 'dislike' });
     const result = await submitArticleFeedback(request, env, {}, {
@@ -133,17 +138,15 @@ describe('submitArticleFeedback', () => {
       user: { user_hash: 'user1' },
     });
 
-    // Should use INSERT OR REPLACE
-    const sqlCall = env._mocks.prepare.mock.calls.find(
-      (c) => typeof c[0] === 'string' && c[0].includes('INSERT OR REPLACE')
-    );
-    expect(sqlCall).toBeTruthy();
-    expect(result.status).toBe(200);
+    expect(result.status).toBe(409);
+    expect(result.body.success).toBe(false);
+    expect(result.body.error.type).toBe('already_submitted');
   });
 
   it('uses authenticated user_hash from JWT, not from body', async () => {
     validateFeedback.mockReturnValue({ valid: true, errors: [] });
     env._mocks.first.mockResolvedValueOnce({ article_id: 'abc123' });
+    env._mocks.first.mockResolvedValueOnce(null);
     env._mocks.run.mockResolvedValueOnce({});
 
     const request = createRequest({ type: 'like', user_hash: 'spoofed_hash' });
