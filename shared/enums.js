@@ -22,6 +22,7 @@
  * | 2025-03-06 | v1.0    | Initial enums            | Project kickoff  |
  * | 2026-03-07 | v2.0    | PowerReader: config boundaries, filtered status, knowledge categories | Architecture decisions #004-#010 |
  * | 2026-03-08 | v2.1    | +4 news sources (ETtoday, SETN, EBC, Newtalk) | Crawler expansion |
+ * | 2026-03-10 | v3.1    | +5 news sources (鏡週刊, 匯流新聞, 台視, 中視, 華視) | Crawler expansion |
  * | 2026-03-08 | v3.0    | Three-Camp: CAMP_TYPES, getCampFromScore(), CAMP_COLORS, BLINDSPOT_TYPES, detectBlindspot(), SUBSCRIBER_TIERS, BADGE_TYPES, getWhiteAxisValue() | Decision #013-#016 |
  */
 
@@ -69,7 +70,14 @@ export const NEWS_SOURCES = {
   ETTODAY: "ETtoday新聞雲",
   SETN: "三立新聞",
   EBC: "東森新聞",
-  NEWTALK: "新頭殼"
+  NEWTALK: "新頭殼",
+
+  // Additional Sources — Added 2026-03-10
+  MIRROR_MEDIA: "鏡週刊",
+  CNEWS: "匯流新聞",
+  TTV: "台視新聞",
+  CTV: "中視新聞",
+  CTS: "華視新聞"
 };
 
 // Create reverse mapping (value -> key)
