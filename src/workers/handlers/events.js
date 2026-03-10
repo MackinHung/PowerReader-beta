@@ -149,13 +149,6 @@ export async function getEventDetail(request, env, ctx, { params }) {
         ? safeJsonParse(row.camp_ratio, null)
         : row.camp_ratio,
     }));
-  } else {
-    // No keyword extractable, return empty
-    const rows = await env.DB.prepare(
-      `SELECT article_id, title, summary, source, published_at, camp_ratio
-       FROM articles WHERE 0 LIMIT 0`
-    ).bind().all();
-    articles = [];
   }
 
   return jsonResponse(200, {

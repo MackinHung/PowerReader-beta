@@ -61,7 +61,7 @@ export async function submitArticleFeedback(request, env, ctx, { params, user })
 
   return jsonResponse(200, {
     success: true,
-    data: { article_id, user_hash, type: body.type },
+    data: { article_id, type: body.type },
     error: null,
   });
 }
