@@ -22,10 +22,10 @@ const CAMP_COLORS = {
 const CAMP_ORDER = ['green', 'white', 'blue', 'gray'];
 
 const CAMP_LABELS = {
-  green: '泛綠',
-  white: '中立',
-  blue: '泛藍',
-  gray: '非政治'
+  green: '民進黨(綠)',
+  white: '民眾黨(白)',
+  blue: '國民黨(藍)',
+  gray: '無陣營(灰)'
 };
 
 /**
@@ -51,7 +51,7 @@ export function createCampBar(ratio) {
   const bar = document.createElement('div');
   bar.className = 'camp-bar';
   bar.setAttribute('role', 'img');
-  bar.setAttribute('aria-label', `陣營比例：泛綠 ${ratio.green}%、中立 ${ratio.white}%、泛藍 ${ratio.blue}%、非政治 ${ratio.gray}%`);
+  bar.setAttribute('aria-label', `陣營比例：民進黨(綠) ${ratio.green}%、民眾黨(白) ${ratio.white}%、國民黨(藍) ${ratio.blue}%、無陣營(灰) ${ratio.gray}%`);
 
   for (const camp of CAMP_ORDER) {
     const pct = ratio[camp];
@@ -123,7 +123,7 @@ export function createCampIndicator(ratio) {
   const el = document.createElement('span');
   el.className = `camp-indicator camp-indicator--${dominant}`;
   el.textContent = CAMP_LABELS[dominant] || dominant;
-  el.setAttribute('aria-label', `陣營比例：泛綠 ${ratio.green}%、中立 ${ratio.white}%、泛藍 ${ratio.blue}%、非政治 ${ratio.gray}%`);
+  el.setAttribute('aria-label', `陣營比例：民進黨(綠) ${ratio.green}%、民眾黨(白) ${ratio.white}%、國民黨(藍) ${ratio.blue}%、無陣營(灰) ${ratio.gray}%`);
 
   return el;
 }

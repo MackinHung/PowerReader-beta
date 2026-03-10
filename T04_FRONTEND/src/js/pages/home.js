@@ -174,18 +174,20 @@ function createCategoryFilter() {
   // "All" option
   const allOption = document.createElement('option');
   allOption.value = '';
-  allOption.textContent = t('nav.title.home');
+  allOption.textContent = t('category.label.all');
   select.appendChild(allOption);
 
-  // Category options
+  // Category options — values must match DB matched_topic (Chinese)
   const categories = [
-    'politics', 'economy', 'society', 'technology', 'international',
-    'entertainment', 'sports', 'health', 'education', 'environment'
+    { value: '政治', key: 'politics' },
+    { value: '社會', key: 'society' },
+    { value: '國際', key: 'international' },
+    { value: '兩岸', key: 'cross_strait' }
   ];
   for (const cat of categories) {
     const option = document.createElement('option');
-    option.value = cat;
-    option.textContent = t(`category.label.${cat}`);
+    option.value = cat.value;
+    option.textContent = t(`category.label.${cat.key}`);
     select.appendChild(option);
   }
 

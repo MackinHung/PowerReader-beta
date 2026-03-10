@@ -40,19 +40,21 @@ const messages = {
   // Camp Labels (三營陣 — shared/enums.js CAMP_TYPES)
   // ==============================================
   'camp.bar.title': '陣營比例',
-  'camp.label.green': '泛綠',
-  'camp.label.white': '中立',
-  'camp.label.blue': '泛藍',
-  'camp.label.gray': '非政治',
+  'camp.label.green': '民進黨(綠)',
+  'camp.label.white': '民眾黨(白)',
+  'camp.label.blue': '國民黨(藍)',
+  'camp.label.gray': '無陣營(灰)',
 
   // ==============================================
   // News Categories (shared/enums.js NEWS_CATEGORIES)
   // ==============================================
+  'category.label.all': '全部',
   'category.label.politics': '政治',
-  'category.label.economy': '經濟',
   'category.label.society': '社會',
-  'category.label.technology': '科技',
   'category.label.international': '國際',
+  'category.label.cross_strait': '兩岸',
+  'category.label.economy': '經濟',
+  'category.label.technology': '科技',
   'category.label.entertainment': '娛樂',
   'category.label.sports': '體育',
   'category.label.health': '健康',
@@ -104,7 +106,7 @@ const messages = {
   'nav.button.search': '搜尋',
   'nav.button.back': '返回',
   'nav.button.share': '分享',
-  'nav.title.home': '今日熱門新聞',
+  'nav.title.home': '最新新聞',
   'nav.title.compare': '跨媒體比較',
   'nav.title.analyze': '立場分析',
   'nav.title.profile': '個人資料',
@@ -550,20 +552,20 @@ const messages = {
   'feedback.submit_error': '回饋提交失敗，請稍後再試',
   'feedback.already_submitted': '您已提交過回饋',
 
-  'report.button': '檢舉',
-  'report.title': '檢舉內容',
+  'report.button': '回報',
+  'report.title': '回報問題',
   'report.reason.analysis_inaccurate': '分析不準確',
   'report.reason.analysis_abnormal': '分析異常',
   'report.reason.cannot_analyze': '無法分析',
   'report.reason.data_abnormal': '資料異常',
   'report.reason.other': '其它',
   'report.description_placeholder': '補充說明（選填）',
-  'report.submit': '提交檢舉',
+  'report.submit': '提交回報',
   'report.cancel': '取消',
-  'report.success': '檢舉已提交，感謝您的回報',
-  'report.error': '檢舉提交失敗，請稍後再試',
-  'report.duplicate': '您已檢舉過此內容',
-  'report.login_required': '請先登入才能檢舉',
+  'report.success': '回報已提交，感謝您',
+  'report.error': '回報提交失敗，請稍後再試',
+  'report.duplicate': '您已回報過此內容',
+  'report.login_required': '請先登入才能回報',
 
   // ==============================================
   // Search (v2.1)
@@ -592,7 +594,7 @@ const messages = {
   'a11y.bias_bar.indicator': '目前立場指標位於分數 {score}，屬於{category}',
 
   // Camp ratio
-  'a11y.camp_bar': '陣營比例：泛綠 {green}%、中立 {white}%、泛藍 {blue}%、非政治 {gray}%',
+  'a11y.camp_bar': '陣營比例：民進黨(綠) {green}%、民眾黨(白) {white}%、國民黨(藍) {blue}%、無陣營(灰) {gray}%',
 
   // Controversy
   'a11y.controversy_bar': '爭議程度指標，分數 {score}，等級 {level}',
