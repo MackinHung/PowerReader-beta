@@ -23,6 +23,11 @@ import { submitReward, recordFailure, getRewardsSummary } from './handlers/rewar
 import { healthCheck, readinessCheck, getMetrics, getUsage } from './handlers/health.js';
 import { getBlindspotEvents } from './handlers/blindspot.js';
 import { getSources, getSource } from './handlers/sources.js';
+import { submitArticleFeedback, getArticleFeedbackStats } from './handlers/feedback.js';
+import { reportArticle, reportAnalysis } from './handlers/reports.js';
+import { submitAnalysisFeedback, getAnalysisFeedbackStats } from './handlers/analysis-feedback.js';
+import { searchArticles } from './handlers/search.js';
+import { getEvents, getEventDetail } from './handlers/events.js';
 
 /**
  * Route table: [method, pattern, handler, options]
@@ -69,6 +74,25 @@ const ROUTES = [
   ['POST', '/api/v1/rewards/submit',  submitReward,      { auth: 'service', rateLimit: false, cache: 'no-store' }],
   ['POST', '/api/v1/rewards/failure', recordFailure,     { auth: 'service', rateLimit: false, cache: 'no-store' }],
   ['GET',  '/api/v1/rewards/me',      getRewardsSummary, { auth: 'service', rateLimit: false, cache: 'no-store' }],
+
+  // Article Feedback API (v2.1 — community interaction)
+  ['POST', '/api/v1/articles/:article_id/feedback',       submitArticleFeedback,    { auth: 'jwt',  rateLimit: true,  cache: 'no-store' }],
+  ['GET',  '/api/v1/articles/:article_id/feedback/stats', getArticleFeedbackStats,  { auth: 'none', rateLimit: true,  cache: `public, max-age=${CLOUDFLARE.CDN_NEWS_LIST_TTL}` }],
+
+  // Article & Analysis Reports API (v2.1 — content moderation)
+  ['POST', '/api/v1/articles/:article_id/report',         reportArticle,            { auth: 'jwt',  rateLimit: true,  cache: 'no-store' }],
+  ['POST', '/api/v1/analyses/:analysis_id/report',        reportAnalysis,           { auth: 'jwt',  rateLimit: true,  cache: 'no-store' }],
+
+  // Analysis Feedback API (v2.1 — analysis quality signals)
+  ['POST', '/api/v1/analyses/:analysis_id/feedback',       submitAnalysisFeedback,   { auth: 'jwt',  rateLimit: true,  cache: 'no-store' }],
+  ['GET',  '/api/v1/analyses/:analysis_id/feedback/stats', getAnalysisFeedbackStats, { auth: 'none', rateLimit: true,  cache: `public, max-age=${CLOUDFLARE.CDN_NEWS_LIST_TTL}` }],
+
+  // Search API (v2.1 — text search)
+  ['GET', '/api/v1/search', searchArticles, { auth: 'none', rateLimit: true, cache: `public, max-age=${CLOUDFLARE.CDN_NEWS_LIST_TTL}` }],
+
+  // Events API (v2.1 — cluster aggregation)
+  ['GET', '/api/v1/events',              getEvents,      { auth: 'none', rateLimit: true, cache: `public, max-age=${CLOUDFLARE.CDN_NEWS_LIST_TTL}` }],
+  ['GET', '/api/v1/events/:cluster_id',  getEventDetail, { auth: 'none', rateLimit: true, cache: `public, max-age=${CLOUDFLARE.CDN_NEWS_LIST_TTL}` }],
 
   // Blindspot API (v2.0 — camp imbalance detection)
   ['GET', '/api/v1/blindspot/events', getBlindspotEvents, { auth: 'none', rateLimit: true, cache: `public, max-age=${CLOUDFLARE.CDN_NEWS_LIST_TTL}` }],

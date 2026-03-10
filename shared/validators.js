@@ -20,6 +20,8 @@ import { ANALYSIS, CRAWLER } from './config.js';
 import {
   ARTICLE_STATUS,
   KNOWLEDGE_CATEGORIES,
+  FEEDBACK_TYPES,
+  REPORT_REASONS,
   isValidNewsSource,
   isValidArticleStatus,
   canTransitionStatus
@@ -203,11 +205,78 @@ export function validateStatusTransition(currentStatus, targetStatus) {
   return { valid: true, errors: [] };
 }
 
+/**
+ * Validate feedback submission (POST /api/v1/articles/:id/feedback or /analyses/:id/feedback)
+ * @param {object} body - { type: 'like'|'dislike' }
+ * @returns {{ valid: boolean, errors: string[] }}
+ */
+export function validateFeedback(body) {
+  const errors = [];
+  const validTypes = Object.values(FEEDBACK_TYPES);
+
+  if (!body || typeof body !== 'object') {
+    return { valid: false, errors: ['Request body is required'] };
+  }
+  if (!validTypes.includes(body.type)) {
+    errors.push(`type must be one of: ${validTypes.join(', ')}`);
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Validate report submission (POST /api/v1/articles/:id/report or /analyses/:id/report)
+ * @param {object} body - { reason, description? }
+ * @returns {{ valid: boolean, errors: string[] }}
+ */
+export function validateReport(body) {
+  const errors = [];
+  const validReasons = Object.values(REPORT_REASONS);
+
+  if (!body || typeof body !== 'object') {
+    return { valid: false, errors: ['Request body is required'] };
+  }
+  if (!validReasons.includes(body.reason)) {
+    errors.push(`reason must be one of: ${validReasons.join(', ')}`);
+  }
+  if (body.description != null) {
+    if (typeof body.description !== 'string') {
+      errors.push('description must be a string');
+    } else if (body.description.length > 500) {
+      errors.push('description must be 500 characters or less');
+    }
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Validate search query (GET /api/v1/search?q=...)
+ * @param {string} query - Search keyword
+ * @returns {{ valid: boolean, errors: string[] }}
+ */
+export function validateSearchQuery(query) {
+  const errors = [];
+
+  if (!isNonEmptyString(query)) {
+    errors.push('Search query (q) is required');
+  } else if (query.trim().length < 2) {
+    errors.push('Search query must be at least 2 characters');
+  } else if (query.trim().length > 100) {
+    errors.push('Search query must be 100 characters or less');
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
 export default {
   validateArticle,
   validateArticleBatch,
   validateAnalysis,
   validateKnowledge,
   validatePointsUpdate,
-  validateStatusTransition
+  validateStatusTransition,
+  validateFeedback,
+  validateReport,
+  validateSearchQuery
 };

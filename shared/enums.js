@@ -424,6 +424,32 @@ export function detectBlindspot(campCounts) {
   return null; // Balanced
 }
 
+// =========================================
+// 👍 Feedback Types
+// =========================================
+export const FEEDBACK_TYPES = {
+  LIKE: "like",
+  DISLIKE: "dislike"
+};
+
+// =========================================
+// 🚩 Report Reasons
+// =========================================
+export const REPORT_REASONS = {
+  INACCURATE: "inaccurate",   // 資料不準確
+  BIASED: "biased",           // 明顯偏頗
+  SPAM: "spam",               // 垃圾內容
+  OFFENSIVE: "offensive",     // 攻擊性內容
+  OTHER: "other"              // 其他
+};
+
+export const REPORT_STATUS = {
+  PENDING: "pending",
+  REVIEWED: "reviewed",
+  RESOLVED: "resolved",
+  DISMISSED: "dismissed"
+};
+
 // Subscriber tiers
 export const SUBSCRIBER_TIERS = {
   FREE: "free",                // 免費用戶 (所有功能可用)
@@ -512,6 +538,10 @@ export default {
   BLINDSPOT_TYPES,
   SUBSCRIBER_TIERS,
   BADGE_TYPES,
+  // Feedback & Reports (v2.1)
+  FEEDBACK_TYPES,
+  REPORT_REASONS,
+  REPORT_STATUS,
   // Helper functions
   canTransitionStatus,
   getBiasCategory,
