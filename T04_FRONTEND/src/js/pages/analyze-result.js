@@ -8,12 +8,13 @@
  * @license AGPL-3.0
  */
 
-import { submitAnalysisResult } from '../api.js';
+import { submitAnalysisResult, fetchAnalysisFeedbackStats, submitAnalysisFeedback, reportAnalysis } from '../api.js';
 import { getModeLabel } from '../model/inference.js';
 import { createControversyMeter } from '../components/controversy-badge.js';
 import { createCampBar } from '../components/camp-bar.js';
-import { getAuthToken, getUserHash } from '../auth.js';
+import { getAuthToken, getUserHash, isAuthenticated } from '../auth.js';
 import { getControversyLevelFromScore } from '../utils/score-categories.js';
+import { t } from '../../locale/zh-TW.js';
 
 /**
  * Render the analysis result preview with submit/retry buttons.
@@ -367,7 +368,7 @@ async function submitAnalysis(article, result, container) {
     );
 
     if (data.success) {
-      renderSubmitSuccess(container, false, data.data?.reward);
+      renderSubmitSuccess(container, false, data.data?.reward, data.data?.analysis_id);
     } else {
       renderSubmitError(container, data.error?.message || '系統錯誤，請稍後再試', article, result);
     }
@@ -376,7 +377,7 @@ async function submitAnalysis(article, result, container) {
   }
 }
 
-function renderSubmitSuccess(container, isQueued, reward) {
+function renderSubmitSuccess(container, isQueued, reward, analysisId) {
   container.innerHTML = '';
 
   const msg = document.createElement('div');
@@ -409,6 +410,14 @@ function renderSubmitSuccess(container, isQueued, reward) {
     }
 
     msg.appendChild(rewardCard);
+  }
+
+  // Analysis feedback (like/dislike + report) — only if we have an analysisId
+  if (analysisId && !isQueued) {
+    const feedbackSection = document.createElement('div');
+    feedbackSection.className = 'analysis-feedback';
+    renderAnalysisFeedback(feedbackSection, analysisId);
+    msg.appendChild(feedbackSection);
   }
 
   const actions = document.createElement('div');
@@ -447,4 +456,174 @@ function renderSubmitError(container, message, article, result) {
   msg.appendChild(retryBtn);
 
   container.appendChild(msg);
+}
+
+// ── Analysis Feedback ──
+
+const REPORT_REASONS = ['inaccurate', 'biased', 'spam', 'offensive', 'other'];
+
+/**
+ * Render like/dislike + report for a submitted analysis.
+ */
+async function renderAnalysisFeedback(container, analysisId) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'feedback-bar';
+
+  // Like button
+  const likeBtn = document.createElement('button');
+  likeBtn.className = 'feedback-btn feedback-btn--like';
+  likeBtn.setAttribute('aria-label', t('feedback.like'));
+  const likeIcon = document.createElement('span');
+  likeIcon.className = 'feedback-btn__icon';
+  likeIcon.textContent = '\u25B2';
+  const likeCount = document.createElement('span');
+  likeCount.className = 'feedback-btn__count';
+  likeCount.textContent = '0';
+  likeBtn.appendChild(likeIcon);
+  likeBtn.appendChild(likeCount);
+
+  // Dislike button
+  const dislikeBtn = document.createElement('button');
+  dislikeBtn.className = 'feedback-btn feedback-btn--dislike';
+  dislikeBtn.setAttribute('aria-label', t('feedback.dislike'));
+  const dislikeIcon = document.createElement('span');
+  dislikeIcon.className = 'feedback-btn__icon';
+  dislikeIcon.textContent = '\u25BC';
+  const dislikeCount = document.createElement('span');
+  dislikeCount.className = 'feedback-btn__count';
+  dislikeCount.textContent = '0';
+  dislikeBtn.appendChild(dislikeIcon);
+  dislikeBtn.appendChild(dislikeCount);
+
+  // Report button
+  const reportBtn = document.createElement('button');
+  reportBtn.className = 'feedback-btn feedback-btn--report';
+  reportBtn.textContent = t('report.button');
+
+  wrapper.appendChild(likeBtn);
+  wrapper.appendChild(dislikeBtn);
+  wrapper.appendChild(reportBtn);
+  container.appendChild(wrapper);
+
+  // Message area
+  const msgEl = document.createElement('p');
+  msgEl.className = 'feedback-bar__message';
+  msgEl.hidden = true;
+  container.appendChild(msgEl);
+
+  // Fetch stats
+  const stats = await fetchAnalysisFeedbackStats(analysisId);
+  if (stats.success && stats.data) {
+    likeCount.textContent = String(stats.data.likes || 0);
+    dislikeCount.textContent = String(stats.data.dislikes || 0);
+    if (stats.data.user_feedback === 'like') likeBtn.classList.add('feedback-btn--active');
+    else if (stats.data.user_feedback === 'dislike') dislikeBtn.classList.add('feedback-btn--active');
+  }
+
+  // Click handlers
+  async function handleClick(type) {
+    if (!isAuthenticated()) {
+      showMsg(msgEl, t('feedback.login_required'), 'warning');
+      return;
+    }
+    const result = await submitAnalysisFeedback(analysisId, type, getAuthToken());
+    if (result.success) {
+      showMsg(msgEl, t('feedback.submit_success'), 'success');
+      const updated = await fetchAnalysisFeedbackStats(analysisId);
+      if (updated.success && updated.data) {
+        likeCount.textContent = String(updated.data.likes || 0);
+        dislikeCount.textContent = String(updated.data.dislikes || 0);
+        likeBtn.classList.toggle('feedback-btn--active', updated.data.user_feedback === 'like');
+        dislikeBtn.classList.toggle('feedback-btn--active', updated.data.user_feedback === 'dislike');
+      }
+    } else {
+      showMsg(msgEl, result.error?.message || t('feedback.submit_error'), 'error');
+    }
+  }
+
+  likeBtn.addEventListener('click', () => handleClick('like'));
+  dislikeBtn.addEventListener('click', () => handleClick('dislike'));
+  reportBtn.addEventListener('click', () => showAnalysisReportDialog(analysisId, msgEl));
+}
+
+function showMsg(el, text, type) {
+  el.textContent = text;
+  el.className = `feedback-bar__message feedback-bar__message--${type}`;
+  el.hidden = false;
+  setTimeout(() => { el.hidden = true; }, 3000);
+}
+
+function showAnalysisReportDialog(analysisId, msgEl) {
+  if (!isAuthenticated()) {
+    showMsg(msgEl, t('report.login_required'), 'warning');
+    return;
+  }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'report-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+
+  const dialog = document.createElement('div');
+  dialog.className = 'report-dialog';
+
+  const heading = document.createElement('h3');
+  heading.textContent = t('report.title');
+  dialog.appendChild(heading);
+
+  const reasonGroup = document.createElement('div');
+  reasonGroup.className = 'report-dialog__reasons';
+  for (const reason of REPORT_REASONS) {
+    const label = document.createElement('label');
+    label.className = 'report-dialog__reason';
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = 'report-reason';
+    radio.value = reason;
+    const text = document.createElement('span');
+    text.textContent = t(`report.reason.${reason}`);
+    label.appendChild(radio);
+    label.appendChild(text);
+    reasonGroup.appendChild(label);
+  }
+  dialog.appendChild(reasonGroup);
+
+  const descInput = document.createElement('textarea');
+  descInput.className = 'report-dialog__desc';
+  descInput.placeholder = t('report.description_placeholder');
+  descInput.rows = 3;
+  descInput.maxLength = 500;
+  dialog.appendChild(descInput);
+
+  const actions = document.createElement('div');
+  actions.className = 'report-dialog__actions';
+
+  const submitBtn = document.createElement('button');
+  submitBtn.className = 'btn btn--primary';
+  submitBtn.textContent = t('report.submit');
+  submitBtn.addEventListener('click', async () => {
+    const selected = reasonGroup.querySelector('input:checked');
+    if (!selected) return;
+    submitBtn.disabled = true;
+    const result = await reportAnalysis(analysisId, selected.value, descInput.value.trim() || undefined, getAuthToken());
+    overlay.remove();
+    if (result.success) {
+      showMsg(msgEl, t('report.success'), 'success');
+    } else if (result.error?.type === 'duplicate_report') {
+      showMsg(msgEl, t('report.duplicate'), 'warning');
+    } else {
+      showMsg(msgEl, result.error?.message || t('report.error'), 'error');
+    }
+  });
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn btn--text';
+  cancelBtn.textContent = t('report.cancel');
+  cancelBtn.addEventListener('click', () => overlay.remove());
+
+  actions.appendChild(submitBtn);
+  actions.appendChild(cancelBtn);
+  dialog.appendChild(actions);
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
 }

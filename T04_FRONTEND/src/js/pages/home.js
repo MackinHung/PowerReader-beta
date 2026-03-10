@@ -12,7 +12,7 @@
  */
 
 import { t } from '../../locale/zh-TW.js';
-import { fetchArticles } from '../api.js';
+import { fetchArticles, searchArticles } from '../api.js';
 import { createArticleCard } from '../components/article-card.js';
 import { getUserErrorMessage } from '../utils/error.js';
 
@@ -21,6 +21,7 @@ let currentPage = 1;
 let isLoading = false;
 let hasMore = true;
 let currentCategory = '';
+let currentSearchQuery = '';
 let observer = null;
 
 /**
@@ -33,6 +34,7 @@ export function renderHome(container) {
   isLoading = false;
   hasMore = true;
   currentCategory = '';
+  currentSearchQuery = '';
   if (observer) { observer.disconnect(); observer = null; }
 
   container.innerHTML = '';
@@ -42,6 +44,9 @@ export function renderHome(container) {
   heading.className = 'page-title';
   heading.textContent = t('nav.title.home');
   container.appendChild(heading);
+
+  // Search bar
+  container.appendChild(createSearchBar());
 
   // Category filter
   container.appendChild(createCategoryFilter());
@@ -79,6 +84,74 @@ export function renderHome(container) {
   }, { threshold: 0.1, rootMargin: '200px' });
 
   observer.observe(sentinel);
+}
+
+/**
+ * Create search bar with input and button.
+ * @returns {HTMLElement}
+ */
+function createSearchBar() {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'home-search';
+
+  const input = document.createElement('input');
+  input.type = 'search';
+  input.className = 'home-search__input';
+  input.placeholder = t('search.placeholder');
+  input.setAttribute('aria-label', t('a11y.search.input'));
+
+  const searchBtn = document.createElement('button');
+  searchBtn.className = 'btn btn--primary home-search__btn';
+  searchBtn.textContent = t('search.button');
+
+  const clearBtn = document.createElement('button');
+  clearBtn.className = 'btn btn--text home-search__clear';
+  clearBtn.textContent = t('search.clear');
+  clearBtn.hidden = true;
+
+  function doSearch() {
+    const query = input.value.trim();
+    if (query.length < 2) return;
+
+    currentSearchQuery = query;
+    currentPage = 1;
+    hasMore = true;
+    clearBtn.hidden = false;
+
+    const list = document.querySelector('.article-list');
+    const loader = document.querySelector('.loading-indicator');
+    if (list) {
+      list.innerHTML = '';
+      loadArticles(list, loader);
+    }
+  }
+
+  function clearSearch() {
+    input.value = '';
+    currentSearchQuery = '';
+    currentPage = 1;
+    hasMore = true;
+    clearBtn.hidden = true;
+
+    const list = document.querySelector('.article-list');
+    const loader = document.querySelector('.loading-indicator');
+    if (list) {
+      list.innerHTML = '';
+      loadArticles(list, loader);
+    }
+  }
+
+  searchBtn.addEventListener('click', doSearch);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') doSearch();
+  });
+  clearBtn.addEventListener('click', clearSearch);
+
+  wrapper.appendChild(input);
+  wrapper.appendChild(searchBtn);
+  wrapper.appendChild(clearBtn);
+
+  return wrapper;
 }
 
 /**
@@ -145,13 +218,24 @@ async function loadArticles(list, loader) {
   isLoading = true;
   if (loader) loader.hidden = false;
 
-  const result = await fetchArticles({
-    page: currentPage,
-    limit: 20,
-    sort_by: 'published_at',
-    sort_order: 'desc',
-    category: currentCategory || undefined
-  });
+  let result;
+
+  if (currentSearchQuery) {
+    // Search mode
+    result = await searchArticles(currentSearchQuery, {
+      page: currentPage,
+      limit: 20
+    });
+  } else {
+    // Normal browse mode
+    result = await fetchArticles({
+      page: currentPage,
+      limit: 20,
+      sort_by: 'published_at',
+      sort_order: 'desc',
+      category: currentCategory || undefined
+    });
+  }
 
   if (loader) loader.hidden = true;
   isLoading = false;
@@ -163,13 +247,26 @@ async function loadArticles(list, loader) {
     return;
   }
 
-  const articles = result.data?.articles || [];
+  // Search API returns items, articles API returns articles
+  const articles = result.data?.items || result.data?.articles || [];
   const pagination = result.data?.pagination;
 
   if (articles.length === 0 && currentPage === 1) {
-    renderEmpty(list);
+    if (currentSearchQuery) {
+      renderEmpty(list, t('search.no_results'));
+    } else {
+      renderEmpty(list);
+    }
     hasMore = false;
     return;
+  }
+
+  // Show result count for search
+  if (currentSearchQuery && currentPage === 1 && pagination) {
+    const countEl = document.createElement('p');
+    countEl.className = 'home-search__results-count';
+    countEl.textContent = t('search.results_count', { count: pagination.total });
+    list.appendChild(countEl);
   }
 
   for (const article of articles) {
@@ -186,7 +283,7 @@ async function loadArticles(list, loader) {
  * Render empty state.
  * @param {HTMLElement} container
  */
-function renderEmpty(container) {
+function renderEmpty(container, message) {
   const el = document.createElement('div');
   el.className = 'empty-state';
   el.setAttribute('role', 'status');
@@ -196,7 +293,7 @@ function renderEmpty(container) {
   icon.textContent = '---';
 
   const text = document.createElement('p');
-  text.textContent = t('common.label.no_data');
+  text.textContent = message || t('common.label.no_data');
 
   el.appendChild(icon);
   el.appendChild(text);

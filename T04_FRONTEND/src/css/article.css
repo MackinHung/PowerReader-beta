@@ -375,3 +375,208 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ==============================================
+   Feedback Bar (like/dislike + report)
+   ============================================== */
+.article-detail__feedback {
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.feedback-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.feedback-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  font-size: var(--text-caption);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.feedback-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.feedback-btn--active {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.feedback-btn--report {
+  margin-left: auto;
+  color: var(--color-text-secondary);
+  font-size: var(--text-small);
+}
+
+.feedback-btn--report:hover {
+  color: #D32F2F;
+  border-color: #D32F2F;
+}
+
+.feedback-btn__icon {
+  font-size: 10px;
+  line-height: 1;
+}
+
+.feedback-btn__count {
+  font-weight: 600;
+}
+
+.feedback-bar__message {
+  font-size: var(--text-small);
+  margin-top: var(--spacing-xs);
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: opacity 0.3s;
+}
+
+.feedback-bar__message--success {
+  color: #2E7D32;
+  background: #E8F5E9;
+}
+
+.feedback-bar__message--error {
+  color: #D32F2F;
+  background: #FFEBEE;
+}
+
+.feedback-bar__message--warning {
+  color: #F57F17;
+  background: #FFF8E1;
+}
+
+/* ==============================================
+   Report Dialog Overlay
+   ============================================== */
+.report-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  padding: var(--spacing-md);
+}
+
+.report-dialog {
+  background: var(--color-bg);
+  border-radius: 16px;
+  padding: var(--spacing-lg);
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.report-dialog h3 {
+  margin-bottom: var(--spacing-md);
+}
+
+.report-dialog__reasons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.report-dialog__reason {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  font-size: var(--text-caption);
+  padding: var(--spacing-xs) 0;
+}
+
+.report-dialog__reason input[type="radio"] {
+  accent-color: var(--color-primary);
+}
+
+.report-dialog__desc {
+  width: 100%;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-family: var(--font-sans);
+  font-size: var(--text-caption);
+  resize: vertical;
+  margin-bottom: var(--spacing-md);
+}
+
+.report-dialog__desc:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -1px;
+}
+
+.report-dialog__actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+}
+
+/* ==============================================
+   Analysis Feedback (on result page)
+   ============================================== */
+.analysis-feedback {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+}
+
+/* ==============================================
+   Search Bar (home page)
+   ============================================== */
+.home-search {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+}
+
+.home-search__input {
+  flex: 1;
+  padding: 8px 14px;
+  font-size: var(--text-caption);
+  border: 1px solid var(--color-border);
+  border-radius: 24px;
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  transition: border-color 0.15s;
+}
+
+.home-search__input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.15);
+}
+
+.home-search__btn {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border-radius: 24px;
+  font-size: var(--text-caption);
+}
+
+.home-search__clear {
+  flex-shrink: 0;
+  font-size: var(--text-small);
+}
+
+.home-search__results-count {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  padding: var(--spacing-xs) 0;
+  margin-bottom: var(--spacing-sm);
+}

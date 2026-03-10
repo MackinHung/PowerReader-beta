@@ -359,3 +359,146 @@ export async function fetchSource(source) {
   }
   return result;
 }
+
+// =============================================
+// Article Feedback API (v2.1)
+// =============================================
+
+/**
+ * POST /api/v1/articles/:article_id/feedback — submit like/dislike.
+ */
+export async function submitArticleFeedback(articleId, type, token) {
+  return apiFetch(`/articles/${encodeURIComponent(articleId)}/feedback`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({ type })
+  });
+}
+
+/**
+ * GET /api/v1/articles/:article_id/feedback/stats — aggregated feedback.
+ */
+export async function fetchArticleFeedbackStats(articleId) {
+  return apiFetch(`/articles/${encodeURIComponent(articleId)}/feedback/stats`);
+}
+
+// =============================================
+// Analysis Feedback API (v2.1)
+// =============================================
+
+/**
+ * POST /api/v1/analyses/:analysis_id/feedback — submit like/dislike.
+ */
+export async function submitAnalysisFeedback(analysisId, type, token) {
+  return apiFetch(`/analyses/${encodeURIComponent(analysisId)}/feedback`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({ type })
+  });
+}
+
+/**
+ * GET /api/v1/analyses/:analysis_id/feedback/stats — aggregated feedback.
+ */
+export async function fetchAnalysisFeedbackStats(analysisId) {
+  return apiFetch(`/analyses/${encodeURIComponent(analysisId)}/feedback/stats`);
+}
+
+// =============================================
+// Reports API (v2.1 — content moderation)
+// =============================================
+
+/**
+ * POST /api/v1/articles/:article_id/report — report article.
+ */
+export async function reportArticle(articleId, reason, description, token) {
+  const body = { reason };
+  if (description) body.description = description;
+  return apiFetch(`/articles/${encodeURIComponent(articleId)}/report`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(body)
+  });
+}
+
+/**
+ * POST /api/v1/analyses/:analysis_id/report — report analysis.
+ */
+export async function reportAnalysis(analysisId, reason, description, token) {
+  const body = { reason };
+  if (description) body.description = description;
+  return apiFetch(`/analyses/${encodeURIComponent(analysisId)}/report`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(body)
+  });
+}
+
+// =============================================
+// Search API (v2.1 — text search)
+// =============================================
+
+/**
+ * GET /api/v1/search?q=keyword — article text search.
+ */
+export async function searchArticles(query, { page = 1, limit = 20 } = {}) {
+  const cacheKey = `search:${query}:${page}:${limit}`;
+
+  if (!navigator.onLine) {
+    const cached = await getCachedResponse(cacheKey);
+    if (cached) return { success: true, data: cached, error: null };
+    return { success: false, data: null, error: { type: 'offline' } };
+  }
+
+  const params = new URLSearchParams({ q: query, page, limit });
+  const result = await apiFetch(`/search?${params}`);
+  if (result.success && result.data) {
+    await cacheResponse(cacheKey, result.data);
+  }
+  return result;
+}
+
+// =============================================
+// Events API (v2.1 — cluster aggregation)
+// =============================================
+
+/**
+ * GET /api/v1/events — paginated event clusters.
+ */
+export async function fetchEvents({ page = 1, limit = 20, type } = {}) {
+  const cacheKey = `events:${page}:${limit}:${type || ''}`;
+
+  if (!navigator.onLine) {
+    const cached = await getCachedResponse(cacheKey);
+    if (cached) return { success: true, data: cached, error: null };
+    return { success: false, data: null, error: { type: 'offline' } };
+  }
+
+  const params = new URLSearchParams({ page, limit });
+  if (type) params.set('type', type);
+
+  const result = await apiFetch(`/events?${params}`);
+  if (result.success && result.data) {
+    await cacheResponse(cacheKey, result.data);
+  }
+  return result;
+}
+
+/**
+ * GET /api/v1/events/:cluster_id — event detail with articles.
+ */
+export async function fetchEventDetail(clusterId) {
+  const cacheKey = `event:${clusterId}`;
+
+  if (!navigator.onLine) {
+    const cached = await getCachedResponse(cacheKey);
+    if (cached) return { success: true, data: cached, error: null };
+    return { success: false, data: null, error: { type: 'offline' } };
+  }
+
+  const result = await apiFetch(`/events/${encodeURIComponent(clusterId)}`);
+  if (result.success && result.data) {
+    await cacheResponse(cacheKey, result.data);
+  }
+  return result;
+}

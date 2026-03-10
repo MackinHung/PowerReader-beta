@@ -11,7 +11,7 @@
  * @license AGPL-3.0
  */
 
-import { fetchArticle } from '../api.js';
+import { fetchArticle, fetchArticleFeedbackStats, submitArticleFeedback, reportArticle } from '../api.js';
 import { createControversyMeter } from '../components/controversy-badge.js';
 import { createCampBar } from '../components/camp-bar.js';
 import { enqueueAnalysis, cancelAnalysis, onQueueChange, getQueueStatus, AnalysisCancelledError } from '../model/queue.js';
@@ -24,6 +24,8 @@ import { scanGPU, getUserGPUSelection, saveUserGPUSelection } from '../model/ben
 import { getGPUOptionsForArch } from '../model/gpu-database.js';
 import { formatVRAM } from './settings-helpers.js';
 import { isMobileDevice } from '../utils/device-detect.js';
+import { getAuthToken, isAuthenticated } from '../auth.js';
+import { t } from '../../locale/zh-TW.js';
 
 // ── Constants ──
 
@@ -113,6 +115,7 @@ export async function renderArticle(container, params) {
   const article = result.data;
   renderArticleContent(container, article);
 
+  loadFeedbackSection(container, articleId);
   loadClusterPanel(container, articleId);
   startAutoAnalysis(container, article);
 }
@@ -187,6 +190,13 @@ function renderArticleContent(container, article) {
     linkWrapper.appendChild(link);
     container.appendChild(linkWrapper);
   }
+
+  // Feedback + Report section
+  const feedbackSection = document.createElement('section');
+  feedbackSection.id = 'feedback-section';
+  feedbackSection.className = 'article-detail__feedback';
+  feedbackSection.setAttribute('aria-label', '文章回饋');
+  container.appendChild(feedbackSection);
 
   // Analysis section (replaces old analyze button)
   const analysisSection = document.createElement('section');
@@ -572,3 +582,224 @@ function renderDetailError(container, message) {
   el.appendChild(text);
   container.appendChild(el);
 }
+
+// ── Feedback + Report ──
+
+const REPORT_REASONS = ['inaccurate', 'biased', 'spam', 'offensive', 'other'];
+
+/**
+ * Load and render feedback section (like/dislike + report).
+ */
+async function loadFeedbackSection(container, articleId) {
+  const section = container.querySelector('#feedback-section');
+  if (!section) return;
+
+  section.innerHTML = '';
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'feedback-bar';
+
+  // Like button
+  const likeBtn = document.createElement('button');
+  likeBtn.className = 'feedback-btn feedback-btn--like';
+  likeBtn.setAttribute('aria-label', t('feedback.like'));
+
+  const likeIcon = document.createElement('span');
+  likeIcon.className = 'feedback-btn__icon';
+  likeIcon.textContent = '\u25B2'; // ▲
+  const likeCount = document.createElement('span');
+  likeCount.className = 'feedback-btn__count';
+  likeCount.textContent = '0';
+  likeBtn.appendChild(likeIcon);
+  likeBtn.appendChild(likeCount);
+
+  // Dislike button
+  const dislikeBtn = document.createElement('button');
+  dislikeBtn.className = 'feedback-btn feedback-btn--dislike';
+  dislikeBtn.setAttribute('aria-label', t('feedback.dislike'));
+
+  const dislikeIcon = document.createElement('span');
+  dislikeIcon.className = 'feedback-btn__icon';
+  dislikeIcon.textContent = '\u25BC'; // ▼
+  const dislikeCountEl = document.createElement('span');
+  dislikeCountEl.className = 'feedback-btn__count';
+  dislikeCountEl.textContent = '0';
+  dislikeBtn.appendChild(dislikeIcon);
+  dislikeBtn.appendChild(dislikeCountEl);
+
+  // Report button
+  const reportBtn = document.createElement('button');
+  reportBtn.className = 'feedback-btn feedback-btn--report';
+  reportBtn.setAttribute('aria-label', t('report.button'));
+  reportBtn.textContent = t('report.button');
+
+  wrapper.appendChild(likeBtn);
+  wrapper.appendChild(dislikeBtn);
+  wrapper.appendChild(reportBtn);
+  section.appendChild(wrapper);
+
+  // Feedback message area
+  const msgEl = document.createElement('p');
+  msgEl.className = 'feedback-bar__message';
+  msgEl.hidden = true;
+  section.appendChild(msgEl);
+
+  // Fetch current stats
+  const stats = await fetchArticleFeedbackStats(articleId);
+  if (stats.success && stats.data) {
+    likeCount.textContent = String(stats.data.likes || 0);
+    dislikeCountEl.textContent = String(stats.data.dislikes || 0);
+
+    if (stats.data.user_feedback === 'like') {
+      likeBtn.classList.add('feedback-btn--active');
+    } else if (stats.data.user_feedback === 'dislike') {
+      dislikeBtn.classList.add('feedback-btn--active');
+    }
+  }
+
+  // Click handlers
+  likeBtn.addEventListener('click', () => handleFeedbackClick(articleId, 'like', likeBtn, dislikeBtn, likeCount, dislikeCountEl, msgEl));
+  dislikeBtn.addEventListener('click', () => handleFeedbackClick(articleId, 'dislike', likeBtn, dislikeBtn, likeCount, dislikeCountEl, msgEl));
+  reportBtn.addEventListener('click', () => showReportDialog(articleId, 'article', msgEl));
+}
+
+async function handleFeedbackClick(articleId, type, likeBtn, dislikeBtn, likeCountEl, dislikeCountEl, msgEl) {
+  if (!isAuthenticated()) {
+    showFeedbackMessage(msgEl, t('feedback.login_required'), 'warning');
+    return;
+  }
+
+  const token = getAuthToken();
+  const result = await submitArticleFeedback(articleId, type, token);
+
+  if (result.success) {
+    showFeedbackMessage(msgEl, t('feedback.submit_success'), 'success');
+
+    // Re-fetch stats to update counts
+    const stats = await fetchArticleFeedbackStats(articleId);
+    if (stats.success && stats.data) {
+      likeCountEl.textContent = String(stats.data.likes || 0);
+      dislikeCountEl.textContent = String(stats.data.dislikes || 0);
+
+      likeBtn.classList.toggle('feedback-btn--active', stats.data.user_feedback === 'like');
+      dislikeBtn.classList.toggle('feedback-btn--active', stats.data.user_feedback === 'dislike');
+    }
+  } else {
+    const msg = result.error?.message || t('feedback.submit_error');
+    showFeedbackMessage(msgEl, msg, 'error');
+  }
+}
+
+function showFeedbackMessage(msgEl, text, type) {
+  msgEl.textContent = text;
+  msgEl.className = `feedback-bar__message feedback-bar__message--${type}`;
+  msgEl.hidden = false;
+  setTimeout(() => { msgEl.hidden = true; }, 3000);
+}
+
+/**
+ * Show report dialog overlay.
+ * @param {string} targetId - article_id or analysis_id
+ * @param {'article'|'analysis'} targetType
+ * @param {HTMLElement} msgEl - message element for feedback
+ */
+function showReportDialog(targetId, targetType, msgEl) {
+  if (!isAuthenticated()) {
+    showFeedbackMessage(msgEl, t('report.login_required'), 'warning');
+    return;
+  }
+
+  // Overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'report-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', t('report.title'));
+
+  const dialog = document.createElement('div');
+  dialog.className = 'report-dialog';
+
+  const heading = document.createElement('h3');
+  heading.textContent = t('report.title');
+  dialog.appendChild(heading);
+
+  // Reason radio buttons
+  const reasonGroup = document.createElement('div');
+  reasonGroup.className = 'report-dialog__reasons';
+
+  for (const reason of REPORT_REASONS) {
+    const label = document.createElement('label');
+    label.className = 'report-dialog__reason';
+
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = 'report-reason';
+    radio.value = reason;
+
+    const text = document.createElement('span');
+    text.textContent = t(`report.reason.${reason}`);
+
+    label.appendChild(radio);
+    label.appendChild(text);
+    reasonGroup.appendChild(label);
+  }
+  dialog.appendChild(reasonGroup);
+
+  // Description textarea
+  const descInput = document.createElement('textarea');
+  descInput.className = 'report-dialog__desc';
+  descInput.placeholder = t('report.description_placeholder');
+  descInput.rows = 3;
+  descInput.maxLength = 500;
+  dialog.appendChild(descInput);
+
+  // Actions
+  const actions = document.createElement('div');
+  actions.className = 'report-dialog__actions';
+
+  const submitBtn = document.createElement('button');
+  submitBtn.className = 'btn btn--primary';
+  submitBtn.textContent = t('report.submit');
+  submitBtn.addEventListener('click', async () => {
+    const selectedRadio = reasonGroup.querySelector('input[name="report-reason"]:checked');
+    if (!selectedRadio) return;
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = '...';
+
+    const token = getAuthToken();
+    const desc = descInput.value.trim() || undefined;
+
+    const apiFn = targetType === 'article' ? reportArticle : (await import('../api.js')).reportAnalysis;
+    const result = await apiFn(targetId, selectedRadio.value, desc, token);
+
+    overlay.remove();
+
+    if (result.success) {
+      showFeedbackMessage(msgEl, t('report.success'), 'success');
+    } else if (result.error?.type === 'duplicate_report') {
+      showFeedbackMessage(msgEl, t('report.duplicate'), 'warning');
+    } else {
+      showFeedbackMessage(msgEl, result.error?.message || t('report.error'), 'error');
+    }
+  });
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn btn--text';
+  cancelBtn.textContent = t('report.cancel');
+  cancelBtn.addEventListener('click', () => overlay.remove());
+
+  actions.appendChild(submitBtn);
+  actions.appendChild(cancelBtn);
+  dialog.appendChild(actions);
+
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+
+  // Focus first radio
+  const firstRadio = reasonGroup.querySelector('input[type="radio"]');
+  if (firstRadio) firstRadio.focus();
+}
+
+// Export for use by analyze-result.js
+export { showReportDialog, showFeedbackMessage };

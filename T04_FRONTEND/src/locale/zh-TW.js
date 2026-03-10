@@ -539,6 +539,44 @@ const messages = {
   'ext.context_menu.analyze': '使用公民算力分析此文章',
 
   // ==============================================
+  // Feedback & Reports (v2.1)
+  // ==============================================
+  'feedback.like': '有幫助',
+  'feedback.dislike': '沒幫助',
+  'feedback.liked': '已按讚',
+  'feedback.disliked': '已按倒讚',
+  'feedback.login_required': '請先登入才能回饋',
+  'feedback.submit_success': '感謝您的回饋',
+  'feedback.submit_error': '回饋提交失敗，請稍後再試',
+  'feedback.already_submitted': '您已提交過回饋',
+
+  'report.button': '檢舉',
+  'report.title': '檢舉內容',
+  'report.reason.inaccurate': '內容不正確',
+  'report.reason.biased': '明顯偏頗',
+  'report.reason.spam': '垃圾訊息',
+  'report.reason.offensive': '冒犯性內容',
+  'report.reason.other': '其他',
+  'report.description_placeholder': '補充說明（選填）',
+  'report.submit': '提交檢舉',
+  'report.cancel': '取消',
+  'report.success': '檢舉已提交，感謝您的回報',
+  'report.error': '檢舉提交失敗，請稍後再試',
+  'report.duplicate': '您已檢舉過此內容',
+  'report.login_required': '請先登入才能檢舉',
+
+  // ==============================================
+  // Search (v2.1)
+  // ==============================================
+  'search.placeholder': '搜尋新聞...',
+  'search.button': '搜尋',
+  'search.clear': '清除',
+  'search.no_results': '找不到相關新聞',
+  'search.results_count': '找到 {count} 篇相關新聞',
+  'search.error': '搜尋失敗，請稍後再試',
+  'search.min_length': '請輸入至少 2 個字',
+
+  // ==============================================
   // Accessibility (a11y)
   // ==============================================
   // Navigation

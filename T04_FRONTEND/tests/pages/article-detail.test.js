@@ -24,6 +24,16 @@ beforeEach(async () => {
 
   vi.doMock('../../src/js/api.js', () => ({
     fetchArticle: mockFetchArticle,
+    fetchArticleFeedbackStats: vi.fn(() => Promise.resolve({ success: true, data: { likes: 0, dislikes: 0, user_feedback: null } })),
+    submitArticleFeedback: vi.fn(() => Promise.resolve({ success: true, data: {} })),
+    reportArticle: vi.fn(() => Promise.resolve({ success: true, data: {} })),
+  }));
+  vi.doMock('../../src/js/auth.js', () => ({
+    getAuthToken: vi.fn(() => null),
+    isAuthenticated: vi.fn(() => false),
+  }));
+  vi.doMock('../../locale/zh-TW.js', () => ({
+    t: vi.fn((key) => key),
   }));
   vi.doMock('../../src/js/components/controversy-badge.js', () => ({
     createControversyMeter: vi.fn(() => document.createElement('div')),
@@ -157,7 +167,19 @@ describe('renderArticle — GPU consent gate', () => {
       isMobileDevice: vi.fn(() => true),
     }));
     // Re-register all other mocks
-    vi.doMock('../../src/js/api.js', () => ({ fetchArticle: mockFetchArticle }));
+    vi.doMock('../../src/js/api.js', () => ({
+      fetchArticle: mockFetchArticle,
+      fetchArticleFeedbackStats: vi.fn(() => Promise.resolve({ success: true, data: { likes: 0, dislikes: 0, user_feedback: null } })),
+      submitArticleFeedback: vi.fn(() => Promise.resolve({ success: true, data: {} })),
+      reportArticle: vi.fn(() => Promise.resolve({ success: true, data: {} })),
+    }));
+    vi.doMock('../../src/js/auth.js', () => ({
+      getAuthToken: vi.fn(() => null),
+      isAuthenticated: vi.fn(() => false),
+    }));
+    vi.doMock('../../locale/zh-TW.js', () => ({
+      t: vi.fn((key) => key),
+    }));
     vi.doMock('../../src/js/components/controversy-badge.js', () => ({
       createControversyMeter: vi.fn(() => document.createElement('div')),
     }));
