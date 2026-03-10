@@ -12,7 +12,7 @@ let mod;
 let mockEnqueueAnalysis, mockCancelAll, mockFetchArticles, mockSubmitAnalysisResult;
 let mockGetAuthToken, mockGetUserHash, mockIsAuthenticated;
 let mockOpenDB, mockT;
-let mockGetCachedBenchmark, mockScanGPU;
+let mockScanGPU;
 
 beforeEach(async () => {
   vi.resetModules();
@@ -28,11 +28,9 @@ beforeEach(async () => {
   mockIsAuthenticated = vi.fn(() => true);
   mockOpenDB = vi.fn();
   mockT = vi.fn((key) => key);
-  mockGetCachedBenchmark = vi.fn(() => ({ mode: 'gpu', latency_ms: 5000 }));
   mockScanGPU = vi.fn(() => Promise.resolve({ supported: true, vramMB: 8192 }));
 
   vi.doMock('../../src/js/model/benchmark.js', () => ({
-    getCachedBenchmark: mockGetCachedBenchmark,
     scanGPU: mockScanGPU,
   }));
   vi.doMock('../../src/js/model/queue.js', () => ({

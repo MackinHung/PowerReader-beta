@@ -23,12 +23,6 @@ vi.mock('../../src/js/model/output-parser.js', () => ({
   parseNarrativeOutput: vi.fn(() => ({ points: ['p1'], key_phrases: ['k1'] })),
 }));
 
-vi.mock('../../src/js/model/benchmark.js', () => ({
-  getCachedBenchmark: vi.fn(() => null),
-  getTimeoutForTier: vi.fn(() => 90000),
-  scanGPU: vi.fn(() => Promise.resolve({ supported: false })),
-}));
-
 // ── Dynamic module import helper ──
 // inference.js has module-level singleton state, so we use
 // vi.resetModules() + dynamic import to get a fresh copy per test group.
@@ -60,11 +54,6 @@ beforeEach(async () => {
     parseScoreOutput: vi.fn(() => ({ bias_score: 50, controversy_score: 30 })),
     parseNarrativeOutput: vi.fn(() => ({ points: ['p1'], key_phrases: ['k1'] })),
     parseAnalysisOutput: vi.fn(() => ({ bias_score: 50, controversy_score: 0 })),
-  }));
-  vi.mock('../../src/js/model/benchmark.js', () => ({
-    getCachedBenchmark: vi.fn(() => null),
-    getTimeoutForTier: vi.fn(() => 90000),
-    scanGPU: vi.fn(() => Promise.resolve({ supported: false })),
   }));
   inferenceModule = await loadInferenceModule();
 });
@@ -137,38 +126,7 @@ describe('hasWebGPU', () => {
 // ══════════════════════════════════════════════
 
 describe('detectBestMode', () => {
-  it('returns "webgpu" when cached benchmark mode is "gpu"', async () => {
-    const { getCachedBenchmark } = await import('../../src/js/model/benchmark.js');
-    getCachedBenchmark.mockReturnValue({ mode: 'gpu' });
-
-    const result = await inferenceModule.detectBestMode();
-
-    expect(result).toBe('webgpu');
-  });
-
-  it('returns "webgpu" when cached benchmark mode is "cpu"', async () => {
-    const { getCachedBenchmark } = await import('../../src/js/model/benchmark.js');
-    getCachedBenchmark.mockReturnValue({ mode: 'cpu' });
-
-    const result = await inferenceModule.detectBestMode();
-
-    expect(result).toBe('webgpu');
-  });
-
-  it('returns "server" when cached benchmark mode is "none"', async () => {
-    const { getCachedBenchmark } = await import('../../src/js/model/benchmark.js');
-    getCachedBenchmark.mockReturnValue({ mode: 'none' });
-
-    const result = await inferenceModule.detectBestMode();
-
-    expect(result).toBe('server');
-  });
-
-  it('returns "webgpu" when no cache and hasWebGPU is true', async () => {
-    const { getCachedBenchmark } = await import('../../src/js/model/benchmark.js');
-    getCachedBenchmark.mockReturnValue(null);
-
-    // Make hasWebGPU return true
+  it('returns "webgpu" when hasWebGPU is true', async () => {
     globalThis.navigator.gpu = {
       requestAdapter: vi.fn().mockResolvedValue({ name: 'test' }),
     };
@@ -178,9 +136,7 @@ describe('detectBestMode', () => {
     expect(result).toBe('webgpu');
   });
 
-  it('returns "server" when no cache and hasWebGPU is false', async () => {
-    const { getCachedBenchmark } = await import('../../src/js/model/benchmark.js');
-    getCachedBenchmark.mockReturnValue(null);
+  it('returns "server" when hasWebGPU is false', async () => {
     delete globalThis.navigator.gpu;
 
     const result = await inferenceModule.detectBestMode();
@@ -247,13 +203,8 @@ describe('runAnalysis', () => {
   });
 
   it('falls back to server when WebGPU inference fails', async () => {
-    // detectBestMode will return 'webgpu' due to cached benchmark
-    const { getCachedBenchmark } = await import('../../src/js/model/benchmark.js');
-    getCachedBenchmark.mockReturnValue({ mode: 'gpu' });
-
-    // The WebLLM getWebLLMEngine will be called, which internally does a
-    // dynamic import of the CDN. Since we can't load the CDN in tests,
-    // getWebLLMEngine will throw, triggering the fallback.
+    // mode='webgpu' is passed explicitly. getWebLLMEngine will fail
+    // (CDN unavailable in tests), triggering the server fallback.
 
     const serverResponse = {
       bias_score: 55,

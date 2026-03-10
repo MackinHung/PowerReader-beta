@@ -10,8 +10,8 @@
 import { t } from '../../locale/zh-TW.js';
 import { openDB } from '../db.js';
 import { isModelDownloaded, deleteModel } from '../model/manager.js';
-import { detectBestMode, getModeLabel, clearAllModelCaches, getWebLLMEngine } from '../model/inference.js';
-import { scanGPU, runBenchmark, getCachedBenchmark, clearBenchmark, getUserGPUSelection, saveUserGPUSelection } from '../model/benchmark.js';
+import { detectBestMode, getModeLabel, clearAllModelCaches } from '../model/inference.js';
+import { scanGPU, getUserGPUSelection, saveUserGPUSelection } from '../model/benchmark.js';
 import { getGPUOptionsForArch } from '../model/gpu-database.js';
 import {
   startAutoRunner, stopAutoRunner, getAutoRunnerStatus,
@@ -19,9 +19,7 @@ import {
   pauseAutoRunner, resumeAutoRunner, forceStopAutoRunner
 } from '../model/auto-runner.js';
 import { isAuthenticated } from '../auth.js';
-import {
-  formatVRAM, formatBenchmarkDate, formatBenchmarkMode, createInfoRow
-} from './settings-helpers.js';
+import { formatVRAM, createInfoRow } from './settings-helpers.js';
 import { isMobileDevice, getBrowserInfo } from '../utils/device-detect.js';
 
 /**
@@ -420,88 +418,6 @@ async function renderHardwareSection(container) {
     renderGPUPicker(card, gpuInfo, container);
   }
 
-  // --- Benchmark Result ---
-  const benchTitle = document.createElement('p');
-  benchTitle.className = 'settings-card__title';
-  benchTitle.style.marginTop = '1rem';
-  benchTitle.textContent = t('settings.hw.bench_title');
-  card.appendChild(benchTitle);
-
-  const cached = getCachedBenchmark();
-  if (cached) {
-    const { text: modeText, color: modeColor } = formatBenchmarkMode(cached.mode);
-    card.appendChild(createInfoRow(t('settings.hw.bench_tier'), modeText, modeColor));
-    card.appendChild(createInfoRow(t('settings.hw.bench_latency'), `${cached.latency_ms} ms`));
-    card.appendChild(createInfoRow(t('settings.hw.bench_time'), formatBenchmarkDate(cached.tested_at)));
-  } else {
-    const noResultEl = document.createElement('p');
-    noResultEl.className = 'settings-card__subtitle';
-    noResultEl.textContent = t('settings.hw.bench_none');
-    card.appendChild(noResultEl);
-  }
-
-  // --- Status text (for benchmark progress) ---
-  const statusEl = document.createElement('p');
-  statusEl.className = 'settings-card__subtitle';
-  statusEl.style.display = 'none';
-  card.appendChild(statusEl);
-
-  // --- Buttons ---
-  const actionsRow = document.createElement('div');
-  actionsRow.className = 'settings-card__actions';
-
-  // Re-detect hardware button
-  const redetectBtn = document.createElement('button');
-  redetectBtn.className = 'btn btn--secondary';
-  redetectBtn.textContent = t('settings.hw.btn_redetect');
-  redetectBtn.addEventListener('click', () => {
-    clearBenchmark();
-    renderSettings(container);
-  });
-  actionsRow.appendChild(redetectBtn);
-
-  // Run benchmark button
-  const benchmarkBtn = document.createElement('button');
-  benchmarkBtn.className = 'btn btn--primary';
-  benchmarkBtn.textContent = t('settings.hw.btn_benchmark');
-  benchmarkBtn.addEventListener('click', async () => {
-    benchmarkBtn.disabled = true;
-    benchmarkBtn.textContent = t('settings.hw.btn_benchmarking');
-    redetectBtn.disabled = true;
-    statusEl.style.display = 'block';
-    statusEl.textContent = t('settings.hw.stage_init');
-
-    try {
-      const stageKeys = {
-        scanning_gpu: 'settings.hw.stage_scanning',
-        loading_engine: 'settings.hw.stage_loading',
-        running_inference: 'settings.hw.stage_running',
-        done: 'settings.hw.stage_done',
-        error: 'settings.hw.stage_error',
-      };
-
-      await runBenchmark(
-        () => getWebLLMEngine((p) => {
-          statusEl.textContent = t('model.inference.loading_model_pct', { text: p.text || '' });
-        }),
-        (progress) => {
-          const key = stageKeys[progress.stage];
-          statusEl.textContent = key ? t(key) : progress.stage;
-        }
-      );
-      renderSettings(container);
-    } catch (err) {
-      console.error('[Settings] Benchmark failed:', err);
-      statusEl.textContent = t('settings.hw.error_prefix', { message: err.message || '未知錯誤' });
-      statusEl.style.color = 'var(--color-bias-extreme)';
-      benchmarkBtn.disabled = false;
-      benchmarkBtn.textContent = t('settings.hw.btn_benchmark');
-      redetectBtn.disabled = false;
-    }
-  });
-  actionsRow.appendChild(benchmarkBtn);
-
-  card.appendChild(actionsRow);
   section.appendChild(card);
   container.appendChild(section);
 }

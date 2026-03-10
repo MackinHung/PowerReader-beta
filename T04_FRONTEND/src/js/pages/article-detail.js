@@ -20,11 +20,14 @@ import { runPreAnalysisChecks } from './analyze-checks.js';
 import { updateStatusUI } from './analyze-engine.js';
 import { loadClusterPanel } from './article-panels.js';
 import { getAutoRunnerStatus } from '../model/auto-runner.js';
-import { runPreDownloadChecks } from '../model/manager.js';
+import { scanGPU, getUserGPUSelection, saveUserGPUSelection } from '../model/benchmark.js';
+import { getGPUOptionsForArch } from '../model/gpu-database.js';
+import { formatVRAM } from './settings-helpers.js';
+import { isMobileDevice } from '../utils/device-detect.js';
 
 // ── Constants ──
 
-const CONSENT_KEY = 'powerreader_auto_consent';
+const GPU_CONSENT_KEY = 'powerreader_gpu_consent';
 
 // Source display names
 const SOURCE_NAMES = {
@@ -262,7 +265,15 @@ function renderManualAnalyzeButton(section, article) {
 }
 
 /**
- * Run pre-analysis checks and proceed through download/consent gates.
+ * Check if user has given one-time GPU consent.
+ * @returns {boolean}
+ */
+export function isGPUConsentGiven() {
+  return localStorage.getItem(GPU_CONSENT_KEY) === '1';
+}
+
+/**
+ * Run pre-analysis checks and proceed through the single GPU consent gate.
  */
 async function proceedToAnalysis(section, article) {
   const checks = await runPreAnalysisChecks(article);
@@ -271,15 +282,9 @@ async function proceedToAnalysis(section, article) {
     return;
   }
 
-  // First-time download confirmation
-  if (localStorage.getItem('powerreader_webllm_cached') !== '1') {
-    renderDownloadConfirmation(section, article);
-    return;
-  }
-
-  // One-time consent dialog
-  if (localStorage.getItem(CONSENT_KEY) !== '1') {
-    renderConsentDialog(section, article);
+  // Single gate: one-time GPU informed consent
+  if (!isGPUConsentGiven()) {
+    renderGPUConsent(section, article);
     return;
   }
 
@@ -335,85 +340,145 @@ function renderAnalysisBlocked(section, checks, article) {
   }
 }
 
-async function renderDownloadConfirmation(section, article) {
-  section.innerHTML = '';
-  const heading = document.createElement('h3');
-  heading.className = 'analyze-download__heading';
-  heading.textContent = '首次使用需下載 AI 模型';
-  section.appendChild(heading);
-
-  const desc = document.createElement('p');
-  desc.className = 'analyze-download__subtitle';
-  desc.textContent = '分析功能需要下載約 4.5GB 的 AI 模型至瀏覽器，下載後可離線使用。建議使用 WiFi 下載。';
-  section.appendChild(desc);
-
-  // Device condition checks
-  const { checks } = await runPreDownloadChecks();
-  const checkList = document.createElement('ul');
-  checkList.className = 'analyze-download__checks';
-  const checkLabels = {
-    wifi: '網路連線',
-    battery: '電量充足',
-    storage: '儲存空間'
-  };
-  let hasWarning = false;
-  for (const check of checks) {
-    const li = document.createElement('li');
-    const icon = check.ok ? '\u2705' : '\u274C';
-    li.textContent = `${icon} ${checkLabels[check.name] || check.name}`;
-    if (!check.ok) {
-      li.className = 'analyze-download__check--warn';
-      hasWarning = true;
-    }
-    checkList.appendChild(li);
-  }
-  section.appendChild(checkList);
-
-  // Size hint
-  const sizeHint = document.createElement('p');
-  sizeHint.className = 'analyze-download__size-hint';
-  sizeHint.textContent = '模型大小: 約 4.5GB';
-  section.appendChild(sizeHint);
-
-  // Warning if any check failed
-  if (hasWarning) {
-    const warn = document.createElement('p');
-    warn.className = 'analyze-download__warning';
-    warn.textContent = '偵測到行動網路連線，下載 4.5GB 模型可能產生大量數據費用。';
-    section.appendChild(warn);
-  }
-
-  const confirmBtn = document.createElement('button');
-  confirmBtn.className = 'btn btn--primary';
-  confirmBtn.textContent = '確認下載並分析';
-  confirmBtn.addEventListener('click', () => { enqueueAndTrack(section, article); });
-  section.appendChild(confirmBtn);
-}
-
 /**
- * One-time consent dialog explaining auto GPU analysis.
+ * Render GPU consent card — single gate for first-time analysis.
+ * Blocks mobile users and devices without WebGPU with clear messages.
  */
-function renderConsentDialog(section, article) {
+async function renderGPUConsent(section, article) {
   section.innerHTML = '';
 
+  const card = document.createElement('div');
+  card.className = 'gpu-consent-card';
+
   const heading = document.createElement('h3');
-  heading.className = 'analyze-consent__heading';
-  heading.textContent = '自動分析說明';
-  section.appendChild(heading);
+  heading.className = 'gpu-consent-card__heading';
+  heading.textContent = 'AI 本機分析說明';
+  card.appendChild(heading);
 
-  const desc = document.createElement('p');
-  desc.className = 'analyze-consent__desc';
-  desc.textContent = 'PowerReader 會使用您的 GPU 自動分析文章立場。過程約 15 秒，完全在您的裝置上執行，不會上傳原文。';
-  section.appendChild(desc);
+  // ── Block: mobile device ──
+  if (isMobileDevice()) {
+    const msg = document.createElement('p');
+    msg.className = 'gpu-consent-card__blocked';
+    msg.textContent = '行動裝置不支援本機 AI 分析';
+    card.appendChild(msg);
 
+    const hint = document.createElement('p');
+    hint.className = 'gpu-consent-card__hint';
+    hint.textContent = '4.5GB 模型需要桌面電腦的 GPU 運算，請使用桌面瀏覽器';
+    card.appendChild(hint);
+
+    section.appendChild(card);
+    return;
+  }
+
+  // ── Scan GPU ──
+  const gpuInfo = await scanGPU();
+
+  // ── Block: no WebGPU ──
+  if (!gpuInfo.supported) {
+    const msg = document.createElement('p');
+    msg.className = 'gpu-consent-card__blocked';
+    msg.textContent = '您的瀏覽器不支援 WebGPU';
+    card.appendChild(msg);
+
+    const hint = document.createElement('p');
+    hint.className = 'gpu-consent-card__hint';
+    hint.textContent = '請使用 Chrome 113+ 或 Edge 113+ 瀏覽器';
+    card.appendChild(hint);
+
+    section.appendChild(card);
+    return;
+  }
+
+  // ── GPU info display ──
+  const userOverride = getUserGPUSelection();
+
+  if (userOverride) {
+    card.appendChild(_gpuInfoRow('GPU', userOverride.device));
+    card.appendChild(_gpuInfoRow('顯存', formatVRAM(userOverride.vramMB)));
+  } else if (gpuInfo.device && gpuInfo.vramMB > 0) {
+    card.appendChild(_gpuInfoRow('GPU', gpuInfo.device));
+    card.appendChild(_gpuInfoRow('顯存', formatVRAM(gpuInfo.vramMB)));
+  } else if (gpuInfo.archInfo) {
+    card.appendChild(_gpuInfoRow('GPU', gpuInfo.archInfo.label + ' (' + gpuInfo.archInfo.series + ')'));
+    card.appendChild(_gpuInfoRow('顯存', gpuInfo.archInfo.vramRange));
+
+    // Inline GPU picker when device name is unknown
+    _renderInlineGPUPicker(card, gpuInfo);
+  } else {
+    card.appendChild(_gpuInfoRow('GPU', gpuInfo.vendor || '未知'));
+  }
+
+  // ── Privacy & model info ──
+  const modelHint = document.createElement('p');
+  modelHint.className = 'gpu-consent-card__info';
+  modelHint.textContent = '首次使用將下載約 4.5GB AI 模型至瀏覽器';
+  card.appendChild(modelHint);
+
+  const privacyHint = document.createElement('p');
+  privacyHint.className = 'gpu-consent-card__info';
+  privacyHint.textContent = '分析完全在您的裝置上執行，不上傳原文';
+  card.appendChild(privacyHint);
+
+  // ── Confirm button ──
   const confirmBtn = document.createElement('button');
-  confirmBtn.className = 'btn btn--primary';
-  confirmBtn.textContent = '了解，開始分析';
+  confirmBtn.className = 'btn btn--primary btn--large';
+  confirmBtn.textContent = '確認，開始分析';
   confirmBtn.addEventListener('click', () => {
-    localStorage.setItem(CONSENT_KEY, '1');
+    localStorage.setItem(GPU_CONSENT_KEY, '1');
     enqueueAndTrack(section, article);
   });
-  section.appendChild(confirmBtn);
+  card.appendChild(confirmBtn);
+
+  section.appendChild(card);
+}
+
+function _gpuInfoRow(label, value) {
+  const row = document.createElement('div');
+  row.className = 'gpu-consent-card__row';
+  const labelEl = document.createElement('span');
+  labelEl.className = 'gpu-consent-card__label';
+  labelEl.textContent = label;
+  const valueEl = document.createElement('span');
+  valueEl.className = 'gpu-consent-card__value';
+  valueEl.textContent = value;
+  row.appendChild(labelEl);
+  row.appendChild(valueEl);
+  return row;
+}
+
+function _renderInlineGPUPicker(card, gpuInfo) {
+  const options = getGPUOptionsForArch(gpuInfo.architecture);
+  if (!options || options.length === 0) return;
+
+  const hint = document.createElement('p');
+  hint.className = 'gpu-consent-card__picker-hint';
+  hint.textContent = '可選擇您的 GPU 型號以優化體驗（非必要）';
+  card.appendChild(hint);
+
+  const select = document.createElement('select');
+  select.className = 'gpu-consent-card__select';
+
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = '-- 選擇 GPU 型號 --';
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  select.appendChild(placeholder);
+
+  for (const gpu of options) {
+    const opt = document.createElement('option');
+    opt.value = JSON.stringify({ device: gpu.name, vramMB: gpu.vramMB });
+    opt.textContent = gpu.name + ' (' + formatVRAM(gpu.vramMB) + ')';
+    select.appendChild(opt);
+  }
+
+  select.addEventListener('change', () => {
+    if (!select.value) return;
+    const chosen = JSON.parse(select.value);
+    saveUserGPUSelection(chosen.device, chosen.vramMB);
+  });
+  card.appendChild(select);
 }
 
 function enqueueAndTrack(section, article) {

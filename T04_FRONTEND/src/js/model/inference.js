@@ -23,7 +23,6 @@ import {
   assembleUserMessage
 } from './prompt.js';
 import { parseScoreOutput, parseNarrativeOutput } from './output-parser.js';
-import { getCachedBenchmark, getTimeoutForTier, scanGPU } from './benchmark.js';
 import { isMobileDevice } from '../utils/device-detect.js';
 
 // =============================================
@@ -46,16 +45,11 @@ const PASS2_MAX_TOKENS = 512;   // Narrative JSON ~200-400 tokens
 const INFERENCE_TIMEOUT_MS = 90000; // 90s total for dual pass (8B needs more time)
 
 /**
- * Get dynamic inference timeout based on benchmark tier.
- * Falls back to INFERENCE_TIMEOUT_MS if no benchmark data.
+ * Get inference timeout. Fixed at 90s — sufficient for both GPU and CPU.
  * @returns {number} Timeout in milliseconds
  */
 function getInferenceTimeout() {
-  const cached = getCachedBenchmark();
-  if (cached && cached.mode) {
-    return getTimeoutForTier(cached.mode);
-  }
-  return INFERENCE_TIMEOUT_MS; // fallback to default
+  return INFERENCE_TIMEOUT_MS;
 }
 
 
@@ -186,26 +180,8 @@ export async function hasWebGPU() {
  * @returns {Promise<string>} INFERENCE_MODES value
  */
 export async function detectBestMode() {
-  // Mobile devices → always server mode (4.5GB model too large)
   if (isMobileDevice()) return INFERENCE_MODES.SERVER;
-
-  // Check cached benchmark first
-  const cached = getCachedBenchmark();
-  if (cached && cached.mode) {
-    if (cached.mode === 'gpu' || cached.mode === 'cpu') {
-      return INFERENCE_MODES.WEBGPU;
-    }
-    if (cached.mode === 'none') {
-      return INFERENCE_MODES.SERVER;
-    }
-  }
-
-  // No cached benchmark — probe WebGPU
   if (await hasWebGPU()) return INFERENCE_MODES.WEBGPU;
-
-  // Fire-and-forget: scan GPU and cache availability for future visits
-  scanGPU().catch(() => {});
-
   return INFERENCE_MODES.SERVER;
 }
 
