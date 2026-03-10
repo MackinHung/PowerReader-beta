@@ -222,9 +222,12 @@ async function _runLoop() {
 
     const allArticles = result.data.articles;
 
-    // Filter out already-processed articles via IndexedDB
+    // Filter out already-analyzed articles (global one-per-article limit)
+    // and already-processed articles via IndexedDB
     const processedIds = await _getProcessedIds();
-    const candidates = allArticles.filter(a => !processedIds.has(a.article_id));
+    const candidates = allArticles.filter(a =>
+      !(a.analysis_count > 0) && !processedIds.has(a.article_id)
+    );
 
     if (candidates.length === 0) {
       _stopReason = t('auto_runner.error.no_articles');

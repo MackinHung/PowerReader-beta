@@ -78,15 +78,16 @@ export async function createAnalysis(request, env, ctx, { params, user }) {
     });
   }
 
-  // Check duplicate analysis (one per user per article)
+  // Check duplicate analysis — global one-per-article limit
+  // Once ANY user has analyzed an article, NO ONE can analyze it again.
   const existing = await env.DB.prepare(
-    'SELECT id FROM analyses WHERE article_id = ? AND user_hash = ?'
-  ).bind(article_id, user_hash).first();
+    'SELECT id FROM analyses WHERE article_id = ?'
+  ).bind(article_id).first();
 
   if (existing) {
     return jsonResponse(409, {
       success: false, data: null,
-      error: { type: 'validation_error', message: '您已對此文章提交過分析' }
+      error: { type: 'already_analyzed', message: '此文章已被分析過' }
     });
   }
 
@@ -101,17 +102,29 @@ export async function createAnalysis(request, env, ctx, { params, user }) {
   const campRatioJson = body.camp_ratio ? JSON.stringify(body.camp_ratio) : null;
 
   // Insert analysis (using authenticated user_hash, not body.user_hash)
-  await env.DB.prepare(`
-    INSERT INTO analyses (article_id, user_hash, bias_score, bias_category,
-      controversy_score, controversy_level, reasoning, key_phrases,
-      quality_gate_result, quality_scores, prompt_version, camp_ratio)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(
-    article_id, user_hash, body.bias_score, bias_category,
-    body.controversy_score, controversy_level, body.reasoning,
-    JSON.stringify(body.key_phrases), quality_gate_result,
-    JSON.stringify(quality_scores), body.prompt_version, campRatioJson
-  ).run();
+  // Race condition guard: UNIQUE(article_id) constraint catches concurrent inserts.
+  try {
+    await env.DB.prepare(`
+      INSERT INTO analyses (article_id, user_hash, bias_score, bias_category,
+        controversy_score, controversy_level, reasoning, key_phrases,
+        quality_gate_result, quality_scores, prompt_version, camp_ratio)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      article_id, user_hash, body.bias_score, bias_category,
+      body.controversy_score, controversy_level, body.reasoning,
+      JSON.stringify(body.key_phrases), quality_gate_result,
+      JSON.stringify(quality_scores), body.prompt_version, campRatioJson
+    ).run();
+  } catch (err) {
+    // UNIQUE constraint violation = another user submitted first (race condition)
+    if (err.message && err.message.includes('UNIQUE constraint')) {
+      return jsonResponse(409, {
+        success: false, data: null,
+        error: { type: 'already_analyzed', message: '此文章已被分析過' }
+      });
+    }
+    throw err; // Re-throw unexpected errors
+  }
 
   // Update article analysis count + user daily count (batch for efficiency)
   await env.DB.batch([

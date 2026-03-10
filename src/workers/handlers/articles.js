@@ -52,7 +52,7 @@ export async function getArticles(request, env, ctx, { url }) {
 
   // Fetch page
   const dataQuery = `SELECT article_id, primary_url, source, title, summary, published_at,
-    bias_score, bias_category, controversy_score, controversy_level, status
+    bias_score, bias_category, controversy_score, controversy_level, status, analysis_count
     FROM articles ${whereClause} ORDER BY ${sortBy} ${sortOrder} LIMIT ? OFFSET ?`;
 
   const rows = await env.DB.prepare(dataQuery)

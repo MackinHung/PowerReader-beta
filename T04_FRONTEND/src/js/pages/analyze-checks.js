@@ -23,6 +23,11 @@ const DEADLINE_HOURS = 72;
 export async function runPreAnalysisChecks(article) {
   const issues = [];
 
+  // 0a. Check if article already has an analysis (global one-per-article limit)
+  if (article.analysis_count > 0) {
+    issues.push({ type: 'already_analyzed', message: '此文章已被分析過，每篇文章僅能分析一次' });
+  }
+
   // 0. Check model / inference mode
   const bestMode = await detectBestMode();
 

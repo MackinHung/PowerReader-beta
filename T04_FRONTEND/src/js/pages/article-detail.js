@@ -218,6 +218,12 @@ async function startAutoAnalysis(container, article) {
   const section = container.querySelector('#analysis-section');
   if (!section) return;
 
+  // Global one-per-article limit: if already analyzed, show message instead of button
+  if (article.analysis_count > 0) {
+    _renderAlreadyAnalyzed(section, article);
+    return;
+  }
+
   // Check if this article is already in the queue (auto-runner or manual)
   const queueStatus = getQueueStatus();
   const articleId = article.article_id;
@@ -239,6 +245,28 @@ async function startAutoAnalysis(container, article) {
 
   // Show manual analysis button (user clicks to start)
   renderManualAnalyzeButton(section, article);
+}
+
+/**
+ * Render message when article has already been analyzed.
+ */
+function _renderAlreadyAnalyzed(section, article) {
+  section.innerHTML = '';
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'article-detail__analyze-trigger';
+
+  const heading = document.createElement('h3');
+  heading.className = 'section-heading';
+  heading.textContent = 'AI 立場分析';
+  wrapper.appendChild(heading);
+
+  const msg = document.createElement('p');
+  msg.className = 'analyze-trigger__desc';
+  msg.textContent = '此文章已被分析過，每篇文章僅能分析一次';
+  wrapper.appendChild(msg);
+
+  section.appendChild(wrapper);
 }
 
 /**
