@@ -60,20 +60,18 @@ export async function searchArticles(request, env, ctx, { url }) {
   const escapedKeyword = escapeLikePattern(query.trim());
   const likePattern = `%${escapedKeyword}%`;
 
-  // Count total matches
+  // Count total matches (no status filter — articles may be 'published' or 'deduplicated')
   const countResult = await env.DB.prepare(
     `SELECT COUNT(*) AS total FROM articles
-     WHERE (title LIKE ?1 ESCAPE '\\' OR summary LIKE ?1 ESCAPE '\\')
-     AND status = 'published'`
+     WHERE (title LIKE ?1 ESCAPE '\\' OR summary LIKE ?1 ESCAPE '\\')`
   ).bind(likePattern).first();
   const total = countResult?.total || 0;
 
   // Fetch matching articles
   const rows = await env.DB.prepare(
-    `SELECT article_id, title, summary, source, published_at, camp_ratio
+    `SELECT article_id, title, summary, source, published_at, camp_ratio, analysis_count
      FROM articles
      WHERE (title LIKE ?1 ESCAPE '\\' OR summary LIKE ?1 ESCAPE '\\')
-     AND status = 'published'
      ORDER BY published_at DESC
      LIMIT ? OFFSET ?`
   ).bind(likePattern, limit, offset).all();
@@ -84,6 +82,7 @@ export async function searchArticles(request, env, ctx, { url }) {
     summary: row.summary ? escapeHtml(row.summary) : row.summary,
     source: row.source,
     published_at: row.published_at,
+    analysis_count: row.analysis_count || 0,
     camp_ratio: typeof row.camp_ratio === 'string'
       ? safeJsonParse(row.camp_ratio, null)
       : row.camp_ratio,

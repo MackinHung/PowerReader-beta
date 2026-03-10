@@ -267,7 +267,7 @@ describe('searchArticles', () => {
     expect(escapeHtml).toHaveBeenCalledWith('<b>bold</b>');
   });
 
-  it('uses published status filter in SQL', async () => {
+  it('does not filter by status (articles may be published or deduplicated)', async () => {
     validateSearchQuery.mockReturnValue({ valid: true, errors: [] });
     env.setupChains([
       { first: { total: 0 } },
@@ -277,8 +277,8 @@ describe('searchArticles', () => {
     const url = createUrl('?q=test');
     await searchArticles({}, env, {}, { url });
 
-    // Verify SQL includes status = 'published'
+    // No status filter — all articles should be searchable
     const prepareCall = env._prepare.mock.calls[0][0];
-    expect(prepareCall).toContain("status = 'published'");
+    expect(prepareCall).not.toContain("status =");
   });
 });
