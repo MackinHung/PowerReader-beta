@@ -9,7 +9,7 @@
  * Strategy: use robocopy (Windows native) to copy source to a temp
  * ASCII path, build there, copy output back.
  */
-import { existsSync, mkdirSync, rmSync } from 'fs';
+import { existsSync, mkdirSync, rmSync, copyFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
@@ -24,6 +24,12 @@ const hasNonAscii = /[^\x00-\x7F]/.test(PROJECT_ROOT);
 if (!hasNonAscii) {
   console.log('ASCII path detected, running vite build directly...');
   execSync('npx vite build', { cwd: PROJECT_ROOT, stdio: 'inherit' });
+  // SPA fallback: copy 200.html → index.html for Cloudflare Pages
+  const fallback = resolve(PROJECT_ROOT, 'build', '200.html');
+  if (existsSync(fallback)) {
+    copyFileSync(fallback, resolve(PROJECT_ROOT, 'build', 'index.html'));
+    console.log('[build] Copied 200.html → index.html (SPA fallback)');
+  }
   process.exit(0);
 }
 
@@ -98,6 +104,13 @@ try {
     console.log('[build] Copying build output back...');
     robocopy(buildSrc, buildDest, '/E /PURGE /NJH /NJS /NDL /NP');
     console.log('[build] Build output at', buildDest);
+  }
+
+  // SPA fallback: copy 200.html → index.html for Cloudflare Pages
+  const fallbackFile = resolve(buildDest, '200.html');
+  if (existsSync(fallbackFile)) {
+    copyFileSync(fallbackFile, resolve(buildDest, 'index.html'));
+    console.log('[build] Copied 200.html → index.html (SPA fallback)');
   }
 
   console.log('[build] Build completed successfully!');
