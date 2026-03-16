@@ -100,16 +100,7 @@ export function createArticleCard(article) {
   title.textContent = article.title || '';
   card.appendChild(title);
 
-  // Summary (truncated)
-  if (article.summary) {
-    const summary = document.createElement('p');
-    summary.className = 'article-card__summary';
-    const truncated = article.summary.length > 100
-      ? article.summary.slice(0, 100) + '...'
-      : article.summary;
-    summary.textContent = truncated;
-    card.appendChild(summary);
-  }
+
 
   // Footer: bias indicator + controversy badge
   const footer = document.createElement('div');

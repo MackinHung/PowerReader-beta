@@ -49,12 +49,17 @@ export function renderResultPreview(container, article, result) {
     const knowledgeEntries = result.knowledgeEntries || [];
     const highRelevanceEntries = knowledgeEntries.filter(e => (e.score || 0) >= 0.7);
 
-    const pointsSection = document.createElement('div');
-    pointsSection.className = 'analyze-result__narrative';
+    const pointsSection = document.createElement('details');
+    pointsSection.className = 'analyze-result__narrative-collapsible';
 
-    const pointsHeading = document.createElement('h4');
-    pointsHeading.textContent = '論述重點';
+    const pointsHeading = document.createElement('summary');
+    pointsHeading.textContent = '查看 AI 論述重點 (僅供參考)';
     pointsSection.appendChild(pointsHeading);
+
+    const disclaimer = document.createElement('p');
+    disclaimer.className = 'analyze-result__disclaimer';
+    disclaimer.textContent = '以下分析由您的瀏覽器本機 AI 模型產生，不代表本平台觀點。AI 可能產生不準確的判斷，請以原文為準。';
+    pointsSection.appendChild(disclaimer);
 
     const pointsList = document.createElement('ol');
     pointsList.className = 'analyze-result__points-list';
@@ -89,12 +94,17 @@ export function renderResultPreview(container, article, result) {
 
   // Reasoning (fallback for server mode or legacy)
   if (!result.points?.length && result.reasoning) {
-    const reasonSection = document.createElement('div');
-    reasonSection.className = 'analyze-result__reasoning';
+    const reasonSection = document.createElement('details');
+    reasonSection.className = 'analyze-result__reasoning-collapsible';
 
-    const reasonHeading = document.createElement('h4');
-    reasonHeading.textContent = '分析推理';
+    const reasonHeading = document.createElement('summary');
+    reasonHeading.textContent = '查看分析推理 (僅供參考)';
     reasonSection.appendChild(reasonHeading);
+
+    const disclaimer = document.createElement('p');
+    disclaimer.className = 'analyze-result__disclaimer';
+    disclaimer.textContent = '以下分析由您的瀏覽器本機 AI 模型產生，不代表本平台觀點。AI 可能產生不準確的判斷，請以原文為準。';
+    reasonSection.appendChild(disclaimer);
 
     const reasonText = document.createElement('p');
     reasonText.textContent = result.reasoning;

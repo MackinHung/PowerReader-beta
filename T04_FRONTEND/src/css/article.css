@@ -590,3 +590,32 @@
   padding: var(--spacing-xs) 0;
   margin-bottom: var(--spacing-sm);
 }
+
+/* ==============================================
+   Supplement 1: Collapsible Summary & Disclaimer
+   ============================================== */
+.article-detail__summary-collapsible {
+  margin-bottom: var(--spacing-lg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: var(--spacing-md);
+  background-color: var(--color-bg-secondary);
+}
+
+.article-detail__summary-collapsible summary {
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--color-primary);
+  outline: none;
+}
+
+.article-detail__disclaimer {
+  font-size: var(--text-small);
+  font-style: italic;
+  margin-top: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm);
+  background-color: #FFF3CD;
+  color: #856404;
+  border-radius: 4px;
+}

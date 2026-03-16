@@ -171,9 +171,25 @@ function renderArticleContent(container, article) {
   if (article.summary) {
     const summarySection = document.createElement('section');
     summarySection.className = 'article-detail__summary';
+    
+    // Supplement 1: Legal protection for summary (Collapsible)
+    const details = document.createElement('details');
+    details.className = 'article-detail__summary-collapsible';
+    
+    const summaryToggle = document.createElement('summary');
+    summaryToggle.textContent = '查看自動摘要 (AI 生成，僅供參考)';
+    details.appendChild(summaryToggle);
+
+    const disclaimer = document.createElement('p');
+    disclaimer.className = 'article-detail__disclaimer';
+    disclaimer.textContent = '以下內容由 AI 自動產生，不代表本平台立場，可能有誤。原文請點擊「前往原文」查看。';
+    details.appendChild(disclaimer);
+
     const summaryText = document.createElement('p');
     summaryText.textContent = article.summary;
-    summarySection.appendChild(summaryText);
+    details.appendChild(summaryText);
+
+    summarySection.appendChild(details);
     container.appendChild(summarySection);
   }
 

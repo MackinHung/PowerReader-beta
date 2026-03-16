@@ -516,3 +516,34 @@
   margin-top: 2px;
   line-height: 1.5;
 }
+
+/* ==============================================
+   Supplement 1: Collapsible Analysis & Disclaimer
+   ============================================== */
+.analyze-result__narrative-collapsible,
+.analyze-result__reasoning-collapsible {
+  margin: var(--spacing-lg) 0;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: var(--spacing-md);
+  background-color: var(--color-bg-secondary);
+}
+
+.analyze-result__narrative-collapsible summary,
+.analyze-result__reasoning-collapsible summary {
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--color-primary);
+  outline: none;
+}
+
+.analyze-result__disclaimer {
+  font-size: var(--text-small);
+  font-style: italic;
+  margin-top: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm);
+  background-color: #FFF3CD;
+  color: #856404;
+  border-radius: 4px;
+}
