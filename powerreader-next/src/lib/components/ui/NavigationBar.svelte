@@ -79,4 +79,11 @@
   .nav-label {
     font: var(--md-sys-typescale-label-medium-font);
   }
+
+  /* Desktop: hide bottom navigation (sidebar takes over) */
+  @media (min-width: 768px) {
+    .md-navigation-bar {
+      display: none;
+    }
+  }
 </style>

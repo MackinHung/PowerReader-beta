@@ -8,6 +8,13 @@
 }
 
 :root {
+  /* Responsive Breakpoints */
+  --breakpoint-tablet: 768px;
+  --breakpoint-desktop: 1024px;
+  --sidebar-width-expanded: 280px;
+  --sidebar-width-rail: 72px;
+  --content-max-width: 1680px;
+
   /* Primary (based on #1A73E8) */
   --md-sys-color-primary: #1A73E8;
   --md-sys-color-on-primary: #FFFFFF;
@@ -188,4 +195,13 @@ body {
 }
 .ripple:active::after {
   opacity: var(--md-sys-state-pressed-opacity);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

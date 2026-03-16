@@ -11,9 +11,11 @@
   import FeedbackButtons from '$lib/components/feedback/FeedbackButtons.svelte';
   import ProgressIndicator from '$lib/components/ui/ProgressIndicator.svelte';
   import { getArticlesStore } from '$lib/stores/articles.svelte.js';
+  import { getMediaQueryStore } from '$lib/stores/mediaQuery.svelte.js';
   import * as api from '$lib/core/api.js';
 
   const articlesStore = getArticlesStore();
+  const media = getMediaQueryStore();
   let articleId = $derived(page.params.id);
 
   let article = $state(null);
@@ -28,7 +30,6 @@
     loading = true;
     error = null;
 
-    // Try store first
     const cached = articlesStore.getArticle(id);
     if (cached) {
       article = cached;
@@ -36,7 +37,6 @@
       return;
     }
 
-    // Fetch from API
     try {
       const result = await api.fetchArticle(id);
       if (result.success) {
@@ -68,12 +68,18 @@
     }
   }
 
+  function handleOpenOriginal() {
+    if (article?.primary_url) {
+      window.open(article.primary_url, '_blank', 'noopener');
+    }
+  }
+
   function goAnalyze() {
     goto(`/analyze/${articleId}`);
   }
 </script>
 
-<div class="article-page">
+<div class="article-page" class:desktop={media.isDesktop}>
   {#if loading}
     <div class="loading-state">
       <ProgressIndicator type="circular" />
@@ -85,21 +91,46 @@
       <Button variant="outlined" onclick={() => loadArticle(articleId)}>重試</Button>
     </div>
   {:else if article}
-    <div class="article-header">
-      <div class="meta-row">
-        <SourceBadge source={article.source} size="medium" />
-        <span class="date">{formatDate(article.published_at)}</span>
+    <div class="article-left">
+      <div class="article-header">
+        <div class="meta-row">
+          <SourceBadge source={article.source} size="medium" />
+          <span class="date">{formatDate(article.published_at)}</span>
+        </div>
+        <h1 class="article-title">{article.title}</h1>
+        {#if article.primary_url}
+          <button class="original-link" onclick={handleOpenOriginal}>
+            <span class="material-symbols-outlined">open_in_new</span>
+            查看原文
+          </button>
+        {/if}
       </div>
-      <h1 class="article-title">{article.title}</h1>
-      {#if article.primary_url}
-        <a href={article.primary_url} target="_blank" rel="noopener" class="original-link">
-          <span class="material-symbols-outlined">open_in_new</span>
-          查看原文
-        </a>
+
+      {#if article.content_markdown || article.summary}
+        <Card variant="filled">
+          <div class="content-section">
+            <h3>摘要</h3>
+            <p>{article.summary || article.content_markdown || article.title}</p>
+          </div>
+        </Card>
+      {/if}
+
+      <div class="action-row">
+        <FeedbackButtons articleId={articleId} />
+        <button class="icon-action" onclick={handleShare} aria-label="分享">
+          <span class="material-symbols-outlined">share</span>
+        </button>
+      </div>
+
+      {#if article.analysis_status !== 'done'}
+        <Button onclick={goAnalyze}>
+          <span class="material-symbols-outlined">psychology</span>
+          分析此文章
+        </Button>
       {/if}
     </div>
 
-    <div class="viz-section">
+    <div class="article-right">
       {#if article.bias_score != null}
         <Card variant="filled">
           <div class="viz-block">
@@ -125,33 +156,11 @@
       {#if article.controversy_score != null}
         <ControversyMeter level={article.controversy_score} />
       {/if}
+
+      {#if article.knowledge_items?.length}
+        <KnowledgePanel items={article.knowledge_items} />
+      {/if}
     </div>
-
-    {#if article.content_markdown || article.summary}
-      <Card variant="filled">
-        <div class="content-section">
-          <h3>摘要</h3>
-          <p>{article.summary || article.content_markdown || article.title}</p>
-        </div>
-      </Card>
-    {/if}
-
-    {#if article.knowledge_items?.length}
-      <KnowledgePanel items={article.knowledge_items} />
-    {/if}
-
-    <div class="action-row">
-      <FeedbackButtons articleId={articleId} />
-      <button class="icon-action" onclick={handleShare} aria-label="分享">
-        <span class="material-symbols-outlined">share</span>
-      </button>
-    </div>
-
-    {#if article.analysis_status !== 'done'}
-      <button class="fab" onclick={goAnalyze} aria-label="分析此文章">
-        <span class="material-symbols-outlined">psychology</span>
-      </button>
-    {/if}
   {/if}
 </div>
 
@@ -162,6 +171,30 @@
     gap: 16px;
     padding: 16px;
   }
+  .article-page.desktop {
+    flex-direction: row;
+    gap: 24px;
+    align-items: flex-start;
+  }
+  .article-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+  .article-right {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .article-page.desktop .article-right {
+    width: 360px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 80px;
+  }
+
   .loading-state, .error-state {
     display: flex;
     flex-direction: column;
@@ -170,6 +203,7 @@
     padding: 64px 16px;
     gap: 16px;
     color: var(--md-sys-color-on-surface-variant);
+    width: 100%;
   }
   .error-state .material-symbols-outlined {
     font-size: 48px;
@@ -201,15 +235,14 @@
     gap: 4px;
     font: var(--md-sys-typescale-label-large-font);
     color: var(--md-sys-color-primary);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
     text-decoration: none;
   }
   .original-link:hover {
     text-decoration: underline;
-  }
-  .viz-section {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
   }
   .viz-block {
     display: flex;
@@ -257,28 +290,5 @@
   }
   .icon-action:hover {
     background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
-  }
-  .fab {
-    position: fixed;
-    bottom: 96px;
-    right: 16px;
-    width: 56px;
-    height: 56px;
-    border: none;
-    border-radius: 16px;
-    background: var(--md-sys-color-primary-container);
-    color: var(--md-sys-color-on-primary-container);
-    box-shadow: var(--md-sys-elevation-3);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 50;
-  }
-  .fab:hover {
-    box-shadow: var(--md-sys-elevation-4);
-  }
-  .fab .material-symbols-outlined {
-    font-size: 24px;
   }
 </style>

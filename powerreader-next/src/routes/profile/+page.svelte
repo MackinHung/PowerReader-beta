@@ -143,6 +143,9 @@
     flex-direction: column;
     gap: 16px;
     padding: 16px;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
   }
   .center-state {
     display: flex;

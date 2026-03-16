@@ -7,9 +7,11 @@
   import ProgressIndicator from '$lib/components/ui/ProgressIndicator.svelte';
   import { getArticlesStore } from '$lib/stores/articles.svelte.js';
   import { getAnalysisStore } from '$lib/stores/analysis.svelte.js';
+  import { getMediaQueryStore } from '$lib/stores/mediaQuery.svelte.js';
 
   const articlesStore = getArticlesStore();
   const analysisStore = getAnalysisStore();
+  const media = getMediaQueryStore();
 
   let checks = $state({ gpu: false, model: false, article: false, queue: false });
   let recentResults = $state([]);
@@ -71,13 +73,14 @@
   }
 </script>
 
-<div class="analyze-page">
-  <Card variant="filled">
-    <PreChecks {checks} onstart={handleStartAnalysis} />
-  </Card>
+<div class="analyze-page" class:desktop={media.isDesktop}>
+  <div class="analyze-controls">
+    <Card variant="filled">
+      <PreChecks {checks} onstart={handleStartAnalysis} />
+    </Card>
 
-  <section class="section">
-    <h3 class="section-title">自動分析</h3>
+    <section class="section">
+      <h3 class="section-title">自動分析</h3>
     <div class="auto-controls">
       {#if autoRunnerState === 'idle'}
         <Button onclick={handleStartAuto}>
@@ -97,7 +100,9 @@
       {/if}
     </div>
   </section>
+  </div>
 
+  <div class="analyze-articles">
   <section class="section">
     <h3 class="section-title">選擇文章分析</h3>
     {#if articlesStore.loading}
@@ -135,6 +140,7 @@
       </div>
     </section>
   {/if}
+  </div>
 </div>
 
 <style>
@@ -143,6 +149,29 @@
     flex-direction: column;
     gap: 20px;
     padding: 16px;
+  }
+  .analyze-page.desktop {
+    flex-direction: row;
+    gap: 24px;
+    align-items: flex-start;
+  }
+  .analyze-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .analyze-page.desktop .analyze-controls {
+    width: 340px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 80px;
+  }
+  .analyze-articles {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
   }
   .section {
     display: flex;

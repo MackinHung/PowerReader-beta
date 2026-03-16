@@ -4,7 +4,7 @@
   import BiasSpectrum from '$lib/components/data-viz/BiasSpectrum.svelte';
   import CampBar from '$lib/components/data-viz/CampBar.svelte';
 
-  let { article = {} } = $props();
+  let { article = {}, onclick, onanalyze } = $props();
 
   const STATUS_COLORS = {
     none: 'var(--md-sys-color-outline)',
@@ -19,9 +19,34 @@
     const d = new Date(article.published_at);
     return `${d.getMonth() + 1}/${d.getDate()}`;
   });
+
+  function handleCardClick(e) {
+    // Don't trigger card click when clicking analyze button
+    if (e.target.closest('.analyze-btn')) return;
+    onclick?.();
+  }
+
+  function handleAnalyze(e) {
+    e.stopPropagation();
+    onanalyze?.();
+  }
+
+  function handleKeydown(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onclick?.();
+    }
+  }
 </script>
 
-<a href="/article/{article.article_hash}" class="article-card-link">
+<div
+  class="article-card-wrapper"
+  onclick={handleCardClick}
+  onkeydown={handleKeydown}
+  role="button"
+  tabindex="0"
+  aria-label="開啟原文：{article.title ?? ''}"
+>
   <Card variant="elevated">
     <div class="card-inner">
       <div class="card-top">
@@ -46,15 +71,42 @@
           </div>
         {/if}
       </div>
+      <div class="card-actions">
+        {#if article.primary_url}
+          <span class="external-hint">
+            <span class="material-symbols-outlined" style="font-size: 16px;">open_in_new</span>
+            原文
+          </span>
+        {/if}
+        {#if onanalyze}
+          <button
+            class="analyze-btn"
+            onclick={handleAnalyze}
+            aria-label="詳細分析"
+            title="詳細分析"
+          >
+            <span class="material-symbols-outlined">analytics</span>
+          </button>
+        {/if}
+      </div>
     </div>
   </Card>
-</a>
+</div>
 
 <style>
-  .article-card-link {
-    text-decoration: none;
-    color: inherit;
+  .article-card-wrapper {
     display: block;
+    cursor: pointer;
+    border-radius: var(--md-sys-shape-corner-medium);
+    transition: transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                box-shadow var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+  }
+  .article-card-wrapper:hover {
+    transform: translateY(-2px);
+  }
+  .article-card-wrapper:focus-visible {
+    outline: 2px solid var(--md-sys-color-primary);
+    outline-offset: 2px;
   }
   .card-inner {
     display: flex;
@@ -97,5 +149,34 @@
   }
   .mini-camp {
     width: 100%;
+  }
+  .card-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 4px;
+  }
+  .external-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font: var(--md-sys-typescale-label-small-font);
+    color: var(--md-sys-color-primary);
+  }
+  .analyze-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: var(--md-sys-shape-corner-full);
+    background: transparent;
+    color: var(--md-sys-color-on-surface-variant);
+    cursor: pointer;
+  }
+  .analyze-btn:hover {
+    background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
+    color: var(--md-sys-color-primary);
   }
 </style>

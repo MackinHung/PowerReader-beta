@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
 
-  let { title = '', showBack = false, onback, children } = $props();
+  let { title = '', showBack = false, onback, showMenuToggle = false, ontoggle, children } = $props();
   let scrolled = $state(false);
 
   onMount(() => {
@@ -16,8 +16,12 @@
 <header class="md-top-app-bar" class:scrolled>
   <div class="bar-leading">
     {#if showBack}
-      <button class="bar-back" onclick={onback} aria-label="Go back">
+      <button class="bar-icon-btn" onclick={onback} aria-label="Go back">
         <span class="material-symbols-outlined">arrow_back</span>
+      </button>
+    {:else if showMenuToggle}
+      <button class="bar-icon-btn desktop-menu-toggle" onclick={ontoggle} aria-label="Toggle sidebar">
+        <span class="material-symbols-outlined">menu</span>
       </button>
     {/if}
   </div>
@@ -48,7 +52,7 @@
     display: flex;
     align-items: center;
   }
-  .bar-back {
+  .bar-icon-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -59,6 +63,18 @@
     background: transparent;
     color: var(--md-sys-color-on-surface);
     cursor: pointer;
+  }
+  .bar-icon-btn:hover {
+    background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
+  }
+  /* Hide menu toggle on mobile (sidebar is hidden there) */
+  .desktop-menu-toggle {
+    display: none;
+  }
+  @media (min-width: 768px) {
+    .desktop-menu-toggle {
+      display: inline-flex;
+    }
   }
   .bar-title {
     flex: 1;

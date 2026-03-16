@@ -2,16 +2,24 @@
   import SearchBar from '$lib/components/ui/SearchBar.svelte';
   import Chip from '$lib/components/ui/Chip.svelte';
   import ArticleCard from '$lib/components/article/ArticleCard.svelte';
+  import ResponsiveGrid from '$lib/components/ui/ResponsiveGrid.svelte';
   import ProgressIndicator from '$lib/components/ui/ProgressIndicator.svelte';
+  import AnalysisDetailPanel from '$lib/components/analysis/AnalysisDetailPanel.svelte';
   import { getArticlesStore } from '$lib/stores/articles.svelte.js';
+  import { getMediaQueryStore } from '$lib/stores/mediaQuery.svelte.js';
 
   const store = getArticlesStore();
+  const media = getMediaQueryStore();
 
   let searchValue = $state('');
   let selectedCategory = $state('all');
   let sentinelEl = $state(null);
   let refreshStartY = $state(0);
   let refreshing = $state(false);
+
+  // Detail panel state
+  let detailArticle = $state(null);
+  let detailOpen = $state(false);
 
   const categories = [
     { label: '全部', value: 'all' },
@@ -52,6 +60,22 @@
     refreshStartY = 0;
   }
 
+  function handleArticleClick(article) {
+    if (article.primary_url) {
+      window.open(article.primary_url, '_blank', 'noopener');
+    }
+  }
+
+  function handleShowAnalysis(article) {
+    detailArticle = article;
+    detailOpen = true;
+  }
+
+  function handleCloseDetail() {
+    detailOpen = false;
+    detailArticle = null;
+  }
+
   // Fetch articles on mount
   $effect(() => {
     store.fetchArticles('all', 1);
@@ -77,8 +101,8 @@
   class="home-page"
   role="application"
   tabindex="-1"
-  ontouchstart={handleTouchStart}
-  ontouchend={handleTouchEnd}
+  ontouchstart={media.isMobile ? handleTouchStart : undefined}
+  ontouchend={media.isMobile ? handleTouchEnd : undefined}
 >
   <div class="search-section">
     <SearchBar bind:value={searchValue} placeholder="搜尋新聞..." onsearch={handleSearch} />
@@ -100,11 +124,15 @@
     </div>
   {/if}
 
-  <div class="article-list">
+  <ResponsiveGrid>
     {#each store.articles as article (article.article_hash || article.article_id)}
-      <ArticleCard {article} />
+      <ArticleCard
+        {article}
+        onclick={() => handleArticleClick(article)}
+        onanalyze={() => handleShowAnalysis(article)}
+      />
     {/each}
-  </div>
+  </ResponsiveGrid>
 
   {#if store.loading}
     <div class="loading-indicator">
@@ -123,6 +151,12 @@
     <div bind:this={sentinelEl} class="scroll-sentinel"></div>
   {/if}
 </div>
+
+<AnalysisDetailPanel
+  article={detailArticle}
+  open={detailOpen}
+  onclose={handleCloseDetail}
+/>
 
 <style>
   .home-page {
@@ -146,11 +180,6 @@
     display: flex;
     justify-content: center;
     padding: 8px 0;
-  }
-  .article-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
   }
   .loading-indicator {
     padding: 16px 0;

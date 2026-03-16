@@ -2,6 +2,7 @@
   import Card from '$lib/components/ui/Card.svelte';
   import Chip from '$lib/components/ui/Chip.svelte';
   import SourceBadge from '$lib/components/article/SourceBadge.svelte';
+  import ResponsiveGrid from '$lib/components/ui/ResponsiveGrid.svelte';
   import ProgressIndicator from '$lib/components/ui/ProgressIndicator.svelte';
   import * as api from '$lib/core/api.js';
 
@@ -77,7 +78,7 @@
       <p>目前未偵測到報導盲區</p>
     </div>
   {:else}
-    <div class="blindspot-list">
+    <ResponsiveGrid minColumnWidth="300px">
       {#each filtered as spot}
         <Card variant="elevated">
           <div class="spot-card">
@@ -105,7 +106,7 @@
           </div>
         </Card>
       {/each}
-    </div>
+    </ResponsiveGrid>
   {/if}
 </div>
 
@@ -144,11 +145,6 @@
   .center-state p {
     margin: 0;
     font: var(--md-sys-typescale-body-large-font);
-  }
-  .blindspot-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
   }
   .spot-card {
     display: flex;
