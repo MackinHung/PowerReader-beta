@@ -1,0 +1,191 @@
+/* MD3 Design Tokens for PowerReader */
+
+/* === CSS Reset === */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Primary (based on #1A73E8) */
+  --md-sys-color-primary: #1A73E8;
+  --md-sys-color-on-primary: #FFFFFF;
+  --md-sys-color-primary-container: #D3E3FD;
+  --md-sys-color-on-primary-container: #041E49;
+
+  /* Secondary */
+  --md-sys-color-secondary: #625B71;
+  --md-sys-color-on-secondary: #FFFFFF;
+  --md-sys-color-secondary-container: #E8DEF8;
+  --md-sys-color-on-secondary-container: #1D192B;
+
+  /* Tertiary */
+  --md-sys-color-tertiary: #7D5260;
+  --md-sys-color-on-tertiary: #FFFFFF;
+  --md-sys-color-tertiary-container: #FFD8E4;
+  --md-sys-color-on-tertiary-container: #31111D;
+
+  /* Surface */
+  --md-sys-color-surface: #FEF7FF;
+  --md-sys-color-surface-dim: #DED8E1;
+  --md-sys-color-surface-bright: #FEF7FF;
+  --md-sys-color-surface-container: #F3EDF7;
+  --md-sys-color-surface-container-lowest: #FFFFFF;
+  --md-sys-color-surface-container-low: #F7F2FA;
+  --md-sys-color-surface-container-high: #ECE6F0;
+  --md-sys-color-surface-container-highest: #E6E0E9;
+  --md-sys-color-on-surface: #1D1B20;
+  --md-sys-color-on-surface-variant: #49454F;
+  --md-sys-color-inverse-surface: #322F35;
+  --md-sys-color-inverse-on-surface: #F5EFF7;
+
+  /* Outline */
+  --md-sys-color-outline: #79747E;
+  --md-sys-color-outline-variant: #CAC4D0;
+
+  /* Error */
+  --md-sys-color-error: #B3261E;
+  --md-sys-color-on-error: #FFFFFF;
+  --md-sys-color-error-container: #F9DEDC;
+  --md-sys-color-on-error-container: #410E0B;
+
+  /* Camp Colors (Taiwan political camps) */
+  --camp-green: #2E7D32;
+  --camp-green-light: #A5D6A7;
+  --camp-white: #757575;
+  --camp-white-light: #E0E0E0;
+  --camp-blue: #1565C0;
+  --camp-blue-light: #90CAF9;
+
+  /* Controversy Colors */
+  --controversy-low: #28A745;
+  --controversy-moderate: #FFC107;
+  --controversy-high: #FD7E14;
+  --controversy-very-high: #DC3545;
+  --controversy-extreme: #6F42C1;
+
+  /* Typography Scale (Noto Sans TC) */
+  --md-sys-typescale-display-large-font: 400 57px/64px 'Noto Sans TC', sans-serif;
+  --md-sys-typescale-display-medium-font: 400 45px/52px 'Noto Sans TC', sans-serif;
+  --md-sys-typescale-display-small-font: 400 36px/44px 'Noto Sans TC', sans-serif;
+  --md-sys-typescale-headline-large-font: 400 32px/40px 'Noto Sans TC', sans-serif;
+  --md-sys-typescale-headline-medium-font: 400 28px/36px 'Noto Sans TC', sans-serif;
+  --md-sys-typescale-headline-small-font: 400 24px/32px 'Noto Sans TC', sans-serif;
+  --md-sys-typescale-title-large-font: 400 22px/28px 'Noto Sans TC', sans-serif;
+  --md-sys-typescale-title-medium-font: 500 16px/24px 'Noto Sans TC', sans-serif;
+  --md-sys-typescale-title-small-font: 500 14px/20px 'Noto Sans TC', sans-serif;
+  --md-sys-typescale-body-large-font: 400 16px/24px 'Noto Sans TC', sans-serif;
+  --md-sys-typescale-body-medium-font: 400 14px/20px 'Noto Sans TC', sans-serif;
+  --md-sys-typescale-body-small-font: 400 12px/16px 'Noto Sans TC', sans-serif;
+  --md-sys-typescale-label-large-font: 500 14px/20px 'Noto Sans TC', sans-serif;
+  --md-sys-typescale-label-medium-font: 500 12px/16px 'Noto Sans TC', sans-serif;
+  --md-sys-typescale-label-small-font: 500 11px/16px 'Noto Sans TC', sans-serif;
+
+  /* Shape Scale */
+  --md-sys-shape-corner-none: 0px;
+  --md-sys-shape-corner-extra-small: 4px;
+  --md-sys-shape-corner-small: 8px;
+  --md-sys-shape-corner-medium: 12px;
+  --md-sys-shape-corner-large: 16px;
+  --md-sys-shape-corner-extra-large: 28px;
+  --md-sys-shape-corner-full: 9999px;
+
+  /* Elevation */
+  --md-sys-elevation-0: none;
+  --md-sys-elevation-1: 0 1px 2px rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15);
+  --md-sys-elevation-2: 0 1px 2px rgba(0,0,0,0.3), 0 2px 6px 2px rgba(0,0,0,0.15);
+  --md-sys-elevation-3: 0 4px 8px 3px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.3);
+
+  /* State Layer Opacity */
+  --md-sys-state-hover-opacity: 0.08;
+  --md-sys-state-focus-opacity: 0.12;
+  --md-sys-state-pressed-opacity: 0.12;
+  --md-sys-state-dragged-opacity: 0.16;
+
+  /* Motion */
+  --md-sys-motion-duration-short1: 50ms;
+  --md-sys-motion-duration-short2: 100ms;
+  --md-sys-motion-duration-short3: 150ms;
+  --md-sys-motion-duration-short4: 200ms;
+  --md-sys-motion-duration-medium1: 250ms;
+  --md-sys-motion-duration-medium2: 300ms;
+  --md-sys-motion-duration-medium3: 350ms;
+  --md-sys-motion-duration-medium4: 400ms;
+  --md-sys-motion-duration-long1: 450ms;
+  --md-sys-motion-duration-long2: 500ms;
+  --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-standard-decelerate: cubic-bezier(0, 0, 0, 1);
+  --md-sys-motion-easing-standard-accelerate: cubic-bezier(0.3, 0, 1, 1);
+  --md-sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --md-sys-motion-easing-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+}
+
+body {
+  font: var(--md-sys-typescale-body-large-font);
+  background-color: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-full);
+}
+
+/* Focus visible */
+:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+  border-radius: var(--md-sys-shape-corner-extra-small);
+}
+
+/* Utility classes */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Material Symbols base */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+}
+
+/* Ripple effect base */
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+.ripple::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+  pointer-events: none;
+}
+.ripple:hover::after {
+  opacity: var(--md-sys-state-hover-opacity);
+}
+.ripple:active::after {
+  opacity: var(--md-sys-state-pressed-opacity);
+}
