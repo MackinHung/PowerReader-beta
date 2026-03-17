@@ -26,6 +26,13 @@
   let downloadSpeed = $state('');       // e.g. "12.3 MB/s"
   let downloadEta = $state('');         // e.g. "2:30"
 
+  // EMA smoothing state for stable ETA
+  let smoothedSpeed = 0;               // EMA of progress/s
+  let smoothedEta = 0;                 // EMA of remaining seconds
+  const SPEED_ALPHA = 0.7;             // speed smoothing (responsive)
+  const ETA_ALPHA = 0.9;               // ETA smoothing (stable)
+  const ESTIMATED_MB = 4500;           // ~4.5GB for Qwen3-8B
+
   // ── GPU detection state ──
   let gpuResult = $state(null);         // scanGPU() result
   let gpuScanning = $state(false);
@@ -191,6 +198,8 @@
     downloadSpeed = '';
     downloadEta = '';
     downloadStartTime = Date.now();
+    smoothedSpeed = 0;
+    smoothedEta = 0;
     let lastProgress = 0;
     let lastTime = Date.now();
 
@@ -200,26 +209,40 @@
         modelProgress = pct;
         modelStageText = report.text || '';
 
-        // Calculate speed and ETA
         const now = Date.now();
         const dt = (now - lastTime) / 1000;
         if (dt > 0.5 && pct > lastProgress) {
           const dp = pct - lastProgress;
-          const speed = dp / dt;                    // progress/s
-          const remaining = (1.0 - pct) / speed;    // seconds
-          const totalElapsed = (now - downloadStartTime) / 1000;
+          const instantSpeed = dp / dt;  // progress/s
 
-          // Estimate total size ~4.5GB for Qwen3-8B
-          const estimatedMB = 4500;
-          const speedMB = speed * estimatedMB;
-          downloadSpeed = speedMB >= 1 ? `${speedMB.toFixed(1)} MB/s` : `${(speedMB * 1024).toFixed(0)} KB/s`;
+          // EMA smoothing: speed (α=0.7 responsive), ETA (α=0.9 stable)
+          smoothedSpeed = smoothedSpeed === 0
+            ? instantSpeed
+            : (1 - SPEED_ALPHA) * instantSpeed + SPEED_ALPHA * smoothedSpeed;
 
-          if (remaining < 60) {
-            downloadEta = `${Math.ceil(remaining)} 秒`;
-          } else {
-            const mins = Math.floor(remaining / 60);
-            const secs = Math.ceil(remaining % 60);
+          const remaining = smoothedSpeed > 0 ? (1.0 - pct) / smoothedSpeed : 0;
+          smoothedEta = smoothedEta === 0
+            ? remaining
+            : (1 - ETA_ALPHA) * remaining + ETA_ALPHA * smoothedEta;
+
+          // Format speed
+          const speedMB = smoothedSpeed * ESTIMATED_MB;
+          downloadSpeed = speedMB >= 1
+            ? `${speedMB.toFixed(1)} MB/s`
+            : `${(speedMB * 1024).toFixed(0)} KB/s`;
+
+          // Format ETA
+          const eta = Math.max(0, smoothedEta);
+          if (eta < 60) {
+            downloadEta = `${Math.ceil(eta)} 秒`;
+          } else if (eta < 3600) {
+            const mins = Math.floor(eta / 60);
+            const secs = Math.ceil(eta % 60);
             downloadEta = `${mins}:${String(secs).padStart(2, '0')}`;
+          } else {
+            const hrs = Math.floor(eta / 3600);
+            const mins = Math.floor((eta % 3600) / 60);
+            downloadEta = `${hrs}:${String(mins).padStart(2, '0')}:00`;
           }
 
           lastProgress = pct;
@@ -269,6 +292,11 @@
 
   // ── Benchmark ──
   async function handleRunBenchmark() {
+    // Guard: model must be downloaded first
+    if (!modelReady) {
+      benchStage = '尚未下載模型，請先下載';
+      return;
+    }
     benchRunning = true;
     benchStage = '掃描 GPU...';
     try {
@@ -540,6 +568,11 @@
               <ProgressIndicator type="circular" />
               <span>{benchStage}</span>
             </div>
+          {:else if benchStage && !benchResult}
+            <div class="bench-hint">
+              <span class="material-symbols-outlined">info</span>
+              <span>{benchStage}</span>
+            </div>
           {/if}
 
           <Button variant="outlined" onclick={handleRunBenchmark} disabled={benchRunning}>
@@ -806,5 +839,15 @@
     gap: 12px;
     font: var(--md-sys-typescale-body-medium-font);
     color: var(--md-sys-color-on-surface-variant);
+  }
+  .bench-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font: var(--md-sys-typescale-body-small-font);
+    color: var(--md-sys-color-tertiary);
+  }
+  .bench-hint .material-symbols-outlined {
+    font-size: 18px;
   }
 </style>
