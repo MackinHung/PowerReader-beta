@@ -5,7 +5,6 @@
   import CampBar from '$lib/components/data-viz/CampBar.svelte';
   import ControversyMeter from '$lib/components/data-viz/ControversyMeter.svelte';
   import KnowledgePanel from '$lib/components/article/KnowledgePanel.svelte';
-  import FeedbackButtons from '$lib/components/feedback/FeedbackButtons.svelte';
   import { getMediaQueryStore } from '$lib/stores/mediaQuery.svelte.js';
 
   let { article = null, open = false, onclose } = $props();
@@ -107,10 +106,6 @@
   {#if article.knowledge_items?.length}
     <KnowledgePanel items={article.knowledge_items} />
   {/if}
-
-  <div class="action-row">
-    <FeedbackButtons articleId={article.article_hash || article.article_id} />
-  </div>
 
   <Button onclick={handleOpenOriginal} fullWidth>
     <span class="material-symbols-outlined">open_in_new</span>
@@ -225,10 +220,5 @@
     color: var(--md-sys-color-on-surface-variant);
     line-height: 1.6;
     white-space: pre-wrap;
-  }
-  .action-row {
-    display: flex;
-    align-items: center;
-    padding: 8px 0;
   }
 </style>

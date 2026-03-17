@@ -10,7 +10,6 @@
   import ControversyMeter from '$lib/components/data-viz/ControversyMeter.svelte';
   import KnowledgePanel from '$lib/components/article/KnowledgePanel.svelte';
   import ArticleCluster from '$lib/components/article/ArticleCluster.svelte';
-  import FeedbackButtons from '$lib/components/feedback/FeedbackButtons.svelte';
   import ProgressIndicator from '$lib/components/ui/ProgressIndicator.svelte';
   import { getArticlesStore } from '$lib/stores/articles.svelte.js';
   import { getMediaQueryStore } from '$lib/stores/mediaQuery.svelte.js';
@@ -176,7 +175,6 @@
       {/if}
 
       <div class="action-row">
-        <FeedbackButtons articleId={articleId} />
         <button class="icon-action" onclick={handleShare} aria-label="分享">
           <span class="material-symbols-outlined">share</span>
         </button>
