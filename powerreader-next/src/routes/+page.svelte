@@ -3,17 +3,21 @@
   import SearchBar from '$lib/components/ui/SearchBar.svelte';
   import Chip from '$lib/components/ui/Chip.svelte';
   import ArticleCard from '$lib/components/article/ArticleCard.svelte';
+  import EventCard from '$lib/components/article/EventCard.svelte';
   import ResponsiveGrid from '$lib/components/ui/ResponsiveGrid.svelte';
   import ProgressIndicator from '$lib/components/ui/ProgressIndicator.svelte';
   import AnalysisDetailPanel from '$lib/components/analysis/AnalysisDetailPanel.svelte';
   import { getArticlesStore } from '$lib/stores/articles.svelte.js';
+  import { getEventsStore } from '$lib/stores/events.svelte.js';
   import { getMediaQueryStore } from '$lib/stores/mediaQuery.svelte.js';
 
   const store = getArticlesStore();
+  const eventsStore = getEventsStore();
   const media = getMediaQueryStore();
 
   let searchValue = $state('');
   let selectedCategory = $state('all');
+  let viewMode = $state('events');
   let sentinelEl = $state(null);
   let refreshStartY = $state(0);
   let refreshing = $state(false);
@@ -36,12 +40,19 @@
   }
 
   function handleSearch(query) {
+    if (query.trim()) {
+      viewMode = 'articles';
+    }
     store.searchArticles(query);
   }
 
   async function handleRefresh() {
     refreshing = true;
-    await store.refreshArticles();
+    if (viewMode === 'events') {
+      await eventsStore.refreshEvents();
+    } else {
+      await store.refreshArticles();
+    }
     refreshing = false;
   }
 
@@ -75,18 +86,33 @@
     detailArticle = null;
   }
 
-  // Fetch articles on mount (untrack to avoid reactive deps from store internals)
+  function handleEventToggle(event) {
+    if (eventsStore.getExpandedArticles(event.cluster_id)) {
+      eventsStore.collapseEvent(event.cluster_id);
+    } else {
+      eventsStore.expandEvent(event.cluster_id, event.title);
+    }
+  }
+
+  // Fetch both articles and events on mount
   $effect(() => {
-    untrack(() => store.fetchArticles('all', 1));
+    untrack(() => {
+      store.fetchArticles('all', 1);
+      eventsStore.fetchEvents(1);
+    });
   });
 
-  // IntersectionObserver for infinite scroll
+  // IntersectionObserver for infinite scroll (mode-aware)
   $effect(() => {
     if (!sentinelEl) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && store.hasMore && !store.loading) {
-          store.loadMore();
+        if (entries[0].isIntersecting) {
+          if (viewMode === 'events' && eventsStore.hasMore && !eventsStore.loading) {
+            eventsStore.loadMore();
+          } else if (viewMode === 'articles' && store.hasMore && !store.loading) {
+            store.loadMore();
+          }
         }
       },
       { rootMargin: '200px' }
@@ -94,6 +120,12 @@
     observer.observe(sentinelEl);
     return () => observer.disconnect();
   });
+
+  let activeLoading = $derived(viewMode === 'events' ? eventsStore.loading : store.loading);
+  let activeHasMore = $derived(viewMode === 'events' ? eventsStore.hasMore : store.hasMore);
+  let activeHasItems = $derived(
+    viewMode === 'events' ? eventsStore.events.length > 0 : store.articles.length > 0
+  );
 </script>
 
 <div
@@ -107,15 +139,32 @@
     <SearchBar bind:value={searchValue} placeholder="搜尋新聞..." onsearch={handleSearch} />
   </div>
 
-  <div class="category-chips">
-    {#each categories as cat}
-      <Chip
-        label={cat.label}
-        selected={selectedCategory === cat.value}
-        onclick={() => handleCategoryClick(cat.value)}
-      />
-    {/each}
+  <div class="view-toggle">
+    <Chip
+      label="事件集群"
+      icon="hub"
+      selected={viewMode === 'events'}
+      onclick={() => viewMode = 'events'}
+    />
+    <Chip
+      label="全部文章"
+      icon="article"
+      selected={viewMode === 'articles'}
+      onclick={() => viewMode = 'articles'}
+    />
   </div>
+
+  {#if viewMode === 'articles'}
+    <div class="category-chips">
+      {#each categories as cat}
+        <Chip
+          label={cat.label}
+          selected={selectedCategory === cat.value}
+          onclick={() => handleCategoryClick(cat.value)}
+        />
+      {/each}
+    </div>
+  {/if}
 
   {#if refreshing}
     <div class="refresh-indicator">
@@ -123,30 +172,48 @@
     </div>
   {/if}
 
-  <ResponsiveGrid>
-    {#each store.articles as article (article.article_hash || article.article_id)}
-      <ArticleCard
-        {article}
-        onclick={() => handleArticleClick(article)}
-        onanalyze={() => handleShowAnalysis(article)}
-      />
-    {/each}
-  </ResponsiveGrid>
+  {#if viewMode === 'events'}
+    <ResponsiveGrid minColumnWidth="360px">
+      {#each eventsStore.events as event (event.cluster_id)}
+        <EventCard
+          {event}
+          expanded={!!eventsStore.getExpandedArticles(event.cluster_id)}
+          articles={eventsStore.getExpandedArticles(event.cluster_id) || []}
+          articlesLoading={eventsStore.expandingId === event.cluster_id}
+          ontoggle={() => handleEventToggle(event)}
+          onArticleClick={(a) => handleArticleClick(a)}
+          onArticleAnalyze={(a) => handleShowAnalysis(a)}
+        />
+      {/each}
+    </ResponsiveGrid>
+  {:else}
+    <ResponsiveGrid>
+      {#each store.articles as article (article.article_hash || article.article_id)}
+        <ArticleCard
+          {article}
+          onclick={() => handleArticleClick(article)}
+          onanalyze={() => handleShowAnalysis(article)}
+        />
+      {/each}
+    </ResponsiveGrid>
+  {/if}
 
-  {#if store.loading}
+  {#if activeLoading}
     <div class="loading-indicator">
       <ProgressIndicator type="linear" />
     </div>
   {/if}
 
-  {#if !store.loading && store.articles.length === 0}
+  {#if !activeLoading && !activeHasItems}
     <div class="empty-state">
-      <span class="material-symbols-outlined empty-icon">article</span>
-      <p>暫無新聞</p>
+      <span class="material-symbols-outlined empty-icon">
+        {viewMode === 'events' ? 'hub' : 'article'}
+      </span>
+      <p>{viewMode === 'events' ? '暫無事件集群' : '暫無新聞'}</p>
     </div>
   {/if}
 
-  {#if store.hasMore && store.articles.length > 0}
+  {#if activeHasMore && activeHasItems}
     <div bind:this={sentinelEl} class="scroll-sentinel"></div>
   {/if}
 </div>
@@ -166,6 +233,10 @@
   }
   .search-section {
     width: 100%;
+  }
+  .view-toggle {
+    display: flex;
+    gap: 8px;
   }
   .category-chips {
     display: flex;
