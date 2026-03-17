@@ -16,6 +16,9 @@ let currentFilter = $state('all');
 let currentSort = $state('published_at');
 let searchQuery = $state('');
 
+// In-memory page-1 cache per category — instant re-tap
+const _pageOneCache = {};
+
 export function getArticlesStore() {
   return {
     get articles() { return articles; },
@@ -32,6 +35,15 @@ export function getArticlesStore() {
      * @param {number} page - Page number (1-based)
      */
     async fetchArticles(filter = 'all', page = 1) {
+      // Instant return from memory cache for page 1 re-tap
+      if (page === 1 && _pageOneCache[filter]) {
+        articles = _pageOneCache[filter].articles;
+        hasMore = _pageOneCache[filter].hasMore;
+        currentPage = 1;
+        currentFilter = filter;
+        return;
+      }
+
       loading = true;
       error = null;
       try {
@@ -51,6 +63,8 @@ export function getArticlesStore() {
 
         if (page === 1) {
           articles = incoming;
+          // Cache page 1 results in memory
+          _pageOneCache[filter] = { articles: incoming, hasMore: incoming.length >= 20 };
         } else {
           articles = [...articles, ...incoming];
         }
@@ -112,6 +126,7 @@ export function getArticlesStore() {
 
     /** Refresh from page 1 with current filter. */
     async refreshArticles() {
+      delete _pageOneCache[currentFilter];
       await this.fetchArticles(currentFilter, 1);
     },
 
@@ -121,6 +136,8 @@ export function getArticlesStore() {
      */
     async setSortBy(sortBy) {
       currentSort = sortBy;
+      // Invalidate all caches — sort order affects all categories
+      for (const key of Object.keys(_pageOneCache)) delete _pageOneCache[key];
       await this.fetchArticles(currentFilter, 1);
     },
 

@@ -110,18 +110,18 @@ describe('fetchArticles', () => {
     expect(store.articles[0].article_id).toBe('a1');
   });
 
-  it('page 1 replaces articles', async () => {
-    // First fetch
+  it('page 1 replaces articles (different category)', async () => {
+    // First fetch: 'all'
     await store.fetchArticles('all', 1);
     expect(store.articles).toHaveLength(2);
 
-    // New page 1 fetch with different data
+    // Fetch different category — no cache hit
     mockApi.fetchArticles.mockResolvedValue({
       success: true,
       data: { articles: [{ article_id: 'new1', title: 'New' }] },
     });
 
-    await store.fetchArticles('all', 1);
+    await store.fetchArticles('politics', 1);
     expect(store.articles).toHaveLength(1);
     expect(store.articles[0].article_id).toBe('new1');
   });
@@ -340,5 +340,113 @@ describe('clearSearch', () => {
 
     expect(store.searchQuery).toBe('');
     expect(mockApi.fetchArticles).toHaveBeenCalled();
+  });
+});
+
+// ══════════════════════════════════════════════
+// 9. In-memory category cache
+// ══════════════════════════════════════════════
+
+describe('in-memory category cache', () => {
+  it('returns cached results on page 1 re-tap (no API call)', async () => {
+    await store.fetchArticles('all', 1);
+    expect(store.articles).toHaveLength(2);
+
+    mockApi.fetchArticles.mockClear();
+
+    // Second call to same filter+page → cache hit
+    await store.fetchArticles('all', 1);
+    expect(mockApi.fetchArticles).not.toHaveBeenCalled();
+    expect(store.articles).toHaveLength(2);
+    expect(store.articles[0].article_id).toBe('a1');
+  });
+
+  it('does not cache page 2+ results', async () => {
+    const twentyArticles = Array.from({ length: 20 }, (_, i) => ({
+      article_id: `a${i}`, title: `Art ${i}`,
+    }));
+    mockApi.fetchArticles.mockResolvedValue({
+      success: true,
+      data: { articles: twentyArticles },
+    });
+
+    await store.fetchArticles('all', 1);
+    mockApi.fetchArticles.mockClear();
+
+    mockApi.fetchArticles.mockResolvedValue({
+      success: true,
+      data: { articles: [{ article_id: 'more1' }] },
+    });
+
+    // Page 2 should always call API
+    await store.fetchArticles('all', 2);
+    expect(mockApi.fetchArticles).toHaveBeenCalled();
+  });
+
+  it('separate caches per category', async () => {
+    // Fetch 'all'
+    await store.fetchArticles('all', 1);
+    expect(store.articles).toHaveLength(2);
+
+    // Fetch 'politics' with different data
+    mockApi.fetchArticles.mockResolvedValue({
+      success: true,
+      data: { articles: [{ article_id: 'p1', title: 'Politics' }] },
+    });
+    await store.fetchArticles('politics', 1);
+    expect(store.articles).toHaveLength(1);
+
+    mockApi.fetchArticles.mockClear();
+
+    // Switch back to 'all' → cache hit with original data
+    await store.fetchArticles('all', 1);
+    expect(mockApi.fetchArticles).not.toHaveBeenCalled();
+    expect(store.articles).toHaveLength(2);
+    expect(store.articles[0].article_id).toBe('a1');
+  });
+
+  it('refreshArticles bypasses and repopulates cache', async () => {
+    await store.fetchArticles('all', 1);
+    expect(store.articles).toHaveLength(2);
+
+    // Change mock data
+    mockApi.fetchArticles.mockResolvedValue({
+      success: true,
+      data: { articles: [{ article_id: 'refreshed', title: 'Refreshed' }] },
+    });
+
+    // refreshArticles clears cache → forces API call
+    await store.refreshArticles();
+    expect(store.articles).toHaveLength(1);
+    expect(store.articles[0].article_id).toBe('refreshed');
+  });
+
+  it('setSortBy invalidates all category caches', async () => {
+    // Cache two categories
+    await store.fetchArticles('all', 1);
+    mockApi.fetchArticles.mockResolvedValue({
+      success: true,
+      data: { articles: [{ article_id: 'p1', title: 'Politics' }] },
+    });
+    await store.fetchArticles('politics', 1);
+    mockApi.fetchArticles.mockClear();
+
+    // setSortBy clears ALL caches + re-fetches currentFilter ('politics')
+    await store.setSortBy('title');
+    expect(mockApi.fetchArticles).toHaveBeenCalledTimes(1);
+
+    mockApi.fetchArticles.mockClear();
+
+    // 'all' cache was invalidated and NOT re-fetched by setSortBy → needs API
+    await store.fetchArticles('all', 1);
+    expect(mockApi.fetchArticles).toHaveBeenCalled();
+  });
+
+  it('does not set loading=true on cache hit', async () => {
+    await store.fetchArticles('all', 1);
+
+    // Re-tap: should not show loading
+    await store.fetchArticles('all', 1);
+    expect(store.loading).toBe(false);
   });
 });
