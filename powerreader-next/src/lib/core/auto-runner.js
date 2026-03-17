@@ -12,7 +12,7 @@
  */
 
 import { enqueueAnalysis, cancelAll, AnalysisCancelledError } from './queue.js';
-import { fetchArticles, submitAnalysisResult } from './api.js';
+import { fetchArticles, fetchEvents, searchArticles, submitAnalysisResult } from './api.js';
 import { getAuthToken, getUserHash, isAuthenticated } from './auth.js';
 import { openDB } from './db.js';
 import { t } from '$lib/i18n/zh-TW.js';
@@ -197,6 +197,11 @@ export function forceStopAutoRunner() {
   cancelAll();
   _running = false;
   _paused = false;
+  // Abort any pending delays so loop exits immediately
+  if (_abortController) {
+    _abortController.abort();
+    _abortController = null;
+  }
   if (_resumeResolver) {
     _resumeResolver();
     _resumeResolver = null;
@@ -208,43 +213,23 @@ export function forceStopAutoRunner() {
 
 async function _runLoop() {
   while (_running) {
-    // Check for pause between batches
     if (_paused) {
       await _waitForResume();
       if (!_running) return;
     }
 
-    // Fetch a batch of articles
-    const result = await fetchArticles({
-      sort_by: 'published_at',
-      limit: FETCH_BATCH_SIZE
-    });
+    // ── Cluster-priority: fetch events first, then fallback to flat articles ──
+    const articles = await _fetchClusterPrioritizedArticles();
 
-    if (!result.success || !result.data?.articles?.length) {
+    if (!_running) return;
+
+    if (articles.length === 0) {
       _stopReason = t('auto_runner.error.no_articles');
       return;
     }
 
-    const allArticles = result.data.articles;
-
-    // Filter out already-analyzed articles (global one-per-article limit)
-    // and already-processed articles via IndexedDB
-    const processedIds = await _getProcessedIds();
-    const candidates = allArticles.filter(a =>
-      !(a.analysis_count > 0) && !processedIds.has(a.article_id)
-    );
-
-    if (candidates.length === 0) {
-      _stopReason = t('auto_runner.error.no_articles');
-      return;
-    }
-
-    // Fisher-Yates shuffle (creates its own copy internally)
-    const shuffled = _fisherYatesShuffle(candidates);
-
-    // Process each article
-    for (const article of shuffled) {
-      // Check for pause between articles
+    // Process each article (already ordered by cluster)
+    for (const article of articles) {
       if (_paused) {
         _currentArticle = null;
         _notify();
@@ -259,10 +244,8 @@ async function _runLoop() {
 
       if (!_running) return;
 
-      // Record to IndexedDB
       await _recordHistory(article.article_id, status.type, status.error);
 
-      // Update stats and check stop conditions
       if (status.type === 'success') {
         _stats.analyzed += 1;
         _consecutiveFailures = 0;
@@ -274,7 +257,6 @@ async function _runLoop() {
         _notify();
         return;
       } else {
-        // failed_format, failed_network, failed_quality
         _stats.failed += 1;
         _consecutiveFailures += 1;
 
@@ -286,7 +268,6 @@ async function _runLoop() {
           return;
         }
 
-        // Network error: longer pause
         if (status.type === 'failed_network') {
           await _delay(NETWORK_PAUSE_MS);
           continue;
@@ -294,13 +275,82 @@ async function _runLoop() {
       }
 
       _notify();
-
-      // Inter-analysis delay
       await _delay(getInterAnalysisDelay());
     }
 
     // Batch exhausted — loop will fetch next batch
   }
+}
+
+/**
+ * Fetch articles ordered by event cluster priority:
+ * 1. Fetch events → for each event, search for its articles
+ * 2. Group articles by cluster (same event together)
+ * 3. Fallback to flat article list if no events available
+ * 4. Filter out already-processed articles
+ */
+async function _fetchClusterPrioritizedArticles() {
+  const processedIds = await _getProcessedIds();
+
+  // Try cluster-first approach
+  try {
+    const eventsResult = await fetchEvents({ page: 1, limit: 20 });
+    const events = eventsResult.success
+      ? (eventsResult.data?.items || eventsResult.data?.events || [])
+      : [];
+
+    if (events.length > 0) {
+      const clusteredArticles = [];
+      const seenIds = new Set();
+
+      for (const event of events) {
+        if (!_running) return [];
+
+        // Search for articles related to this event
+        const shortTitle = (event.title || '').slice(0, 15);
+        if (!shortTitle) continue;
+
+        try {
+          const searchResult = await searchArticles(shortTitle, { limit: 10 });
+          const articles = searchResult.success
+            ? (searchResult.data?.articles || searchResult.data?.items || [])
+            : [];
+
+          for (const article of articles) {
+            if (!seenIds.has(article.article_id)) {
+              seenIds.add(article.article_id);
+              clusteredArticles.push(article);
+            }
+          }
+        } catch {
+          // Skip this cluster on error, continue to next
+        }
+      }
+
+      // Filter out already-processed
+      const candidates = clusteredArticles.filter(a =>
+        !(a.analysis_count > 0) && !processedIds.has(a.article_id)
+      );
+
+      if (candidates.length > 0) return candidates;
+    }
+  } catch {
+    // Fall through to flat fallback
+  }
+
+  // Fallback: flat article list (shuffled)
+  const result = await fetchArticles({
+    sort_by: 'published_at',
+    limit: FETCH_BATCH_SIZE
+  });
+
+  if (!result.success || !result.data?.articles?.length) return [];
+
+  const candidates = result.data.articles.filter(a =>
+    !(a.analysis_count > 0) && !processedIds.has(a.article_id)
+  );
+
+  return _fisherYatesShuffle(candidates);
 }
 
 /**
