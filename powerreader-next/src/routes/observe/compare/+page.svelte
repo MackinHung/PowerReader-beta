@@ -1,4 +1,5 @@
 <script>
+  import { untrack } from 'svelte';
   import Select from '$lib/components/ui/Select.svelte';
   import ArticleCluster from '$lib/components/article/ArticleCluster.svelte';
   import ProgressIndicator from '$lib/components/ui/ProgressIndicator.svelte';
@@ -16,12 +17,13 @@
   );
 
   $effect(() => {
-    fetchEvents();
+    untrack(() => fetchEvents());
   });
 
   $effect(() => {
-    if (selectedEvent) {
-      fetchCluster(selectedEvent);
+    const evt = selectedEvent;
+    if (evt) {
+      untrack(() => fetchCluster(evt));
     }
   });
 

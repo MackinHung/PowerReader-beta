@@ -1,4 +1,5 @@
 <script>
+  import { untrack } from 'svelte';
   import Card from '$lib/components/ui/Card.svelte';
   import Chip from '$lib/components/ui/Chip.svelte';
   import SourceBadge from '$lib/components/article/SourceBadge.svelte';
@@ -22,7 +23,7 @@
   ];
 
   $effect(() => {
-    fetchBlindspots();
+    untrack(() => fetchBlindspots());
   });
 
   async function fetchBlindspots() {

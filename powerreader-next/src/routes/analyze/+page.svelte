@@ -1,4 +1,5 @@
 <script>
+  import { untrack } from 'svelte';
   import { goto } from '$app/navigation';
   import Card from '$lib/components/ui/Card.svelte';
   import Button from '$lib/components/ui/Button.svelte';
@@ -22,19 +23,22 @@
     return cleanup;
   });
 
-  // Load articles if needed
+  // Load articles if needed (one-time mount check, untrack to avoid reactive loop)
   $effect(() => {
-    if (articlesStore.articles.length === 0) {
-      articlesStore.fetchArticles('all', 1);
-    }
+    untrack(() => {
+      if (articlesStore.articles.length === 0) {
+        articlesStore.fetchArticles('all', 1);
+      }
+    });
   });
 
-  // Check GPU support
+  // Check GPU support (no spread — avoid reading checks which would create cycle)
   $effect(() => {
     if (typeof window !== 'undefined') {
       checks = {
-        ...checks,
         gpu: !!navigator.gpu,
+        model: false,
+        article: false,
         queue: true
       };
     }

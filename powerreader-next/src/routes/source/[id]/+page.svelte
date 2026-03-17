@@ -1,5 +1,6 @@
 <script>
   import { page } from '$app/state';
+  import { untrack } from 'svelte';
   import Card from '$lib/components/ui/Card.svelte';
   import SourceBadge from '$lib/components/article/SourceBadge.svelte';
   import TrendChart from '$lib/components/data-viz/TrendChart.svelte';
@@ -15,7 +16,8 @@
   let error = $state(null);
 
   $effect(() => {
-    loadSource(sourceId);
+    const id = sourceId;
+    untrack(() => loadSource(id));
   });
 
   async function loadSource(id) {
