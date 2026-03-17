@@ -3,19 +3,33 @@
 
   let tooltip = $state({ visible: false, x: 0, y: 0, date: '', value: 0 });
 
+  // Normalize: accept both [{date,value}] and plain number arrays
+  let normalized = $derived.by(() => {
+    if (!data || data.length === 0) return [];
+    if (typeof data[0] === 'number') {
+      const today = new Date();
+      return data.map((v, i) => {
+        const d = new Date(today);
+        d.setDate(d.getDate() - (data.length - 1 - i));
+        return { date: d.toISOString().slice(5, 10), value: v ?? 0 };
+      });
+    }
+    return data.map(d => ({ date: d.date ?? '', value: d.value ?? 0 }));
+  });
+
   let pointData = $derived.by(() => {
-    if (data.length < 2) return { polyline: '', polygon: '', coords: [] };
+    if (normalized.length < 2) return { polyline: '', polygon: '', coords: [] };
 
     const padding = 4;
     const w = 300;
     const h = height;
-    const values = data.map((d) => d.value);
+    const values = normalized.map((d) => d.value);
     const minV = Math.min(...values);
     const maxV = Math.max(...values);
     const range = maxV - minV || 1;
 
-    const coords = data.map((d, i) => ({
-      x: padding + (i / (data.length - 1)) * (w - padding * 2),
+    const coords = normalized.map((d, i) => ({
+      x: padding + (i / (normalized.length - 1)) * (w - padding * 2),
       y: padding + (1 - (d.value - minV) / range) * (h - padding * 2),
       date: d.date,
       value: d.value,
@@ -45,7 +59,7 @@
 </script>
 
 <div class="trend-chart" style="height: {height}px">
-  {#if data.length >= 2}
+  {#if normalized.length >= 2}
     <svg viewBox="0 0 300 {height}" preserveAspectRatio="none" width="100%" {height}>
       <polygon points={pointData.polygon} fill={color} opacity="0.15" />
       <polyline
