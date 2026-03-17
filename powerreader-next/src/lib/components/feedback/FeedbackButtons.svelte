@@ -10,6 +10,7 @@
   let submitted = $state(false);
   let selected = $state(null);
   let error = $state('');
+  let offlineQueued = $state(false);
 
   $effect(() => {
     if (!submitted) {
@@ -25,6 +26,23 @@
     submitted = true;
     error = '';
 
+    if (!navigator.onLine) {
+      try {
+        const { enqueuePendingSync } = await import('$lib/core/offline-queue.js');
+        await enqueuePendingSync('feedback', {
+          articleId,
+          feedbackType: TYPE_MAP[type],
+          token: authStore.token
+        });
+        offlineQueued = true;
+      } catch (e) {
+        submitted = false;
+        selected = null;
+        error = '離線儲存失敗';
+      }
+      return;
+    }
+
     const result = await submitArticleFeedback(articleId, TYPE_MAP[type], authStore.token);
     if (!result.success) {
       submitted = false;
@@ -38,7 +56,7 @@
   {#if error}
     <span class="error-text">{error}</span>
   {:else if submitted}
-    <span class="submitted-text">已提交</span>
+    <span class="submitted-text">{offlineQueued ? '已儲存，上線後同步' : '已提交'}</span>
   {/if}
   <IconButton
     icon={selected === 'agree' ? 'thumb_up' : 'thumb_up'}

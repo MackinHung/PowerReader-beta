@@ -37,6 +37,8 @@
     !currentPath.startsWith('/onboarding') && !currentPath.startsWith('/auth')
   );
   let isOnline = $state(true);
+  let pendingSyncCount = $state(0);
+  let snackbarMessage = $state('');
 
   $effect(() => {
     if (typeof window === 'undefined') return;
@@ -48,9 +50,22 @@
 
     isOnline = navigator.onLine;
     const handleOnline = () => isOnline = true;
-    const handleOffline = () => isOnline = false;
+    const handleOffline = () => {
+      isOnline = false;
+      import('$lib/core/offline-queue.js').then(({ getPendingSyncCount }) => {
+        getPendingSyncCount().then(n => { pendingSyncCount = n; });
+      }).catch(() => {});
+    };
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+
+    // Check pending sync count on init if already offline
+    if (!navigator.onLine) {
+      import('$lib/core/offline-queue.js').then(({ getPendingSyncCount }) => {
+        getPendingSyncCount().then(n => { pendingSyncCount = n; });
+      }).catch(() => {});
+    }
+
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
@@ -61,6 +76,35 @@
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js');
     }
+  });
+
+  $effect(() => {
+    if (typeof window === 'undefined') return;
+    // Init: persistent storage + cache cleanup
+    import('$lib/core/db.js').then(({ requestPersistentStorage, cleanExpiredCache }) => {
+      requestPersistentStorage();
+      cleanExpiredCache();
+    }).catch(() => {});
+  });
+
+  $effect(() => {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+
+    function handleSWMessage(event) {
+      if (event.data?.type === 'sync-complete') {
+        const { synced, failed } = event.data;
+        if (synced > 0) {
+          snackbarMessage = `已同步 ${synced} 筆資料${failed > 0 ? `，${failed} 筆失敗` : ''}`;
+          setTimeout(() => { snackbarMessage = ''; }, 4000);
+        }
+        pendingSyncCount = failed;
+      }
+    }
+
+    navigator.serviceWorker.addEventListener('message', handleSWMessage);
+    return () => {
+      navigator.serviceWorker.removeEventListener('message', handleSWMessage);
+    };
   });
 
   // Keyboard shortcuts
@@ -78,7 +122,7 @@
 {#if !isOnline}
   <div class="offline-banner" class:has-sidebar={!media.isMobile}>
     <span class="material-symbols-outlined">cloud_off</span>
-    離線模式
+    {pendingSyncCount > 0 ? `離線模式 — ${pendingSyncCount} 筆待同步` : '離線模式'}
   </div>
 {/if}
 
@@ -117,6 +161,13 @@
         {@render children?.()}
       </div>
     </main>
+  </div>
+{/if}
+
+{#if snackbarMessage}
+  <div class="sync-snackbar">
+    <span class="material-symbols-outlined">sync</span>
+    {snackbarMessage}
   </div>
 {/if}
 
@@ -173,5 +224,26 @@
   .content-wrapper {
     max-width: var(--content-max-width);
     margin: 0 auto;
+  }
+  .sync-snackbar {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: var(--md-sys-color-inverse-surface);
+    color: var(--md-sys-color-inverse-on-surface);
+    border-radius: var(--md-sys-shape-corner-small);
+    font: var(--md-sys-typescale-body-medium-font);
+    box-shadow: var(--md-sys-elevation-3);
+    animation: snackbar-in 0.3s ease-out;
+  }
+  @keyframes snackbar-in {
+    from { transform: translateX(-50%) translateY(100%); opacity: 0; }
+    to { transform: translateX(-50%) translateY(0); opacity: 1; }
   }
 </style>
