@@ -227,7 +227,7 @@ describe('cleanExpiredCache', () => {
 // ====================================================
 
 describe('requestPersistentStorage', () => {
-  it('logs granted when storage.persist() returns true', async () => {
+  it('completes silently when storage.persist() returns true', async () => {
     Object.defineProperty(navigator, 'storage', {
       value: {
         persist: vi.fn(() => Promise.resolve(true)),
@@ -236,17 +236,10 @@ describe('requestPersistentStorage', () => {
       writable: true,
     });
 
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
-    await mod.requestPersistentStorage();
-
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringContaining('granted')
-    );
-    logSpy.mockRestore();
+    await expect(mod.requestPersistentStorage()).resolves.toBeUndefined();
   });
 
-  it('logs denied when storage.persist() returns false', async () => {
+  it('completes silently when storage.persist() returns false', async () => {
     Object.defineProperty(navigator, 'storage', {
       value: {
         persist: vi.fn(() => Promise.resolve(false)),
@@ -255,13 +248,6 @@ describe('requestPersistentStorage', () => {
       writable: true,
     });
 
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-    await mod.requestPersistentStorage();
-
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('denied')
-    );
-    warnSpy.mockRestore();
+    await expect(mod.requestPersistentStorage()).resolves.toBeUndefined();
   });
 });
