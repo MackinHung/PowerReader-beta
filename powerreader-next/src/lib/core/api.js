@@ -38,7 +38,7 @@ async function apiFetch(path, options = {}) {
       return {
         success: false,
         data: null,
-        error: json.error || { type: 'api_error', status: response.status }
+        error: { ...(json.error || { type: 'api_error' }), status: response.status }
       };
     }
 
