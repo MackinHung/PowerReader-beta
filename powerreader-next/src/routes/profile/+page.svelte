@@ -34,10 +34,10 @@
   async function loadProfile() {
     loading = true;
     try {
-      await Promise.all([
-        authStore.fetchProfile(),
-        authStore.fetchPoints()
-      ]);
+      await authStore.fetchProfile();
+      // Stop if fetchProfile triggered logout (401)
+      if (!authStore.isAuthenticated) return;
+      await authStore.fetchPoints();
       await loadContributions(1);
     } catch (e) {
       console.error('Failed to load profile:', e);
@@ -47,6 +47,7 @@
   }
 
   async function loadContributions(page) {
+    if (!authStore.isAuthenticated || !authStore.token) return;
     contribLoading = true;
     try {
       const result = await api.fetchUserContributions(authStore.token, { page, limit: 20 });

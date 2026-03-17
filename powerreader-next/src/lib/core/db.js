@@ -125,12 +125,11 @@ function cleanStoreByIndex(db, storeName, indexName, cutoffISO) {
  * Non-critical: logs result but does not throw.
  */
 export async function requestPersistentStorage() {
-  if (navigator.storage && navigator.storage.persist) {
-    const granted = await navigator.storage.persist();
-    if (granted) {
-      console.log('[DB] Persistent storage granted');
-    } else {
-      console.warn('[DB] Persistent storage denied by browser');
+  try {
+    if (navigator.storage && navigator.storage.persist) {
+      await navigator.storage.persist();
     }
+  } catch {
+    // Non-critical — browser may deny persistent storage
   }
 }

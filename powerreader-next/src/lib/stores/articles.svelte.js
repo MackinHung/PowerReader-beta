@@ -91,7 +91,7 @@ export function getArticlesStore() {
           error = result.error?.type || 'search_failed';
           return;
         }
-        articles = result.data?.articles || [];
+        articles = result.data?.articles || result.data?.items || [];
         hasMore = false;
         currentPage = 1;
       } catch (e) {

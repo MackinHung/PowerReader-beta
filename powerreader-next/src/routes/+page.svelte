@@ -24,12 +24,10 @@
 
   const categories = [
     { label: '全部', value: 'all' },
-    { label: '政治', value: 'politics' },
-    { label: '財經', value: 'finance' },
-    { label: '社會', value: 'society' },
-    { label: '國際', value: 'international' },
-    { label: '科技', value: 'tech' },
-    { label: '生活', value: 'life' }
+    { label: '政治', value: '政治' },
+    { label: '社會', value: '社會' },
+    { label: '國際', value: '國際' },
+    { label: '兩岸', value: '兩岸' }
   ];
 
   function handleCategoryClick(value) {
