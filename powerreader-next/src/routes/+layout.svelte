@@ -1,16 +1,18 @@
 <script>
   import { page } from '$app/state';
-  import { goto } from '$app/navigation';
+  import { untrack } from 'svelte';
   import NavigationBar from '$lib/components/ui/NavigationBar.svelte';
   import TopAppBar from '$lib/components/ui/TopAppBar.svelte';
   import Sidebar from '$lib/components/ui/Sidebar.svelte';
   import Snackbar from '$lib/components/ui/Snackbar.svelte';
-  import GlobalAutoRunnerBar from '$lib/components/analysis/GlobalAutoRunnerBar.svelte';
   import { getMediaQueryStore } from '$lib/stores/mediaQuery.svelte.js';
   import '../app.css';
 
   let { children } = $props();
   const media = getMediaQueryStore();
+
+  // Lazy-load GlobalAutoRunnerBar to avoid pulling in heavy inference chain
+  let AutoRunnerBar = $state(null);
 
   const navItems = [
     { icon: 'home', label: '首頁', href: '/' },
@@ -41,16 +43,12 @@
   let pendingSyncCount = $state(0);
   let snackbarMessage = $state('');
 
+  // Online/offline detection (no reactive deps — runs once)
   $effect(() => {
     if (typeof window === 'undefined') return;
 
-    const done = localStorage.getItem('onboarding_complete');
-    if (!done && currentPath !== '/onboarding') {
-      goto('/onboarding');
-    }
-
     isOnline = navigator.onLine;
-    const handleOnline = () => isOnline = true;
+    const handleOnline = () => { isOnline = true; };
     const handleOffline = () => {
       isOnline = false;
       import('$lib/core/offline-queue.js').then(({ getPendingSyncCount }) => {
@@ -60,7 +58,6 @@
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Check pending sync count on init if already offline
     if (!navigator.onLine) {
       import('$lib/core/offline-queue.js').then(({ getPendingSyncCount }) => {
         getPendingSyncCount().then(n => { pendingSyncCount = n; });
@@ -73,21 +70,26 @@
     };
   });
 
-  $effect(() => {
-    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js');
-    }
-  });
-
+  // SW registration + DB init (runs once, no reactive deps)
   $effect(() => {
     if (typeof window === 'undefined') return;
-    // Init: persistent storage + cache cleanup
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+
     import('$lib/core/db.js').then(({ requestPersistentStorage, cleanExpiredCache }) => {
       requestPersistentStorage();
       cleanExpiredCache();
     }).catch(() => {});
+
+    // Lazy-load auto-runner bar after initial paint
+    import('$lib/components/analysis/GlobalAutoRunnerBar.svelte')
+      .then(m => { AutoRunnerBar = m.default; })
+      .catch(() => {});
   });
 
+  // SW sync-complete message handler (runs once)
   $effect(() => {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
 
@@ -172,7 +174,9 @@
   </div>
 {/if}
 
-<GlobalAutoRunnerBar />
+{#if AutoRunnerBar}
+  <svelte:component this={AutoRunnerBar} />
+{/if}
 <Snackbar />
 
 <style>

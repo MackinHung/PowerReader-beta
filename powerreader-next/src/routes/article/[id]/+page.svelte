@@ -1,5 +1,6 @@
 <script>
   import { page } from '$app/state';
+  import { untrack } from 'svelte';
   import { goto } from '$app/navigation';
   import Card from '$lib/components/ui/Card.svelte';
   import Button from '$lib/components/ui/Button.svelte';
@@ -31,7 +32,8 @@
   let clusterError = $state(null);
 
   $effect(() => {
-    loadArticle(articleId);
+    const id = articleId;
+    untrack(() => loadArticle(id));
   });
 
   async function loadArticle(id) {

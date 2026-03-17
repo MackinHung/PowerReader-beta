@@ -1,4 +1,5 @@
 <script>
+  import { untrack } from 'svelte';
   import SearchBar from '$lib/components/ui/SearchBar.svelte';
   import Chip from '$lib/components/ui/Chip.svelte';
   import ArticleCard from '$lib/components/article/ArticleCard.svelte';
@@ -76,9 +77,9 @@
     detailArticle = null;
   }
 
-  // Fetch articles on mount
+  // Fetch articles on mount (untrack to avoid reactive deps from store internals)
   $effect(() => {
-    store.fetchArticles('all', 1);
+    untrack(() => store.fetchArticles('all', 1));
   });
 
   // IntersectionObserver for infinite scroll

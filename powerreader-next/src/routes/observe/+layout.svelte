@@ -1,6 +1,7 @@
 <script>
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
+  import { untrack } from 'svelte';
   import Tabs from '$lib/components/ui/Tabs.svelte';
 
   let { children } = $props();
@@ -12,24 +13,31 @@
 
   let currentPath = $derived(page.url.pathname);
   let activeTab = $state('blindspot');
-  let lastSyncedPath = '';
+  let navigating = false;
 
   // Sync route -> tab (when user navigates via URL or back button)
   $effect(() => {
-    const pathTab = currentPath.includes('/compare') ? 'compare' : 'blindspot';
-    if (currentPath !== lastSyncedPath) {
-      activeTab = pathTab;
-      lastSyncedPath = currentPath;
-    }
+    const path = currentPath;
+    const pathTab = path.includes('/compare') ? 'compare' : 'blindspot';
+    untrack(() => {
+      if (activeTab !== pathTab) {
+        navigating = true;
+        activeTab = pathTab;
+        navigating = false;
+      }
+    });
   });
 
   // Sync tab -> route (when user clicks tab)
   $effect(() => {
-    const target = `/observe/${activeTab}`;
-    if (target !== currentPath && lastSyncedPath === currentPath) {
-      lastSyncedPath = target;
-      goto(target);
-    }
+    const tab = activeTab;
+    if (navigating) return;
+    untrack(() => {
+      const target = `/observe/${tab}`;
+      if (target !== currentPath) {
+        goto(target);
+      }
+    });
   });
 </script>
 

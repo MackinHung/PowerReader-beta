@@ -1,4 +1,5 @@
 <script>
+  import { untrack } from 'svelte';
   import Card from '$lib/components/ui/Card.svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import TrendChart from '$lib/components/data-viz/TrendChart.svelte';
@@ -22,8 +23,9 @@
 
   $effect(() => {
     if (typeof window === 'undefined') return;
-    if (authStore.isAuthenticated) {
-      loadProfile();
+    const isAuth = authStore.isAuthenticated;
+    if (isAuth) {
+      untrack(() => loadProfile());
     } else {
       loading = false;
     }
