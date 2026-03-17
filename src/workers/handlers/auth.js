@@ -84,14 +84,15 @@ export async function googleOAuthCallback(request, env, ctx, { url }) {
       })
     });
 
+    tokenData = await tokenResponse.json();
+
     if (!tokenResponse.ok) {
+      console.error('[Auth] Google token exchange failed:', tokenResponse.status, JSON.stringify(tokenData));
       return jsonResponse(502, {
         success: false, data: null,
         error: { type: 'api_error', message: '系統錯誤,請稍後再試' }
       });
     }
-
-    tokenData = await tokenResponse.json();
   } catch {
     return jsonResponse(502, {
       success: false, data: null,

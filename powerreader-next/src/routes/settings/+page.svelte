@@ -115,6 +115,25 @@
     untrack(() => initSettings());
   });
 
+  /** Check if WebLLM model is actually cached in Cache API */
+  async function checkWebLLMCacheExists() {
+    try {
+      if (typeof caches === 'undefined') return false;
+      const names = await caches.keys();
+      // WebLLM cache names contain 'webllm' or model patterns
+      const webllmCache = names.find(n =>
+        n.includes('webllm') || n.includes('mlc') || n.includes('Qwen')
+      );
+      if (!webllmCache) return false;
+      const cache = await caches.open(webllmCache);
+      const keys = await cache.keys();
+      // Need at least a few entries (WASM + params) to be considered downloaded
+      return keys.length >= 2;
+    } catch {
+      return false;
+    }
+  }
+
   async function initSettings() {
     // Load saved settings
     autoMode = localStorage.getItem('analysis_mode') === 'auto';
@@ -122,12 +141,8 @@
     notifications = localStorage.getItem('notifications') !== 'false';
     cacheEnabled = localStorage.getItem('cache_enabled') !== 'false';
 
-    // Model status — check WebLLM cache flag first, then OPFS/IDB
-    if (localStorage.getItem('powerreader_webllm_cached') === '1') {
-      modelReady = true;
-    } else {
-      modelReady = await isModelDownloaded().catch(() => false);
-    }
+    // Model status — check actual WebLLM caches in Cache API
+    modelReady = await checkWebLLMCacheExists();
 
     // GPU: load cached benchmark
     benchResult = getCachedBenchmark();
@@ -246,6 +261,10 @@
     saveUserGPUSelection(label, vram);
     userOverride = { device: label, vramMB: vram };
     selectedGpu = val;
+    // Clear stale benchmark so old "不建議本地推理" doesn't persist
+    if (benchResult && benchResult.mode === 'none') {
+      benchResult = null;
+    }
   }
 
   // ── Benchmark ──
@@ -288,27 +307,22 @@
     cacheSize = '0 MB';
   }
 
-  // ── Derived helpers ──
-  function getGpuDisplayName() {
+  // ── Derived helpers (reactive) ──
+  let gpuDisplayName = $derived.by(() => {
     if (userOverride) return `${userOverride.device} (${userOverride.vramMB} MB)`;
     if (gpuResult?.supported && gpuResult.device) return `${gpuResult.device} (${gpuResult.vramMB} MB)`;
     if (gpuResult?.supported) return `WebGPU 可用 (VRAM 未知)`;
     return 'WebGPU 不可用';
-  }
+  });
 
-  function getVramMB() {
-    if (userOverride) return userOverride.vramMB;
-    if (gpuResult?.vramMB) return gpuResult.vramMB;
-    return 0;
-  }
+  let vramMB = $derived(userOverride ? userOverride.vramMB : (gpuResult?.vramMB || 0));
 
-  function getVramVerdict() {
-    const vram = getVramMB();
-    if (vram === 0) return { icon: 'help', text: '無法判斷', color: 'var(--md-sys-color-on-surface-variant)' };
-    if (vram >= 6144) return { icon: 'check_circle', text: '可運行本地推理', color: 'var(--md-sys-color-primary)' };
-    if (vram >= 4096) return { icon: 'warning', text: '可能較慢', color: 'var(--md-sys-color-tertiary)' };
+  let vramVerdict = $derived.by(() => {
+    if (vramMB === 0) return { icon: 'help', text: '無法判斷', color: 'var(--md-sys-color-on-surface-variant)' };
+    if (vramMB >= 6144) return { icon: 'check_circle', text: '可運行本地推理', color: 'var(--md-sys-color-primary)' };
+    if (vramMB >= 4096) return { icon: 'warning', text: '可能較慢', color: 'var(--md-sys-color-tertiary)' };
     return { icon: 'error', text: 'VRAM 不足，建議使用伺服器模式', color: 'var(--md-sys-color-error)' };
-  }
+  });
 
   function getTierLabel(mode) {
     const labels = { gpu: 'GPU 加速', cpu: 'CPU 模式', none: '不建議本地推理' };
@@ -445,17 +459,16 @@
             {#if gpuScanning}
               偵測中...
             {:else}
-              {getGpuDisplayName()}
+              {gpuDisplayName}
             {/if}
           </span>
         </div>
 
         <!-- VRAM Verdict -->
         {#if !gpuScanning}
-          {@const verdict = getVramVerdict()}
-          <div class="verdict-row" style:color={verdict.color}>
-            <span class="material-symbols-outlined verdict-icon">{verdict.icon}</span>
-            <span>{verdict.text}</span>
+          <div class="verdict-row" style:color={vramVerdict.color}>
+            <span class="material-symbols-outlined verdict-icon">{vramVerdict.icon}</span>
+            <span>{vramVerdict.text}</span>
           </div>
         {/if}
 
