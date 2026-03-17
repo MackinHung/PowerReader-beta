@@ -234,10 +234,11 @@ describe('loadMore', () => {
 // ══════════════════════════════════════════════
 
 describe('expandEvent', () => {
-  it('calls searchArticles with event title', async () => {
-    await store.expandEvent('c1', 'Event Title');
+  it('truncates title to 15 chars for search', async () => {
+    const longTitle = '這是一個非常長的事件標題用來測試截斷功能是否正常運作';
+    await store.expandEvent('c1', longTitle);
 
-    expect(mockApi.searchArticles).toHaveBeenCalledWith('Event Title');
+    expect(mockApi.searchArticles).toHaveBeenCalledWith(longTitle.slice(0, 15));
   });
 
   it('stores articles in expandedArticles', async () => {
@@ -248,12 +249,44 @@ describe('expandEvent', () => {
     expect(articles[0].article_id).toBe('a1');
   });
 
-  it('does not re-fetch if already expanded (cache hit)', async () => {
+  it('does not re-fetch if already expanded with results (cache hit)', async () => {
     await store.expandEvent('c1', 'Event Title');
     mockApi.searchArticles.mockClear();
 
     await store.expandEvent('c1', 'Event Title');
     expect(mockApi.searchArticles).not.toHaveBeenCalled();
+  });
+
+  it('retries when previous expand found no results', async () => {
+    // First attempt: no results
+    mockApi.searchArticles.mockResolvedValue({
+      success: true,
+      data: { articles: [] },
+    });
+    await store.expandEvent('c1', 'No Results');
+    expect(store.getExpandedArticles('c1')).toBeUndefined();
+
+    // Second attempt: results available now
+    mockApi.searchArticles.mockResolvedValue({
+      success: true,
+      data: { articles: [{ article_id: 'a1', title: 'Found' }] },
+    });
+    await store.expandEvent('c1', 'No Results');
+    expect(store.getExpandedArticles('c1')).toHaveLength(1);
+  });
+
+  it('falls back to 8-char query when 15-char returns empty', async () => {
+    const title = '美國駐以色列領事官邸遭伊朗飛彈碎片擊中';
+    mockApi.searchArticles
+      .mockResolvedValueOnce({ success: true, data: { articles: [] } })  // 15-char: empty
+      .mockResolvedValueOnce({ success: true, data: { articles: [{ article_id: 'fb1' }] } });  // 8-char: found
+
+    await store.expandEvent('c1', title);
+
+    expect(mockApi.searchArticles).toHaveBeenCalledTimes(2);
+    expect(mockApi.searchArticles).toHaveBeenNthCalledWith(1, title.slice(0, 15));
+    expect(mockApi.searchArticles).toHaveBeenNthCalledWith(2, title.slice(0, 8));
+    expect(store.getExpandedArticles('c1')).toHaveLength(1);
   });
 
   it('sets expandingId during load', async () => {
@@ -265,13 +298,13 @@ describe('expandEvent', () => {
     const promise = store.expandEvent('c1', 'Event Title');
     expect(store.expandingId).toBe('c1');
 
-    resolveSearch({ success: true, data: { articles: [] } });
+    resolveSearch({ success: true, data: { articles: [{ article_id: 'x' }] } });
     await promise;
 
     expect(store.expandingId).toBeNull();
   });
 
-  it('handles search failure gracefully', async () => {
+  it('does not cache on search failure', async () => {
     mockApi.searchArticles.mockResolvedValue({
       success: false,
       error: { type: 'search_failed' },
@@ -279,17 +312,16 @@ describe('expandEvent', () => {
 
     await store.expandEvent('c1', 'Bad Title');
 
-    const articles = store.getExpandedArticles('c1');
-    expect(articles).toEqual([]);
+    // Not cached — undefined, not empty array
+    expect(store.getExpandedArticles('c1')).toBeUndefined();
   });
 
-  it('handles search exception gracefully', async () => {
+  it('does not cache on search exception', async () => {
     mockApi.searchArticles.mockRejectedValue(new Error('Network'));
 
     await store.expandEvent('c1', 'Error Title');
 
-    const articles = store.getExpandedArticles('c1');
-    expect(articles).toEqual([]);
+    expect(store.getExpandedArticles('c1')).toBeUndefined();
     expect(store.expandingId).toBeNull();
   });
 
@@ -313,7 +345,7 @@ describe('expandEvent', () => {
 
 describe('collapseEvent', () => {
   it('removes articles from expandedArticles', async () => {
-    await store.expandEvent('c1', 'Event Title');
+    await store.expandEvent('c1', 'Short Title');
     expect(store.getExpandedArticles('c1')).toBeDefined();
 
     store.collapseEvent('c1');
@@ -335,7 +367,7 @@ describe('getExpandedArticles', () => {
   });
 
   it('returns articles array for expanded cluster', async () => {
-    await store.expandEvent('c1', 'Title');
+    await store.expandEvent('c1', 'Short');
     const result = store.getExpandedArticles('c1');
     expect(Array.isArray(result)).toBe(true);
   });

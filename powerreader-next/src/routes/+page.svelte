@@ -87,7 +87,8 @@
   }
 
   function handleEventToggle(event) {
-    if (eventsStore.getExpandedArticles(event.cluster_id)) {
+    const existing = eventsStore.getExpandedArticles(event.cluster_id);
+    if (existing && existing.length > 0) {
       eventsStore.collapseEvent(event.cluster_id);
     } else {
       eventsStore.expandEvent(event.cluster_id, event.title);

@@ -66,21 +66,38 @@ export function getEventsStore() {
     /**
      * Expand an event cluster by searching for its articles.
      * Uses search API as workaround (GET /events/{id} returns 500).
+     * Truncates title to avoid backend 500 on long Chinese queries.
+     * Only caches if results were found; empty results allow retry.
      * @param {string} clusterId
      * @param {string} title - Event title to search for
      */
     async expandEvent(clusterId, title) {
-      if (expandedArticles[clusterId]) return;
+      if (expandedArticles[clusterId]?.length > 0) return;
 
       expandingId = clusterId;
       try {
-        const result = await api.searchArticles(title);
-        const articles = result.success
+        // Truncate title: long Chinese queries cause backend 500.
+        // Try 15 chars first, fallback to 8 chars if no results.
+        const shortTitle = (title || '').slice(0, 15);
+        let result = await api.searchArticles(shortTitle);
+        let articles = result.success
           ? (result.data?.articles || result.data?.items || [])
           : [];
-        expandedArticles = { ...expandedArticles, [clusterId]: articles };
+
+        // Fallback: try shorter query if no results
+        if (articles.length === 0 && shortTitle.length > 8) {
+          const shorterTitle = (title || '').slice(0, 8);
+          result = await api.searchArticles(shorterTitle);
+          articles = result.success
+            ? (result.data?.articles || result.data?.items || [])
+            : [];
+        }
+
+        if (articles.length > 0) {
+          expandedArticles = { ...expandedArticles, [clusterId]: articles };
+        }
       } catch {
-        expandedArticles = { ...expandedArticles, [clusterId]: [] };
+        // Don't cache empty on error — allow retry
       } finally {
         expandingId = null;
       }
