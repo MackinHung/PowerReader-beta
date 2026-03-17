@@ -5,6 +5,7 @@
   import TopAppBar from '$lib/components/ui/TopAppBar.svelte';
   import Sidebar from '$lib/components/ui/Sidebar.svelte';
   import Snackbar from '$lib/components/ui/Snackbar.svelte';
+  import GlobalAutoRunnerBar from '$lib/components/analysis/GlobalAutoRunnerBar.svelte';
   import { getMediaQueryStore } from '$lib/stores/mediaQuery.svelte.js';
   import '../app.css';
 
@@ -171,6 +172,7 @@
   </div>
 {/if}
 
+<GlobalAutoRunnerBar />
 <Snackbar />
 
 <style>

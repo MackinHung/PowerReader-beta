@@ -32,6 +32,7 @@ beforeEach(async () => {
 
   vi.doMock('../../src/lib/core/benchmark.js', () => ({
     scanGPU: mockScanGPU,
+    getCachedBenchmark: vi.fn(() => ({ mode: 'gpu' })),
   }));
   vi.doMock('../../src/lib/core/queue.js', () => ({
     enqueueAnalysis: mockEnqueueAnalysis,

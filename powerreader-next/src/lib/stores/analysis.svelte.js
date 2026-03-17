@@ -35,6 +35,8 @@ let autoRunnerStatus = $state(getAutoRunnerStatus());
 let currentAnalysis = $state(null);
 let analysisError = $state(null);
 let analysisStage = $state(null);
+let analysisEta = $state(null);
+let analysisProgress = $state(0);
 
 export function getAnalysisStore() {
   // Subscribe to event emitters via $effect in the consuming component,
@@ -66,6 +68,8 @@ export function getAnalysisStore() {
     get currentAnalysis() { return currentAnalysis; },
     get analysisError() { return analysisError; },
     get analysisStage() { return analysisStage; },
+    get eta() { return analysisEta; },
+    get progress() { return analysisProgress; },
     get isAutoModeEnabled() { return isAutoModeEnabled(); },
 
     /**
@@ -99,15 +103,23 @@ export function getAnalysisStore() {
 
       try {
         const result = await enqueueAnalysis(articleId, article, {
-          onStatus: (stage) => { analysisStage = stage; }
+          onStatus: (stage, elapsed, extra) => {
+            analysisStage = stage;
+            analysisEta = extra?.eta || null;
+            analysisProgress = extra?.progress || 0;
+          }
         });
         currentAnalysis = null;
         analysisStage = null;
+        analysisEta = null;
+        analysisProgress = 0;
         return result;
       } catch (e) {
         analysisError = e.message;
         currentAnalysis = null;
         analysisStage = null;
+        analysisEta = null;
+        analysisProgress = 0;
         throw e;
       }
     },
@@ -121,6 +133,8 @@ export function getAnalysisStore() {
       if (currentAnalysis?.articleId === articleId) {
         currentAnalysis = null;
         analysisStage = null;
+        analysisEta = null;
+        analysisProgress = 0;
       }
     },
 
@@ -129,6 +143,8 @@ export function getAnalysisStore() {
       cancelAll();
       currentAnalysis = null;
       analysisStage = null;
+      analysisEta = null;
+      analysisProgress = 0;
     },
 
     // -- Auto-runner controls --

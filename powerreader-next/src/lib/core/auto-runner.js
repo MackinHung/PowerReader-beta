@@ -19,11 +19,16 @@ import { t } from '$lib/i18n/zh-TW.js';
 import { createEventEmitter } from '$lib/utils/event-emitter.js';
 import { promisifyRequest, promisifyTransaction } from '$lib/utils/idb-helpers.js';
 import { isMobileDevice } from '$lib/utils/device-detect.js';
-import { scanGPU } from './benchmark.js';
+import { scanGPU, getCachedBenchmark } from './benchmark.js';
 
 // ── Constants ──
 
-const INTER_ANALYSIS_DELAY_MS = 2000;
+function getInterAnalysisDelay() {
+  const benchmark = getCachedBenchmark();
+  if (benchmark?.mode === 'gpu') return 1000;
+  if (benchmark?.mode === 'cpu') return 3000;
+  return 5000;
+}
 const NETWORK_PAUSE_MS = 30000;
 const MAX_CONSECUTIVE_FAILURES = 5;
 const FETCH_BATCH_SIZE = 50;
@@ -291,7 +296,7 @@ async function _runLoop() {
       _notify();
 
       // Inter-analysis delay
-      await _delay(INTER_ANALYSIS_DELAY_MS);
+      await _delay(getInterAnalysisDelay());
     }
 
     // Batch exhausted — loop will fetch next batch

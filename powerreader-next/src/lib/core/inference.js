@@ -24,6 +24,8 @@ import {
 } from './prompt.js';
 import { parseScoreOutput, parseNarrativeOutput } from './output-parser.js';
 import { isMobileDevice } from '$lib/utils/device-detect.js';
+import { recordLatency, estimateRemaining, getDualPassProgress } from './eta.js';
+import { getCachedBenchmark, getTimeoutForTier } from './benchmark.js';
 
 // =============================================
 // Configuration
@@ -42,14 +44,18 @@ const QWEN3_NO_THINK = '\n/no_think';
 
 const PASS1_MAX_TOKENS = 150;   // Score JSON + camp_ratio ~80 tokens, buffer for stray text
 const PASS2_MAX_TOKENS = 512;   // Narrative JSON ~200-400 tokens
-const INFERENCE_TIMEOUT_MS = 90000; // 90s total for dual pass (8B needs more time)
 
 /**
- * Get inference timeout. Fixed at 90s — sufficient for both GPU and CPU.
- * @returns {number} Timeout in milliseconds
+ * Race a promise against a timeout. Rejects with 'inference_timeout' on expiry.
+ * @param {Promise} promise
+ * @param {number} ms
+ * @returns {Promise}
  */
-function getInferenceTimeout() {
-  return INFERENCE_TIMEOUT_MS;
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('inference_timeout')), ms))
+  ]);
 }
 
 
@@ -217,7 +223,11 @@ export async function runAnalysis({ article, knowledgeEntries = [], mode, onStat
   const startTime = Date.now();
 
   const updateStatus = (stage, extra) => {
-    if (onStatus) onStatus(stage, Date.now() - startTime, extra);
+    const elapsed = Date.now() - startTime;
+    const tier = getCachedBenchmark()?.mode || 'cpu';
+    const progress = getDualPassProgress(stage, elapsed, tier);
+    const eta = estimateRemaining(tier, stage.includes('pass2') ? 'pass2' : 'pass1', elapsed);
+    if (onStatus) onStatus(stage, elapsed, { ...extra, eta, progress });
   };
 
   updateStatus('preparing');
@@ -252,6 +262,11 @@ export async function runAnalysis({ article, knowledgeEntries = [], mode, onStat
 // =============================================
 
 async function runWebLLMInference(article, knowledgeEntries, updateStatus) {
+  // Streaming investigation: WebLLM supports stream:true but JSON output (Pass 1)
+  // is not suitable for streaming. Pass 2 narrative could benefit but stability
+  // varies across browsers. Keeping batch mode for reliability. Revisit when
+  // WebLLM streaming API stabilizes.
+
   // Phase 0: Load model
   updateStatus('loading_model');
   const engine = await getWebLLMEngine((progress) => {
@@ -259,18 +274,27 @@ async function runWebLLMInference(article, knowledgeEntries, updateStatus) {
   });
 
   const userMessage = assembleUserMessage(article, knowledgeEntries);
+  const tier = getCachedBenchmark()?.mode || 'cpu';
 
-  // Phase 1: Score extraction
+  // Phase 1: Score extraction (per-pass timeout)
   updateStatus('pass1_running');
+  const pass1Start = Date.now();
+  const pass1Timeout = getTimeoutForTier(tier);
   const pass1SystemPrompt = assembleScoreSystemPrompt() + QWEN3_NO_THINK;
-  const pass1Response = await engine.chat.completions.create({
-    messages: [
-      { role: 'system', content: pass1SystemPrompt },
-      { role: 'user', content: userMessage }
-    ],
-    ...MODEL_PARAMS,
-    max_tokens: PASS1_MAX_TOKENS
-  });
+
+  const pass1Response = await withTimeout(
+    engine.chat.completions.create({
+      messages: [
+        { role: 'system', content: pass1SystemPrompt },
+        { role: 'user', content: userMessage }
+      ],
+      ...MODEL_PARAMS,
+      max_tokens: PASS1_MAX_TOKENS
+    }),
+    pass1Timeout
+  );
+
+  recordLatency(tier, 'pass1', Date.now() - pass1Start);
 
   const pass1Raw = pass1Response.choices[0]?.message?.content || '';
   const scores = parseScoreOutput(pass1Raw);
@@ -279,17 +303,41 @@ async function runWebLLMInference(article, knowledgeEntries, updateStatus) {
   // Free KV cache between passes — critical for 6GB VRAM
   try { await engine.resetChat(); } catch {}
 
-  // Phase 2: Narrative analysis (informed by Pass 1 scores)
+  // Phase 2: Narrative analysis (informed by Pass 1 scores, 2x timeout)
   updateStatus('pass2_running');
+  const pass2Start = Date.now();
+  const pass2Timeout = getTimeoutForTier(tier) * 2;
   const pass2SystemPrompt = assembleNarrativeSystemPrompt(scores.bias_score, scores.controversy_score) + QWEN3_NO_THINK;
-  const pass2Response = await engine.chat.completions.create({
-    messages: [
-      { role: 'system', content: pass2SystemPrompt },
-      { role: 'user', content: userMessage }
-    ],
-    ...MODEL_PARAMS,
-    max_tokens: PASS2_MAX_TOKENS
-  });
+
+  let pass2Response;
+  try {
+    pass2Response = await withTimeout(
+      engine.chat.completions.create({
+        messages: [
+          { role: 'system', content: pass2SystemPrompt },
+          { role: 'user', content: userMessage }
+        ],
+        ...MODEL_PARAMS,
+        max_tokens: PASS2_MAX_TOKENS
+      }),
+      pass2Timeout
+    );
+  } catch (err) {
+    // Pass 2 timeout — return partial result (pass 1 scores preserved)
+    recordLatency(tier, 'pass2', Date.now() - pass2Start);
+    updateStatus('pass2_done');
+    return {
+      ...scores,
+      points: [],
+      reasoning: '',
+      key_phrases: [],
+      prompt_version: 'v3.0.0',
+      partial: true,
+      _debug: { pass1_system: pass1SystemPrompt, pass1_raw: pass1Raw, pass2_error: err.message }
+    };
+  }
+
+  recordLatency(tier, 'pass2', Date.now() - pass2Start);
 
   const pass2Raw = pass2Response.choices[0]?.message?.content || '';
   const narrative = parseNarrativeOutput(pass2Raw);
@@ -306,7 +354,6 @@ async function runWebLLMInference(article, knowledgeEntries, updateStatus) {
     reasoning: narrative.points.join('\n'),
     key_phrases,
     prompt_version: 'v3.0.0',
-    // Debug: raw prompts and outputs for inspection
     _debug: {
       pass1_system: pass1SystemPrompt,
       pass1_user: userMessage.substring(0, 500),
@@ -332,7 +379,7 @@ async function runServerInference(article, knowledgeEntries, updateStatus) {
       knowledge: knowledgeEntries,
       model_params: { think: false, temperature: 0.5 }
     }),
-    signal: AbortSignal.timeout(getInferenceTimeout())
+    signal: AbortSignal.timeout(getTimeoutForTier(getCachedBenchmark()?.mode || 'cpu'))
   });
 
   if (!response.ok) {
