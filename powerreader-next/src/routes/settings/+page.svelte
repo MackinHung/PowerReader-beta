@@ -1,78 +1,164 @@
 <script>
+  import { untrack } from 'svelte';
   import Card from '$lib/components/ui/Card.svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import Switch from '$lib/components/ui/Switch.svelte';
   import List from '$lib/components/ui/List.svelte';
   import ListItem from '$lib/components/ui/ListItem.svelte';
-  import { runPreDownloadChecks, downloadModel, deleteModel, isModelDownloaded, getDownloadProgress } from '$lib/core/manager.js';
-  import { scanGPU, getCachedBenchmark } from '$lib/core/benchmark.js';
+  import ProgressIndicator from '$lib/components/ui/ProgressIndicator.svelte';
+  import { getWebLLMEngine, clearAllModelCaches, hasWebGPU, detectBestMode, INFERENCE_MODES } from '$lib/core/inference.js';
+  import { scanGPU, getCachedBenchmark, runBenchmark, clearBenchmark, saveUserGPUSelection, getUserGPUSelection, getTimeoutForTier } from '$lib/core/benchmark.js';
+  import { isModelDownloaded } from '$lib/core/manager.js';
 
+  // ── Analysis settings ──
   let autoMode = $state(false);
   let autoSubmit = $state(false);
   let notifications = $state(true);
   let cacheEnabled = $state(true);
 
-  let modelStatus = $state('未下載');
-  let modelDownloading = $state(false);
-  let gpuInfo = $state('偵測中...');
+  // ── Model download state ──
+  let modelReady = $state(false);
+  let modelLoading = $state(false);
+  let modelProgress = $state(0);       // 0.0-1.0
+  let modelStageText = $state('');      // WebLLM progress text
+  let modelError = $state('');
+  let downloadStartTime = $state(0);
+  let downloadSpeed = $state('');       // e.g. "12.3 MB/s"
+  let downloadEta = $state('');         // e.g. "2:30"
+
+  // ── GPU detection state ──
+  let gpuResult = $state(null);         // scanGPU() result
+  let gpuScanning = $state(false);
+  let webgpuSupported = $state(false);
+
+  // ── Benchmark state ──
+  let benchResult = $state(null);       // { mode, latency_ms, gpu_info, tested_at }
+  let benchRunning = $state(false);
+  let benchStage = $state('');
+
+  // ── GPU manual selection ──
+  let showGpuPicker = $state(false);
+  let selectedGpu = $state('');
+  let userOverride = $state(null);      // getUserGPUSelection()
+
+  // ── Inference mode ──
+  let inferenceMode = $state('');
+
+  // ── Cache ──
   let cacheSize = $state('計算中...');
+
+  // ── Common GPU list for manual selection ──
+  const GPU_OPTIONS = [
+    { group: 'NVIDIA RTX 50', items: [
+      { label: 'RTX 5090', vram: 32768 },
+      { label: 'RTX 5080', vram: 16384 },
+      { label: 'RTX 5070 Ti', vram: 16384 },
+      { label: 'RTX 5070', vram: 12288 },
+      { label: 'RTX 5060', vram: 8192 },
+    ]},
+    { group: 'NVIDIA RTX 40', items: [
+      { label: 'RTX 4090', vram: 24576 },
+      { label: 'RTX 4080', vram: 16384 },
+      { label: 'RTX 4070 Ti', vram: 12288 },
+      { label: 'RTX 4070', vram: 12288 },
+      { label: 'RTX 4060 Ti', vram: 8192 },
+      { label: 'RTX 4060', vram: 8192 },
+    ]},
+    { group: 'NVIDIA RTX 30', items: [
+      { label: 'RTX 3090', vram: 24576 },
+      { label: 'RTX 3080', vram: 10240 },
+      { label: 'RTX 3070', vram: 8192 },
+      { label: 'RTX 3060', vram: 12288 },
+      { label: 'RTX 3050', vram: 8192 },
+    ]},
+    { group: 'NVIDIA RTX 20', items: [
+      { label: 'RTX 2080 Ti', vram: 11264 },
+      { label: 'RTX 2070', vram: 8192 },
+      { label: 'RTX 2060', vram: 6144 },
+    ]},
+    { group: 'NVIDIA GTX', items: [
+      { label: 'GTX 1660 Ti', vram: 6144 },
+      { label: 'GTX 1660', vram: 6144 },
+      { label: 'GTX 1650', vram: 4096 },
+      { label: 'GTX 1050 Ti', vram: 4096 },
+    ]},
+    { group: 'AMD Radeon', items: [
+      { label: 'RX 7900 XTX', vram: 24576 },
+      { label: 'RX 7800 XT', vram: 16384 },
+      { label: 'RX 7600', vram: 8192 },
+      { label: 'RX 6800 XT', vram: 16384 },
+      { label: 'RX 6700 XT', vram: 12288 },
+      { label: 'RX 6600', vram: 8192 },
+    ]},
+    { group: 'Apple Silicon', items: [
+      { label: 'M4 Pro / Max', vram: 24576 },
+      { label: 'M4', vram: 16384 },
+      { label: 'M3 Pro / Max', vram: 18432 },
+      { label: 'M3', vram: 8192 },
+      { label: 'M2 Pro / Max', vram: 16384 },
+      { label: 'M2', vram: 8192 },
+      { label: 'M1 Pro / Max', vram: 16384 },
+      { label: 'M1', vram: 8192 },
+    ]},
+    { group: 'Intel', items: [
+      { label: 'Arc A770', vram: 16384 },
+      { label: 'Arc A750', vram: 8192 },
+      { label: 'Iris Xe (內顯)', vram: 2048 },
+    ]},
+  ];
+
+  // ── Init ──
+  let initialized = $state(false);
 
   $effect(() => {
     if (typeof window === 'undefined') return;
+    untrack(() => initSettings());
+  });
 
+  async function initSettings() {
     // Load saved settings
     autoMode = localStorage.getItem('analysis_mode') === 'auto';
     autoSubmit = localStorage.getItem('auto_submit') === 'true';
     notifications = localStorage.getItem('notifications') !== 'false';
     cacheEnabled = localStorage.getItem('cache_enabled') !== 'false';
 
-    // Check initial model status
-    isModelDownloaded().then(downloaded => {
-      if (downloaded) modelStatus = '已下載';
-    }).catch(() => {});
-
-    // Check cached benchmark for GPU info
-    const cached = getCachedBenchmark();
-    if (cached && cached.gpu_info) {
-      const gi = cached.gpu_info;
-      if (gi.supported && (gi.device || gi.vramMB)) {
-        gpuInfo = gi.device
-          ? `${gi.device} (${gi.vramMB} MB)`
-          : `WebGPU 可用 (${gi.vramMB} MB)`;
-      } else if (!gi.supported) {
-        gpuInfo = 'WebGPU 不可用';
-      }
+    // Model status — check WebLLM cache flag first, then OPFS/IDB
+    if (localStorage.getItem('powerreader_webllm_cached') === '1') {
+      modelReady = true;
+    } else {
+      modelReady = await isModelDownloaded().catch(() => false);
     }
 
-    // If no cached info, do a live GPU scan
-    if (!cached || !cached.gpu_info) {
-      scanGPU().then(result => {
-        if (result.supported) {
-          gpuInfo = result.device
-            ? `${result.device} (${result.vramMB} MB)`
-            : 'WebGPU 可用';
-        } else {
-          gpuInfo = 'WebGPU 不可用';
-        }
-      }).catch(() => {
-        gpuInfo = 'WebGPU 不可用';
-      });
-    }
+    // GPU: load cached benchmark
+    benchResult = getCachedBenchmark();
+    userOverride = getUserGPUSelection();
 
-    // Estimate cache
+    // GPU: live scan
+    gpuScanning = true;
+    try {
+      gpuResult = await scanGPU();
+      webgpuSupported = gpuResult.supported;
+    } catch {
+      gpuResult = null;
+      webgpuSupported = false;
+    }
+    gpuScanning = false;
+
+    // Inference mode
+    inferenceMode = await detectBestMode().catch(() => INFERENCE_MODES.SERVER);
+
+    // Cache size
     if (navigator.storage?.estimate) {
-      navigator.storage.estimate().then(est => {
-        const usedMB = ((est.usage || 0) / (1024 * 1024)).toFixed(1);
-        cacheSize = `${usedMB} MB`;
-      });
+      const est = await navigator.storage.estimate();
+      cacheSize = `${((est.usage || 0) / (1024 * 1024)).toFixed(1)} MB`;
     } else {
       cacheSize = '無法計算';
     }
-  });
 
-  let initialized = $state(false);
+    queueMicrotask(() => { initialized = true; });
+  }
 
-  // Persist settings to localStorage when they change (after initial load)
+  // Persist settings
   $effect(() => {
     if (!initialized || typeof window === 'undefined') return;
     localStorage.setItem('analysis_mode', autoMode ? 'auto' : 'manual');
@@ -81,48 +167,119 @@
     localStorage.setItem('cache_enabled', String(cacheEnabled));
   });
 
-  // Mark initialized after first load completes
-  $effect(() => {
-    if (typeof window !== 'undefined') {
-      // Use microtask to avoid triggering save on initial load
-      queueMicrotask(() => { initialized = true; });
-    }
-  });
-
+  // ── Model download ──
   async function handleDownloadModel() {
-    modelDownloading = true;
-    try {
-      modelStatus = '檢查下載條件...';
-      const { canDownload, checks } = await runPreDownloadChecks();
-      if (!canDownload) {
-        const failedCheck = checks.find(c => !c.ok);
-        modelStatus = failedCheck?.reason || '下載條件不符';
-        modelDownloading = false;
-        return;
-      }
+    modelLoading = true;
+    modelError = '';
+    modelProgress = 0;
+    modelStageText = '正在初始化...';
+    downloadSpeed = '';
+    downloadEta = '';
+    downloadStartTime = Date.now();
+    let lastProgress = 0;
+    let lastTime = Date.now();
 
-      modelStatus = '下載中... 0%';
-      await downloadModel('', (downloaded, total) => {
-        const pct = Math.round((downloaded / total) * 100);
-        modelStatus = `下載中... ${pct}%`;
+    try {
+      await getWebLLMEngine((report) => {
+        const pct = report.progress || 0;
+        modelProgress = pct;
+        modelStageText = report.text || '';
+
+        // Calculate speed and ETA
+        const now = Date.now();
+        const dt = (now - lastTime) / 1000;
+        if (dt > 0.5 && pct > lastProgress) {
+          const dp = pct - lastProgress;
+          const speed = dp / dt;                    // progress/s
+          const remaining = (1.0 - pct) / speed;    // seconds
+          const totalElapsed = (now - downloadStartTime) / 1000;
+
+          // Estimate total size ~4.5GB for Qwen3-8B
+          const estimatedMB = 4500;
+          const speedMB = speed * estimatedMB;
+          downloadSpeed = speedMB >= 1 ? `${speedMB.toFixed(1)} MB/s` : `${(speedMB * 1024).toFixed(0)} KB/s`;
+
+          if (remaining < 60) {
+            downloadEta = `${Math.ceil(remaining)} 秒`;
+          } else {
+            const mins = Math.floor(remaining / 60);
+            const secs = Math.ceil(remaining % 60);
+            downloadEta = `${mins}:${String(secs).padStart(2, '0')}`;
+          }
+
+          lastProgress = pct;
+          lastTime = now;
+        }
       });
-      modelStatus = '已下載';
+
+      modelReady = true;
+      modelProgress = 1;
+      modelStageText = '下載完成';
+      downloadSpeed = '';
+      downloadEta = '';
     } catch (err) {
-      modelStatus = `下載失敗：${err.message || '未知錯誤'}`;
+      modelError = err.message || '下載失敗';
+      modelStageText = '';
     } finally {
-      modelDownloading = false;
+      modelLoading = false;
     }
   }
 
   async function handleDeleteModel() {
     try {
-      await deleteModel();
-      modelStatus = '未下載';
+      const freedMB = await clearAllModelCaches();
+      try { localStorage.removeItem('powerreader_webllm_cached'); } catch {}
+      modelReady = false;
+      modelProgress = 0;
+      modelStageText = freedMB > 0 ? `已釋放 ${freedMB} MB` : '已刪除';
     } catch (err) {
-      modelStatus = `刪除失敗：${err.message || '未知錯誤'}`;
+      modelError = `刪除失敗：${err.message || '未知錯誤'}`;
     }
   }
 
+  // ── GPU manual selection ──
+  function handleGpuSelect(e) {
+    const val = e.target.value;
+    if (!val) return;
+    const [label, vramStr] = val.split('|');
+    const vram = parseInt(vramStr, 10);
+    saveUserGPUSelection(label, vram);
+    userOverride = { device: label, vramMB: vram };
+    selectedGpu = val;
+  }
+
+  // ── Benchmark ──
+  async function handleRunBenchmark() {
+    benchRunning = true;
+    benchStage = '掃描 GPU...';
+    try {
+      const result = await runBenchmark(
+        () => getWebLLMEngine(),
+        (progress) => {
+          const stages = {
+            scanning_gpu: '掃描 GPU...',
+            loading_engine: '載入模型...',
+            running_inference: '推理測試中...',
+            done: '完成',
+            error: '測試失敗'
+          };
+          benchStage = stages[progress.stage] || progress.stage;
+        }
+      );
+      benchResult = result;
+      // Update GPU result from benchmark
+      if (result.gpu_info) {
+        gpuResult = result.gpu_info;
+        webgpuSupported = result.gpu_info.supported;
+      }
+    } catch {
+      benchStage = '測試失敗';
+    } finally {
+      benchRunning = false;
+    }
+  }
+
+  // ── Cache ──
   async function handleClearCache() {
     if (typeof caches !== 'undefined') {
       const keys = await caches.keys();
@@ -131,24 +288,45 @@
     cacheSize = '0 MB';
   }
 
-  async function handleBenchmark() {
-    gpuInfo = '偵測中...';
-    try {
-      const result = await scanGPU();
-      if (result.supported) {
-        gpuInfo = result.device
-          ? `${result.device} (${result.vramMB} MB)`
-          : `WebGPU 可用 (${result.vramMB} MB)`;
-      } else {
-        gpuInfo = 'WebGPU 不可用';
-      }
-    } catch {
-      gpuInfo = 'WebGPU 偵測失敗';
-    }
+  // ── Derived helpers ──
+  function getGpuDisplayName() {
+    if (userOverride) return `${userOverride.device} (${userOverride.vramMB} MB)`;
+    if (gpuResult?.supported && gpuResult.device) return `${gpuResult.device} (${gpuResult.vramMB} MB)`;
+    if (gpuResult?.supported) return `WebGPU 可用 (VRAM 未知)`;
+    return 'WebGPU 不可用';
+  }
+
+  function getVramMB() {
+    if (userOverride) return userOverride.vramMB;
+    if (gpuResult?.vramMB) return gpuResult.vramMB;
+    return 0;
+  }
+
+  function getVramVerdict() {
+    const vram = getVramMB();
+    if (vram === 0) return { icon: 'help', text: '無法判斷', color: 'var(--md-sys-color-on-surface-variant)' };
+    if (vram >= 6144) return { icon: 'check_circle', text: '可運行本地推理', color: 'var(--md-sys-color-primary)' };
+    if (vram >= 4096) return { icon: 'warning', text: '可能較慢', color: 'var(--md-sys-color-tertiary)' };
+    return { icon: 'error', text: 'VRAM 不足，建議使用伺服器模式', color: 'var(--md-sys-color-error)' };
+  }
+
+  function getTierLabel(mode) {
+    const labels = { gpu: 'GPU 加速', cpu: 'CPU 模式', none: '不建議本地推理' };
+    return labels[mode] || '未測試';
+  }
+
+  function getTierColor(mode) {
+    const colors = { gpu: 'var(--md-sys-color-primary)', cpu: 'var(--md-sys-color-tertiary)', none: 'var(--md-sys-color-error)' };
+    return colors[mode] || 'var(--md-sys-color-on-surface-variant)';
+  }
+
+  function getModeLabel(mode) {
+    return mode === INFERENCE_MODES.WEBGPU ? 'WebGPU 本地推理' : '伺服器推理';
   }
 </script>
 
 <div class="settings-page">
+  <!-- ═══ Analysis Settings ═══ -->
   <section class="section">
     <h3 class="section-title">分析設定</h3>
     <Card variant="filled">
@@ -177,24 +355,76 @@
     </Card>
   </section>
 
+  <!-- ═══ Model Management ═══ -->
   <section class="section">
     <h3 class="section-title">模型管理</h3>
     <Card variant="filled">
       <div class="model-section">
+        <!-- Header -->
         <div class="model-info">
-          <span class="material-symbols-outlined">smart_toy</span>
+          <span class="material-symbols-outlined model-icon">smart_toy</span>
           <div class="model-text">
             <span class="model-name">Qwen3-8B</span>
-            <span class="model-status">{modelStatus}</span>
+            <span class="model-size">~4.5 GB (WebGPU 4-bit 量化)</span>
           </div>
+          {#if modelReady && !modelLoading}
+            <span class="material-symbols-outlined model-check">check_circle</span>
+          {/if}
         </div>
+
+        <!-- Progress bar during download -->
+        {#if modelLoading}
+          <div class="download-progress">
+            <div class="progress-header">
+              <span class="progress-pct">{Math.round(modelProgress * 100)}%</span>
+              {#if downloadSpeed}
+                <span class="progress-speed">{downloadSpeed}</span>
+              {/if}
+              {#if downloadEta}
+                <span class="progress-eta">剩餘 {downloadEta}</span>
+              {/if}
+            </div>
+            <ProgressIndicator type="linear" value={modelProgress * 100} />
+            {#if modelStageText}
+              <span class="progress-stage">{modelStageText}</span>
+            {/if}
+          </div>
+        {/if}
+
+        <!-- Error -->
+        {#if modelError}
+          <div class="model-error">
+            <span class="material-symbols-outlined">error</span>
+            <span>{modelError}</span>
+          </div>
+        {/if}
+
+        <!-- Status text when not downloading -->
+        {#if !modelLoading && !modelError}
+          <span class="model-status-text">
+            {#if modelReady}
+              已下載，可進行本地推理
+            {:else}
+              尚未下載，需要 Wi-Fi 和足夠儲存空間
+            {/if}
+          </span>
+        {/if}
+
+        <!-- Actions -->
         <div class="model-actions">
-          {#if modelStatus === '未下載'}
-            <Button onclick={handleDownloadModel} disabled={modelDownloading}>
+          {#if !modelReady && !modelLoading}
+            <Button onclick={handleDownloadModel}>
+              <span class="material-symbols-outlined">download</span>
               下載模型
             </Button>
-          {:else if modelStatus === '已下載'}
+          {:else if modelLoading}
+            <Button variant="outlined" disabled>
+              <span class="material-symbols-outlined">hourglass_top</span>
+              下載中...
+            </Button>
+          {:else if modelReady}
             <Button variant="outlined" onclick={handleDeleteModel}>
+              <span class="material-symbols-outlined">delete</span>
               刪除模型
             </Button>
           {/if}
@@ -203,19 +433,112 @@
     </Card>
   </section>
 
+  <!-- ═══ Hardware Detection ═══ -->
   <section class="section">
-    <h3 class="section-title">硬體資訊</h3>
+    <h3 class="section-title">硬體偵測</h3>
     <Card variant="filled">
-      <List>
-        <ListItem headline="GPU" supporting={gpuInfo}>
-          {#snippet trailing()}
-            <Button variant="text" onclick={handleBenchmark}>測試</Button>
-          {/snippet}
-        </ListItem>
-      </List>
+      <div class="hardware-section">
+        <!-- GPU Info -->
+        <div class="hw-row">
+          <span class="hw-label">GPU</span>
+          <span class="hw-value">
+            {#if gpuScanning}
+              偵測中...
+            {:else}
+              {getGpuDisplayName()}
+            {/if}
+          </span>
+        </div>
+
+        <!-- VRAM Verdict -->
+        {#if !gpuScanning}
+          {@const verdict = getVramVerdict()}
+          <div class="verdict-row" style:color={verdict.color}>
+            <span class="material-symbols-outlined verdict-icon">{verdict.icon}</span>
+            <span>{verdict.text}</span>
+          </div>
+        {/if}
+
+        <!-- GPU Type -->
+        {#if gpuResult?.gpuType && gpuResult.gpuType !== 'unknown'}
+          <div class="hw-row">
+            <span class="hw-label">類型</span>
+            <span class="hw-value">
+              {gpuResult.gpuType === 'discrete' ? '獨立顯卡' : gpuResult.gpuType === 'integrated' ? '內建顯示' : gpuResult.gpuType === 'unified' ? '統一記憶體' : gpuResult.gpuType}
+            </span>
+          </div>
+        {/if}
+
+        <!-- Architecture -->
+        {#if gpuResult?.architecture}
+          <div class="hw-row">
+            <span class="hw-label">架構</span>
+            <span class="hw-value">{gpuResult.vendor} {gpuResult.architecture}</span>
+          </div>
+        {/if}
+
+        <!-- Inference Mode -->
+        <div class="hw-row">
+          <span class="hw-label">推理模式</span>
+          <span class="hw-value">{getModeLabel(inferenceMode)}</span>
+        </div>
+
+        <!-- Manual GPU Selection -->
+        <div class="gpu-picker">
+          <span class="gpu-picker-label">偵測不到 GPU？手動選擇：</span>
+          <select class="gpu-select" value={selectedGpu} onchange={handleGpuSelect}>
+            <option value="">-- 選擇你的 GPU --</option>
+            {#each GPU_OPTIONS as group}
+              <optgroup label={group.group}>
+                {#each group.items as gpu}
+                  <option value="{gpu.label}|{gpu.vram}">
+                    {gpu.label} ({(gpu.vram / 1024).toFixed(0)} GB)
+                  </option>
+                {/each}
+              </optgroup>
+            {/each}
+          </select>
+          {#if userOverride}
+            <span class="gpu-override-badge">
+              手動選擇：{userOverride.device}
+            </span>
+          {/if}
+        </div>
+
+        <!-- Benchmark Section -->
+        <div class="bench-section">
+          {#if benchResult && !benchRunning}
+            <div class="bench-result">
+              <div class="bench-tier" style:color={getTierColor(benchResult.mode)}>
+                <span class="material-symbols-outlined">
+                  {benchResult.mode === 'gpu' ? 'bolt' : benchResult.mode === 'cpu' ? 'memory' : 'block'}
+                </span>
+                <span class="bench-tier-text">{getTierLabel(benchResult.mode)}</span>
+              </div>
+              <div class="bench-details">
+                <span>延遲：{(benchResult.latency_ms / 1000).toFixed(1)} 秒</span>
+                <span>逾時設定：{(getTimeoutForTier(benchResult.mode) / 1000).toFixed(0)} 秒/Pass</span>
+              </div>
+            </div>
+          {/if}
+
+          {#if benchRunning}
+            <div class="bench-running">
+              <ProgressIndicator type="circular" />
+              <span>{benchStage}</span>
+            </div>
+          {/if}
+
+          <Button variant="outlined" onclick={handleRunBenchmark} disabled={benchRunning}>
+            <span class="material-symbols-outlined">speed</span>
+            {benchResult ? '重新測試' : '效能測試'}
+          </Button>
+        </div>
+      </div>
     </Card>
   </section>
 
+  <!-- ═══ Cache Management ═══ -->
   <section class="section">
     <h3 class="section-title">快取管理</h3>
     <Card variant="filled">
@@ -229,6 +552,7 @@
     </Card>
   </section>
 
+  <!-- ═══ About ═══ -->
   <section class="section">
     <h3 class="section-title">關於</h3>
     <Card variant="filled">
@@ -266,6 +590,8 @@
     color: var(--md-sys-color-on-surface);
     padding-left: 4px;
   }
+
+  /* ── Model Section ── */
   .model-section {
     display: flex;
     flex-direction: column;
@@ -277,9 +603,14 @@
     align-items: center;
     gap: 12px;
   }
-  .model-info .material-symbols-outlined {
+  .model-icon {
     font-size: 32px;
     color: var(--md-sys-color-primary);
+  }
+  .model-check {
+    font-size: 24px;
+    color: var(--md-sys-color-primary);
+    margin-left: auto;
   }
   .model-text {
     display: flex;
@@ -289,13 +620,178 @@
   .model-name {
     font: var(--md-sys-typescale-body-large-font);
     color: var(--md-sys-color-on-surface);
+    font-weight: 500;
   }
-  .model-status {
+  .model-size {
     font: var(--md-sys-typescale-body-small-font);
     color: var(--md-sys-color-on-surface-variant);
+  }
+  .model-status-text {
+    font: var(--md-sys-typescale-body-small-font);
+    color: var(--md-sys-color-on-surface-variant);
+    padding-left: 44px;
   }
   .model-actions {
     display: flex;
     gap: 8px;
+    padding-left: 44px;
+  }
+  .model-error {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-left: 44px;
+    font: var(--md-sys-typescale-body-small-font);
+    color: var(--md-sys-color-error);
+  }
+  .model-error .material-symbols-outlined {
+    font-size: 18px;
+  }
+
+  /* ── Download Progress ── */
+  .download-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 0 44px 0 44px;
+  }
+  .progress-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .progress-pct {
+    font: var(--md-sys-typescale-title-medium-font);
+    color: var(--md-sys-color-primary);
+    font-weight: 600;
+    min-width: 48px;
+  }
+  .progress-speed {
+    font: var(--md-sys-typescale-label-medium-font);
+    color: var(--md-sys-color-on-surface-variant);
+  }
+  .progress-eta {
+    font: var(--md-sys-typescale-label-medium-font);
+    color: var(--md-sys-color-on-surface-variant);
+    margin-left: auto;
+  }
+  .progress-stage {
+    font: var(--md-sys-typescale-body-small-font);
+    color: var(--md-sys-color-on-surface-variant);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* ── Hardware Section ── */
+  .hardware-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 4px 0;
+  }
+  .hw-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 2px 0;
+  }
+  .hw-label {
+    font: var(--md-sys-typescale-label-large-font);
+    color: var(--md-sys-color-on-surface-variant);
+    min-width: 72px;
+    flex-shrink: 0;
+  }
+  .hw-value {
+    font: var(--md-sys-typescale-body-medium-font);
+    color: var(--md-sys-color-on-surface);
+  }
+  .verdict-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: var(--md-sys-shape-corner-small);
+    background: color-mix(in srgb, currentColor 8%, transparent);
+  }
+  .verdict-icon {
+    font-size: 20px;
+  }
+  .verdict-row > span:last-child {
+    font: var(--md-sys-typescale-label-large-font);
+  }
+
+  /* ── GPU Picker ── */
+  .gpu-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 4px;
+    border-top: 1px solid var(--md-sys-color-outline-variant);
+  }
+  .gpu-picker-label {
+    font: var(--md-sys-typescale-label-medium-font);
+    color: var(--md-sys-color-on-surface-variant);
+  }
+  .gpu-select {
+    padding: 8px 12px;
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: var(--md-sys-shape-corner-small);
+    background: var(--md-sys-color-surface);
+    color: var(--md-sys-color-on-surface);
+    font: var(--md-sys-typescale-body-medium-font);
+    outline: none;
+    cursor: pointer;
+    max-width: 320px;
+  }
+  .gpu-select:focus {
+    border-color: var(--md-sys-color-primary);
+  }
+  .gpu-override-badge {
+    font: var(--md-sys-typescale-label-small-font);
+    color: var(--md-sys-color-primary);
+    padding: 2px 8px;
+    border-radius: var(--md-sys-shape-corner-extra-small);
+    background: var(--md-sys-color-primary-container);
+    align-self: flex-start;
+  }
+
+  /* ── Benchmark ── */
+  .bench-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 4px;
+    border-top: 1px solid var(--md-sys-color-outline-variant);
+  }
+  .bench-result {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .bench-tier {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .bench-tier .material-symbols-outlined {
+    font-size: 24px;
+  }
+  .bench-tier-text {
+    font: var(--md-sys-typescale-title-small-font);
+    font-weight: 500;
+  }
+  .bench-details {
+    display: flex;
+    gap: 16px;
+    font: var(--md-sys-typescale-body-small-font);
+    color: var(--md-sys-color-on-surface-variant);
+  }
+  .bench-running {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font: var(--md-sys-typescale-body-medium-font);
+    color: var(--md-sys-color-on-surface-variant);
   }
 </style>
