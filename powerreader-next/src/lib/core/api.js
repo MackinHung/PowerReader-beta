@@ -502,3 +502,26 @@ export async function fetchEventDetail(clusterId) {
   }
   return result;
 }
+
+// =============================================
+// PDPA Compliance API
+// =============================================
+
+/**
+ * GET /api/v1/user/me/export — export all user data (PDPA compliance).
+ */
+export async function exportUserData(token) {
+  return apiFetch('/user/me/export', {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+}
+
+/**
+ * DELETE /api/v1/user/me — delete user account (PDPA compliance).
+ */
+export async function deleteUserAccount(token) {
+  return apiFetch('/user/me', {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+}

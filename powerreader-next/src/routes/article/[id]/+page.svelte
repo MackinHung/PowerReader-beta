@@ -8,6 +8,7 @@
   import CampBar from '$lib/components/data-viz/CampBar.svelte';
   import ControversyMeter from '$lib/components/data-viz/ControversyMeter.svelte';
   import KnowledgePanel from '$lib/components/article/KnowledgePanel.svelte';
+  import ArticleCluster from '$lib/components/article/ArticleCluster.svelte';
   import FeedbackButtons from '$lib/components/feedback/FeedbackButtons.svelte';
   import ProgressIndicator from '$lib/components/ui/ProgressIndicator.svelte';
   import { getArticlesStore } from '$lib/stores/articles.svelte.js';
@@ -22,6 +23,13 @@
   let loading = $state(true);
   let error = $state(null);
 
+  let knowledge = $state(null);
+  let cluster = $state(null);
+  let knowledgeLoading = $state(false);
+  let clusterLoading = $state(false);
+  let knowledgeError = $state(null);
+  let clusterError = $state(null);
+
   $effect(() => {
     loadArticle(articleId);
   });
@@ -29,11 +37,16 @@
   async function loadArticle(id) {
     loading = true;
     error = null;
+    knowledge = null;
+    cluster = null;
+    knowledgeError = null;
+    clusterError = null;
 
     const cached = articlesStore.getArticle(id);
     if (cached) {
       article = cached;
       loading = false;
+      loadSideData(id);
       return;
     }
 
@@ -41,6 +54,7 @@
       const result = await api.fetchArticle(id);
       if (result.success) {
         article = result.data;
+        loadSideData(id);
       } else {
         error = result.error?.message || '無法載入文章';
       }
@@ -49,6 +63,50 @@
     } finally {
       loading = false;
     }
+  }
+
+  async function loadSideData(id) {
+    knowledgeLoading = true;
+    clusterLoading = true;
+    knowledgeError = null;
+    clusterError = null;
+
+    const [knowledgeResult, clusterResult] = await Promise.allSettled([
+      api.fetchArticleKnowledge(id),
+      api.fetchArticleCluster(id)
+    ]);
+
+    if (knowledgeResult.status === 'fulfilled' && knowledgeResult.value.success) {
+      knowledge = knowledgeResult.value.data?.items || knowledgeResult.value.data || [];
+    } else {
+      knowledgeError = 'knowledge_load_failed';
+    }
+    knowledgeLoading = false;
+
+    if (clusterResult.status === 'fulfilled' && clusterResult.value.success) {
+      cluster = clusterResult.value.data;
+    } else {
+      clusterError = 'cluster_load_failed';
+    }
+    clusterLoading = false;
+  }
+
+  function retryKnowledge() {
+    knowledgeLoading = true;
+    knowledgeError = null;
+    api.fetchArticleKnowledge(articleId).then(r => {
+      if (r.success) knowledge = r.data?.items || r.data || [];
+      else knowledgeError = 'failed';
+    }).catch(() => { knowledgeError = 'failed'; }).finally(() => { knowledgeLoading = false; });
+  }
+
+  function retryCluster() {
+    clusterLoading = true;
+    clusterError = null;
+    api.fetchArticleCluster(articleId).then(r => {
+      if (r.success) cluster = r.data;
+      else clusterError = 'failed';
+    }).catch(() => { clusterError = 'failed'; }).finally(() => { clusterLoading = false; });
   }
 
   function formatDate(dateStr) {
@@ -157,8 +215,39 @@
         <ControversyMeter level={article.controversy_score} />
       {/if}
 
-      {#if article.knowledge_items?.length}
-        <KnowledgePanel items={article.knowledge_items} />
+      <!-- Knowledge Panel -->
+      {#if knowledgeLoading}
+        <Card variant="filled">
+          <div class="skeleton-block">
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line"></div>
+          </div>
+        </Card>
+      {:else if knowledgeError}
+        <button class="retry-chip" onclick={retryKnowledge}>
+          <span class="material-symbols-outlined">refresh</span>
+          重新載入知識面板
+        </button>
+      {:else if knowledge?.length}
+        <KnowledgePanel items={knowledge} />
+      {/if}
+
+      <!-- Article Cluster -->
+      {#if clusterLoading}
+        <Card variant="filled">
+          <div class="skeleton-block">
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line short"></div>
+          </div>
+        </Card>
+      {:else if clusterError}
+        <button class="retry-chip" onclick={retryCluster}>
+          <span class="material-symbols-outlined">refresh</span>
+          重新載入跨媒體報導
+        </button>
+      {:else if cluster?.articles?.length}
+        <ArticleCluster articles={cluster.articles} divergenceScore={cluster.divergence_score ?? 0} />
       {/if}
     </div>
   {/if}
@@ -290,5 +379,39 @@
   }
   .icon-action:hover {
     background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
+  }
+  .skeleton-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 4px 0;
+  }
+  .skeleton-line {
+    height: 12px;
+    background: var(--md-sys-color-surface-container-high);
+    border-radius: var(--md-sys-shape-corner-extra-small);
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+  }
+  .skeleton-line.short {
+    width: 60%;
+  }
+  @keyframes skeleton-pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+  .retry-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: var(--md-sys-shape-corner-small);
+    background: transparent;
+    color: var(--md-sys-color-primary);
+    font: var(--md-sys-typescale-label-large-font);
+    cursor: pointer;
+  }
+  .retry-chip:hover {
+    background: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
   }
 </style>
