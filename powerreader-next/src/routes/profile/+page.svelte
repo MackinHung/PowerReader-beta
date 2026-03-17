@@ -2,33 +2,31 @@
   import Card from '$lib/components/ui/Card.svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import TrendChart from '$lib/components/data-viz/TrendChart.svelte';
-  import * as api from '$lib/core/api.js';
+  import { getAuthStore } from '$lib/stores/auth.svelte.js';
+  import { API_BASE } from '$lib/core/api.js';
 
-  // Check for auth/settings stores - use localStorage fallback for now
-  let user = $state(null);
+  const authStore = getAuthStore();
+
   let loading = $state(true);
   let contributions = $state([]);
   let trendData = $state([]);
 
   $effect(() => {
     if (typeof window === 'undefined') return;
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      loadProfile(token);
+    if (authStore.isAuthenticated) {
+      loadProfile();
     } else {
       loading = false;
     }
   });
 
-  async function loadProfile(token) {
+  async function loadProfile() {
     loading = true;
     try {
-      const result = await api.fetchUserMe(token);
-      if (result.success) {
-        user = result.data?.user;
-        contributions = result.data?.contributions || [];
-        trendData = result.data?.trend || [];
-      }
+      await Promise.all([
+        authStore.fetchProfile(),
+        authStore.fetchPoints()
+      ]);
     } catch (e) {
       console.error('Failed to load profile:', e);
     } finally {
@@ -37,16 +35,13 @@
   }
 
   function handleLogin() {
-    // Redirect to Google OAuth flow
-    const clientId = ''; // Set from config
-    const redirectUri = `${window.location.origin}/auth/callback`;
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=openid%20email%20profile`;
-    window.location.href = authUrl;
+    const apiOrigin = new URL(API_BASE).origin;
+    const callbackUrl = `${window.location.origin}/auth/callback`;
+    window.location.href = `${apiOrigin}/api/v1/auth/google?redirect=${encodeURIComponent(callbackUrl)}`;
   }
 
   function handleLogout() {
-    localStorage.removeItem('auth_token');
-    user = null;
+    authStore.logout();
     contributions = [];
     trendData = [];
   }
@@ -58,7 +53,7 @@
       <span class="material-symbols-outlined loading-icon">hourglass_top</span>
       <p>載入中...</p>
     </div>
-  {:else if !user}
+  {:else if !authStore.isAuthenticated}
     <div class="login-prompt">
       <Card variant="elevated">
         <div class="login-card">
@@ -76,16 +71,12 @@
     <div class="user-section">
       <Card variant="elevated">
         <div class="user-info">
-          {#if user.avatar}
-            <img class="avatar" src={user.avatar} alt={user.name} />
-          {:else}
-            <div class="avatar-placeholder">
-              <span class="material-symbols-outlined">person</span>
-            </div>
-          {/if}
+          <div class="avatar-placeholder">
+            <span class="material-symbols-outlined">person</span>
+          </div>
           <div class="user-text">
-            <span class="user-name">{user.name || user.email}</span>
-            <span class="user-email">{user.email}</span>
+            <span class="user-name">{authStore.userProfile?.user_hash?.slice(0, 8) ?? '使用者'}...</span>
+            <span class="user-email">加入於 {authStore.userProfile?.member_since?.slice(0, 10) ?? ''}</span>
           </div>
         </div>
       </Card>
@@ -94,19 +85,19 @@
     <div class="kpi-grid">
       <Card variant="filled">
         <div class="kpi-card">
-          <span class="kpi-value">{user.analyses_count ?? 0}</span>
-          <span class="kpi-label">分析數</span>
+          <span class="kpi-value">{authStore.userProfile?.contribution_count ?? 0}</span>
+          <span class="kpi-label">貢獻數</span>
         </div>
       </Card>
       <Card variant="filled">
         <div class="kpi-card">
-          <span class="kpi-value">{user.points ?? 0}</span>
+          <span class="kpi-value">{authStore.userProfile?.display_points ?? '0.00'}</span>
           <span class="kpi-label">貢獻點數</span>
         </div>
       </Card>
       <Card variant="filled">
         <div class="kpi-card">
-          <span class="kpi-value">{user.voting_power ?? 0}</span>
+          <span class="kpi-value">{authStore.userProfile?.vote_rights ?? 0}</span>
           <span class="kpi-label">投票權</span>
         </div>
       </Card>
@@ -198,12 +189,6 @@
     display: flex;
     align-items: center;
     gap: 16px;
-  }
-  .avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: var(--md-sys-shape-corner-full);
-    object-fit: cover;
   }
   .avatar-placeholder {
     width: 48px;

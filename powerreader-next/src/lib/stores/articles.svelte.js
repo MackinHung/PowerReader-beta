@@ -36,7 +36,7 @@ export function getArticlesStore() {
       error = null;
       try {
         const result = await api.fetchArticles({
-          source: filter === 'all' ? undefined : filter,
+          category: filter === 'all' ? undefined : filter,
           sort_by: currentSort,
           page,
           limit: 20

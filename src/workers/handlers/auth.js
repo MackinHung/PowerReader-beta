@@ -156,7 +156,7 @@ export async function googleOAuthCallback(request, env, ctx, { url }) {
     redirectBase = 'https://powerreader.pages.dev';
   }
 
-  const callbackUrl = `${redirectBase}/#/auth/callback?token=${encodeURIComponent(jwt)}&session=${encodeURIComponent(session_id)}`;
+  const callbackUrl = `${redirectBase}/auth/callback?token=${encodeURIComponent(jwt)}&session=${encodeURIComponent(session_id)}`;
   return Response.redirect(callbackUrl, 302);
 }
 

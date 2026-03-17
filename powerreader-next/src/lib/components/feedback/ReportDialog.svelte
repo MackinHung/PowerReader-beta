@@ -2,6 +2,9 @@
   import Dialog from '$lib/components/ui/Dialog.svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import { reportArticle } from '$lib/core/api.js';
+  import { getAuthStore } from '$lib/stores/auth.svelte.js';
+
+  const authStore = getAuthStore();
 
   let { open = $bindable(false), articleId = '' } = $props();
 
@@ -21,7 +24,7 @@
     submitting = true;
     error = '';
 
-    const result = await reportArticle(articleId, reason, details, null);
+    const result = await reportArticle(articleId, reason, details, authStore.token);
     submitting = false;
 
     if (result.success) {

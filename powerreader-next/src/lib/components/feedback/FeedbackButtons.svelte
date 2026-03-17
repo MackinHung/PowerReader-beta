@@ -1,6 +1,9 @@
 <script>
   import IconButton from '$lib/components/ui/IconButton.svelte';
   import { submitArticleFeedback } from '$lib/core/api.js';
+  import { getAuthStore } from '$lib/stores/auth.svelte.js';
+
+  const authStore = getAuthStore();
 
   let { articleId = '', currentFeedback = null } = $props();
 
@@ -22,7 +25,7 @@
     submitted = true;
     error = '';
 
-    const result = await submitArticleFeedback(articleId, TYPE_MAP[type], null);
+    const result = await submitArticleFeedback(articleId, TYPE_MAP[type], authStore.token);
     if (!result.success) {
       submitted = false;
       selected = null;

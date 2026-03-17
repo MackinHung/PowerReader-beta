@@ -1,18 +1,18 @@
 <script>
   import { goto } from '$app/navigation';
+  import { getAuthStore } from '$lib/stores/auth.svelte.js';
 
+  const authStore = getAuthStore();
   let message = $state('登入處理中...');
 
   $effect(() => {
     if (typeof window === 'undefined') return;
 
-    // Extract token from URL hash or query params
-    const hash = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash || window.location.search);
-    const token = params.get('access_token') || params.get('token');
+    // Extract token from query params (?token=...&session=...)
+    const params = new URLSearchParams(window.location.search);
+    const success = authStore.handleCallback(params);
 
-    if (token) {
-      localStorage.setItem('auth_token', token);
+    if (success) {
       message = '登入成功！正在跳轉...';
       setTimeout(() => {
         goto('/profile', { replaceState: true });
