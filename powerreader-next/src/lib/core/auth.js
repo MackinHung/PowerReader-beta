@@ -97,12 +97,35 @@ export function getUserHash() {
 }
 
 /**
- * Check if user is currently authenticated.
- * Does NOT validate token — server validates on each request.
+ * Check if a JWT token's exp claim is in the past.
+ * @param {string} token - JWT string
+ * @returns {boolean} true if expired or unparseable
+ */
+function isTokenExpired(token) {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return true;
+    const payload = JSON.parse(atob(parts[1]));
+    if (!payload.exp) return false; // No exp claim = never expires
+    return Date.now() >= payload.exp * 1000;
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Check if user is currently authenticated with a non-expired token.
+ * If token exists but is expired, clears auth and returns false.
  * @returns {boolean}
  */
 export function isAuthenticated() {
-  return !!localStorage.getItem(TOKEN_KEY);
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) return false;
+  if (isTokenExpired(token)) {
+    clearAuth();
+    return false;
+  }
+  return true;
 }
 
 /**
