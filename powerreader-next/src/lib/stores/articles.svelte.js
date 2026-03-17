@@ -66,7 +66,9 @@ export function getArticlesStore() {
           // Cache page 1 results in memory
           _pageOneCache[filter] = { articles: incoming, hasMore: incoming.length >= 20 };
         } else {
-          articles = [...articles, ...incoming];
+          const existingIds = new Set(articles.map(a => a.article_id));
+          const unique = incoming.filter(a => !existingIds.has(a.article_id));
+          articles = [...articles, ...unique];
         }
 
         hasMore = incoming.length >= 20;

@@ -115,7 +115,7 @@
       </div>
     {:else}
       <div class="pick-list">
-        {#each articlesStore.articles.slice(0, 10) as article (article.article_hash || article.article_id)}
+        {#each articlesStore.articles.slice(0, 10) as article, i (article.article_id ?? i)}
           <Card variant="elevated" clickable onclick={() => selectArticle(article)}>
             <div class="pick-item">
               <span class="pick-title">{article.title}</span>

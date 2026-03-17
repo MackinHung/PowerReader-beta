@@ -82,7 +82,7 @@
       <section class="section">
         <h3 class="section-title">最近文章</h3>
         <div class="article-list">
-          {#each articles as article (article.article_hash || article.article_id)}
+          {#each articles as article, i (article.article_id ?? i)}
             <ArticleCard {article} />
           {/each}
         </div>

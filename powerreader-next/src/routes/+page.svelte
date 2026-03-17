@@ -189,7 +189,7 @@
     </ResponsiveGrid>
   {:else}
     <ResponsiveGrid>
-      {#each store.articles as article (article.article_hash || article.article_id)}
+      {#each store.articles as article, i (article.article_id ?? i)}
         <ArticleCard
           {article}
           onclick={() => handleArticleClick(article)}

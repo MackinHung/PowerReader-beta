@@ -77,7 +77,7 @@
           </div>
         {:else if articles.length > 0}
           <div class="articles-list">
-            {#each articles as article (article.article_hash || article.article_id)}
+            {#each articles as article, i (article.article_id ?? i)}
               <ArticleCard
                 {article}
                 onclick={() => onArticleClick?.(article)}
