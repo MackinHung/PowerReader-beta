@@ -10,6 +10,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 let mod;
 let mockEnqueueAnalysis, mockCancelAll, mockFetchArticles, mockSubmitAnalysisResult;
+let mockFetchEvents, mockSearchArticles, mockFetchArticle;
 let mockGetAuthToken, mockGetUserHash, mockIsAuthenticated;
 let mockOpenDB, mockT;
 let mockScanGPU;
@@ -23,6 +24,9 @@ beforeEach(async () => {
   mockCancelAll = vi.fn();
   mockFetchArticles = vi.fn();
   mockSubmitAnalysisResult = vi.fn();
+  mockFetchEvents = vi.fn().mockResolvedValue({ success: false });
+  mockSearchArticles = vi.fn().mockResolvedValue({ success: false });
+  mockFetchArticle = vi.fn().mockResolvedValue({ success: false });
   mockGetAuthToken = vi.fn(() => 'token');
   mockGetUserHash = vi.fn(() => 'hash');
   mockIsAuthenticated = vi.fn(() => true);
@@ -46,6 +50,9 @@ beforeEach(async () => {
   }));
   vi.doMock('../../src/lib/core/api.js', () => ({
     fetchArticles: mockFetchArticles,
+    fetchArticle: mockFetchArticle,
+    fetchEvents: mockFetchEvents,
+    searchArticles: mockSearchArticles,
     submitAnalysisResult: mockSubmitAnalysisResult,
   }));
   vi.doMock('../../src/lib/core/auth.js', () => ({
@@ -524,5 +531,201 @@ describe('pauseAutoRunner', () => {
     resolveFetch({ success: false, data: null });
     await vi.advanceTimersByTimeAsync(0);
     await promise;
+  });
+});
+
+// ══════════════════════════════════════════════
+// 7. Cluster-priority ordering
+// ══════════════════════════════════════════════
+
+describe('cluster-priority ordering', () => {
+  it('fetches events first and searches articles per cluster', async () => {
+    mockIsAuthenticated.mockReturnValue(true);
+    localStorage.setItem('powerreader_webllm_cached', '1');
+    setupMockDB();
+
+    mockFetchEvents
+      .mockResolvedValueOnce({
+        success: true,
+        data: {
+          items: [
+            { cluster_id: 'c1', title: '美國大選結果分析報導' },
+            { cluster_id: 'c2', title: '台灣半導體政策討論' },
+          ],
+        },
+      })
+      .mockResolvedValueOnce({ success: false }); // 2nd iteration → no events
+
+    mockSearchArticles
+      .mockResolvedValueOnce({
+        success: true,
+        data: { articles: [{ article_id: 'a1', title: 'Article from cluster 1' }] },
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        data: { articles: [{ article_id: 'a2', title: 'Article from cluster 2' }] },
+      });
+
+    // fetchArticle pre-check: not yet analyzed
+    mockFetchArticle.mockResolvedValue({ success: true, data: { analysis_count: 0 } });
+
+    mockEnqueueAnalysis.mockResolvedValue({
+      bias_score: 50, controversy_score: 30,
+      reasoning: 'test', key_phrases: [], points: [],
+      prompt_version: 'v3.0.0', latency_ms: 100, mode: 'webgpu',
+    });
+    mockSubmitAnalysisResult.mockResolvedValue({ success: true });
+
+    // Fallback when no events: empty articles → stop
+    mockFetchArticles.mockResolvedValue({ success: true, data: { articles: [] } });
+
+    const promise = mod.startAutoRunner();
+    await vi.advanceTimersByTimeAsync(30000);
+    await promise;
+
+    // Should have searched for articles in both clusters
+    expect(mockSearchArticles).toHaveBeenCalledTimes(2);
+    // Should have analyzed both articles
+    expect(mockEnqueueAnalysis).toHaveBeenCalledTimes(2);
+    expect(mod.getAutoRunnerStatus().analyzed).toBe(2);
+  });
+
+  it('deduplicates articles across clusters', async () => {
+    mockIsAuthenticated.mockReturnValue(true);
+    localStorage.setItem('powerreader_webllm_cached', '1');
+    setupMockDB();
+
+    mockFetchEvents.mockResolvedValueOnce({
+      success: true,
+      data: {
+        items: [
+          { cluster_id: 'c1', title: '重複事件測試一' },
+          { cluster_id: 'c2', title: '重複事件測試二' },
+        ],
+      },
+    });
+
+    // Both clusters return the same article
+    const sameArticle = { article_id: 'dup-1', title: 'Shared article' };
+    mockSearchArticles
+      .mockResolvedValueOnce({ success: true, data: { articles: [sameArticle] } })
+      .mockResolvedValueOnce({ success: true, data: { articles: [sameArticle] } });
+
+    mockFetchArticle.mockResolvedValue({ success: true, data: { analysis_count: 0 } });
+    mockEnqueueAnalysis.mockResolvedValue({
+      bias_score: 50, controversy_score: 30,
+      reasoning: 'test', key_phrases: [], points: [],
+      prompt_version: 'v3.0.0', latency_ms: 100, mode: 'webgpu',
+    });
+    mockSubmitAnalysisResult.mockResolvedValue({ success: true });
+
+    // Stop on second iteration
+    mockFetchEvents.mockResolvedValueOnce({ success: false });
+    mockFetchArticles.mockResolvedValue({ success: true, data: { articles: [] } });
+
+    const promise = mod.startAutoRunner();
+    await vi.advanceTimersByTimeAsync(30000);
+    await promise;
+
+    // Should only analyze once despite appearing in two clusters
+    expect(mockEnqueueAnalysis).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back to flat article list when no events available', async () => {
+    mockIsAuthenticated.mockReturnValue(true);
+    localStorage.setItem('powerreader_webllm_cached', '1');
+    setupMockDB();
+
+    // No events
+    mockFetchEvents.mockResolvedValue({ success: false });
+
+    // Flat articles available
+    mockFetchArticles
+      .mockResolvedValueOnce({
+        success: true,
+        data: { articles: [{ article_id: 'flat-1', title: 'Flat article' }] },
+      })
+      .mockResolvedValueOnce({ success: true, data: { articles: [] } });
+
+    mockFetchArticle.mockResolvedValue({ success: true, data: { analysis_count: 0 } });
+    mockEnqueueAnalysis.mockResolvedValue({
+      bias_score: 50, controversy_score: 30,
+      reasoning: 'test', key_phrases: [], points: [],
+      prompt_version: 'v3.0.0', latency_ms: 100, mode: 'webgpu',
+    });
+    mockSubmitAnalysisResult.mockResolvedValue({ success: true });
+
+    const promise = mod.startAutoRunner();
+    await vi.advanceTimersByTimeAsync(30000);
+    await promise;
+
+    expect(mockFetchArticles).toHaveBeenCalled();
+    expect(mockEnqueueAnalysis).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ══════════════════════════════════════════════
+// 8. Pre-analysis duplicate check
+// ══════════════════════════════════════════════
+
+describe('pre-analysis duplicate check', () => {
+  it('skips article if fresh API check shows already analyzed', async () => {
+    mockIsAuthenticated.mockReturnValue(true);
+    localStorage.setItem('powerreader_webllm_cached', '1');
+    setupMockDB();
+
+    // No events → fallback to flat
+    mockFetchEvents.mockResolvedValue({ success: false });
+    mockFetchArticles
+      .mockResolvedValueOnce({
+        success: true,
+        data: { articles: [{ article_id: 'already-done', title: 'Done' }] },
+      })
+      .mockResolvedValueOnce({ success: true, data: { articles: [] } });
+
+    // Pre-check: article already has analysis
+    mockFetchArticle.mockResolvedValue({
+      success: true,
+      data: { analysis_count: 1 },
+    });
+
+    const promise = mod.startAutoRunner();
+    await vi.advanceTimersByTimeAsync(30000);
+    await promise;
+
+    // Should NOT have called enqueueAnalysis (skipped due to duplicate)
+    expect(mockEnqueueAnalysis).not.toHaveBeenCalled();
+    expect(mod.getAutoRunnerStatus().skipped).toBe(1);
+  });
+
+  it('proceeds with analysis if pre-check fails (network error)', async () => {
+    mockIsAuthenticated.mockReturnValue(true);
+    localStorage.setItem('powerreader_webllm_cached', '1');
+    setupMockDB();
+
+    mockFetchEvents.mockResolvedValue({ success: false });
+    mockFetchArticles
+      .mockResolvedValueOnce({
+        success: true,
+        data: { articles: [{ article_id: 'a1', title: 'Test' }] },
+      })
+      .mockResolvedValueOnce({ success: true, data: { articles: [] } });
+
+    // Pre-check fails
+    mockFetchArticle.mockRejectedValue(new Error('network error'));
+
+    mockEnqueueAnalysis.mockResolvedValue({
+      bias_score: 50, controversy_score: 30,
+      reasoning: 'test', key_phrases: [], points: [],
+      prompt_version: 'v3.0.0', latency_ms: 100, mode: 'webgpu',
+    });
+    mockSubmitAnalysisResult.mockResolvedValue({ success: true });
+
+    const promise = mod.startAutoRunner();
+    await vi.advanceTimersByTimeAsync(30000);
+    await promise;
+
+    // Should still analyze (pre-check failure doesn't block)
+    expect(mockEnqueueAnalysis).toHaveBeenCalledTimes(1);
   });
 });

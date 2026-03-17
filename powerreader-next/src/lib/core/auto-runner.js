@@ -12,7 +12,7 @@
  */
 
 import { enqueueAnalysis, cancelAll, AnalysisCancelledError } from './queue.js';
-import { fetchArticles, fetchEvents, searchArticles, submitAnalysisResult } from './api.js';
+import { fetchArticles, fetchArticle, fetchEvents, searchArticles, submitAnalysisResult } from './api.js';
 import { getAuthToken, getUserHash, isAuthenticated } from './auth.js';
 import { openDB } from './db.js';
 import { t } from '$lib/i18n/zh-TW.js';
@@ -366,6 +366,16 @@ function _waitForResume() {
 
 async function _processArticle(article) {
   try {
+    // Fresh duplicate check — avoid wasting GPU time if someone else already analyzed
+    try {
+      const freshCheck = await fetchArticle(article.article_id);
+      if (freshCheck.success && freshCheck.data?.analysis_count > 0) {
+        return { type: 'skipped_duplicate', error: null };
+      }
+    } catch {
+      // If check fails, proceed anyway — server will reject duplicates on submit
+    }
+
     // Run analysis via queue
     const analysisResult = await enqueueAnalysis(article.article_id, article, {});
 
