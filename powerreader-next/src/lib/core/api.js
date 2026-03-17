@@ -13,6 +13,7 @@ import { openDB } from './db.js';
 
 export const API_BASE = 'https://powerreader-api.watermelom5404.workers.dev/api/v1';
 const FETCH_TIMEOUT_MS = 10000;
+const CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
 
 // =============================================
 // Internal: Fetch wrapper
@@ -126,6 +127,43 @@ async function getAllCachedArticles() {
   }
 }
 
+/**
+ * Return cached response only if it's within CACHE_TTL_MS.
+ * Returns null if missing or stale — caller should fetch from API.
+ */
+async function getFreshCachedResponse(cacheKey) {
+  try {
+    const db = await openDB();
+    const tx = db.transaction('cached_results', 'readonly');
+    const req = tx.objectStore('cached_results').get(cacheKey);
+    const record = await new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); });
+    db.close();
+    if (!record) return null;
+    const age = Date.now() - new Date(record.cached_at).getTime();
+    return age < CACHE_TTL_MS ? record.data : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Return cached article only if it's within CACHE_TTL_MS.
+ */
+async function getFreshCachedArticle(articleId) {
+  try {
+    const db = await openDB();
+    const tx = db.transaction('articles', 'readonly');
+    const req = tx.objectStore('articles').get(articleId);
+    const record = await new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); });
+    db.close();
+    if (!record) return null;
+    const age = Date.now() - new Date(record.cached_at).getTime();
+    return age < CACHE_TTL_MS ? record : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 // =============================================
 // Public API
 // =============================================
@@ -155,6 +193,9 @@ export async function fetchArticles({
     };
   }
 
+  const fresh = await getFreshCachedResponse(cacheKey);
+  if (fresh) return { success: true, data: fresh, error: null };
+
   const params = new URLSearchParams({ page, limit, sort_by, sort_order });
   if (source) params.set('source', source);
   if (category) params.set('category', category);
@@ -181,6 +222,9 @@ export async function fetchArticle(articleId) {
     return { success: false, data: null, error: { type: 'article_not_cached' } };
   }
 
+  const fresh = await getFreshCachedArticle(articleId);
+  if (fresh) return { success: true, data: fresh, error: null };
+
   const result = await apiFetch(`/articles/${encodeURIComponent(articleId)}`);
   if (result.success && result.data) {
     await cacheArticle(result.data);
@@ -200,6 +244,9 @@ export async function fetchArticleCluster(articleId) {
     return { success: false, data: null, error: { type: 'offline' } };
   }
 
+  const fresh = await getFreshCachedResponse(cacheKey);
+  if (fresh) return { success: true, data: fresh, error: null };
+
   const result = await apiFetch(`/articles/${encodeURIComponent(articleId)}/cluster`);
   if (result.success && result.data) {
     await cacheResponse(cacheKey, result.data);
@@ -218,6 +265,9 @@ export async function fetchArticleKnowledge(articleId) {
     if (cached) return { success: true, data: cached, error: null };
     return { success: false, data: null, error: { type: 'offline' } };
   }
+
+  const fresh = await getFreshCachedResponse(cacheKey);
+  if (fresh) return { success: true, data: fresh, error: null };
 
   const result = await apiFetch(`/articles/${encodeURIComponent(articleId)}/knowledge`);
   if (result.success && result.data) {
@@ -274,6 +324,9 @@ export async function fetchArticleAnalyses(articleId) {
     return { success: false, data: null, error: { type: 'offline' } };
   }
 
+  const fresh = await getFreshCachedResponse(cacheKey);
+  if (fresh) return { success: true, data: fresh, error: null };
+
   const result = await apiFetch(`/articles/${encodeURIComponent(articleId)}/analyses`);
   if (result.success && result.data) {
     await cacheResponse(cacheKey, result.data);
@@ -308,6 +361,9 @@ export async function fetchBlindspotEvents({ page = 1, limit = 20, type } = {}) 
     return { success: false, data: null, error: { type: 'offline' } };
   }
 
+  const fresh = await getFreshCachedResponse(cacheKey);
+  if (fresh) return { success: true, data: fresh, error: null };
+
   const params = new URLSearchParams({ page, limit });
   if (type) params.set('type', type);
 
@@ -334,6 +390,9 @@ export async function fetchSources() {
     return { success: false, data: null, error: { type: 'offline' } };
   }
 
+  const fresh = await getFreshCachedResponse(cacheKey);
+  if (fresh) return { success: true, data: fresh, error: null };
+
   const result = await apiFetch('/sources');
   if (result.success && result.data) {
     await cacheResponse(cacheKey, result.data);
@@ -352,6 +411,9 @@ export async function fetchSource(source) {
     if (cached) return { success: true, data: cached, error: null };
     return { success: false, data: null, error: { type: 'offline' } };
   }
+
+  const fresh = await getFreshCachedResponse(cacheKey);
+  if (fresh) return { success: true, data: fresh, error: null };
 
   const result = await apiFetch(`/sources/${encodeURIComponent(source)}`);
   if (result.success && result.data) {
@@ -450,6 +512,9 @@ export async function searchArticles(query, { page = 1, limit = 20 } = {}) {
     return { success: false, data: null, error: { type: 'offline' } };
   }
 
+  const fresh = await getFreshCachedResponse(cacheKey);
+  if (fresh) return { success: true, data: fresh, error: null };
+
   const params = new URLSearchParams({ q: query, page, limit });
   const result = await apiFetch(`/search?${params}`);
   if (result.success && result.data) {
@@ -474,6 +539,9 @@ export async function fetchEvents({ page = 1, limit = 20, type } = {}) {
     return { success: false, data: null, error: { type: 'offline' } };
   }
 
+  const fresh = await getFreshCachedResponse(cacheKey);
+  if (fresh) return { success: true, data: fresh, error: null };
+
   const params = new URLSearchParams({ page, limit });
   if (type) params.set('type', type);
 
@@ -495,6 +563,9 @@ export async function fetchEventDetail(clusterId) {
     if (cached) return { success: true, data: cached, error: null };
     return { success: false, data: null, error: { type: 'offline' } };
   }
+
+  const fresh = await getFreshCachedResponse(cacheKey);
+  if (fresh) return { success: true, data: fresh, error: null };
 
   const result = await apiFetch(`/events/${encodeURIComponent(clusterId)}`);
   if (result.success && result.data) {
