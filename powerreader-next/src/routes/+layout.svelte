@@ -95,6 +95,36 @@
       .catch(() => {});
   });
 
+  // Pre-warm WebLLM engine if model is already cached (runs once)
+  // Loads model weights from Cache API → GPU memory in background,
+  // so the first analysis after page refresh is instant.
+  $effect(() => {
+    if (typeof window === 'undefined') return;
+
+    untrack(() => {
+      // Only pre-warm if model was previously downloaded
+      if (localStorage.getItem('powerreader_webllm_cached') !== '1') return;
+
+      // Skip mobile — uses server inference
+      import('$lib/utils/device-detect.js').then(({ isMobileDevice }) => {
+        if (isMobileDevice()) return;
+
+        const prewarm = () => {
+          import('$lib/core/inference.js').then(({ getWebLLMEngine }) => {
+            getWebLLMEngine().catch(() => {});
+          }).catch(() => {});
+        };
+
+        // Defer until browser is idle to avoid blocking initial paint
+        if (typeof requestIdleCallback === 'function') {
+          requestIdleCallback(prewarm);
+        } else {
+          setTimeout(prewarm, 2000);
+        }
+      }).catch(() => {});
+    });
+  });
+
   // SW sync-complete message handler (runs once)
   $effect(() => {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
