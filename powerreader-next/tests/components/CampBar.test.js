@@ -3,33 +3,18 @@ import { render, screen } from '@testing-library/svelte';
 import CampBar from '$lib/components/data-viz/CampBar.svelte';
 
 describe('CampBar', () => {
-	describe('media mode (default)', () => {
-		it('renders with default media labels', () => {
-			render(CampBar, { props: { green: 3, white: 2, blue: 1 } });
-			expect(screen.getByText('偏綠')).toBeTruthy();
-			expect(screen.getByText('中立')).toBeTruthy();
-			expect(screen.getByText('偏藍')).toBeTruthy();
-		});
-
-		it('has 8px height bar in media mode', () => {
-			const { container } = render(CampBar, { props: { green: 3, white: 2, blue: 1 } });
-			const bar = container.querySelector('.camp-bar');
-			expect(bar.classList.contains('stance')).toBe(false);
-		});
+	it('renders with party labels (stance only)', () => {
+		render(CampBar, { props: { green: 3, white: 2, blue: 1 } });
+		expect(screen.getByText('民進黨')).toBeTruthy();
+		expect(screen.getByText('民眾黨')).toBeTruthy();
+		expect(screen.getByText('國民黨')).toBeTruthy();
 	});
 
-	describe('stance mode', () => {
-		it('renders with party labels', () => {
-			render(CampBar, { props: { green: 3, white: 2, blue: 1, mode: 'stance' } });
-			expect(screen.getByText('民進黨')).toBeTruthy();
-			expect(screen.getByText('民眾黨')).toBeTruthy();
-			expect(screen.getByText('國民黨')).toBeTruthy();
-		});
-
-		it('has stance class for taller bar', () => {
-			const { container } = render(CampBar, { props: { green: 3, white: 2, blue: 1, mode: 'stance' } });
-			expect(container.querySelector('.camp-bar.stance')).toBeTruthy();
-		});
+	it('does not render media camp labels', () => {
+		render(CampBar, { props: { green: 3, white: 2, blue: 1 } });
+		expect(screen.queryByText('偏綠')).toBeNull();
+		expect(screen.queryByText('中立')).toBeNull();
+		expect(screen.queryByText('偏藍')).toBeNull();
 	});
 
 	describe('percentage calculation', () => {
@@ -43,10 +28,7 @@ describe('CampBar', () => {
 
 		it('handles all zeros gracefully', () => {
 			const { container } = render(CampBar, { props: { green: 0, white: 0, blue: 0 } });
-			// bluePct = 100 - 0 - 0 = 100 but only renders if bluePct > 0
-			// With all zeros, total becomes 1 so green/white/blue all compute, blue gets remainder
 			const segments = container.querySelectorAll('.segment');
-			// At least one segment is rendered (blue takes remainder)
 			expect(segments.length).toBeGreaterThanOrEqual(0);
 		});
 
@@ -61,5 +43,20 @@ describe('CampBar', () => {
 			// white segment (10%) should have no span child
 			expect(segments[1].querySelector('span')).toBeNull();
 		});
+	});
+
+	it('uses gradient backgrounds for segments', () => {
+		const { container } = render(CampBar, { props: { green: 3, white: 2, blue: 1 } });
+		const segments = container.querySelectorAll('.segment');
+		// All segments should use gradient background-image
+		expect(segments[0].style.backgroundImage).toContain('linear-gradient');
+		expect(segments[1].style.backgroundImage).toContain('linear-gradient');
+		expect(segments[2].style.backgroundImage).toContain('linear-gradient');
+	});
+
+	it('renders legend with gradient dots', () => {
+		const { container } = render(CampBar, { props: { green: 3, white: 2, blue: 1 } });
+		const dots = container.querySelectorAll('.legend .dot');
+		expect(dots.length).toBe(3);
 	});
 });

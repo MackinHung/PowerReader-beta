@@ -11,11 +11,10 @@ const makeCluster = (overrides = {}) => ({
 	category: '政治',
 	article_count: 5,
 	source_count: 3,
-	camp_distribution: JSON.stringify({ green: 3, white: 1, blue: 1 }),
 	sources_json: JSON.stringify([
-		{ source: 'liberty_times', count: 2, camp: 'green' },
-		{ source: 'cna', count: 2, camp: 'white' },
-		{ source: 'udn', count: 1, camp: 'blue' },
+		{ source: 'liberty_times', count: 2 },
+		{ source: 'cna', count: 2 },
+		{ source: 'udn', count: 1 },
 	]),
 	avg_controversy_score: 45,
 	earliest_published_at: '2026-03-18T06:00:00Z',
@@ -36,16 +35,16 @@ describe('ClusterCardV2', () => {
 		expect(screen.getByText(/3 家媒體/)).toBeTruthy();
 	});
 
-	it('renders source badges', () => {
+	it('renders source badges (neutral, no camp coloring)', () => {
 		render(ClusterCardV2, { props: { cluster: makeCluster() } });
 		expect(screen.getByText('自由時報')).toBeTruthy();
 		expect(screen.getByText('中央社')).toBeTruthy();
 		expect(screen.getByText('聯合新聞網')).toBeTruthy();
 	});
 
-	it('renders CoverageRing section', () => {
+	it('does NOT render media camp section (CoverageRing removed)', () => {
 		render(ClusterCardV2, { props: { cluster: makeCluster() } });
-		expect(screen.getByText('媒體陣營')).toBeTruthy();
+		expect(screen.queryByText('媒體陣營')).toBeNull();
 	});
 
 	it('renders ControversyPulse with score', () => {

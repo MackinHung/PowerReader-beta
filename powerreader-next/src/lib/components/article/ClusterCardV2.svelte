@@ -1,7 +1,8 @@
 <script>
   /**
-   * ClusterCardV2 — redesigned cluster card separating
-   * media camp (WHO reported) from issue stance (WHAT it says).
+   * ClusterCardV2 — redesigned cluster card.
+   * Media sources shown as neutral brand icons (no camp coloring).
+   * Issue stance shown via StancePrism (AI-analyzed, not pre-labeled).
    *
    * Visual states:
    *   - Alert: red pulsing border + BlindspotAlert banner
@@ -9,7 +10,6 @@
    *   - Calm:  flat, balanced colors
    */
   import Card from '$lib/components/ui/Card.svelte';
-  import CoverageRing from '$lib/components/data-viz/CoverageRing.svelte';
   import ControversyPulse from '$lib/components/data-viz/ControversyPulse.svelte';
   import BlindspotAlert from '$lib/components/data-viz/BlindspotAlert.svelte';
   import StancePrism from '$lib/components/data-viz/StancePrism.svelte';
@@ -23,7 +23,6 @@
     try { return JSON.parse(str); } catch { return fallback; }
   }
 
-  let campDist = $derived(safeJsonParse(cluster.camp_distribution, {}));
   let sources = $derived(safeJsonParse(cluster.sources_json, []));
   let avgCampRatio = $derived(safeJsonParse(cluster.avg_camp_ratio, null));
 
@@ -87,17 +86,6 @@
           {#if extraSourceCount > 0}
             <span class="extra-sources">+{extraSourceCount}</span>
           {/if}
-        </div>
-      {/if}
-
-      <!-- Media Camp Distribution -->
-      {#if campDist.green != null || campDist.white != null || campDist.blue != null}
-        <div class="coverage-section">
-          <CoverageRing
-            green={campDist.green ?? 0}
-            white={campDist.white ?? 0}
-            blue={campDist.blue ?? 0}
-          />
         </div>
       {/if}
 
@@ -207,9 +195,6 @@
   }
 
   /* Sections */
-  .coverage-section {
-    width: 100%;
-  }
   .stance-section {
     width: 100%;
     border-top: 1px solid var(--md-sys-color-outline-variant);

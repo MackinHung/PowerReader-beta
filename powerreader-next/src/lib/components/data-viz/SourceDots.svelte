@@ -1,23 +1,16 @@
 <script>
   /**
-   * SourceDots — colored dot grid showing source distribution by camp.
-   * Each source gets a row of dots (count = number of articles from that source).
-   * Colors: green/white/blue following camp conventions.
+   * SourceDots — neutral dot grid showing source distribution.
+   * No camp coloring — all dots use the same neutral color.
    */
   let { sources = [] } = $props();
-
-  const CAMP_COLORS = {
-    green: 'var(--camp-green)',
-    white: 'var(--camp-white)',
-    blue: 'var(--camp-blue)',
-  };
 
   // Show at most 5 sources, truncate rest
   let visibleSources = $derived(sources.slice(0, 5));
   let hiddenCount = $derived(Math.max(0, sources.length - 5));
 
   let ariaLabel = $derived(() => {
-    const parts = sources.map(s => `${s.source} (${s.count}篇, ${s.camp === 'green' ? '偏綠' : s.camp === 'blue' ? '偏藍' : '中立'})`);
+    const parts = sources.map(s => `${s.source} (${s.count}篇)`);
     return `來源分布: ${parts.join(', ')}`;
   });
 </script>
@@ -27,7 +20,7 @@
     <div class="source-row">
       <div class="dots">
         {#each Array(Math.min(src.count, 8)) as _}
-          <span class="dot" style="background: {CAMP_COLORS[src.camp] || CAMP_COLORS.white}"></span>
+          <span class="dot"></span>
         {/each}
         {#if src.count > 8}
           <span class="dot-overflow">+{src.count - 8}</span>
@@ -62,6 +55,8 @@
     height: 8px;
     border-radius: 50%;
     flex-shrink: 0;
+    background: var(--md-sys-color-primary);
+    opacity: 0.6;
   }
   .dot-overflow {
     font: var(--md-sys-typescale-label-small-font);
