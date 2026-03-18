@@ -123,12 +123,15 @@ export async function googleOAuthCallback(request, env, ctx, { url }) {
   // Anonymize user (SHA-256 of Google UID)
   const user_hash = await generateUserHash(googleUser.sub);
 
-  // Upsert user in D1
+  // Extract display name from Google profile (scope: 'openid profile')
+  const display_name = googleUser.name || googleUser.given_name || null;
+
+  // Upsert user in D1 (update display_name on every login to stay fresh)
   await env.DB.prepare(`
-    INSERT INTO users (user_hash, created_at, updated_at)
-    VALUES (?, ?, ?)
-    ON CONFLICT(user_hash) DO UPDATE SET updated_at = ?
-  `).bind(user_hash, nowISO(), nowISO(), nowISO()).run();
+    INSERT INTO users (user_hash, display_name, created_at, updated_at)
+    VALUES (?, ?, ?, ?)
+    ON CONFLICT(user_hash) DO UPDATE SET display_name = COALESCE(?, display_name), updated_at = ?
+  `).bind(user_hash, display_name, nowISO(), nowISO(), display_name, nowISO()).run();
 
   // Create session
   const session_id = crypto.randomUUID();
@@ -166,7 +169,7 @@ export async function googleOAuthCallback(request, env, ctx, { url }) {
  */
 export async function getMe(request, env, ctx, { user }) {
   const row = await env.DB.prepare(
-    'SELECT user_hash, total_points_cents, contribution_count, vote_rights, created_at FROM users WHERE user_hash = ?'
+    'SELECT user_hash, display_name, total_points_cents, contribution_count, vote_rights, created_at FROM users WHERE user_hash = ?'
   ).bind(user.user_hash).first();
 
   if (!row) {
@@ -176,10 +179,17 @@ export async function getMe(request, env, ctx, { user }) {
     });
   }
 
+  // Derive role from contribution_count
+  const role = row.contribution_count >= 100 ? 'expert'
+    : row.contribution_count >= 10 ? 'regular'
+    : 'contributor';
+
   return jsonResponse(200, {
     success: true,
     data: {
       user_hash: row.user_hash,
+      display_name: row.display_name || null,
+      role,
       total_points_cents: row.total_points_cents,
       display_points: (row.total_points_cents / 100).toFixed(2),
       contribution_count: row.contribution_count,

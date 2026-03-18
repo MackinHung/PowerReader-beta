@@ -98,8 +98,10 @@ export async function createAnalysis(request, env, ctx, { params, user }) {
   // Quality gate validation (4-layer: format, range, consistency, duplicate)
   const { result: quality_gate_result, scores: quality_scores } = runQualityGates(body);
 
-  // Serialize camp_ratio if provided
+  // Serialize JSON fields
   const campRatioJson = body.camp_ratio ? JSON.stringify(body.camp_ratio) : null;
+  const narrativePointsJson = Array.isArray(body.narrative_points) ? JSON.stringify(body.narrative_points) : null;
+  const inferenceMode = body.inference_mode || null;
 
   // Insert analysis (using authenticated user_hash, not body.user_hash)
   // Race condition guard: UNIQUE(article_id) constraint catches concurrent inserts.
@@ -107,13 +109,15 @@ export async function createAnalysis(request, env, ctx, { params, user }) {
     await env.DB.prepare(`
       INSERT INTO analyses (article_id, user_hash, bias_score, bias_category,
         controversy_score, controversy_level, reasoning, key_phrases,
-        quality_gate_result, quality_scores, prompt_version, camp_ratio)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        quality_gate_result, quality_scores, prompt_version, camp_ratio,
+        narrative_points, inference_mode)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       article_id, user_hash, body.bias_score, bias_category,
       body.controversy_score, controversy_level, body.reasoning,
       JSON.stringify(body.key_phrases), quality_gate_result,
-      JSON.stringify(quality_scores), body.prompt_version, campRatioJson
+      JSON.stringify(quality_scores), body.prompt_version, campRatioJson,
+      narrativePointsJson, inferenceMode
     ).run();
   } catch (err) {
     // UNIQUE constraint violation = another user submitted first (race condition)

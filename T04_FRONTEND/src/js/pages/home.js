@@ -249,8 +249,8 @@ async function loadArticles(list, loader) {
     return;
   }
 
-  // Search API returns items, articles API returns articles
-  const articles = result.data?.items || result.data?.articles || [];
+  // Both search and articles API now return data.articles
+  const articles = result.data?.articles || result.data?.items || [];
   const pagination = result.data?.pagination;
 
   if (articles.length === 0 && currentPage === 1) {

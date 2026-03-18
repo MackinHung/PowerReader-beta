@@ -69,19 +69,25 @@ export async function searchArticles(request, env, ctx, { url }) {
 
   // Fetch matching articles
   const rows = await env.DB.prepare(
-    `SELECT article_id, title, summary, source, published_at, camp_ratio, analysis_count
+    `SELECT article_id, title, summary, source, published_at,
+       bias_score, bias_category, controversy_score, controversy_level,
+       camp_ratio, analysis_count
      FROM articles
      WHERE (title LIKE ?1 ESCAPE '\\' OR summary LIKE ?1 ESCAPE '\\')
      ORDER BY published_at DESC
      LIMIT ? OFFSET ?`
   ).bind(likePattern, limit, offset).all();
 
-  const items = (rows.results || []).map((row) => ({
+  const articles = (rows.results || []).map((row) => ({
     article_id: row.article_id,
     title: row.title ? escapeHtml(row.title) : row.title,
     summary: row.summary ? escapeHtml(row.summary) : row.summary,
     source: row.source,
     published_at: row.published_at,
+    bias_score: row.bias_score,
+    bias_category: row.bias_category,
+    controversy_score: row.controversy_score,
+    controversy_level: row.controversy_level,
     analysis_count: row.analysis_count || 0,
     camp_ratio: typeof row.camp_ratio === 'string'
       ? safeJsonParse(row.camp_ratio, null)
@@ -91,7 +97,7 @@ export async function searchArticles(request, env, ctx, { url }) {
   return jsonResponse(200, {
     success: true,
     data: {
-      items,
+      articles,
       pagination: {
         page,
         limit,

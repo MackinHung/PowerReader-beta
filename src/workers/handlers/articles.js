@@ -52,7 +52,7 @@ export async function getArticles(request, env, ctx, { url }) {
 
   // Fetch page
   const dataQuery = `SELECT article_id, primary_url, source, title, summary, published_at,
-    bias_score, bias_category, controversy_score, controversy_level, status, analysis_count
+    bias_score, bias_category, controversy_score, controversy_level, status, analysis_count, camp_ratio
     FROM articles ${whereClause} ORDER BY ${sortBy} ${sortOrder} LIMIT ? OFFSET ?`;
 
   const rows = await env.DB.prepare(dataQuery)
@@ -416,6 +416,9 @@ function sanitizeArticleRow(row) {
   }
   if ('knowledge_ids' in row && typeof row.knowledge_ids === 'string') {
     try { sanitized.knowledge_ids = JSON.parse(row.knowledge_ids); } catch { sanitized.knowledge_ids = []; }
+  }
+  if ('camp_ratio' in row && typeof row.camp_ratio === 'string') {
+    try { sanitized.camp_ratio = JSON.parse(row.camp_ratio); } catch { sanitized.camp_ratio = null; }
   }
 
   return sanitized;
