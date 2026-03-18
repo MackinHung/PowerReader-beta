@@ -28,15 +28,19 @@ describe("processAnalysisReward", () => {
     repo = createMemoryRepository();
   });
 
-  it("awards points for valid submission", async () => {
+  it("awards random points for valid submission", async () => {
     const result = await processAnalysisReward(
       repo, TEST_USER_HASH, TEST_ARTICLE_ID, TEST_CONTENT_HASH, 10000,
       { now: TEST_NOW },
     );
 
     expect(result.success).toBe(true);
-    expect(result.record.total_points_cents).toBe(10);
+    // Random tier: 10, 20, 30, 40, or 50 cents
+    expect([10, 20, 30, 40, 50]).toContain(result.record.total_points_cents);
     expect(result.record.contribution_count).toBe(1);
+    // Should return the awarded amount
+    expect([10, 20, 30, 40, 50]).toContain(result.last_points_awarded_cents);
+    expect(result.last_points_awarded_cents).toBe(result.record.total_points_cents);
   });
 
   it("rejects submission with time < 5s", async () => {
@@ -115,7 +119,7 @@ describe("processAnalysisReward", () => {
     );
 
     const stored = repo._users.get(TEST_USER_HASH);
-    expect(stored.total_points_cents).toBe(10);
+    expect([10, 20, 30, 40, 50]).toContain(stored.total_points_cents);
     expect(stored.contribution_count).toBe(1);
   });
 

@@ -155,18 +155,17 @@ export async function createAnalysis(request, env, ctx, { params, user }) {
     `).bind(nowISO(), nowISO(), user_hash)
   ]);
 
-  // Award points for valid analysis (T05: integer cents, 10 cents = 0.1 points)
+  // Award random points for valid analysis (T05: weighted tiers, 10-50 cents)
+  let pointsAwardedCents = 0;
   if (quality_gate_result === 'passed') {
     try {
+      pointsAwardedCents = rollPointRewardInline(REWARD.POINT_TIERS);
       await env.DB.prepare(`
         UPDATE users SET
-          total_points_cents = total_points_cents + ?,
-          vote_rights = (total_points_cents + ?) / ?
+          total_points_cents = total_points_cents + ?
         WHERE user_hash = ?
       `).bind(
-        REWARD.POINTS_PER_VALID_ANALYSIS,
-        REWARD.POINTS_PER_VALID_ANALYSIS,
-        REWARD.POINTS_PER_VOTE_RIGHT,
+        pointsAwardedCents,
         user_hash
       ).run();
     } catch {
@@ -201,10 +200,9 @@ export async function createAnalysis(request, env, ctx, { params, user }) {
       ).bind(user_hash).first();
       if (updatedUser) {
         pointsData = {
-          points_awarded_cents: REWARD.POINTS_PER_VALID_ANALYSIS,
+          points_awarded_cents: pointsAwardedCents,
           total_points_cents: updatedUser.total_points_cents,
           display_points: (updatedUser.total_points_cents / 100).toFixed(2),
-          vote_rights: updatedUser.vote_rights,
           contribution_count: updatedUser.contribution_count
         };
       }
@@ -268,6 +266,32 @@ export async function getAnalyses(request, env, ctx, { params }) {
  * @param {object} body - Analysis submission body
  * @returns {{ result: string, scores: object }}
  */
+/**
+ * Roll a random point reward using weighted tiers.
+ * Inline version for Workers environment (can't import T05 path).
+ * Uses crypto.getRandomValues() for secure randomness.
+ *
+ * @param {Array<{cents: number, weight: number}>} tiers
+ * @returns {number} cents value
+ */
+function rollPointRewardInline(tiers) {
+  if (!Array.isArray(tiers) || tiers.length === 0) {
+    return 10; // fallback to 0.1 pt
+  }
+  const totalWeight = tiers.reduce((sum, t) => sum + t.weight, 0);
+  const arr = new Uint32Array(1);
+  crypto.getRandomValues(arr);
+  const roll = arr[0] % totalWeight;
+  let cumulative = 0;
+  for (const tier of tiers) {
+    cumulative += tier.weight;
+    if (roll < cumulative) {
+      return tier.cents;
+    }
+  }
+  return tiers[tiers.length - 1].cents;
+}
+
 function runQualityGates(body) {
   const scores = {
     format_valid: true,

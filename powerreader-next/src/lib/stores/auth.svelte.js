@@ -37,6 +37,11 @@ export function getAuthStore() {
     get hasPrivacyConsent() { return privacyConsent; },
     get userProfile() { return userProfile; },
     get userPoints() { return userPoints; },
+    get dailyQuota() {
+      const used = userPoints?.daily_analysis_count ?? 0;
+      const limit = userPoints?.daily_analysis_limit ?? 50;
+      return { used, limit, remaining: Math.max(0, limit - used) };
+    },
     get loading() { return loading; },
     get error() { return error; },
 

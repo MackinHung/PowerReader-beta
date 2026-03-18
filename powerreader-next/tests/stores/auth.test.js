@@ -287,7 +287,7 @@ describe('fetchProfile', () => {
 });
 
 // ══════════════════════════════════════════════
-// 7. fetchPoints
+// 7. fetchPoints + dailyQuota
 // ══════════════════════════════════════════════
 
 describe('fetchPoints', () => {
@@ -329,6 +329,77 @@ describe('fetchPoints', () => {
     await store.fetchPoints();
 
     expect(mockApiFns.fetchUserPoints).not.toHaveBeenCalled();
+  });
+});
+
+// ══════════════════════════════════════════════
+// 7b. dailyQuota getter
+// ══════════════════════════════════════════════
+
+describe('dailyQuota', () => {
+  it('returns defaults when userPoints is null', () => {
+    const q = store.dailyQuota;
+    expect(q).toEqual({ used: 0, limit: 50, remaining: 50 });
+  });
+
+  it('computes from userPoints data', async () => {
+    mockAuthFns.getUserHash.mockReturnValue('h1');
+    store.login('jwt', 'sess');
+
+    mockApiFns.fetchUserPoints.mockResolvedValue({
+      success: true,
+      data: { daily_analysis_count: 12, daily_analysis_limit: 50 },
+    });
+
+    await store.fetchPoints();
+
+    const q = store.dailyQuota;
+    expect(q.used).toBe(12);
+    expect(q.limit).toBe(50);
+    expect(q.remaining).toBe(38);
+  });
+
+  it('remaining is 0 when daily limit reached', async () => {
+    mockAuthFns.getUserHash.mockReturnValue('h1');
+    store.login('jwt', 'sess');
+
+    mockApiFns.fetchUserPoints.mockResolvedValue({
+      success: true,
+      data: { daily_analysis_count: 50, daily_analysis_limit: 50 },
+    });
+
+    await store.fetchPoints();
+
+    expect(store.dailyQuota.remaining).toBe(0);
+  });
+
+  it('remaining never goes negative', async () => {
+    mockAuthFns.getUserHash.mockReturnValue('h1');
+    store.login('jwt', 'sess');
+
+    mockApiFns.fetchUserPoints.mockResolvedValue({
+      success: true,
+      data: { daily_analysis_count: 60, daily_analysis_limit: 50 },
+    });
+
+    await store.fetchPoints();
+
+    expect(store.dailyQuota.remaining).toBe(0);
+  });
+
+  it('uses fallback limit of 50 when not provided', async () => {
+    mockAuthFns.getUserHash.mockReturnValue('h1');
+    store.login('jwt', 'sess');
+
+    mockApiFns.fetchUserPoints.mockResolvedValue({
+      success: true,
+      data: { daily_analysis_count: 5 },
+    });
+
+    await store.fetchPoints();
+
+    expect(store.dailyQuota.limit).toBe(50);
+    expect(store.dailyQuota.remaining).toBe(45);
   });
 });
 

@@ -85,19 +85,17 @@ export async function submitReward(request, env, ctx, { params }) {
     });
   }
 
-  // Award points if quality gate passed
+  // Award random points if quality gate passed (weighted tiers)
   const pointsAwarded = quality_gate_result === 'passed'
-    ? REWARD.POINTS_PER_VALID_ANALYSIS
+    ? rollPointRewardInline(REWARD.POINT_TIERS)
     : 0;
 
   const newTotalCents = userRow.total_points_cents + pointsAwarded;
-  const newVoteRights = Math.floor(newTotalCents / REWARD.POINTS_PER_VOTE_RIGHT);
 
   // Update user record (D1, NOT KV)
   await env.DB.prepare(`
     UPDATE users SET
       total_points_cents = ?,
-      vote_rights = ?,
       contribution_count = contribution_count + 1,
       daily_analysis_count = daily_analysis_count + 1,
       consecutive_failures = 0,
@@ -105,7 +103,7 @@ export async function submitReward(request, env, ctx, { params }) {
       updated_at = ?
     WHERE user_hash = ?
   `).bind(
-    newTotalCents, newVoteRights,
+    newTotalCents,
     nowISO(), nowISO(), user_hash
   ).run();
 
@@ -117,11 +115,28 @@ export async function submitReward(request, env, ctx, { params }) {
       points_awarded_cents: pointsAwarded,
       total_points_cents: newTotalCents,
       display_points: (newTotalCents / 100).toFixed(2),
-      vote_rights: newVoteRights,
       daily_analysis_count: userRow.daily_analysis_count + 1
     },
     error: null
   });
+}
+
+/**
+ * Roll a random point reward using weighted tiers.
+ * Inline for Workers environment (can't import T05 path).
+ */
+function rollPointRewardInline(tiers) {
+  if (!Array.isArray(tiers) || tiers.length === 0) return 10;
+  const totalWeight = tiers.reduce((sum, t) => sum + t.weight, 0);
+  const arr = new Uint32Array(1);
+  crypto.getRandomValues(arr);
+  const roll = arr[0] % totalWeight;
+  let cumulative = 0;
+  for (const tier of tiers) {
+    cumulative += tier.weight;
+    if (roll < cumulative) return tier.cents;
+  }
+  return tiers[tiers.length - 1].cents;
 }
 
 /**

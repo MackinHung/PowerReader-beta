@@ -7,6 +7,7 @@
  * Maintainer: T01 (System Architecture Team)
  */
 
+import { REWARD } from '../../../shared/config.js';
 import { nowISO } from '../../../shared/utils.js';
 import { jsonResponse } from '../../../shared/response.js';
 
@@ -33,8 +34,8 @@ export async function getPoints(request, env, ctx, { user }) {
       total_points_cents: row.total_points_cents,
       display_points: (row.total_points_cents / 100).toFixed(2),
       contribution_count: row.contribution_count,
-      vote_rights: row.vote_rights,
       daily_analysis_count: row.daily_analysis_count,
+      daily_analysis_limit: REWARD.DAILY_ANALYSIS_LIMIT,
       last_contribution_at: row.last_contribution_at
     },
     error: null

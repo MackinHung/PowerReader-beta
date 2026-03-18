@@ -13,9 +13,11 @@ import {
   POINTS_PER_VALID_ANALYSIS_CENTS,
   DAILY_ANALYSIS_LIMIT,
   MAX_ANALYSIS_TIME_MS,
+  POINT_TIERS,
   addPoints,
   incrementDailyCount,
   getTodayDateString,
+  rollPointReward,
 } from './calculation.js';
 
 import {
@@ -88,13 +90,14 @@ export async function processAnalysisReward(repo, userHash, articleId, contentHa
     return { success: false, error: "您已分析過相同內容的文章", code: 409 };
   }
 
-  // Award points
+  // Award points (random roll from tier table)
+  const awardedCents = rollPointReward(POINT_TIERS);
   record = incrementDailyCount(record, todayDate, now);
-  record = addPoints(record, POINTS_PER_VALID_ANALYSIS_CENTS, now);
+  record = addPoints(record, awardedCents, now);
 
   await repo.persistReward(record, articleId, contentHash, now);
 
-  return { success: true, record };
+  return { success: true, record, last_points_awarded_cents: awardedCents };
 }
 
 /**

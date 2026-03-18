@@ -1,18 +1,10 @@
 <script>
   import Card from '$lib/components/ui/Card.svelte';
   import SourceBadge from './SourceBadge.svelte';
-  import BiasSpectrum from '$lib/components/data-viz/BiasSpectrum.svelte';
-  import CampBar from '$lib/components/data-viz/CampBar.svelte';
 
   let { article = {}, onclick, onanalyze } = $props();
 
-  const STATUS_COLORS = {
-    none: 'var(--md-sys-color-outline)',
-    pending: 'var(--md-sys-color-tertiary)',
-    done: 'var(--camp-green)',
-  };
-
-  let statusColor = $derived(STATUS_COLORS[article.analysis_status ?? 'none'] ?? STATUS_COLORS.none);
+  let analysisCount = $derived(article.analysis_count ?? 0);
 
   let formattedDate = $derived(() => {
     if (!article.published_at) return '';
@@ -52,23 +44,19 @@
       <div class="card-top">
         <SourceBadge source={article.source} />
         <span class="date">{formattedDate()}</span>
-        <span class="status-dot" style="background: {statusColor}"></span>
       </div>
       <h3 class="card-title">{article.title ?? ''}</h3>
       <div class="card-bottom">
-        {#if article.bias_score != null}
-          <div class="mini-spectrum">
-            <BiasSpectrum score={article.bias_score} />
-          </div>
-        {/if}
-        {#if article.camp_ratio}
-          <div class="mini-camp">
-            <CampBar
-              green={article.camp_ratio?.green ?? 0}
-              white={article.camp_ratio?.white ?? 0}
-              blue={article.camp_ratio?.blue ?? 0}
-            />
-          </div>
+        {#if analysisCount > 0}
+          <span class="analysis-badge analyzed">
+            <span class="material-symbols-outlined badge-icon">check_circle</span>
+            已有 {analysisCount} 篇分析
+          </span>
+        {:else}
+          <span class="analysis-badge pending">
+            <span class="material-symbols-outlined badge-icon">smart_toy</span>
+            待分析
+          </span>
         {/if}
       </div>
       <div class="card-actions">
@@ -123,12 +111,6 @@
     color: var(--md-sys-color-on-surface-variant);
     margin-left: auto;
   }
-  .status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
   .card-title {
     font: var(--md-sys-typescale-title-small-font);
     color: var(--md-sys-color-on-surface);
@@ -141,14 +123,26 @@
   }
   .card-bottom {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
+    align-items: center;
   }
-  .mini-spectrum {
-    max-width: 180px;
+  .analysis-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font: var(--md-sys-typescale-label-small-font);
+    padding: 2px 8px;
+    border-radius: var(--md-sys-shape-corner-extra-small);
   }
-  .mini-camp {
-    width: 100%;
+  .analysis-badge.analyzed {
+    color: var(--md-sys-color-primary);
+    background: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
+  }
+  .analysis-badge.pending {
+    color: var(--md-sys-color-outline);
+    background: color-mix(in srgb, var(--md-sys-color-outline) 6%, transparent);
+  }
+  .badge-icon {
+    font-size: 14px;
   }
   .card-actions {
     display: flex;

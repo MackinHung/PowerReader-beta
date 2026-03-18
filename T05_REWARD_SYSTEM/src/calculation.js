@@ -11,10 +11,19 @@
  */
 
 // ── Constants ────────────────────────────────────────────────
-export const POINTS_PER_VALID_ANALYSIS_CENTS = 10; // 10 cents = 0.1 pt
+export const POINTS_PER_VALID_ANALYSIS_CENTS = 10; // 10 cents = 0.1 pt (fallback)
 export const POINTS_PER_VOTE_RIGHT_CENTS = 1000;   // 1000 cents = 10 pts = 1 vote right
 export const DAILY_ANALYSIS_LIMIT = 50;            // max analyses per user per day
 export const MAX_ANALYSIS_TIME_MS = 3600000;       // 1 hour upper bound (anti-abuse)
+
+// Random point tiers — steep pyramid distribution (matches shared/config.js REWARD.POINT_TIERS)
+export const POINT_TIERS = [
+  { cents: 10, weight: 20 },  // 0.1 pt — 50.0%
+  { cents: 20, weight: 10 },  // 0.2 pt — 25.0%
+  { cents: 30, weight: 6 },   // 0.3 pt — 15.0%
+  { cents: 40, weight: 3 },   // 0.4 pt —  7.5%
+  { cents: 50, weight: 1 },   // 0.5 pt —  2.5%
+];
 
 // ── User Record Factory ─────────────────────────────────────
 
@@ -123,6 +132,39 @@ export function getAvailableVoteRights(record) {
  */
 export function getAnonymizedName(userHash) {
   return userHash.substring(0, 8);
+}
+
+// ── Random Point Roll ─────────────────────────────────────────
+
+/**
+ * Roll a random point reward using weighted random selection.
+ * Uses crypto.getRandomValues() for cryptographically secure randomness.
+ *
+ * @param {Array<{cents: number, weight: number}>} [tiers=POINT_TIERS] - Tier array
+ * @returns {number} cents value from the selected tier
+ */
+export function rollPointReward(tiers = POINT_TIERS) {
+  if (!Array.isArray(tiers) || tiers.length === 0) {
+    return POINTS_PER_VALID_ANALYSIS_CENTS; // fallback to fixed 10 cents
+  }
+
+  const totalWeight = tiers.reduce((sum, t) => sum + t.weight, 0);
+
+  // Cryptographically secure random number [0, totalWeight)
+  const arr = new Uint32Array(1);
+  crypto.getRandomValues(arr);
+  const roll = arr[0] % totalWeight;
+
+  let cumulative = 0;
+  for (const tier of tiers) {
+    cumulative += tier.weight;
+    if (roll < cumulative) {
+      return tier.cents;
+    }
+  }
+
+  // Should never reach here, but fallback to last tier
+  return tiers[tiers.length - 1].cents;
 }
 
 // ── Utilities ───────────────────────────────────────────────

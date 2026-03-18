@@ -20,6 +20,7 @@ export {
   POINTS_PER_VOTE_RIGHT_CENTS,
   DAILY_ANALYSIS_LIMIT,
   MAX_ANALYSIS_TIME_MS,
+  POINT_TIERS,
 
   // Record factory
   createUserRecord,
@@ -27,6 +28,9 @@ export {
   // Core operations
   addPoints,
   incrementDailyCount,
+
+  // Random reward
+  rollPointReward,
 
   // Display helpers
   centsToDisplayPoints,

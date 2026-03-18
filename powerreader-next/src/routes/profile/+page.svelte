@@ -149,7 +149,7 @@
         <div class="login-card">
           <span class="material-symbols-outlined login-icon">person</span>
           <h2>登入 PowerReader</h2>
-          <p>登入後可以保存分析紀錄、累積貢獻點數、參與投票</p>
+          <p>登入後可以保存分析紀錄、累積貢獻點數</p>
           <Button onclick={handleLogin}>
             <span class="material-symbols-outlined">login</span>
             使用 Google 登入
@@ -172,7 +172,7 @@
       </Card>
     </div>
 
-    <div class="kpi-grid">
+    <div class="kpi-grid kpi-grid-2">
       <Card variant="filled">
         <div class="kpi-card">
           <span class="kpi-value">{authStore.userProfile?.contribution_count ?? 0}</span>
@@ -183,12 +183,6 @@
         <div class="kpi-card">
           <span class="kpi-value">{authStore.userProfile?.display_points ?? '0.00'}</span>
           <span class="kpi-label">貢獻點數</span>
-        </div>
-      </Card>
-      <Card variant="filled">
-        <div class="kpi-card">
-          <span class="kpi-value">{authStore.userProfile?.vote_rights ?? 0}</span>
-          <span class="kpi-label">投票權</span>
         </div>
       </Card>
     </div>
@@ -366,6 +360,9 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 8px;
+  }
+  .kpi-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
   }
   .kpi-card {
     display: flex;

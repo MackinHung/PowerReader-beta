@@ -27,6 +27,13 @@ vi.mock('../../../shared/config.js', () => ({
     MIN_ANALYSIS_TIME_MS: 5000,
     POINTS_PER_VALID_ANALYSIS: 10,
     POINTS_PER_VOTE_RIGHT: 100,
+    POINT_TIERS: [
+      { cents: 10, weight: 20 },
+      { cents: 20, weight: 10 },
+      { cents: 30, weight: 6 },
+      { cents: 40, weight: 3 },
+      { cents: 50, weight: 1 },
+    ],
   },
 }));
 vi.mock('../../../shared/response.js', () => ({

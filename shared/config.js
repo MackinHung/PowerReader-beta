@@ -184,8 +184,18 @@ export const ANALYSIS = {
 export const REWARD = {
   // Points Mechanism (integer cents to avoid floating point!)
   POINTS_USE_CENTS: true,                // All point values stored as integer cents
-  POINTS_PER_VALID_ANALYSIS: 10,         // 10 cents = 0.1 points
-  POINTS_PER_VOTE_RIGHT: 1000,           // 1000 cents = 10.00 points = 1 vote right
+  POINTS_PER_VALID_ANALYSIS: 10,         // 10 cents = 0.1 points (fallback; replaced by POINT_TIERS)
+  POINTS_PER_VOTE_RIGHT: 1000,           // 1000 cents = 10.00 points = 1 vote right (Phase 2+)
+
+  // Random point tiers (steep pyramid distribution)
+  // Total weight = 40; each analysis rolls one tier via crypto.getRandomValues()
+  POINT_TIERS: [
+    { cents: 10, weight: 20 },  // 0.1 pt — 50.0%
+    { cents: 20, weight: 10 },  // 0.2 pt — 25.0%
+    { cents: 30, weight: 6 },   // 0.3 pt — 15.0%
+    { cents: 40, weight: 3 },   // 0.4 pt —  7.5%
+    { cents: 50, weight: 1 },   // 0.5 pt —  2.5%
+  ],
 
   // Fisher-Yates Shuffle (Phase 2+)
   SHUFFLE_SEED_SOURCE: "record_hash",    // Use last record hash as seed

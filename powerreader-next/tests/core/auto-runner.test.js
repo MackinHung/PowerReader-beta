@@ -10,7 +10,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 let mod;
 let mockEnqueueAnalysis, mockCancelAll, mockFetchArticles, mockSubmitAnalysisResult;
-let mockFetchEvents, mockSearchArticles, mockFetchArticle;
+let mockFetchEvents, mockSearchArticles, mockFetchArticle, mockFetchUserPoints;
 let mockGetAuthToken, mockGetUserHash, mockIsAuthenticated;
 let mockOpenDB, mockT;
 let mockScanGPU;
@@ -27,6 +27,10 @@ beforeEach(async () => {
   mockFetchEvents = vi.fn().mockResolvedValue({ success: false });
   mockSearchArticles = vi.fn().mockResolvedValue({ success: false });
   mockFetchArticle = vi.fn().mockResolvedValue({ success: false });
+  mockFetchUserPoints = vi.fn().mockResolvedValue({
+    success: true,
+    data: { daily_analysis_count: 0, daily_analysis_limit: 50 },
+  });
   mockGetAuthToken = vi.fn(() => 'token');
   mockGetUserHash = vi.fn(() => 'hash');
   mockIsAuthenticated = vi.fn(() => true);
@@ -54,6 +58,7 @@ beforeEach(async () => {
     fetchEvents: mockFetchEvents,
     searchArticles: mockSearchArticles,
     submitAnalysisResult: mockSubmitAnalysisResult,
+    fetchUserPoints: mockFetchUserPoints,
   }));
   vi.doMock('../../src/lib/core/auth.js', () => ({
     getAuthToken: mockGetAuthToken,
@@ -727,5 +732,86 @@ describe('pre-analysis duplicate check', () => {
 
     // Should still analyze (pre-check failure doesn't block)
     expect(mockEnqueueAnalysis).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ══════════════════════════════════════════════
+// 9. Daily quota check before start
+// ══════════════════════════════════════════════
+
+describe('daily quota check', () => {
+  it('stops with quota_exhausted when daily limit reached', async () => {
+    mockIsAuthenticated.mockReturnValue(true);
+    localStorage.setItem('powerreader_webllm_cached', '1');
+
+    mockFetchUserPoints.mockResolvedValue({
+      success: true,
+      data: { daily_analysis_count: 50, daily_analysis_limit: 50 },
+    });
+
+    await mod.startAutoRunner();
+
+    const status = mod.getAutoRunnerStatus();
+    expect(status.running).toBe(false);
+    expect(status.stopReason).toBe('auto_runner.quota_exhausted');
+  });
+
+  it('proceeds normally when quota remains', async () => {
+    mockIsAuthenticated.mockReturnValue(true);
+    localStorage.setItem('powerreader_webllm_cached', '1');
+    setupMockDB();
+
+    mockFetchUserPoints.mockResolvedValue({
+      success: true,
+      data: { daily_analysis_count: 10, daily_analysis_limit: 50 },
+    });
+
+    mockFetchArticles.mockResolvedValue({
+      success: true,
+      data: { articles: [] },
+    });
+
+    await mod.startAutoRunner();
+
+    // Should have proceeded past quota check (stopped due to no articles)
+    const status = mod.getAutoRunnerStatus();
+    expect(status.stopReason).toBe('auto_runner.error.no_articles');
+  });
+
+  it('proceeds when quota fetch fails (non-fatal)', async () => {
+    mockIsAuthenticated.mockReturnValue(true);
+    localStorage.setItem('powerreader_webllm_cached', '1');
+    setupMockDB();
+
+    mockFetchUserPoints.mockRejectedValue(new Error('Network error'));
+
+    mockFetchArticles.mockResolvedValue({
+      success: true,
+      data: { articles: [] },
+    });
+
+    await mod.startAutoRunner();
+
+    // Should proceed past quota check (non-fatal failure)
+    const status = mod.getAutoRunnerStatus();
+    expect(status.stopReason).toBe('auto_runner.error.no_articles');
+  });
+
+  it('proceeds when quota response has no data', async () => {
+    mockIsAuthenticated.mockReturnValue(true);
+    localStorage.setItem('powerreader_webllm_cached', '1');
+    setupMockDB();
+
+    mockFetchUserPoints.mockResolvedValue({ success: false });
+
+    mockFetchArticles.mockResolvedValue({
+      success: true,
+      data: { articles: [] },
+    });
+
+    await mod.startAutoRunner();
+
+    const status = mod.getAutoRunnerStatus();
+    expect(status.stopReason).toBe('auto_runner.error.no_articles');
   });
 });

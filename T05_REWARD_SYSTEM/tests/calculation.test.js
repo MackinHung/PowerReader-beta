@@ -14,10 +14,12 @@ import {
   getAvailableVoteRights,
   getAnonymizedName,
   getTodayDateString,
+  rollPointReward,
   POINTS_PER_VALID_ANALYSIS_CENTS,
   POINTS_PER_VOTE_RIGHT_CENTS,
   DAILY_ANALYSIS_LIMIT,
   MAX_ANALYSIS_TIME_MS,
+  POINT_TIERS,
 } from "../src/calculation.js";
 import { TEST_USER_HASH, TEST_NOW, TEST_TODAY, makeRecord } from "./helpers.js";
 
@@ -192,5 +194,74 @@ describe("getTodayDateString", () => {
     // 2026-03-07 00:30 in Taipei = 2026-03-06 16:30 UTC
     const result = getTodayDateString("2026-03-06T16:30:00Z");
     expect(result).toBe("2026-03-07");
+  });
+});
+
+// ── POINT_TIERS & rollPointReward Tests ───────────────────────
+
+describe("POINT_TIERS", () => {
+  it("has 5 tiers with correct total weight of 40", () => {
+    expect(POINT_TIERS).toHaveLength(5);
+    const totalWeight = POINT_TIERS.reduce((s, t) => s + t.weight, 0);
+    expect(totalWeight).toBe(40);
+  });
+
+  it("tiers have correct cents values", () => {
+    const centsValues = POINT_TIERS.map(t => t.cents);
+    expect(centsValues).toEqual([10, 20, 30, 40, 50]);
+  });
+});
+
+describe("rollPointReward", () => {
+  it("returns a value in [10, 20, 30, 40, 50]", () => {
+    const validCents = [10, 20, 30, 40, 50];
+    for (let i = 0; i < 100; i++) {
+      const result = rollPointReward(POINT_TIERS);
+      expect(validCents).toContain(result);
+    }
+  });
+
+  it("returns fallback for empty tiers", () => {
+    expect(rollPointReward([])).toBe(POINTS_PER_VALID_ANALYSIS_CENTS);
+  });
+
+  it("returns fallback for null tiers", () => {
+    expect(rollPointReward(null)).toBe(POINTS_PER_VALID_ANALYSIS_CENTS);
+  });
+
+  it("uses default POINT_TIERS when called with undefined", () => {
+    const validCents = [10, 20, 30, 40, 50];
+    // undefined triggers default parameter = POINT_TIERS
+    expect(validCents).toContain(rollPointReward(undefined));
+  });
+
+  it("handles single-tier array", () => {
+    const singleTier = [{ cents: 30, weight: 1 }];
+    for (let i = 0; i < 20; i++) {
+      expect(rollPointReward(singleTier)).toBe(30);
+    }
+  });
+
+  it("distribution roughly matches weights over 10000 rolls (±8%)", () => {
+    const counts = { 10: 0, 20: 0, 30: 0, 40: 0, 50: 0 };
+    const N = 10000;
+
+    for (let i = 0; i < N; i++) {
+      const result = rollPointReward(POINT_TIERS);
+      counts[result]++;
+    }
+
+    // Expected: 50%, 25%, 15%, 7.5%, 2.5%
+    const tolerance = 0.08;
+    expect(counts[10] / N).toBeGreaterThan(0.50 - tolerance);
+    expect(counts[10] / N).toBeLessThan(0.50 + tolerance);
+    expect(counts[20] / N).toBeGreaterThan(0.25 - tolerance);
+    expect(counts[20] / N).toBeLessThan(0.25 + tolerance);
+    expect(counts[30] / N).toBeGreaterThan(0.15 - tolerance);
+    expect(counts[30] / N).toBeLessThan(0.15 + tolerance);
+    expect(counts[40] / N).toBeGreaterThan(0.075 - tolerance);
+    expect(counts[40] / N).toBeLessThan(0.075 + tolerance);
+    expect(counts[50] / N).toBeGreaterThan(0.025 - tolerance);
+    expect(counts[50] / N).toBeLessThan(0.025 + tolerance);
   });
 });

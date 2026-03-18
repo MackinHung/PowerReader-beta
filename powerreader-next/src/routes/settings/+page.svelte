@@ -6,9 +6,12 @@
   import List from '$lib/components/ui/List.svelte';
   import ListItem from '$lib/components/ui/ListItem.svelte';
   import ProgressIndicator from '$lib/components/ui/ProgressIndicator.svelte';
+  import { getAuthStore } from '$lib/stores/auth.svelte.js';
   import { getWebLLMEngine, clearAllModelCaches, hasWebGPU, detectBestMode, INFERENCE_MODES } from '$lib/core/inference.js';
   import { scanGPU, getCachedBenchmark, runBenchmark, clearBenchmark, saveUserGPUSelection, getUserGPUSelection, getTimeoutForTier } from '$lib/core/benchmark.js';
   import { isModelDownloaded } from '$lib/core/manager.js';
+
+  const authStore = getAuthStore();
 
   // ── Analysis settings ──
   let autoMode = $state(false);
@@ -175,6 +178,11 @@
       cacheSize = `${((est.usage || 0) / (1024 * 1024)).toFixed(1)} MB`;
     } else {
       cacheSize = '無法計算';
+    }
+
+    // Fetch daily quota if authenticated
+    if (authStore.isAuthenticated) {
+      await authStore.fetchPoints().catch(() => {});
     }
 
     queueMicrotask(() => { initialized = true; });
@@ -396,6 +404,31 @@
       </List>
     </Card>
   </section>
+
+  <!-- ═══ Daily Quota ═══ -->
+  {#if authStore.isAuthenticated}
+    <section class="section">
+      <h3 class="section-title">每日分析配額</h3>
+      <Card variant="filled">
+        <div class="quota-section">
+          <div class="quota-header">
+            <span class="quota-text">
+              {authStore.dailyQuota.used} / {authStore.dailyQuota.limit} 次
+            </span>
+            <span class="quota-hint">每次分析可獲得 0.1~0.5 點</span>
+          </div>
+          <div class="quota-bar-track">
+            <div
+              class="quota-bar-fill"
+              style:width="{Math.min(100, (authStore.dailyQuota.used / authStore.dailyQuota.limit) * 100)}%"
+              class:quota-bar-full={authStore.dailyQuota.remaining === 0}
+            ></div>
+          </div>
+          <span class="quota-reset-hint">每日 00:00 (台灣時間) 重置</span>
+        </div>
+      </Card>
+    </section>
+  {/if}
 
   <!-- ═══ Model Management ═══ -->
   <section class="section">
@@ -635,6 +668,48 @@
     font: var(--md-sys-typescale-title-small-font);
     color: var(--md-sys-color-on-surface);
     padding-left: 4px;
+  }
+
+  /* ── Quota Section ── */
+  .quota-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 4px 0;
+  }
+  .quota-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .quota-text {
+    font: var(--md-sys-typescale-title-medium-font);
+    color: var(--md-sys-color-on-surface);
+    font-weight: 500;
+  }
+  .quota-hint {
+    font: var(--md-sys-typescale-label-small-font);
+    color: var(--md-sys-color-on-surface-variant);
+  }
+  .quota-bar-track {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--md-sys-color-surface-container-highest);
+    overflow: hidden;
+  }
+  .quota-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--md-sys-color-primary);
+    transition: width 0.3s ease;
+  }
+  .quota-bar-full {
+    background: var(--md-sys-color-error);
+  }
+  .quota-reset-hint {
+    font: var(--md-sys-typescale-body-small-font);
+    color: var(--md-sys-color-on-surface-variant);
   }
 
   /* ── Model Section ── */

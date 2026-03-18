@@ -12,7 +12,7 @@
  */
 
 import { enqueueAnalysis, cancelAll, AnalysisCancelledError } from './queue.js';
-import { fetchArticles, fetchArticle, fetchEvents, searchArticles, submitAnalysisResult } from './api.js';
+import { fetchArticles, fetchArticle, fetchEvents, searchArticles, submitAnalysisResult, fetchUserPoints } from './api.js';
 import { getAuthToken, getUserHash, isAuthenticated } from './auth.js';
 import { openDB } from './db.js';
 import { t } from '$lib/i18n/zh-TW.js';
@@ -128,6 +128,28 @@ export async function startAutoRunner() {
     _stopReason = t('auto_runner.error.model_not_ready');
     _notify();
     return;
+  }
+
+  // Fetch daily quota before starting
+  let quotaRemaining = Infinity;
+  try {
+    const token = getAuthToken();
+    if (token) {
+      const pointsResult = await fetchUserPoints(token);
+      if (pointsResult.success && pointsResult.data) {
+        const used = pointsResult.data.daily_analysis_count || 0;
+        const limit = pointsResult.data.daily_analysis_limit || 50;
+        quotaRemaining = Math.max(0, limit - used);
+
+        if (quotaRemaining === 0) {
+          _stopReason = t('auto_runner.quota_exhausted');
+          _notify();
+          return;
+        }
+      }
+    }
+  } catch {
+    // Quota fetch failure is non-fatal; proceed without quota info
   }
 
   _running = true;
