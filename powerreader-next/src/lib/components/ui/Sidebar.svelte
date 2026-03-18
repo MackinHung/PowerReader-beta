@@ -63,7 +63,7 @@
     bottom: 0;
     display: flex;
     flex-direction: column;
-    background: var(--md-sys-color-surface-container);
+    background: var(--pr-graphite);
     z-index: 100;
     transition: width var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized);
     overflow: hidden;
@@ -91,16 +91,19 @@
     border: none;
     border-radius: var(--md-sys-shape-corner-full);
     background: transparent;
-    color: var(--md-sys-color-on-surface-variant);
+    color: rgba(255, 255, 255, 0.7);
     cursor: pointer;
     flex-shrink: 0;
   }
   .toggle-btn:hover {
-    background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
+    background: rgba(255, 255, 255, 0.1);
   }
   .sidebar-brand {
-    font: var(--md-sys-typescale-title-large-font);
-    color: var(--md-sys-color-on-surface);
+    font-family: var(--pr-font-serif);
+    font-size: 22px;
+    line-height: 28px;
+    font-weight: 400;
+    color: var(--pr-gold);
     white-space: nowrap;
     overflow: hidden;
   }
@@ -120,7 +123,7 @@
     padding: 0 16px;
     border-radius: var(--md-sys-shape-corner-full);
     text-decoration: none;
-    color: var(--md-sys-color-on-surface-variant);
+    color: rgba(255, 255, 255, 0.7);
     white-space: nowrap;
     transition: background var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
   }
@@ -129,17 +132,20 @@
     padding: 0;
   }
   .nav-item:hover {
-    background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
+    background: rgba(255, 255, 255, 0.1);
   }
   .nav-item.active {
-    background: var(--md-sys-color-secondary-container);
-    color: var(--md-sys-color-on-secondary-container);
+    background: rgba(201, 169, 110, 0.15);
+    color: #ffffff;
+    border-left: 3px solid var(--pr-gold);
+    border-radius: 0 var(--md-sys-shape-corner-full) var(--md-sys-shape-corner-full) 0;
   }
   .nav-icon {
     font-size: 24px;
     flex-shrink: 0;
   }
   .active .nav-icon {
+    color: var(--pr-gold);
     font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   }
   .nav-label {
@@ -152,7 +158,7 @@
     flex-direction: column;
     gap: 4px;
     padding: 8px 12px;
-    border-top: 1px solid var(--md-sys-color-outline-variant);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
     flex-shrink: 0;
   }
 

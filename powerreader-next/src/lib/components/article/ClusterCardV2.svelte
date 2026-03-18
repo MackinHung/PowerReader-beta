@@ -59,7 +59,7 @@
   <!-- Blindspot Banner (conditional) -->
   <BlindspotAlert type={cluster.blindspot_type} {isBlindspot} />
 
-  <Card variant="elevated">
+  <Card variant="editorial">
     <div class="v2-inner">
       <!-- Header -->
       <div class="v2-header">
@@ -118,7 +118,10 @@
                 box-shadow var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
   }
   .cluster-v2-wrapper:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+  }
+  .cluster-v2-wrapper:hover :global(.editorial) {
+    border-left-width: 4px;
   }
   .cluster-v2-wrapper:focus-visible {
     outline: 2px solid var(--md-sys-color-primary);
@@ -158,8 +161,8 @@
   }
   .category-chip {
     font: var(--md-sys-typescale-label-small-font);
-    color: var(--md-sys-color-on-tertiary-container);
-    background: var(--md-sys-color-tertiary-container);
+    color: var(--md-sys-color-on-primary-container);
+    background: var(--md-sys-color-primary-container);
     padding: 2px 10px;
     border-radius: var(--md-sys-shape-corner-extra-small);
     white-space: nowrap;
@@ -172,7 +175,9 @@
 
   /* Title */
   .v2-title {
-    font: var(--md-sys-typescale-title-small-font);
+    font-family: var(--pr-font-serif);
+    font-size: 16px;
+    font-weight: 500;
     color: var(--md-sys-color-on-surface);
     margin: 0;
     display: -webkit-box;
@@ -204,6 +209,7 @@
   /* Footer */
   .v2-footer {
     padding-top: 4px;
-    border-top: 1px solid var(--md-sys-color-outline-variant);
+    color: var(--md-sys-color-primary);
+    font: var(--md-sys-typescale-label-small-font);
   }
 </style>

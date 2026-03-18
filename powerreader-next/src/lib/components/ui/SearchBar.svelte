@@ -31,14 +31,14 @@
     display: flex;
     align-items: center;
     height: 56px;
-    border-radius: var(--md-sys-shape-corner-full);
-    background: var(--md-sys-color-surface-container-high);
+    border-radius: var(--md-sys-shape-corner-large);
+    background: var(--md-sys-color-surface-container);
     padding: 0 16px;
     gap: 8px;
     width: 100%;
   }
   .md-search-bar:focus-within {
-    outline: 2px solid var(--md-sys-color-primary);
+    outline: 2px solid var(--pr-gold);
   }
   .search-icon {
     color: var(--md-sys-color-on-surface-variant);

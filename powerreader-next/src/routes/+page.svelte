@@ -11,17 +11,37 @@
   import { getEventsStore } from '$lib/stores/events.svelte.js';
   import { getMediaQueryStore } from '$lib/stores/mediaQuery.svelte.js';
 
-  // Dynamic import for ClusterCardV2 (with V1 fallback)
+  // Dynamic imports for heavy components
   let ClusterCard = $state(null);
+  let ControversyPulse = $state(null);
+  let BlindspotAlert = $state(null);
+  let CampBar = $state(null);
+  let SourceBadge = $state(null);
+
   $effect(() => {
     import('$lib/components/article/ClusterCardV2.svelte')
       .then(m => { ClusterCard = m.default; })
       .catch(() => {
-        // Fallback to V1 if V2 fails to load
         import('$lib/components/article/ClusterCard.svelte')
           .then(m => { ClusterCard = m.default; })
           .catch(() => {});
       });
+
+    import('$lib/components/data-viz/ControversyPulse.svelte')
+      .then(m => { ControversyPulse = m.default; })
+      .catch(() => {});
+
+    import('$lib/components/data-viz/BlindspotAlert.svelte')
+      .then(m => { BlindspotAlert = m.default; })
+      .catch(() => {});
+
+    import('$lib/components/data-viz/CampBar.svelte')
+      .then(m => { CampBar = m.default; })
+      .catch(() => {});
+
+    import('$lib/components/article/SourceBadge.svelte')
+      .then(m => { SourceBadge = m.default; })
+      .catch(() => {});
   });
 
   const store = getArticlesStore();
@@ -125,7 +145,6 @@
       unclusteredArticles = [];
       return;
     }
-    // Use the articles already loaded in the store
     untrack(() => {
       const idSet = new Set(ids);
       const existing = store.articles.filter(a => idSet.has(a.article_id));
@@ -160,12 +179,22 @@
   // Sort clusters: blindspot first, then by controversy score desc
   let sortedClusters = $derived(() => {
     return [...eventsStore.clusters].sort((a, b) => {
-      // Blindspots first
       if (a.is_blindspot && !b.is_blindspot) return -1;
       if (!a.is_blindspot && b.is_blindspot) return 1;
-      // Then by controversy score descending
       return (b.avg_controversy_score ?? 0) - (a.avg_controversy_score ?? 0);
     });
+  });
+
+  // Hero cluster: first item from sorted list
+  let heroCluster = $derived(() => {
+    const sorted = sortedClusters();
+    return sorted.length > 0 ? sorted[0] : null;
+  });
+
+  // Remaining clusters (after hero)
+  let remainingClusters = $derived(() => {
+    const sorted = sortedClusters();
+    return sorted.length > 1 ? sorted.slice(1) : [];
   });
 
   let blindspotCount = $derived(
@@ -177,6 +206,21 @@
   let showEmptyState = $derived(
     !isSearching && !eventsStore.clustersLoading && !hasClusters && !hasUnclustered
   );
+
+  // Hero helpers
+  function safeJsonParse(str, fallback) {
+    if (typeof str !== 'string') return str || fallback;
+    try { return JSON.parse(str); } catch { return fallback; }
+  }
+
+  function getHeroSources(cluster) {
+    const sources = safeJsonParse(cluster.sources_json, []);
+    return sources.slice(0, 6).map(item => (typeof item === 'string' ? item : item.source));
+  }
+
+  function getHeroCampRatio(cluster) {
+    return safeJsonParse(cluster.avg_camp_ratio, null);
+  }
 </script>
 
 <div
@@ -196,6 +240,7 @@
         label={cat.label}
         selected={selectedCategory === cat.value}
         onclick={() => handleCategoryClick(cat.value)}
+        mode="tab"
       />
     {/each}
   </div>
@@ -207,7 +252,7 @@
   {/if}
 
   {#if isSearching}
-    <!-- Search Results Mode: flat article list -->
+    <!-- Search Results Mode -->
     <ResponsiveGrid>
       {#each store.articles as article, i (article.article_id ?? i)}
         <ArticleCard
@@ -231,13 +276,77 @@
       </div>
     {/if}
   {:else}
-    <!-- Default Mode: Cluster cards + unclustered articles -->
+    <!-- Default Mode: Hero + Clusters + Unclustered -->
 
-    <!-- Section 1: 新聞事件 (Clusters) -->
     {#if eventsStore.clustersLoading && eventsStore.clusters.length === 0}
       <div class="loading-indicator">
         <ProgressIndicator type="linear" />
       </div>
+    {/if}
+
+    <!-- Hero Card -->
+    {#if heroCluster()}
+      {@const hero = heroCluster()}
+      <button
+        class="hero-card"
+        onclick={() => handleClusterClick(hero)}
+        aria-label="精選事件: {hero.representative_title}"
+      >
+        <!-- Blindspot Banner -->
+        {#if hero.is_blindspot && BlindspotAlert}
+          <div class="hero-blindspot">
+            <svelte:component this={BlindspotAlert} type={hero.blindspot_type} isBlindspot={true} />
+          </div>
+        {/if}
+
+        <div class="hero-content">
+          {#if hero.category}
+            <span class="hero-category">{hero.category}</span>
+          {/if}
+          <h2 class="hero-title">{hero.representative_title ?? ''}</h2>
+          <span class="hero-meta">{hero.article_count ?? 0} 篇報導 · {hero.source_count ?? 0} 家媒體</span>
+
+          <div class="hero-viz">
+            {#if ControversyPulse && (hero.avg_controversy_score ?? 0) > 0}
+              <div class="hero-controversy">
+                <svelte:component this={ControversyPulse} score={hero.avg_controversy_score} dark={true} />
+                <span class="hero-viz-label">爭議度</span>
+              </div>
+            {/if}
+
+            {#if CampBar}
+              {@const campRatio = getHeroCampRatio(hero)}
+              {#if campRatio}
+                <div class="hero-camp">
+                  <svelte:component this={CampBar}
+                    green={campRatio.green ?? 0}
+                    white={campRatio.white ?? 0}
+                    blue={campRatio.blue ?? 0}
+                    dark={true}
+                  />
+                </div>
+              {/if}
+            {/if}
+          </div>
+
+          <!-- Source badges -->
+          {#if SourceBadge}
+            {@const heroSources = getHeroSources(hero)}
+            {#if heroSources.length > 0}
+              <div class="hero-sources">
+                {#each heroSources as src (src)}
+                  <svelte:component this={SourceBadge} source={src} size="small" />
+                {/each}
+                {#if (safeJsonParse(hero.sources_json, []).length) > 6}
+                  <span class="hero-extra">+{safeJsonParse(hero.sources_json, []).length - 6}</span>
+                {/if}
+              </div>
+            {/if}
+          {/if}
+        </div>
+
+        <div class="hero-bottom-line"></div>
+      </button>
     {/if}
 
     <!-- Blindspot Radar Banner -->
@@ -248,13 +357,14 @@
       </div>
     {/if}
 
-    {#if hasClusters}
+    <!-- Section: Remaining Clusters -->
+    {#if remainingClusters().length > 0}
       <h2 class="section-heading">
         <span class="material-symbols-outlined section-icon">radar</span>
         即時新聞雷達
       </h2>
       <ResponsiveGrid minColumnWidth="340px">
-        {#each sortedClusters() as cluster (cluster.cluster_id)}
+        {#each remainingClusters() as cluster (cluster.cluster_id)}
           {#if ClusterCard}
             <svelte:component
               this={ClusterCard}
@@ -262,7 +372,6 @@
               onclick={() => handleClusterClick(cluster)}
             />
           {:else}
-            <!-- Fallback while ClusterCard loads -->
             <button
               class="cluster-fallback"
               onclick={() => handleClusterClick(cluster)}
@@ -279,9 +388,20 @@
           <ProgressIndicator type="linear" />
         </div>
       {/if}
+    {:else if hasClusters}
+      <!-- Only hero cluster exists, show section heading anyway for context -->
+      <h2 class="section-heading">
+        <span class="material-symbols-outlined section-icon">radar</span>
+        即時新聞雷達
+      </h2>
+      {#if eventsStore.clustersLoading}
+        <div class="loading-indicator">
+          <ProgressIndicator type="linear" />
+        </div>
+      {/if}
     {/if}
 
-    <!-- Section 2: 其他報導 (Unclustered articles) -->
+    <!-- Section: Unclustered articles -->
     {#if hasUnclustered}
       <h2 class="section-heading">
         <span class="material-symbols-outlined section-icon">article</span>
@@ -321,20 +441,111 @@
   .home-page {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 12px 16px;
+    gap: 16px;
+    padding: 16px;
   }
   .search-section {
     width: 100%;
   }
   .category-chips {
     display: flex;
-    gap: 8px;
+    gap: 4px;
     overflow-x: auto;
     scrollbar-width: none;
     padding: 4px 0;
+    border-bottom: 1px solid var(--md-sys-color-outline-variant);
   }
   .category-chips::-webkit-scrollbar { display: none; }
+
+  /* === Hero Card === */
+  .hero-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--pr-analysis-surface);
+    border-radius: var(--md-sys-shape-corner-medium);
+    overflow: hidden;
+    cursor: pointer;
+    border: none;
+    text-align: left;
+    font: inherit;
+    color: var(--pr-analysis-on-surface);
+    width: 100%;
+    position: relative;
+    transition: transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+  }
+  .hero-card:hover {
+    transform: translateY(-2px);
+  }
+  .hero-card:focus-visible {
+    outline: 2px solid var(--pr-gold);
+    outline-offset: 2px;
+  }
+  .hero-blindspot {
+    width: 100%;
+  }
+  .hero-content {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .hero-category {
+    font: var(--md-sys-typescale-label-small-font);
+    color: var(--pr-analysis-gold);
+    background: rgba(201, 169, 110, 0.15);
+    padding: 2px 12px;
+    border-radius: var(--md-sys-shape-corner-extra-small);
+    align-self: flex-start;
+  }
+  .hero-title {
+    font: 700 24px/32px var(--pr-font-serif);
+    color: var(--pr-analysis-on-surface);
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .hero-meta {
+    font: var(--md-sys-typescale-label-medium-font);
+    color: var(--pr-analysis-on-surface-variant);
+  }
+  .hero-viz {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .hero-controversy {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .hero-viz-label {
+    font: var(--md-sys-typescale-label-small-font);
+    color: var(--pr-analysis-on-surface-variant);
+  }
+  .hero-camp {
+    flex: 1;
+    min-width: 160px;
+  }
+  .hero-sources {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .hero-extra {
+    font: var(--md-sys-typescale-label-small-font);
+    color: var(--pr-analysis-on-surface-variant);
+  }
+  .hero-bottom-line {
+    height: 3px;
+    background: linear-gradient(to right, var(--pr-gold), var(--pr-gold-muted), transparent);
+  }
+
+  /* === Radar Banner === */
   .radar-banner {
     display: flex;
     align-items: center;
@@ -349,18 +560,24 @@
   .radar-icon {
     font-size: 20px;
   }
+
+  /* === Section Heading === */
   .section-heading {
     display: flex;
     align-items: center;
     gap: 8px;
     margin: 8px 0 0;
-    font: var(--md-sys-typescale-title-medium-font);
+    padding-left: 12px;
+    border-left: 4px solid var(--pr-gold);
+    font: 500 16px/24px var(--pr-font-serif);
     color: var(--md-sys-color-on-surface);
   }
   .section-icon {
     font-size: 20px;
-    color: var(--md-sys-color-primary);
+    color: var(--pr-gold);
   }
+
+  /* === Misc === */
   .refresh-indicator {
     display: flex;
     justify-content: center;
@@ -395,6 +612,7 @@
     gap: 4px;
     padding: 16px;
     border: 1px solid var(--md-sys-color-outline-variant);
+    border-left: 3px solid var(--pr-gold);
     border-radius: var(--md-sys-shape-corner-medium);
     background: var(--md-sys-color-surface-container-lowest);
     color: var(--md-sys-color-on-surface);
@@ -404,7 +622,7 @@
     width: 100%;
   }
   .cluster-fallback strong {
-    font: var(--md-sys-typescale-title-small-font);
+    font: 500 14px/20px var(--pr-font-serif);
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -416,5 +634,15 @@
   }
   .cluster-fallback:hover {
     background: color-mix(in srgb, var(--md-sys-color-on-surface) 4%, var(--md-sys-color-surface-container-lowest));
+  }
+
+  @media (min-width: 768px) {
+    .hero-title {
+      font-size: 28px;
+      line-height: 36px;
+    }
+    .hero-content {
+      padding: 32px;
+    }
   }
 </style>

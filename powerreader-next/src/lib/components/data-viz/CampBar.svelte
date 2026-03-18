@@ -4,7 +4,7 @@
    * Shows party gradient colors: DPP (green), TPP (white), KMT (blue).
    * No media camp classification — only AI-derived stance ratios.
    */
-  let { green = 0, white = 0, blue = 0 } = $props();
+  let { green = 0, white = 0, blue = 0, dark = false } = $props();
 
   let total = $derived(green + white + blue || 1);
   let greenPct = $derived(Math.round(green / total * 100));
@@ -18,21 +18,21 @@
   };
 </script>
 
-<div class="camp-bar-wrap">
+<div class="camp-bar-wrap" class:dark-mode={dark}>
   <div class="camp-bar">
     {#if greenPct > 0}
       <div class="segment" style="width: {greenPct}%; background-image: {CFG.green.bg}">
-        {#if greenPct > 15}<span>{greenPct}%</span>{/if}
+        {#if greenPct > 10}<span>{greenPct}%</span>{/if}
       </div>
     {/if}
     {#if whitePct > 0}
       <div class="segment" style="width: {whitePct}%; background-image: {CFG.white.bg}">
-        {#if whitePct > 15}<span>{whitePct}%</span>{/if}
+        {#if whitePct > 10}<span>{whitePct}%</span>{/if}
       </div>
     {/if}
     {#if bluePct > 0}
       <div class="segment" style="width: {bluePct}%; background-image: {CFG.blue.bg}">
-        {#if bluePct > 15}<span>{bluePct}%</span>{/if}
+        {#if bluePct > 10}<span>{bluePct}%</span>{/if}
       </div>
     {/if}
   </div>
@@ -47,7 +47,7 @@
   .camp-bar-wrap { width: 100%; }
   .camp-bar {
     display: flex;
-    height: 12px;
+    height: 18px;
     border-radius: var(--md-sys-shape-corner-full);
     overflow: hidden;
   }
@@ -62,12 +62,18 @@
     color: white;
     text-shadow: 0 1px 2px rgba(0,0,0,0.5);
   }
+  .dark-mode .camp-bar {
+    filter: saturate(1.3);
+  }
   .legend {
     display: flex;
     gap: 12px;
     margin-top: 4px;
     font: var(--md-sys-typescale-label-small-font);
     color: var(--md-sys-color-on-surface-variant);
+  }
+  .dark-mode .legend {
+    color: var(--pr-analysis-on-surface-variant);
   }
   .legend-item { display: flex; align-items: center; gap: 4px; }
   .dot {

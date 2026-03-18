@@ -32,7 +32,8 @@
     left: 0;
     right: 0;
     height: 80px;
-    background: var(--md-sys-color-surface-container);
+    background: var(--md-sys-color-surface);
+    border-top: 1px solid var(--pr-gold);
     display: flex;
     align-items: flex-start;
     justify-content: space-around;
@@ -66,14 +67,14 @@
     width: 64px;
     height: 32px;
     border-radius: var(--md-sys-shape-corner-full);
-    background: var(--md-sys-color-secondary-container);
+    background: var(--pr-gold);
   }
   .nav-icon {
     position: relative;
     font-size: 24px;
   }
   .active .nav-icon {
-    color: var(--md-sys-color-on-secondary-container);
+    color: var(--pr-ink);
     font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   }
   .nav-label {

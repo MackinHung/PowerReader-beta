@@ -39,7 +39,7 @@
   tabindex="0"
   aria-label="開啟原文：{article.title ?? ''}"
 >
-  <Card variant="elevated">
+  <Card variant="filled">
     <div class="card-inner">
       <div class="card-top">
         <SourceBadge source={article.source} />
@@ -86,11 +86,11 @@
     display: block;
     cursor: pointer;
     border-radius: var(--md-sys-shape-corner-medium);
-    transition: transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
-                box-shadow var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+    border-bottom: 1px solid var(--md-sys-color-outline-variant);
+    transition: opacity var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
   }
   .article-card-wrapper:hover {
-    transform: translateY(-2px);
+    opacity: 0.85;
   }
   .article-card-wrapper:focus-visible {
     outline: 2px solid var(--md-sys-color-primary);
@@ -113,6 +113,7 @@
   }
   .card-title {
     font: var(--md-sys-typescale-title-small-font);
+    font-family: var(--pr-font-serif);
     color: var(--md-sys-color-on-surface);
     margin: 0;
     display: -webkit-box;

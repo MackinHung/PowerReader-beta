@@ -103,7 +103,7 @@
       <Button variant="outlined" onclick={() => loadCluster(clusterId)}>重試</Button>
     </div>
   {:else if cluster}
-    <!-- Header -->
+    <!-- Header (Light) -->
     <div class="detail-header">
       <div class="header-badges">
         {#if cluster.category}
@@ -121,52 +121,57 @@
       </span>
     </div>
 
-    <!-- Camp Distribution -->
-    <Card variant="filled">
-      <div class="viz-section">
-        <span class="section-label">陣營比例</span>
-        <CampBar
-          green={campDist.green ?? 0}
-          white={campDist.white ?? 0}
-          blue={campDist.blue ?? 0}
-        />
-      </div>
-    </Card>
-
-    <!-- Controversy -->
-    {#if controversyConfig()}
-      <Card variant="filled">
-        <div class="viz-section">
-          <span class="section-label">平均爭議程度</span>
-          <div class="controversy-row">
-            <div class="heat-bar-container">
-              <div
-                class="heat-bar"
-                style="width: {cluster.avg_controversy_score}%; background: {controversyConfig().color}"
-              ></div>
+    <!-- Analysis Zone (Dark) -->
+    <div class="analysis-zone">
+      <h3 class="zone-title">分析數據</h3>
+      <div class="zone-content">
+        <div class="zone-grid">
+          <!-- Controversy -->
+          {#if controversyConfig()}
+            <div class="zone-item">
+              <span class="zone-label">平均爭議程度</span>
+              <div class="controversy-row">
+                <div class="heat-bar-container">
+                  <div
+                    class="heat-bar"
+                    style="width: {cluster.avg_controversy_score}%; background: {controversyConfig().color}"
+                  ></div>
+                </div>
+                <span class="controversy-label" style="color: {controversyConfig().color}">
+                  {controversyConfig().label} ({Math.round(cluster.avg_controversy_score)})
+                </span>
+              </div>
             </div>
-            <span class="controversy-label" style="color: {controversyConfig().color}">
-              {controversyConfig().label} ({Math.round(cluster.avg_controversy_score)})
-            </span>
+          {/if}
+
+          <!-- Camp Distribution -->
+          <div class="zone-item">
+            <span class="zone-label">陣營比例</span>
+            <CampBar
+              green={campDist.green ?? 0}
+              white={campDist.white ?? 0}
+              blue={campDist.blue ?? 0}
+              dark={true}
+            />
           </div>
         </div>
-      </Card>
-    {/if}
 
-    <!-- Blindspot Alert -->
-    {#if cluster.is_blindspot && blindspotLabel}
-      <div class="blindspot-alert">
-        <span class="material-symbols-outlined">warning</span>
-        <div>
-          <strong>{blindspotLabel}</strong>
-          {#if cluster.missing_camp}
-            <p class="alert-desc">此事件缺少{cluster.missing_camp === 'pan_green' ? '泛綠' : cluster.missing_camp === 'pan_blue' ? '泛藍' : '中立'}觀點的報導</p>
-          {/if}
-        </div>
+        <!-- Blindspot Alert (inside dark zone) -->
+        {#if cluster.is_blindspot && blindspotLabel}
+          <div class="zone-blindspot">
+            <span class="material-symbols-outlined">warning</span>
+            <div>
+              <strong>{blindspotLabel}</strong>
+              {#if cluster.missing_camp}
+                <p class="alert-desc">此事件缺少{cluster.missing_camp === 'pan_green' ? '泛綠' : cluster.missing_camp === 'pan_blue' ? '泛藍' : '中立'}觀點的報導</p>
+              {/if}
+            </div>
+          </div>
+        {/if}
       </div>
-    {/if}
+    </div>
 
-    <!-- Cross-media Comparison Table -->
+    <!-- Cross-media Comparison (Light) -->
     {#if articlesBySource().length >= 2}
       <div class="comparison-section">
         <h2 class="section-heading">
@@ -174,8 +179,13 @@
           跨媒體比較
         </h2>
         <div class="comparison-table">
-          {#each articlesBySource() as [source, sourceArticles]}
-            <div class="comparison-row">
+          <div class="comparison-header-row">
+            <span class="col-source">來源</span>
+            <span class="col-title">標題</span>
+            <span class="col-bias">偏向</span>
+          </div>
+          {#each articlesBySource() as [source, sourceArticles], rowIdx}
+            <div class="comparison-row" class:odd={rowIdx % 2 === 1}>
               <div class="comparison-source">
                 <span class="source-name">{source}</span>
                 <span class="source-count">{sourceArticles.length} 篇</span>
@@ -186,7 +196,7 @@
                     <span class="art-title">{art.title}</span>
                     {#if art.bias_score != null}
                       <span class="art-bias" class:green={art.bias_score <= 40} class:blue={art.bias_score >= 60}>
-                        偏向: {art.bias_score}
+                        {art.bias_score}
                       </span>
                     {/if}
                   </div>
@@ -198,7 +208,7 @@
       </div>
     {/if}
 
-    <!-- Article Timeline -->
+    <!-- Related Articles (Light) -->
     <div class="articles-section">
       <h2 class="section-heading">
         <span class="material-symbols-outlined">article</span>
@@ -220,7 +230,7 @@
   .cluster-detail {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
     padding: 16px;
     max-width: 900px;
     margin: 0 auto;
@@ -244,7 +254,7 @@
     font: var(--md-sys-typescale-body-large-font);
   }
 
-  /* Header */
+  /* === Header (Light) === */
   .detail-header {
     display: flex;
     flex-direction: column;
@@ -258,8 +268,8 @@
   }
   .category-badge {
     font: var(--md-sys-typescale-label-small-font);
-    color: var(--md-sys-color-on-tertiary-container);
-    background: var(--md-sys-color-tertiary-container);
+    color: var(--md-sys-color-on-primary-container);
+    background: var(--md-sys-color-primary-container);
     padding: 2px 10px;
     border-radius: var(--md-sys-shape-corner-extra-small);
   }
@@ -276,7 +286,7 @@
   }
   .detail-title {
     margin: 0;
-    font: var(--md-sys-typescale-headline-small-font);
+    font: 700 28px/36px var(--pr-font-serif);
     color: var(--md-sys-color-on-surface);
     line-height: 1.4;
   }
@@ -291,15 +301,45 @@
     font-size: 16px;
   }
 
-  /* Viz */
-  .viz-section {
+  /* === Analysis Zone (Dark) === */
+  .analysis-zone {
+    background: var(--pr-analysis-surface);
+    border-radius: var(--md-sys-shape-corner-medium);
+    padding: 24px;
+    border: 1px solid var(--pr-analysis-border);
+  }
+  .zone-title {
+    font: 700 18px/24px var(--pr-font-serif);
+    color: var(--pr-analysis-gold);
+    margin: 0 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--pr-analysis-border);
+  }
+  .zone-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .zone-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  @media (min-width: 768px) {
+    .zone-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+  }
+  .zone-item {
     display: flex;
     flex-direction: column;
     gap: 8px;
   }
-  .section-label {
+  .zone-label {
     font: var(--md-sys-typescale-label-medium-font);
-    color: var(--md-sys-color-on-surface-variant);
+    color: var(--pr-analysis-on-surface-variant);
   }
   .controversy-row {
     display: flex;
@@ -308,8 +348,8 @@
   }
   .heat-bar-container {
     flex: 1;
-    height: 6px;
-    background: var(--md-sys-color-surface-container-high);
+    height: 8px;
+    background: var(--pr-analysis-border);
     border-radius: var(--md-sys-shape-corner-full);
     overflow: hidden;
   }
@@ -322,53 +362,75 @@
     font: var(--md-sys-typescale-label-medium-font);
     white-space: nowrap;
   }
-
-  /* Blindspot Alert */
-  .blindspot-alert {
+  .zone-blindspot {
     display: flex;
     gap: 12px;
     padding: 12px 16px;
-    background: var(--md-sys-color-error-container);
-    border-radius: var(--md-sys-shape-corner-medium);
-    color: var(--md-sys-color-on-error-container);
+    background: rgba(179, 38, 30, 0.15);
+    border-radius: var(--md-sys-shape-corner-small);
+    color: #F9DEDC;
+    border: 1px solid rgba(179, 38, 30, 0.3);
   }
-  .blindspot-alert .material-symbols-outlined {
+  .zone-blindspot .material-symbols-outlined {
     flex-shrink: 0;
     font-size: 24px;
+    color: #F44336;
   }
-  .blindspot-alert strong {
+  .zone-blindspot strong {
     font: var(--md-sys-typescale-title-small-font);
+    color: #F9DEDC;
   }
   .alert-desc {
     margin: 4px 0 0;
     font: var(--md-sys-typescale-body-small-font);
+    color: var(--pr-analysis-on-surface-variant);
   }
 
-  /* Comparison */
-  .comparison-section, .articles-section {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
+  /* === Section Heading === */
   .section-heading {
     display: flex;
     align-items: center;
     gap: 8px;
     margin: 0;
-    font: var(--md-sys-typescale-title-medium-font);
+    padding-left: 12px;
+    border-left: 4px solid var(--pr-gold);
+    font: 500 16px/24px var(--pr-font-serif);
     color: var(--md-sys-color-on-surface);
   }
   .section-heading .material-symbols-outlined {
     font-size: 20px;
-    color: var(--md-sys-color-primary);
+    color: var(--pr-gold);
+  }
+
+  /* === Comparison Table (Light, with zebra stripes) === */
+  .comparison-section, .articles-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
   .comparison-table {
     display: flex;
     flex-direction: column;
-    gap: 1px;
-    background: var(--md-sys-color-outline-variant);
     border-radius: var(--md-sys-shape-corner-medium);
     overflow: hidden;
+    border: 1px solid var(--md-sys-color-outline-variant);
+  }
+  .comparison-header-row {
+    display: none;
+    padding: 8px 12px;
+    background: var(--md-sys-color-surface-container);
+    font: var(--md-sys-typescale-label-medium-font);
+    color: var(--md-sys-color-on-surface-variant);
+    font-weight: 600;
+    gap: 8px;
+  }
+  @media (min-width: 768px) {
+    .comparison-header-row {
+      display: flex;
+    }
+    .col-source { width: 120px; flex-shrink: 0; }
+    .col-title { flex: 1; }
+    .col-bias { width: 60px; text-align: right; flex-shrink: 0; }
   }
   .comparison-row {
     display: flex;
@@ -376,6 +438,13 @@
     gap: 6px;
     padding: 12px;
     background: var(--md-sys-color-surface-container-lowest);
+    border-top: 1px solid var(--md-sys-color-outline-variant);
+  }
+  .comparison-row:first-of-type {
+    border-top: none;
+  }
+  .comparison-row.odd {
+    background: var(--md-sys-color-surface-container-low);
   }
   .comparison-source {
     display: flex;
@@ -417,14 +486,24 @@
     color: var(--md-sys-color-on-surface-variant);
     white-space: nowrap;
     flex-shrink: 0;
+    padding: 1px 6px;
+    border-radius: var(--md-sys-shape-corner-extra-small);
+    background: var(--md-sys-color-surface-container);
   }
-  .art-bias.green { color: var(--camp-green); }
-  .art-bias.blue { color: var(--camp-blue); }
+  .art-bias.green { color: var(--camp-green); background: rgba(46, 125, 50, 0.08); }
+  .art-bias.blue { color: var(--camp-blue); background: rgba(21, 101, 192, 0.08); }
 
-  /* Articles list */
+  /* === Articles List === */
   .articles-list {
     display: flex;
     flex-direction: column;
     gap: 8px;
+  }
+
+  @media (min-width: 768px) {
+    .detail-title {
+      font-size: 32px;
+      line-height: 40px;
+    }
   }
 </style>

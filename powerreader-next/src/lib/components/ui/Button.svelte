@@ -21,7 +21,7 @@
     height: 40px;
     padding: 0 24px;
     border: none;
-    border-radius: var(--md-sys-shape-corner-full);
+    border-radius: var(--md-sys-shape-corner-small);
     font: var(--md-sys-typescale-label-large-font);
     cursor: pointer;
     text-decoration: none;

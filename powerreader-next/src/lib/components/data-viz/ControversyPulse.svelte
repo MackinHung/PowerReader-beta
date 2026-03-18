@@ -3,8 +3,9 @@
    * ControversyPulse — 32px colored circle with score + pulse animation.
    * Replaces the thin ControversyHeat bar with a more visual element.
    * High scores (>60) get pulsing ring animation.
+   * dark prop adds outer glow effect using analysis-glow keyframe.
    */
-  let { score = 0 } = $props();
+  let { score = 0, dark = false } = $props();
 
   const LEVELS = [
     { max: 20, color: '#4CAF50', label: '低', tier: 'low' },
@@ -24,6 +25,7 @@
   class="controversy-pulse"
   class:pulse={shouldPulse}
   class:glow={shouldGlow}
+  class:dark-mode={dark}
   role="meter"
   aria-valuenow={rounded}
   aria-valuemin="0"
@@ -61,5 +63,10 @@
   }
   .glow .ring {
     border-width: 3px;
+  }
+  .dark-mode {
+    filter: brightness(1.1);
+    animation: analysis-glow 3s ease-in-out infinite;
+    border-radius: 50%;
   }
 </style>

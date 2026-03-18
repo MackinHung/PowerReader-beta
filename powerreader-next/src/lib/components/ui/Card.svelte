@@ -41,6 +41,16 @@
     background: var(--md-sys-color-surface);
     box-shadow: var(--md-sys-elevation-1);
   }
+  .editorial {
+    background: #ffffff;
+    border-left: 3px solid var(--pr-gold);
+    box-shadow: none;
+  }
+  .dark {
+    background: var(--pr-analysis-surface);
+    color: var(--pr-analysis-on-surface);
+    border: 1px solid var(--pr-analysis-border);
+  }
   .clickable {
     cursor: pointer;
   }
