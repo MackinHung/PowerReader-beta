@@ -17,8 +17,11 @@ import { jsonResponse } from '../../../shared/response.js';
  * Parse pagination params from URL with clamping.
  */
 function parsePagination(url, maxLimit = 50) {
-  const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
-  const limit = Math.min(maxLimit, Math.max(1, parseInt(url.searchParams.get('limit') || '20', 10)));
+  let page = parseInt(url.searchParams.get('page') || '1', 10);
+  let limit = parseInt(url.searchParams.get('limit') || '20', 10);
+  if (isNaN(page) || page < 1) page = 1;
+  if (isNaN(limit) || limit < 1) limit = 20;
+  limit = Math.min(maxLimit, limit);
   const offset = (page - 1) * limit;
   return { page, limit, offset };
 }

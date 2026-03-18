@@ -19,17 +19,13 @@
     imbalanced: '報導失衡',
   };
 
-  let campDist = $derived(
-    typeof cluster.camp_distribution === 'string'
-      ? JSON.parse(cluster.camp_distribution || '{}')
-      : (cluster.camp_distribution || {})
-  );
+  function safeJsonParse(str, fallback) {
+    if (typeof str !== 'string') return str || fallback;
+    try { return JSON.parse(str); } catch { return fallback; }
+  }
 
-  let sources = $derived(
-    typeof cluster.sources_json === 'string'
-      ? JSON.parse(cluster.sources_json || '[]')
-      : (cluster.sources_json || [])
-  );
+  let campDist = $derived(safeJsonParse(cluster.camp_distribution, {}));
+  let sources = $derived(safeJsonParse(cluster.sources_json, []));
 
   let blindspotLabel = $derived(
     cluster.blindspot_type ? (BLINDSPOT_LABELS[cluster.blindspot_type] || cluster.blindspot_type) : null

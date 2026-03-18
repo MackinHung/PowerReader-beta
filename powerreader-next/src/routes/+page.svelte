@@ -122,7 +122,8 @@
     }
     // Use the articles already loaded in the store
     untrack(() => {
-      const existing = store.articles.filter(a => ids.includes(a.article_id));
+      const idSet = new Set(ids);
+      const existing = store.articles.filter(a => idSet.has(a.article_id));
       if (existing.length > 0) {
         unclusteredArticles = existing;
       }
