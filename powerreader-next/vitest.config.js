@@ -8,6 +8,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
 	plugins: [svelte({ hot: false })],
 	resolve: {
+		conditions: ['browser'],
 		alias: {
 			$lib: path.resolve(__dirname, './src/lib'),
 			$app: path.resolve(__dirname, './.svelte-kit/runtime/app')

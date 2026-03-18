@@ -1,0 +1,120 @@
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/svelte';
+import ClusterCardV2 from '$lib/components/article/ClusterCardV2.svelte';
+
+// Mock $app/navigation for goto calls
+vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
+
+const makeCluster = (overrides = {}) => ({
+	cluster_id: 'test-1',
+	representative_title: '總統府召開國安會議',
+	category: '政治',
+	article_count: 5,
+	source_count: 3,
+	camp_distribution: JSON.stringify({ green: 3, white: 1, blue: 1 }),
+	sources_json: JSON.stringify([
+		{ source: 'liberty_times', count: 2, camp: 'green' },
+		{ source: 'cna', count: 2, camp: 'white' },
+		{ source: 'udn', count: 1, camp: 'blue' },
+	]),
+	avg_controversy_score: 45,
+	earliest_published_at: '2026-03-18T06:00:00Z',
+	latest_published_at: '2026-03-18T10:00:00Z',
+	is_blindspot: false,
+	blindspot_type: null,
+	avg_camp_ratio: null,
+	analyzed_count: 0,
+	...overrides,
+});
+
+describe('ClusterCardV2', () => {
+	it('renders title and metadata', () => {
+		render(ClusterCardV2, { props: { cluster: makeCluster() } });
+		expect(screen.getByText('總統府召開國安會議')).toBeTruthy();
+		expect(screen.getByText('政治')).toBeTruthy();
+		expect(screen.getByText(/5 篇/)).toBeTruthy();
+		expect(screen.getByText(/3 家媒體/)).toBeTruthy();
+	});
+
+	it('renders source badges', () => {
+		render(ClusterCardV2, { props: { cluster: makeCluster() } });
+		expect(screen.getByText('自由時報')).toBeTruthy();
+		expect(screen.getByText('中央社')).toBeTruthy();
+		expect(screen.getByText('聯合新聞網')).toBeTruthy();
+	});
+
+	it('renders CoverageRing section', () => {
+		render(ClusterCardV2, { props: { cluster: makeCluster() } });
+		expect(screen.getByText('媒體陣營')).toBeTruthy();
+	});
+
+	it('renders ControversyPulse with score', () => {
+		render(ClusterCardV2, { props: { cluster: makeCluster({ avg_controversy_score: 72 }) } });
+		expect(screen.getByText('72')).toBeTruthy();
+	});
+
+	it('shows blindspot alert for green_only', () => {
+		render(ClusterCardV2, {
+			props: {
+				cluster: makeCluster({
+					is_blindspot: true,
+					blindspot_type: 'green_only',
+				})
+			}
+		});
+		expect(screen.getByRole('alert')).toBeTruthy();
+		expect(screen.getByText(/僅綠營報導/)).toBeTruthy();
+	});
+
+	it('has blindspot class when is_blindspot true', () => {
+		const { container } = render(ClusterCardV2, {
+			props: { cluster: makeCluster({ is_blindspot: true, blindspot_type: 'blue_only' }) }
+		});
+		expect(container.querySelector('.blindspot')).toBeTruthy();
+	});
+
+	it('has hot class when controversy > 60', () => {
+		const { container } = render(ClusterCardV2, {
+			props: { cluster: makeCluster({ avg_controversy_score: 75 }) }
+		});
+		expect(container.querySelector('.hot')).toBeTruthy();
+	});
+
+	it('no hot class when controversy <= 60', () => {
+		const { container } = render(ClusterCardV2, {
+			props: { cluster: makeCluster({ avg_controversy_score: 40 }) }
+		});
+		expect(container.querySelector('.hot')).toBeNull();
+	});
+
+	it('shows StancePrism with "needs AI" when no avg_camp_ratio', () => {
+		render(ClusterCardV2, { props: { cluster: makeCluster() } });
+		expect(screen.getByText(/議題立場需 AI 分析/)).toBeTruthy();
+	});
+
+	it('shows StancePrism with data when avg_camp_ratio exists', () => {
+		render(ClusterCardV2, {
+			props: {
+				cluster: makeCluster({
+					avg_camp_ratio: JSON.stringify({ dpp: 45, tpp: 20, kmt: 35 }),
+					analyzed_count: 3,
+				})
+			}
+		});
+		expect(screen.getByText('議題立場分析')).toBeTruthy();
+	});
+
+	it('fires onclick when clicked', async () => {
+		const handler = vi.fn();
+		const { container } = render(ClusterCardV2, { props: { cluster: makeCluster(), onclick: handler } });
+		await fireEvent.click(container.querySelector('.cluster-v2-wrapper'));
+		expect(handler).toHaveBeenCalledTimes(1);
+	});
+
+	it('fires onclick on Enter key', async () => {
+		const handler = vi.fn();
+		const { container } = render(ClusterCardV2, { props: { cluster: makeCluster(), onclick: handler } });
+		await fireEvent.keyDown(container.querySelector('.cluster-v2-wrapper'), { key: 'Enter' });
+		expect(handler).toHaveBeenCalledTimes(1);
+	});
+});

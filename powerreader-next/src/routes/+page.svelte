@@ -11,12 +11,17 @@
   import { getEventsStore } from '$lib/stores/events.svelte.js';
   import { getMediaQueryStore } from '$lib/stores/mediaQuery.svelte.js';
 
-  // Dynamic import for ClusterCard (may not exist during initial build)
+  // Dynamic import for ClusterCardV2 (with V1 fallback)
   let ClusterCard = $state(null);
   $effect(() => {
-    import('$lib/components/article/ClusterCard.svelte')
+    import('$lib/components/article/ClusterCardV2.svelte')
       .then(m => { ClusterCard = m.default; })
-      .catch(() => {});
+      .catch(() => {
+        // Fallback to V1 if V2 fails to load
+        import('$lib/components/article/ClusterCard.svelte')
+          .then(m => { ClusterCard = m.default; })
+          .catch(() => {});
+      });
   });
 
   const store = getArticlesStore();
@@ -152,6 +157,21 @@
     return () => observer.disconnect();
   });
 
+  // Sort clusters: blindspot first, then by controversy score desc
+  let sortedClusters = $derived(() => {
+    return [...eventsStore.clusters].sort((a, b) => {
+      // Blindspots first
+      if (a.is_blindspot && !b.is_blindspot) return -1;
+      if (!a.is_blindspot && b.is_blindspot) return 1;
+      // Then by controversy score descending
+      return (b.avg_controversy_score ?? 0) - (a.avg_controversy_score ?? 0);
+    });
+  });
+
+  let blindspotCount = $derived(
+    eventsStore.clusters.filter(c => c.is_blindspot).length
+  );
+
   let hasClusters = $derived(eventsStore.clusters.length > 0);
   let hasUnclustered = $derived(unclusteredArticles.length > 0);
   let showEmptyState = $derived(
@@ -220,13 +240,21 @@
       </div>
     {/if}
 
+    <!-- Blindspot Radar Banner -->
+    {#if blindspotCount > 0}
+      <div class="radar-banner" role="alert">
+        <span class="material-symbols-outlined radar-icon">crisis_alert</span>
+        <span>偵測到 {blindspotCount} 個報導盲區</span>
+      </div>
+    {/if}
+
     {#if hasClusters}
       <h2 class="section-heading">
-        <span class="material-symbols-outlined section-icon">hub</span>
-        新聞事件
+        <span class="material-symbols-outlined section-icon">radar</span>
+        即時新聞雷達
       </h2>
-      <ResponsiveGrid minColumnWidth="360px">
-        {#each eventsStore.clusters as cluster (cluster.cluster_id)}
+      <ResponsiveGrid minColumnWidth="340px">
+        {#each sortedClusters() as cluster (cluster.cluster_id)}
           {#if ClusterCard}
             <svelte:component
               this={ClusterCard}
@@ -307,6 +335,20 @@
     padding: 4px 0;
   }
   .category-chips::-webkit-scrollbar { display: none; }
+  .radar-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--md-sys-color-error-container);
+    color: var(--md-sys-color-on-error-container);
+    border-radius: var(--md-sys-shape-corner-small);
+    font: var(--md-sys-typescale-label-large-font);
+    animation: slide-in-top var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate);
+  }
+  .radar-icon {
+    font-size: 20px;
+  }
   .section-heading {
     display: flex;
     align-items: center;

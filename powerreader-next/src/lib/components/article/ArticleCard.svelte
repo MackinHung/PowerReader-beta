@@ -67,6 +67,7 @@
               green={article.camp_ratio?.green ?? 0}
               white={article.camp_ratio?.white ?? 0}
               blue={article.camp_ratio?.blue ?? 0}
+              mode="stance"
             />
           </div>
         {/if}

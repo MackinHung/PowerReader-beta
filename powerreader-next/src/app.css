@@ -72,6 +72,14 @@
   --controversy-very-high: #DC3545;
   --controversy-extreme: #6F42C1;
 
+  /* Stance Colors (Issue Position — party gradients) */
+  --stance-dpp-deep: #1B5E20;
+  --stance-dpp-light: #A5D6A7;
+  --stance-kmt-deep: #0D47A1;
+  --stance-kmt-light: #90CAF9;
+  --stance-tpp-deep: #28C8C8;
+  --stance-tpp-light: #FFFFFF;
+
   /* Typography Scale (Noto Sans TC) */
   --md-sys-typescale-display-large-font: 400 57px/64px 'Noto Sans TC', sans-serif;
   --md-sys-typescale-display-medium-font: 400 45px/52px 'Noto Sans TC', sans-serif;
@@ -195,6 +203,28 @@ body {
 }
 .ripple:active::after {
   opacity: var(--md-sys-state-pressed-opacity);
+}
+
+/* === ClusterCardV2 Animations === */
+@keyframes pulse-border {
+  0%, 100% { border-color: var(--md-sys-color-error); }
+  50% { border-color: rgba(179, 38, 30, 0.3); }
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(244, 67, 54, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0); }
+}
+
+@keyframes glow-warm {
+  0%, 100% { box-shadow: var(--md-sys-elevation-1); }
+  50% { box-shadow: 0 0 16px rgba(255, 152, 0, 0.35), var(--md-sys-elevation-2); }
+}
+
+@keyframes slide-in-top {
+  from { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 /* Reduced motion */
