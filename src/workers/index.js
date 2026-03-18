@@ -24,7 +24,7 @@ import { corsHeaders, handleCorsPreFlight } from './middleware/cors.js';
 import { createMetricsCollector, aggregateHourly } from './monitoring/collector.js';
 import { evaluateAlerts } from './monitoring/alerts.js';
 import { getFullMetrics } from './monitoring/metrics.js';
-import { scanBlindspots, updateSourceTendency } from './handlers/cron-blindspot.js';
+import { scanBlindspots, updateSourceTendency, buildAllClusters } from './handlers/cron-blindspot.js';
 
 export default {
   async fetch(request, env, ctx) {
@@ -82,6 +82,9 @@ export default {
 
     // Blindspot detection: scan clusters every hour (non-blocking)
     ctx.waitUntil(scanBlindspots(env).catch(() => {}));
+
+    // Event cluster pre-computation: build all clusters every hour (non-blocking)
+    ctx.waitUntil(buildAllClusters(env).catch(() => {}));
 
     // Reset daily analysis counts at midnight UTC (cron runs hourly)
     const hour = new Date(event.scheduledTime).getUTCHours();

@@ -31,8 +31,14 @@
     '/settings': '設定'
   };
 
+  // Dynamic title for event detail pages
+  let dynamicTitle = $derived(() => {
+    if (currentPath.startsWith('/event/')) return '事件詳情';
+    return null;
+  });
+
   let currentPath = $derived(page.url.pathname);
-  let title = $derived(titles[currentPath] || 'PowerReader');
+  let title = $derived(dynamicTitle() || titles[currentPath] || 'PowerReader');
   let showBack = $derived(
     !['/', '/observe', '/observe/blindspot', '/observe/compare', '/analyze', '/profile'].includes(currentPath)
   );

@@ -28,6 +28,7 @@ import { reportArticle, reportAnalysis } from './handlers/reports.js';
 import { submitAnalysisFeedback, getAnalysisFeedbackStats } from './handlers/analysis-feedback.js';
 import { searchArticles } from './handlers/search.js';
 import { getEvents, getEventDetail } from './handlers/events.js';
+import { getClusters, getClusterDetail } from './handlers/clusters.js';
 
 /**
  * Route table: [method, pattern, handler, options]
@@ -89,6 +90,10 @@ const ROUTES = [
 
   // Search API (v2.1 — text search)
   ['GET', '/api/v1/search', searchArticles, { auth: 'none', rateLimit: true, cache: `public, max-age=${CLOUDFLARE.CDN_NEWS_LIST_TTL}` }],
+
+  // Clusters API (v2.2 — pre-computed event clusters for homepage visualization)
+  ['GET', '/api/v1/clusters',              getClusters,      { auth: 'none', rateLimit: true, cache: `public, max-age=${CLOUDFLARE.CDN_NEWS_LIST_TTL}` }],
+  ['GET', '/api/v1/clusters/:cluster_id',  getClusterDetail, { auth: 'none', rateLimit: true, cache: `public, max-age=${CLOUDFLARE.CDN_NEWS_LIST_TTL}` }],
 
   // Events API (v2.1 — cluster aggregation)
   ['GET', '/api/v1/events',              getEvents,      { auth: 'none', rateLimit: true, cache: `public, max-age=${CLOUDFLARE.CDN_NEWS_LIST_TTL}` }],

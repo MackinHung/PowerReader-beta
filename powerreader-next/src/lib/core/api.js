@@ -599,6 +599,57 @@ export async function fetchEventDetail(clusterId) {
 }
 
 // =============================================
+// Clusters API (v2.2 — pre-computed event clusters)
+// =============================================
+
+/**
+ * GET /api/v1/clusters — paginated pre-computed clusters.
+ */
+export async function fetchClusters({ page = 1, limit = 20, category } = {}) {
+  const cacheKey = `clusters:${page}:${limit}:${category || ''}`;
+
+  if (!navigator.onLine) {
+    const cached = await getCachedResponse(cacheKey);
+    if (cached) return { success: true, data: cached, error: null };
+    return { success: false, data: null, error: { type: 'offline' } };
+  }
+
+  const fresh = await getFreshCachedResponse(cacheKey);
+  if (fresh) return { success: true, data: fresh, error: null };
+
+  const params = new URLSearchParams({ page, limit });
+  if (category && category !== 'all') params.set('category', category);
+
+  const result = await apiFetch(`/clusters?${params}`);
+  if (result.success && result.data) {
+    await cacheResponse(cacheKey, result.data);
+  }
+  return result;
+}
+
+/**
+ * GET /api/v1/clusters/:cluster_id — cluster detail with articles.
+ */
+export async function fetchClusterDetail(clusterId) {
+  const cacheKey = `cluster-detail:${clusterId}`;
+
+  if (!navigator.onLine) {
+    const cached = await getCachedResponse(cacheKey);
+    if (cached) return { success: true, data: cached, error: null };
+    return { success: false, data: null, error: { type: 'offline' } };
+  }
+
+  const fresh = await getFreshCachedResponse(cacheKey);
+  if (fresh) return { success: true, data: fresh, error: null };
+
+  const result = await apiFetch(`/clusters/${encodeURIComponent(clusterId)}`);
+  if (result.success && result.data) {
+    await cacheResponse(cacheKey, result.data);
+  }
+  return result;
+}
+
+// =============================================
 // PDPA Compliance API
 // =============================================
 

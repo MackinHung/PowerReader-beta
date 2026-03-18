@@ -2,12 +2,12 @@
  * PowerReader - Events Store (Svelte 5 Runes)
  *
  * Reactive store for event clusters.
- * Fetches paginated events and expands individual clusters
- * via search API (workaround until /events/{id} is fixed).
+ * Supports both legacy events (blindspot_events) and new pre-computed clusters.
  */
 
 import * as api from '$lib/core/api.js';
 
+// Legacy events state
 let events = $state([]);
 let loading = $state(false);
 let error = $state(null);
@@ -16,13 +16,83 @@ let currentPage = $state(1);
 let expandedArticles = $state({});
 let expandingId = $state(null);
 
+// Pre-computed clusters state
+let clusters = $state([]);
+let clustersLoading = $state(false);
+let clustersError = $state(null);
+let clustersHasMore = $state(true);
+let clustersPage = $state(1);
+let unclusteredArticleIds = $state([]);
+
 export function getEventsStore() {
   return {
+    // Legacy events getters
     get events() { return events; },
     get loading() { return loading; },
     get error() { return error; },
     get hasMore() { return hasMore; },
     get expandingId() { return expandingId; },
+
+    // Pre-computed clusters getters
+    get clusters() { return clusters; },
+    get clustersLoading() { return clustersLoading; },
+    get clustersError() { return clustersError; },
+    get clustersHasMore() { return clustersHasMore; },
+    get unclusteredArticleIds() { return unclusteredArticleIds; },
+
+    // ==========================================
+    // Pre-computed Clusters (new)
+    // ==========================================
+
+    /**
+     * Fetch pre-computed clusters with pagination.
+     * @param {number} page - Page number (1-based)
+     * @param {string} [category] - Optional category filter
+     */
+    async fetchClusters(page = 1, category) {
+      clustersLoading = true;
+      clustersError = null;
+      try {
+        const result = await api.fetchClusters({ page, limit: 20, category });
+
+        if (!result.success) {
+          clustersError = result.error?.type || 'fetch_failed';
+          return;
+        }
+
+        const incoming = result.data?.clusters || [];
+
+        if (page === 1) {
+          clusters = incoming;
+          unclusteredArticleIds = result.data?.unclustered_article_ids || [];
+        } else {
+          clusters = [...clusters, ...incoming];
+        }
+
+        clustersHasMore = incoming.length >= 20;
+        clustersPage = page;
+      } catch (e) {
+        clustersError = e.message;
+      } finally {
+        clustersLoading = false;
+      }
+    },
+
+    /** Load next page of clusters. */
+    async loadMoreClusters(category) {
+      if (!clustersLoading && clustersHasMore) {
+        await this.fetchClusters(clustersPage + 1, category);
+      }
+    },
+
+    /** Refresh clusters from page 1. */
+    async refreshClusters(category) {
+      await this.fetchClusters(1, category);
+    },
+
+    // ==========================================
+    // Legacy Events (backward compat)
+    // ==========================================
 
     /**
      * Fetch event clusters with pagination.

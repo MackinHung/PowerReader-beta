@@ -1,5 +1,5 @@
 // PowerReader Next - Service Worker
-const CACHE_NAME = 'pr-next-v3';
+const CACHE_NAME = 'pr-next-v4';
 const APP_SHELL = [
   '/',
   '/200.html',

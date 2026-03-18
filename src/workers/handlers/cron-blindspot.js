@@ -247,6 +247,162 @@ function hashCluster(title) {
   return Math.abs(hash).toString(36);
 }
 
+// ========================================
+// Event Cluster Pre-computation
+// ========================================
+
+const CLUSTER_MIN_ARTICLES = 2;
+
+/**
+ * Controversy level ordering for max_controversy_level.
+ */
+const CONTROVERSY_ORDER = { low: 1, moderate: 2, high: 3, very_high: 4 };
+
+/**
+ * Build all event clusters from recent articles and upsert into event_clusters.
+ * Called hourly from index.js scheduled handler.
+ *
+ * Strategy: cluster articles by title similarity (same as blindspot scan),
+ * but with lower threshold (≥2 articles). Computes camp distribution,
+ * source breakdown, controversy scores, and category for frontend cards.
+ */
+export async function buildAllClusters(env) {
+  const rows = await env.DB.prepare(`
+    SELECT article_id, title, source, bias_score, published_at,
+           controversy_score, controversy_level, matched_topic
+    FROM articles
+    WHERE datetime(published_at) >= datetime('now', '-2 days')
+    ORDER BY published_at DESC
+    LIMIT 500
+  `).all();
+
+  const articles = rows.results || [];
+  if (articles.length < CLUSTER_MIN_ARTICLES) return;
+
+  const clusters = buildClusters(articles);
+
+  for (const cluster of clusters) {
+    if (cluster.articles.length < CLUSTER_MIN_ARTICLES) continue;
+
+    const campCounts = { green: 0, white: 0, blue: 0 };
+    const sourceMap = {};
+    const controversyScores = [];
+    let maxControversyLevel = null;
+    let maxControversyOrder = 0;
+    const topicCounts = {};
+    let earliestPub = null;
+    let latestPub = null;
+
+    for (const art of cluster.articles) {
+      // Camp determination (same priority as blindspot)
+      const camp = art.bias_score != null
+        ? getCamp(art.bias_score)
+        : getSourceCamp(art.source);
+      if (camp) {
+        campCounts[camp]++;
+      }
+
+      // Source breakdown
+      const srcCamp = camp || 'white';
+      if (!sourceMap[art.source]) {
+        sourceMap[art.source] = { source: art.source, camp: srcCamp, count: 0 };
+      }
+      sourceMap[art.source].count++;
+
+      // Controversy
+      if (art.controversy_score != null) {
+        controversyScores.push(art.controversy_score);
+      }
+      if (art.controversy_level) {
+        const order = CONTROVERSY_ORDER[art.controversy_level] || 0;
+        if (order > maxControversyOrder) {
+          maxControversyOrder = order;
+          maxControversyLevel = art.controversy_level;
+        }
+      }
+
+      // Category (majority matched_topic)
+      if (art.matched_topic) {
+        topicCounts[art.matched_topic] = (topicCounts[art.matched_topic] || 0) + 1;
+      }
+
+      // Timestamps
+      if (!earliestPub || art.published_at < earliestPub) earliestPub = art.published_at;
+      if (!latestPub || art.published_at > latestPub) latestPub = art.published_at;
+    }
+
+    const sourcesJson = Object.values(sourceMap);
+    const avgControversy = controversyScores.length > 0
+      ? controversyScores.reduce((a, b) => a + b, 0) / controversyScores.length
+      : null;
+
+    // Category: mode of matched_topic
+    let category = null;
+    let maxTopicCount = 0;
+    for (const [topic, count] of Object.entries(topicCounts)) {
+      if (count > maxTopicCount) {
+        maxTopicCount = count;
+        category = topic;
+      }
+    }
+
+    // Blindspot detection
+    const blindspotType = detectBlindspot(campCounts);
+    const isBlindspot = blindspotType ? 1 : 0;
+    const missingCamp = blindspotType ? getMissingCamp(blindspotType) : null;
+
+    const clusterId = `ec_${hashCluster(cluster.articles[0].title)}`;
+    const articleIds = cluster.articles.map(a => a.article_id);
+
+    await env.DB.prepare(`
+      INSERT INTO event_clusters
+        (cluster_id, representative_title, article_count, source_count,
+         camp_distribution, sources_json, article_ids,
+         avg_controversy_score, max_controversy_level, category,
+         is_blindspot, blindspot_type, missing_camp,
+         earliest_published_at, latest_published_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      ON CONFLICT(cluster_id) DO UPDATE SET
+        representative_title = excluded.representative_title,
+        article_count = excluded.article_count,
+        source_count = excluded.source_count,
+        camp_distribution = excluded.camp_distribution,
+        sources_json = excluded.sources_json,
+        article_ids = excluded.article_ids,
+        avg_controversy_score = excluded.avg_controversy_score,
+        max_controversy_level = excluded.max_controversy_level,
+        category = excluded.category,
+        is_blindspot = excluded.is_blindspot,
+        blindspot_type = excluded.blindspot_type,
+        missing_camp = excluded.missing_camp,
+        earliest_published_at = excluded.earliest_published_at,
+        latest_published_at = excluded.latest_published_at,
+        updated_at = excluded.updated_at
+    `).bind(
+      clusterId,
+      cluster.articles[0].title,
+      cluster.articles.length,
+      sourcesJson.length,
+      JSON.stringify(campCounts),
+      JSON.stringify(sourcesJson),
+      JSON.stringify(articleIds),
+      avgControversy,
+      maxControversyLevel,
+      category,
+      isBlindspot,
+      blindspotType,
+      missingCamp,
+      earliestPub,
+      latestPub
+    ).run();
+  }
+
+  // Clean up old clusters (>7 days)
+  await env.DB.prepare(
+    "DELETE FROM event_clusters WHERE datetime(latest_published_at) < datetime('now', '-7 days')"
+  ).run().catch(() => {});
+}
+
 /**
  * Update source tendency table with 30-day rolling average.
  * Called daily at midnight UTC.
