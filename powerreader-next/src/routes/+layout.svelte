@@ -15,21 +15,27 @@
   let AutoRunnerBar = $state(null);
 
   const navItems = [
-    { icon: 'home', label: '首頁', href: '/' },
-    { icon: 'explore', label: '觀察', href: '/observe' },
-    { icon: 'menu_book', label: '知識', href: '/knowledge' },
-    { icon: 'psychology', label: '分析', href: '/analyze' },
-    { icon: 'person', label: '我的', href: '/profile' }
+    { icon: 'newspaper', label: '報導熱點', href: '/' },
+    { icon: 'visibility', label: '觀察偏見', href: '/observe' },
+    { icon: 'database', label: '資料庫', href: '/knowledge' },
+    { icon: 'smart_toy', label: '自動分析', href: '/analyze' },
+    { icon: 'volunteer_activism', label: '個人貢獻', href: '/profile' }
+  ];
+
+  const sidebarExtraItems = [
+    { icon: 'rocket_launch', label: '動力池', href: '/power-pool' },
+    { icon: 'storefront', label: '點數商店', href: '', disabled: true, badge: 'Soon' }
   ];
 
   const titles = {
     '/': 'PowerReader',
-    '/observe': '觀察',
-    '/observe/blindspot': '觀察',
-    '/observe/compare': '觀察',
-    '/knowledge': '知識庫',
-    '/analyze': '分析',
-    '/profile': '我的',
+    '/observe': '觀察偏見',
+    '/observe/blindspot': '觀察偏見',
+    '/observe/compare': '觀察偏見',
+    '/knowledge': '資料庫',
+    '/analyze': '自動分析',
+    '/profile': '個人貢獻',
+    '/power-pool': '動力池',
     '/settings': '設定'
   };
 
@@ -196,6 +202,7 @@
   {#if showNav}
     <Sidebar
       items={navItems}
+      extraItems={sidebarExtraItems}
       expanded={media.sidebarExpanded}
       ontoggle={media.toggleSidebar}
     />

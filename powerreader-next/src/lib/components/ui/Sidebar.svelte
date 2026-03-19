@@ -1,7 +1,7 @@
 <script>
   import { page } from '$app/state';
 
-  let { items = [], expanded = true, ontoggle } = $props();
+  let { items = [], extraItems = [], expanded = true, ontoggle } = $props();
 
   let currentPath = $derived(page.url.pathname);
 
@@ -38,6 +38,40 @@
         {/if}
       </a>
     {/each}
+
+    {#if extraItems.length > 0}
+      <div class="nav-divider"></div>
+      {#each extraItems as item}
+        {#if item.disabled}
+          <span
+            class="nav-item disabled"
+            title={expanded ? undefined : item.label}
+            aria-disabled="true"
+          >
+            <span class="material-symbols-outlined nav-icon">{item.icon}</span>
+            {#if expanded}
+              <span class="nav-label">{item.label}</span>
+              {#if item.badge}
+                <span class="nav-badge">{item.badge}</span>
+              {/if}
+            {/if}
+          </span>
+        {:else}
+          <a
+            href={item.href}
+            class="nav-item"
+            class:active={isActive(item.href)}
+            aria-current={isActive(item.href) ? 'page' : undefined}
+            title={expanded ? undefined : item.label}
+          >
+            <span class="material-symbols-outlined nav-icon">{item.icon}</span>
+            {#if expanded}
+              <span class="nav-label">{item.label}</span>
+            {/if}
+          </a>
+        {/if}
+      {/each}
+    {/if}
   </div>
 
   <div class="sidebar-bottom">
@@ -115,6 +149,11 @@
     padding: 8px 12px;
     overflow-y: auto;
   }
+  .nav-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 8px 0;
+  }
   .nav-item {
     display: flex;
     align-items: center;
@@ -127,11 +166,16 @@
     white-space: nowrap;
     transition: background var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
   }
+  .nav-item.disabled {
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
+  }
   .rail .nav-item {
     justify-content: center;
     padding: 0;
   }
-  .nav-item:hover {
+  .nav-item:hover:not(.disabled) {
     background: rgba(255, 255, 255, 0.1);
   }
   .nav-item.active {
@@ -152,6 +196,15 @@
     font: var(--md-sys-typescale-label-large-font);
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  .nav-badge {
+    font: var(--md-sys-typescale-label-small-font);
+    background: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.6);
+    padding: 2px 8px;
+    border-radius: var(--md-sys-shape-corner-full);
+    margin-left: auto;
+    flex-shrink: 0;
   }
   .sidebar-bottom {
     display: flex;

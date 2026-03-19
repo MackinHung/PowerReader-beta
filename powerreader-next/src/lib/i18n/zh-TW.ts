@@ -98,18 +98,26 @@ const messages: Record<string, string> = {
   // ==============================================
   // Navigation
   // ==============================================
-  'nav.button.home': '首頁',
+  'nav.button.home': '報導熱點',
+  'nav.button.observe': '觀察偏見',
+  'nav.button.knowledge': '資料庫',
   'nav.button.compare': '比較',
-  'nav.button.analyze': '分析',
-  'nav.button.profile': '我的',
+  'nav.button.analyze': '自動分析',
+  'nav.button.profile': '個人貢獻',
+  'nav.button.power_pool': '動力池',
+  'nav.button.point_shop': '點數商店',
   'nav.button.settings': '設定',
   'nav.button.search': '搜尋',
   'nav.button.back': '返回',
   'nav.button.share': '分享',
-  'nav.title.home': '最新新聞',
+  'nav.title.home': '報導熱點',
+  'nav.title.observe': '觀察偏見',
+  'nav.title.knowledge': '資料庫',
   'nav.title.compare': '跨媒體比較',
-  'nav.title.analyze': '立場分析',
-  'nav.title.profile': '個人資料',
+  'nav.title.analyze': '自動分析',
+  'nav.title.profile': '個人貢獻',
+  'nav.title.power_pool': '動力池',
+  'nav.title.point_shop': '點數商店',
   'nav.title.settings': '設定',
 
   // ==============================================
@@ -707,6 +715,37 @@ const messages: Record<string, string> = {
   'knowledge.admin.form.party_none': '無',
   'knowledge.admin.success': '操作成功',
   'knowledge.admin.error': '操作失敗',
+
+  // ==============================================
+  // Power Pool
+  // ==============================================
+  'power_pool.title': '動力池',
+  'power_pool.subtitle': '正向飛輪 — 公民算力驅動的媒體分析生態',
+  'power_pool.flywheel.title': '飛輪願景',
+  'power_pool.flywheel.step1': '貢獻算力',
+  'power_pool.flywheel.step2': '賺取點數',
+  'power_pool.flywheel.step3': '全網共享分析',
+  'power_pool.flywheel.step4': '更多人知道',
+  'power_pool.flywheel.step5': '更多人參與',
+  'power_pool.sponsor.title': '贊助與訂閱',
+  'power_pool.sponsor.desc': '透過贊助或訂閱支持平台永續運營，讓公民算力持續驅動。',
+  'power_pool.sponsor.cta': '即將開放',
+  'power_pool.transparency.title': '獎池透明計劃',
+  'power_pool.transparency.governance': '所有獎池分配由社群投票決定，治理權歸屬貢獻者。',
+  'power_pool.transparency.distribution': '分配權說明：點數可兌換分析報告、進階功能或實體獎品。',
+  'power_pool.transparency.commitment': '所有資金流向公開透明，定期發布審計報告。',
+  'power_pool.report.title': '群體分析報告',
+  'power_pool.report.desc': '當一個議題的所有文章分析完畢，自動生成綜合立場分布與偏見報告。',
+  'power_pool.report.stance_distribution': '立場分布',
+  'power_pool.report.bias_report': '偏見報告',
+  'power_pool.report.mock_label': '範例預覽',
+
+  // ==============================================
+  // Point Shop
+  // ==============================================
+  'point_shop.title': '點數商店',
+  'point_shop.coming_soon': '即將推出',
+  'point_shop.desc': '使用貢獻點數兌換進階分析報告、功能與獎品。',
 
   // ==============================================
   // Accessibility (a11y)
