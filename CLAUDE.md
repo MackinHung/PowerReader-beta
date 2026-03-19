@@ -17,7 +17,7 @@ Agent Teams 冷啟動文件。任何 Claude Agent 加入時的第一份必讀文
 - **完全開源**: AGPL-3.0，含 Prompt 也開源
 
 ### 技術棧
-- **前端**: Cloudflare Pages (PWA) + IndexedDB
+- **前端**: Cloudflare Pages (PWA) + IndexedDB + **TypeScript** (strict mode)
 - **後端**: Cloudflare Workers + D1 + R2 + KV + Vectorize + Workers AI
 - **爬蟲**: 閉源 GitHub 項目，GitHub Actions 每 2h，bge-small-zh 篩選
 - **推理**: Qwen3-8B via WebLLM (@mlc-ai/web-llm, 用戶端 WebGPU, /no_think, t=0.3, top_p=0.85, ~7s/篇)
@@ -151,7 +151,7 @@ M01 - 需求師 & 專案邏輯檢測師 (監督層,不寫代碼)
 
 ### 部署資訊
 - **Production URL**: `https://powerreader.pages.dev`
-- **部署方式**: `npx wrangler pages deploy src --project-name=powerreader --branch=main`
+- **部署方式**: `npm run build && npx wrangler pages deploy build --project-name=powerreader --branch=main`
 - **Production 分支**: `main` (⚠️ 不是 `master`，用 `--branch=main` 部署到 production)
 - **SW 版本**: `static-v22` (每次改靜態資源必須 bump)
 
@@ -174,17 +174,21 @@ M01 - 需求師 & 專案邏輯檢測師 (監督層,不寫代碼)
 ### 核心功能模組
 | 模組 | 檔案 | 功能 |
 |------|------|------|
-| WebLLM 推理 | `model/inference.js` | Qwen3-8B 雙 Pass 本地推理 (WebGPU) |
-| 分析佇列 | `model/queue.js` | FIFO 單一佇列，去重，取消支援 |
-| 自動分析器 | `model/auto-runner.js` | 背景迴圈：抓文章→篩選→隨機→分析→自動提交 |
-| GPU 偵測 | `model/benchmark.js` | WebGPU 掃描 + 推理延遲測試 → GPU/CPU/none 分級 |
-| Prompt 組裝 | `model/prompt.js` | L1 靜態 + L2 RAG 知識 + L3 文章輸入 |
-| 結果解析 | `model/output-parser.js` | stripThinkBlocks + JSON 解析 + key_phrases |
-| 模型下載管理 | `model/manager.js` | OPFS/IndexedDB 模型儲存 + 下載進度 + 暫停/恢復 |
-| 事件發射器 | `utils/event-emitter.js` | 共用 observer pattern (queue + auto-runner) |
-| IDB 工具 | `utils/idb-helpers.js` | promisifyRequest/promisifyTransaction 共用 |
+| 型別定義 | `types/` (api/models/inference/stores/index) | 全域型別 barrel，所有模組共用 |
+| WebLLM 推理 | `core/inference.ts` | Qwen3-8B 雙 Pass 本地推理 (WebGPU) |
+| 分析佇列 | `core/queue.ts` | FIFO 單一佇列，去重，取消支援 |
+| 自動分析器 | `core/auto-runner.ts` | 背景迴圈：抓文章→篩選→隨機→分析→自動提交 |
+| GPU 偵測 | `core/benchmark.ts` | WebGPU 掃描 + 推理延遲測試 → GPU/CPU/none 分級 |
+| Prompt 組裝 | `core/prompt.ts` | L1 靜態 + L2 RAG 知識 + L3 文章輸入 |
+| 結果解析 | `core/output-parser.ts` | stripThinkBlocks + JSON 解析 + key_phrases |
+| 模型下載管理 | `core/manager.ts` | OPFS/IndexedDB 模型儲存 + 下載進度 + 暫停/恢復 |
+| API 客戶端 | `core/api.ts` | 離線優先 + IndexedDB 快取 + typed responses |
+| 事件發射器 | `utils/event-emitter.ts` | 共用 observer pattern (queue + auto-runner) |
+| IDB 工具 | `utils/idb-helpers.ts` | promisifyRequest/promisifyTransaction 共用 |
+| Svelte 5 Stores | `stores/*.svelte.ts` | $state/$derived rune stores (typed) |
+| i18n | `i18n/zh-TW.ts` | 繁中翻譯 + `t(key, params)` 函式 |
 | 獎勵系統 | (API 端) | 分析→品質驗證→點數獎勵→投票權 |
-| 離線支援 | `sw.js` + `db.js` | SW cache-first + IndexedDB 離線快取 + Background Sync |
+| 離線支援 | `sw.js` + `core/db.ts` | SW cache-first + IndexedDB 離線快取 + Background Sync |
 
 ---
 
@@ -214,7 +218,7 @@ Git repo 用 `master` 分支，但 Pages 的 production 分支是 `main`。
 
 **解法**: 部署指令必須加 `--branch=main`：
 ```
-npx wrangler pages deploy src --project-name=powerreader --branch=main
+npm run build && npx wrangler pages deploy build --project-name=powerreader --branch=main
 ```
 
 ### 4. SW precache 清單不可包含有跨目錄 import 的檔案
@@ -225,14 +229,38 @@ npx wrangler pages deploy src --project-name=powerreader --branch=main
 
 ---
 
+## TypeScript 遷移狀態
+
+### 已完成 (ec2c099)
+- **43 個 `.js` 檔案** 已遷移為 `.ts`（含 `.svelte.js` → `.svelte.ts`）
+- `tsconfig.json`: `strict: true`, `allowJs: true`, `@webgpu/types`
+- `src/lib/types/` 型別定義: `api.ts`, `models.ts`, `inference.ts`, `stores.ts`, `index.ts` (barrel)
+- **736 tests** 全部通過, svelte-check 0 errors
+
+### ⏳ 待辦：知識庫完成後遷移
+知識庫區域目前在改版中，完成後需遷移以下檔案：
+1. `src/lib/stores/knowledge.svelte.js` → `knowledge.svelte.ts`
+2. `src/lib/components/knowledge/index.js` → `knowledge/index.ts`
+3. 相關測試檔案可維持 `.test.js`（Vite 自動解析 `.ts`）
+
+### TypeScript 開發注意事項
+- **Typecheck**: `node node_modules/svelte-check/bin/svelte-check --tsconfig ./tsconfig.json`（不用 raw `tsc`，無法處理 Svelte 5 runes）
+- **Import 路徑**: 保持 `.js` 副檔名（Vite bundler 自動解析 `.ts`）
+- **型別導入**: 使用 `import type { ... }` 避免 runtime 開銷
+- **WebLLM engine**: 用 `any`（外部 CDN 動態 import，無型別宣告）
+- **navigator API** (connection/getBattery/gpu.info): 用 `as any` cast（unstable WebGPU API）
+- **測試**: 維持 `.test.js`，Vite 自動處理 `.ts` 模組解析
+
+---
+
 ## 測試基礎設施 (T04_FRONTEND)
 
 ### 框架
 - **Vitest** + jsdom 環境
 - `package.json`: `npm test` (vitest run), `npm run test:watch`, `npm run test:coverage`
-- `vitest.config.js`: jsdom environment, `tests/**/*.test.js`
+- `vitest.config.js`: jsdom environment, `tests/**/*.test.{js,ts}`
 
-### 測試覆蓋 (229 tests, ALL PASSING)
+### 測試覆蓋 (736 tests, 39 files, ALL PASSING)
 | 檔案 | 測試數 | 重點 |
 |------|--------|------|
 | `output-parser.test.js` | 45 | stripThinkBlocks, parseJsonFromLLM, extractKeyPhrases |
@@ -244,11 +272,15 @@ npx wrangler pages deploy src --project-name=powerreader --branch=main
 | `manager.test.js` | 31 | OPFS/IndexedDB 儲存, 下載/暫停/刪除 |
 | `event-emitter.test.js` | 7 | subscribe/notify/unsubscribe, 錯誤隔離 |
 | `idb-helpers.test.js` | 5 | promisifyRequest/promisifyTransaction |
+| `api.test.js` | 246 | 全 API 端點, offline cache, error handling |
+| `gpu-database.test.js` | 29 | GPU lookup, arch fallback |
+| `knowledge*.test.js` | 多 | 知識庫 store/browser/admin/generate |
 
 ### 測試技巧
 - **Singleton 模組**: `vi.resetModules()` + `vi.doMock()` + 動態 `import()` 隔離狀態
 - **瀏覽器 API**: globalThis mock (navigator.gpu, localStorage, fetch, IndexedDB, OPFS)
 - **WebLLM CDN import**: 自然失敗觸發 fallback 測試路徑
+- **fs mock (Node.js)**: `vi.hoisted()` 建 mock fns → `vi.mock('fs', ...)` → static import
 
 ---
 
@@ -293,4 +325,4 @@ npx wrangler pages deploy src --project-name=powerreader --branch=main
 
 ---
 
-**維護者**: M01 | **最後更新**: 2026-03-09 | **版本**: v2.3 (Auto Runner + 部署踩雷紀錄 + 單元測試 + 模組重構)
+**維護者**: M01 | **最後更新**: 2026-03-19 | **版本**: v2.4 (TypeScript 遷移完成 + 736 tests + strict mode)
