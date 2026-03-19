@@ -21,6 +21,12 @@
 
   async function handleSubmit() {
     if (!reason || submitting) return;
+
+    if (!authStore.isAuthenticated) {
+      error = '請先登入才能回報';
+      return;
+    }
+
     submitting = true;
     error = '';
 

@@ -22,6 +22,12 @@
 
   async function handleFeedback(type) {
     if (submitted) return;
+
+    if (!authStore.isAuthenticated) {
+      error = '請先登入才能回饋';
+      return;
+    }
+
     selected = type;
     submitted = true;
     error = '';

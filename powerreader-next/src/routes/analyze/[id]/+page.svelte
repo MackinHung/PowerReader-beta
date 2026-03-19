@@ -9,10 +9,13 @@
   import TransparencyPanel from '$lib/components/analysis/TransparencyPanel.svelte';
   import { getArticlesStore } from '$lib/stores/articles.svelte.js';
   import { getAnalysisStore } from '$lib/stores/analysis.svelte.js';
+  import { getAuthStore } from '$lib/stores/auth.svelte.js';
   import * as api from '$lib/core/api.js';
+  import { getAuthToken } from '$lib/core/auth.js';
 
   const articlesStore = getArticlesStore();
   const analysisStore = getAnalysisStore();
+  const authStore = getAuthStore();
 
   let articleId = $derived(page.params.id);
   let article = $state(null);
@@ -60,8 +63,20 @@
     }
   }
 
+  let showLoginPrompt = $state(false);
+
+  function redirectToLogin() {
+    const apiOrigin = new URL(api.API_BASE).origin;
+    const callbackUrl = `${window.location.origin}/auth/callback`;
+    window.location.href = `${apiOrigin}/api/v1/auth/google?redirect=${encodeURIComponent(callbackUrl)}`;
+  }
+
   async function startAnalysis() {
     if (!article) return;
+    if (!authStore.isAuthenticated) {
+      showLoginPrompt = true;
+      return;
+    }
     analysisError = null;
     try {
       result = await analysisStore.analyze(articleId, article);
@@ -72,8 +87,12 @@
 
   async function handleSubmit() {
     if (!result) return;
+    if (!authStore.isAuthenticated) {
+      showLoginPrompt = true;
+      return;
+    }
     try {
-      const token = localStorage.getItem('auth_token') || '';
+      const token = getAuthToken();
       await api.submitAnalysisResult(articleId, result, token);
       goto(`/article/${articleId}`);
     } catch (e) {
@@ -88,6 +107,23 @@
 </script>
 
 <div class="analyze-detail-page">
+  {#if showLoginPrompt && !authStore.isAuthenticated}
+    <Card variant="elevated">
+      <div class="login-prompt">
+        <span class="material-symbols-outlined login-icon">login</span>
+        <h3>請先登入</h3>
+        <p>登入後才能進行 AI 分析</p>
+        <div class="login-actions">
+          <Button onclick={redirectToLogin}>
+            <span class="material-symbols-outlined">account_circle</span>
+            使用 Google 登入
+          </Button>
+          <Button variant="text" onclick={() => showLoginPrompt = false}>稍後再說</Button>
+        </div>
+      </div>
+    </Card>
+  {/if}
+
   {#if loadError}
     <div class="center-state">
       <span class="material-symbols-outlined error-icon">error</span>
@@ -262,5 +298,34 @@
   .error-msg p {
     margin: 0;
     font: var(--md-sys-typescale-body-medium-font);
+  }
+  .login-prompt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+    padding: 8px 0;
+  }
+  .login-prompt h3 {
+    margin: 0;
+    font: var(--md-sys-typescale-title-medium-font);
+    color: var(--md-sys-color-on-surface);
+  }
+  .login-prompt p {
+    margin: 0;
+    font: var(--md-sys-typescale-body-medium-font);
+    color: var(--md-sys-color-on-surface-variant);
+  }
+  .login-icon {
+    font-size: 40px;
+    color: var(--md-sys-color-primary);
+  }
+  .login-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
   }
 </style>

@@ -9,11 +9,14 @@
   import { getArticlesStore } from '$lib/stores/articles.svelte.js';
   import { getEventsStore } from '$lib/stores/events.svelte.js';
   import { getAnalysisStore } from '$lib/stores/analysis.svelte.js';
+  import { getAuthStore } from '$lib/stores/auth.svelte.js';
   import { getMediaQueryStore } from '$lib/stores/mediaQuery.svelte.js';
+  import * as api from '$lib/core/api.js';
 
   const articlesStore = getArticlesStore();
   const eventsStore = getEventsStore();
   const analysisStore = getAnalysisStore();
+  const authStore = getAuthStore();
   const media = getMediaQueryStore();
 
   // ── View mode: events (cluster) or articles (flat) ──
@@ -54,8 +57,22 @@
     }
   }
 
+  // ── Login prompt ──
+  let showLoginPrompt = $state(false);
+
+  function redirectToLogin() {
+    const apiOrigin = new URL(api.API_BASE).origin;
+    const callbackUrl = `${window.location.origin}/auth/callback`;
+    window.location.href = `${apiOrigin}/api/v1/auth/google?redirect=${encodeURIComponent(callbackUrl)}`;
+  }
+
   // ── Analysis handlers ──
   async function runArticleAnalysis(article) {
+    if (!authStore.isAuthenticated) {
+      showLoginPrompt = true;
+      return;
+    }
+
     analyzingArticle = article;
     analysisRunning = true;
     analysisResult = null;
@@ -84,6 +101,10 @@
 
   // ── Auto-runner controls ──
   async function handleStartAuto() {
+    if (!authStore.isAuthenticated) {
+      showLoginPrompt = true;
+      return;
+    }
     await analysisStore.startAuto();
   }
   function handlePauseAuto() { analysisStore.pauseAuto(); }
@@ -113,6 +134,26 @@
 </svelte:head>
 
 <div class="analyze-page" class:desktop={media.isDesktop}>
+  <!-- ═══ Login Prompt ═══ -->
+  {#if showLoginPrompt && !authStore.isAuthenticated}
+    <div class="login-prompt-overlay" role="alert">
+      <Card variant="elevated">
+        <div class="login-prompt-content">
+          <span class="material-symbols-outlined login-icon">login</span>
+          <h3>請先登入</h3>
+          <p>登入後才能進行 AI 分析、累積貢獻點數</p>
+          <div class="login-actions">
+            <Button onclick={redirectToLogin}>
+              <span class="material-symbols-outlined">account_circle</span>
+              使用 Google 登入
+            </Button>
+            <Button variant="text" onclick={() => showLoginPrompt = false}>稍後再說</Button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  {/if}
+
   <!-- ═══ Left: Controls ═══ -->
   <div class="analyze-controls">
     <!-- Auto Runner -->
@@ -543,5 +584,39 @@
     font: var(--md-sys-typescale-label-medium-font);
     font-weight: 600;
     flex-shrink: 0;
+  }
+
+  /* ── Login Prompt ── */
+  .login-prompt-overlay {
+    width: 100%;
+  }
+  .login-prompt-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+    padding: 8px 0;
+  }
+  .login-prompt-content h3 {
+    margin: 0;
+    font: var(--md-sys-typescale-title-medium-font);
+    color: var(--md-sys-color-on-surface);
+  }
+  .login-prompt-content p {
+    margin: 0;
+    font: var(--md-sys-typescale-body-medium-font);
+    color: var(--md-sys-color-on-surface-variant);
+  }
+  .login-icon {
+    font-size: 40px;
+    color: var(--md-sys-color-primary);
+  }
+  .login-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
   }
 </style>
