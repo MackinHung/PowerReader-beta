@@ -68,12 +68,12 @@ export function generateKnowledgeJson() {
           if (t === 'issue' || t === 'topic') {
             // Issue entries carry stances and optional description
             if (entry.stances) mapped.stances = entry.stances;
-            if (entry.description) mapped.description = entry.description;
+            if (entry.description != null) mapped.description = entry.description;
           } else if (t === 'incident' || t === 'event') {
             // Incident entries may have date, description, keywords
             if (entry.content) mapped.content = entry.content;
             if (entry.date) mapped.date = entry.date;
-            if (entry.description) mapped.description = entry.description;
+            if (entry.description != null) mapped.description = entry.description;
             if (entry.keywords) mapped.keywords = entry.keywords;
           } else {
             // Figure entries (and other types) carry content, party, and structured fields
