@@ -780,3 +780,249 @@ describe('API_BASE', () => {
     expect(apiModule.API_BASE).toBe('https://powerreader-api.watermelom5404.workers.dev/api/v1');
   });
 });
+
+// ══════════════════════════════════════════════
+// 16. proposeKnowledgeEdit
+// ══════════════════════════════════════════════
+
+describe('proposeKnowledgeEdit', () => {
+  it('sends POST with correct payload and returns PR info', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: vi.fn().mockResolvedValue({
+        success: true,
+        data: { pr_number: 42, pr_url: 'https://github.com/test/pr/42' },
+      }),
+    });
+
+    const result = await apiModule.proposeKnowledgeEdit('token123', {
+      entry_id: 'p1',
+      batch_file: 'batch_001',
+      changes: { content: 'new' },
+      reason: 'fix typo',
+      content_hash: 'abc123'
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.data.pr_number).toBe(42);
+
+    const [url, opts] = globalThis.fetch.mock.calls[0];
+    expect(url).toContain('/knowledge/github/propose');
+    expect(opts.method).toBe('POST');
+    expect(opts.headers['Authorization']).toBe('Bearer token123');
+  });
+
+  it('returns error on conflict (409)', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      json: vi.fn().mockResolvedValue({
+        success: false,
+        error: { type: 'content_changed', message: 'Modified' },
+      }),
+    });
+
+    const result = await apiModule.proposeKnowledgeEdit('tok', {
+      entry_id: 'p1', batch_file: 'b', changes: {}, reason: 'r', content_hash: 'h'
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error.type).toBe('content_changed');
+  });
+
+  it('returns error on network failure', async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
+
+    const result = await apiModule.proposeKnowledgeEdit('tok', {
+      entry_id: 'p1', batch_file: 'b', changes: {}, reason: 'r', content_hash: 'h'
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error.type).toBe('network');
+  });
+});
+
+// ══════════════════════════════════════════════
+// 17. fetchKnowledgePRs
+// ══════════════════════════════════════════════
+
+describe('fetchKnowledgePRs', () => {
+  it('returns list of PRs on success', async () => {
+    const prs = [
+      { number: 1, title: 'Edit A', user: 'u1', created_at: '2026-01-01', labels: [] },
+    ];
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue({ success: true, data: { prs } }),
+    });
+
+    const result = await apiModule.fetchKnowledgePRs('tok');
+
+    expect(result.success).toBe(true);
+    expect(result.data.prs).toEqual(prs);
+  });
+
+  it('sends auth header', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true, status: 200,
+      json: vi.fn().mockResolvedValue({ success: true, data: { prs: [] } }),
+    });
+
+    await apiModule.fetchKnowledgePRs('mytoken');
+
+    const headers = globalThis.fetch.mock.calls[0][1].headers;
+    expect(headers['Authorization']).toBe('Bearer mytoken');
+  });
+
+  it('returns error on failure', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false, status: 502,
+      json: vi.fn().mockResolvedValue({ success: false, error: { type: 'github_error' } }),
+    });
+
+    const result = await apiModule.fetchKnowledgePRs('tok');
+
+    expect(result.success).toBe(false);
+  });
+});
+
+// ══════════════════════════════════════════════
+// 18. fetchKnowledgePRDetail
+// ══════════════════════════════════════════════
+
+describe('fetchKnowledgePRDetail', () => {
+  it('returns PR detail with diff', async () => {
+    const detail = {
+      pr: { number: 5, title: 'Edit', state: 'open' },
+      diff: { removed: ['old'], added: ['new'] },
+      changed_files: [{ filename: 'data.json', status: 'modified', additions: 1, deletions: 1 }],
+    };
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true, status: 200,
+      json: vi.fn().mockResolvedValue({ success: true, data: detail }),
+    });
+
+    const result = await apiModule.fetchKnowledgePRDetail('tok', 5);
+
+    expect(result.success).toBe(true);
+    expect(result.data.pr.number).toBe(5);
+    expect(result.data.diff.removed).toEqual(['old']);
+  });
+
+  it('includes PR number in URL', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true, status: 200,
+      json: vi.fn().mockResolvedValue({ success: true, data: {} }),
+    });
+
+    await apiModule.fetchKnowledgePRDetail('tok', 99);
+
+    expect(globalThis.fetch.mock.calls[0][0]).toContain('/knowledge/github/prs/99');
+  });
+
+  it('returns error on 404', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false, status: 404,
+      json: vi.fn().mockResolvedValue({ success: false, error: { type: 'not_found' } }),
+    });
+
+    const result = await apiModule.fetchKnowledgePRDetail('tok', 999);
+
+    expect(result.success).toBe(false);
+    expect(result.error.type).toBe('not_found');
+  });
+});
+
+// ══════════════════════════════════════════════
+// 19. mergeKnowledgePR
+// ══════════════════════════════════════════════
+
+describe('mergeKnowledgePR', () => {
+  it('sends POST and returns merged=true', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true, status: 200,
+      json: vi.fn().mockResolvedValue({ success: true, data: { merged: true } }),
+    });
+
+    const result = await apiModule.mergeKnowledgePR('tok', 10);
+
+    expect(result.success).toBe(true);
+    expect(result.data.merged).toBe(true);
+
+    const [url, opts] = globalThis.fetch.mock.calls[0];
+    expect(url).toContain('/knowledge/github/prs/10/merge');
+    expect(opts.method).toBe('POST');
+  });
+
+  it('returns error on 403 forbidden', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false, status: 403,
+      json: vi.fn().mockResolvedValue({ success: false, error: { type: 'forbidden' } }),
+    });
+
+    const result = await apiModule.mergeKnowledgePR('tok', 10);
+
+    expect(result.success).toBe(false);
+    expect(result.error.type).toBe('forbidden');
+  });
+
+  it('returns error on network failure', async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error('network'));
+
+    const result = await apiModule.mergeKnowledgePR('tok', 10);
+
+    expect(result.success).toBe(false);
+    expect(result.error.type).toBe('network');
+  });
+});
+
+// ══════════════════════════════════════════════
+// 20. closeKnowledgePR
+// ══════════════════════════════════════════════
+
+describe('closeKnowledgePR', () => {
+  it('sends POST with reason and returns closed=true', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true, status: 200,
+      json: vi.fn().mockResolvedValue({ success: true, data: { closed: true } }),
+    });
+
+    const result = await apiModule.closeKnowledgePR('tok', 7, 'inaccurate info');
+
+    expect(result.success).toBe(true);
+    expect(result.data.closed).toBe(true);
+
+    const [url, opts] = globalThis.fetch.mock.calls[0];
+    expect(url).toContain('/knowledge/github/prs/7/close');
+    expect(opts.method).toBe('POST');
+
+    const body = JSON.parse(opts.body);
+    expect(body.reason).toBe('inaccurate info');
+  });
+
+  it('sends empty reason when not provided', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true, status: 200,
+      json: vi.fn().mockResolvedValue({ success: true, data: { closed: true } }),
+    });
+
+    await apiModule.closeKnowledgePR('tok', 7);
+
+    const body = JSON.parse(globalThis.fetch.mock.calls[0][1].body);
+    expect(body.reason).toBe('');
+  });
+
+  it('returns error on 403', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false, status: 403,
+      json: vi.fn().mockResolvedValue({ success: false, error: { type: 'forbidden' } }),
+    });
+
+    const result = await apiModule.closeKnowledgePR('tok', 7);
+
+    expect(result.success).toBe(false);
+    expect(result.error.type).toBe('forbidden');
+  });
+});

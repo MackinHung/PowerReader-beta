@@ -36,6 +36,8 @@
   // Dynamic title for event/knowledge detail pages
   let dynamicTitle = $derived(() => {
     if (currentPath.startsWith('/event/')) return '事件詳情';
+    if (currentPath === '/knowledge/edit') return '編輯知識';
+    if (currentPath === '/knowledge/review') return '編輯審核';
     if (currentPath.startsWith('/knowledge/') && currentPath !== '/knowledge') return '知識詳情';
     return null;
   });

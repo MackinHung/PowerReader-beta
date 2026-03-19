@@ -2,8 +2,11 @@
   import { page } from '$app/state';
   import { untrack } from 'svelte';
   import { getKnowledgeStore } from '$lib/stores/knowledge.svelte.js';
+  import { getAuthStore } from '$lib/stores/auth.svelte.js';
   import { TopicStanceView } from '$lib/components/knowledge/index.js';
   import { t } from '$lib/i18n/zh-TW.js';
+
+  const auth = getAuthStore();
 
   const store = getKnowledgeStore();
 
@@ -81,6 +84,20 @@
           {entry.content}
         </div>
       {/if}
+
+      <div class="entry-actions">
+        {#if auth.isAuthenticated}
+          <a href="/knowledge/edit?id={entry.id}" class="suggest-edit-btn">
+            <span class="material-symbols-outlined">edit</span>
+            {t('knowledge.edit.suggest')}
+          </a>
+        {:else}
+          <span class="suggest-edit-hint">
+            <span class="material-symbols-outlined">lock</span>
+            {t('knowledge.edit.login_required')}
+          </span>
+        {/if}
+      </div>
     </article>
   {/if}
 </div>
@@ -165,6 +182,42 @@
     line-height: 1.7;
     white-space: pre-wrap;
     word-break: break-word;
+  }
+
+  .entry-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 8px;
+    border-top: 1px solid var(--md-sys-color-outline-variant);
+    margin-top: 4px;
+  }
+  .suggest-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--md-sys-color-primary-container);
+    color: var(--md-sys-color-on-primary-container);
+    border-radius: var(--md-sys-shape-corner-small, 8px);
+    text-decoration: none;
+    font: var(--md-sys-typescale-label-large-font);
+    cursor: pointer;
+  }
+  .suggest-edit-btn:hover {
+    opacity: 0.9;
+  }
+  .suggest-edit-btn .material-symbols-outlined {
+    font-size: 18px;
+  }
+  .suggest-edit-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: var(--md-sys-typescale-label-medium-font);
+    color: var(--md-sys-color-on-surface-variant);
+  }
+  .suggest-edit-hint .material-symbols-outlined {
+    font-size: 16px;
   }
 
   /* States */
