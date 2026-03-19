@@ -44,7 +44,7 @@ const MODEL_PARAMS = {
 // Qwen3 /no_think suffix — appended to system prompt to suppress <think> loop
 const QWEN3_NO_THINK = '\n/no_think';
 
-const PASS1_MAX_TOKENS = 150;   // Score JSON + camp_ratio ~80 tokens, buffer for stray text
+const PASS1_MAX_TOKENS = 180;   // Score JSON + camp_ratio + is_political + emotion_intensity
 const PASS2_MAX_TOKENS = 512;   // Narrative JSON ~200-400 tokens
 
 /**
@@ -341,7 +341,7 @@ async function runWebLLMInference(article: Article, knowledgeEntries: KnowledgeE
       points: [],
       reasoning: '',
       key_phrases: [],
-      prompt_version: 'v3.0.0',
+      prompt_version: 'v4.0.0',
       mode: 'webgpu',
       latency_ms: 0,
       _debug: { pass1_system: pass1SystemPrompt, pass1_raw: pass1Raw, pass2_error: (err as Error).message }

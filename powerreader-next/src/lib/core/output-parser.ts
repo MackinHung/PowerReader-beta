@@ -17,7 +17,9 @@ import type { CampRatio } from '$lib/types/api.js';
 const SCORE_DEFAULTS: ScoreOutput = {
   bias_score: 50,
   controversy_score: 0,
-  camp_ratio: null
+  camp_ratio: null,
+  is_political: true,
+  emotion_intensity: 50
 };
 
 const NARRATIVE_DEFAULTS: NarrativeOutput = {
@@ -115,7 +117,21 @@ export function parseScoreOutput(rawOutput: string): ScoreOutput {
 
   const camp_ratio = parseCampRatio(parsed.camp_ratio);
 
-  return { bias_score, controversy_score, camp_ratio };
+  // Parse is_political (boolean, default true for backward compat)
+  const is_political = typeof parsed.is_political === 'boolean'
+    ? parsed.is_political
+    : SCORE_DEFAULTS.is_political;
+
+  // Parse emotion_intensity (0-100, default 50)
+  const emotionRaw = typeof parsed.emotion_intensity === 'number'
+    ? parsed.emotion_intensity
+    : SCORE_DEFAULTS.emotion_intensity;
+  const emotion_intensity = Math.round(Math.max(0, Math.min(100, emotionRaw)));
+
+  // Non-political enforcement: force bias_score to 50
+  const final_bias = is_political ? bias_score : 50;
+
+  return { bias_score: final_bias, controversy_score, camp_ratio, is_political, emotion_intensity };
 }
 
 /**

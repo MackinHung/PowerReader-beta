@@ -19,7 +19,7 @@ vi.mock('../../src/lib/core/prompt.js', () => ({
 }));
 
 vi.mock('../../src/lib/core/output-parser.js', () => ({
-  parseScoreOutput: vi.fn(() => ({ bias_score: 50, controversy_score: 30 })),
+  parseScoreOutput: vi.fn(() => ({ bias_score: 50, controversy_score: 30, camp_ratio: null, is_political: true, emotion_intensity: 50 })),
   parseNarrativeOutput: vi.fn(() => ({ points: ['p1'], key_phrases: ['k1'] })),
 }));
 
@@ -51,7 +51,7 @@ beforeEach(async () => {
     assembleUserMessage: vi.fn(() => 'user-message'),
   }));
   vi.mock('../../src/lib/core/output-parser.js', () => ({
-    parseScoreOutput: vi.fn(() => ({ bias_score: 50, controversy_score: 30 })),
+    parseScoreOutput: vi.fn(() => ({ bias_score: 50, controversy_score: 30, camp_ratio: null, is_political: true, emotion_intensity: 50 })),
     parseNarrativeOutput: vi.fn(() => ({ points: ['p1'], key_phrases: ['k1'] })),
     parseAnalysisOutput: vi.fn(() => ({ bias_score: 50, controversy_score: 0 })),
   }));

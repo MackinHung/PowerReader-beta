@@ -34,6 +34,8 @@ export interface AnalysisResult {
   bias_score: number;
   controversy_score: number;
   camp_ratio: CampRatio | null;
+  is_political: boolean;
+  emotion_intensity: number;
   points: string[];
   reasoning: string;
   key_phrases: string[];
@@ -48,6 +50,8 @@ export interface ScoreOutput {
   bias_score: number;
   controversy_score: number;
   camp_ratio: CampRatio | null;
+  is_political: boolean;
+  emotion_intensity: number;
 }
 
 export interface NarrativeOutput {
@@ -158,3 +162,36 @@ export type ControversyLevel =
   | 'partisan_clash'
   | 'core_conflict'
   | 'national_security';
+
+// ── Group Analysis Types ──
+
+export type CampType = 'green' | 'white' | 'blue' | 'gray';
+
+export interface SourceBreakdown {
+  source: string;
+  camp: CampType;
+  bias_score: number;
+  emotion_intensity: number;
+  summary: string;
+}
+
+export interface CampStatistics {
+  camp: CampType;
+  avg_bias_score: number;
+  avg_controversy_score: number;
+  avg_emotion_intensity: number;
+  article_count: number;
+  sources: string[];
+}
+
+export interface GroupAnalysisResult {
+  cluster_id: string;
+  analyzed_at: string;
+  source_breakdowns: SourceBreakdown[];
+  camp_statistics: CampStatistics[];
+  group_summary: string;
+  bias_direction: string;
+  total_articles: number;
+  total_sources: number;
+  prompt_version: string;
+}

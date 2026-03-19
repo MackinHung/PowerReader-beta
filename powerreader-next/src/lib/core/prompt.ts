@@ -24,9 +24,14 @@ const ARTICLE_MAX_CHARS: number = 8400; // 40% context window rule (~13K tokens)
  * Output: { bias_score, controversy_score, camp_ratio }
  */
 export function assembleScoreSystemPrompt(): string {
-  return `你是資深台灣媒體研究學者，專長量化分析新聞報導的政治傾向。
+  return `你是資深台灣媒體研究學者，專長量化分析新聞報導的政治傾向與情緒煽動程度。
 
-政治光譜:
+第一步: 判斷 is_political
+- 涉及政黨、政策、選舉、政治人物、兩岸、國防外交 → true
+- 純社會/生活/體育/娛樂/科技/健康 → false
+- 若 is_political=false，bias_score 固定 50，camp_ratio.gray 為主要比例
+
+政治光譜 (僅 is_political=true 時有意義):
 0=極度偏民進黨(綠) 50=中立或民眾黨(白) 100=極度偏國民黨(藍)
 
 bias_score:
@@ -49,7 +54,14 @@ camp_ratio: 評估文章內容主張各陣營的佔比(加總=100)
 green=民進黨/綠營 white=民眾黨/中立 blue=國民黨/藍營 gray=與政治幾乎無關
 判斷哪個陣營的論述或主張在文章中最突出，給予最高比例。若內容與政治幾乎無關，gray應為主要比例。
 
-只輸出JSON: {"bias_score": 數字, "controversy_score": 數字, "camp_ratio": {"green": 數字, "white": 數字, "blue": 數字, "gray": 數字}}`;
+emotion_intensity: 情緒煽動程度 0-100
+0-20: 冷靜客觀，純事實陳述
+21-40: 略帶立場，但理性論述
+41-60: 情緒化用詞，帶有明顯情感色彩
+61-80: 煽情，使用恐懼/憤怒/仇恨等情緒操控
+81-100: 極端煽動，散佈恐慌或仇恨
+
+只輸出JSON: {"is_political": 布林, "bias_score": 數字, "controversy_score": 數字, "camp_ratio": {"green": 數字, "white": 數字, "blue": 數字, "gray": 數字}, "emotion_intensity": 數字}`;
 }
 
 /**

@@ -21,13 +21,20 @@ describe('parseScoreOutput', () => {
   it('parses normal JSON with bias_score and controversy_score', () => {
     const raw = '{"bias_score": 75, "controversy_score": 40}';
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 75, controversy_score: 40, camp_ratio: null });
+    expect(result.bias_score).toBe(75);
+    expect(result.controversy_score).toBe(40);
+    expect(result.camp_ratio).toBeNull();
+    // v4 defaults
+    expect(result.is_political).toBe(true);
+    expect(result.emotion_intensity).toBe(50);
   });
 
   it('parses JSON wrapped in <think>...</think> blocks', () => {
     const raw = '<think>Let me analyze this...</think>{"bias_score": 30, "controversy_score": 60}';
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 30, controversy_score: 60, camp_ratio: null });
+    expect(result.bias_score).toBe(30);
+    expect(result.controversy_score).toBe(60);
+    expect(result.camp_ratio).toBeNull();
   });
 
   it('parses JSON wrapped in multiline <think> blocks', () => {
@@ -37,25 +44,30 @@ Multiple lines here.
 </think>
 {"bias_score": 45, "controversy_score": 20}`;
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 45, controversy_score: 20, camp_ratio: null });
+    expect(result.bias_score).toBe(45);
+    expect(result.controversy_score).toBe(20);
+    expect(result.camp_ratio).toBeNull();
   });
 
   it('parses JSON wrapped in markdown code fences', () => {
     const raw = '```json\n{"bias_score": 80, "controversy_score": 55}\n```';
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 80, controversy_score: 55, camp_ratio: null });
+    expect(result.bias_score).toBe(80);
+    expect(result.controversy_score).toBe(55);
   });
 
   it('parses markdown code fences without json label', () => {
     const raw = '```\n{"bias_score": 10, "controversy_score": 5}\n```';
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 10, controversy_score: 5, camp_ratio: null });
+    expect(result.bias_score).toBe(10);
+    expect(result.controversy_score).toBe(5);
   });
 
   it('parses single-quote JSON (4B model quirk)', () => {
     const raw = "{'bias_score': 75, 'controversy_score': 40}";
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 75, controversy_score: 40, camp_ratio: null });
+    expect(result.bias_score).toBe(75);
+    expect(result.controversy_score).toBe(40);
   });
 
   it('clamps bias_score above 100 to 100', () => {
@@ -100,22 +112,33 @@ Multiple lines here.
   it('returns full defaults for completely invalid string', () => {
     const raw = 'This is not JSON at all, just some random text.';
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 50, controversy_score: 0, camp_ratio: null });
+    expect(result.bias_score).toBe(50);
+    expect(result.controversy_score).toBe(0);
+    expect(result.camp_ratio).toBeNull();
+    expect(result.is_political).toBe(true);
+    expect(result.emotion_intensity).toBe(50);
   });
 
   it('returns defaults for null input', () => {
     const result = parseScoreOutput(null);
-    expect(result).toEqual({ bias_score: 50, controversy_score: 0, camp_ratio: null });
+    expect(result.bias_score).toBe(50);
+    expect(result.controversy_score).toBe(0);
+    expect(result.camp_ratio).toBeNull();
+    expect(result.is_political).toBe(true);
+    expect(result.emotion_intensity).toBe(50);
   });
 
   it('returns defaults for undefined input', () => {
     const result = parseScoreOutput(undefined);
-    expect(result).toEqual({ bias_score: 50, controversy_score: 0, camp_ratio: null });
+    expect(result.bias_score).toBe(50);
+    expect(result.is_political).toBe(true);
   });
 
   it('returns defaults for empty string input', () => {
     const result = parseScoreOutput('');
-    expect(result).toEqual({ bias_score: 50, controversy_score: 0, camp_ratio: null });
+    expect(result.bias_score).toBe(50);
+    expect(result.is_political).toBe(true);
+    expect(result.emotion_intensity).toBe(50);
   });
 
   it('rounds floating-point bias_score with Math.round', () => {
@@ -135,7 +158,9 @@ Multiple lines here.
   it('extracts JSON from surrounding text', () => {
     const raw = 'Here is the result: {"bias_score": 60, "controversy_score": 30} hope this helps!';
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 60, controversy_score: 30, camp_ratio: null });
+    expect(result.bias_score).toBe(60);
+    expect(result.controversy_score).toBe(30);
+    expect(result.camp_ratio).toBeNull();
   });
 
   it('handles <think> + code fence combination', () => {
@@ -144,25 +169,29 @@ Multiple lines here.
 {"bias_score": 22, "controversy_score": 88}
 \`\`\``;
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 22, controversy_score: 88, camp_ratio: null });
+    expect(result.bias_score).toBe(22);
+    expect(result.controversy_score).toBe(88);
   });
 
   it('handles extra whitespace around JSON', () => {
     const raw = '   \n  {"bias_score": 50, "controversy_score": 50}  \n  ';
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 50, controversy_score: 50, camp_ratio: null });
+    expect(result.bias_score).toBe(50);
+    expect(result.controversy_score).toBe(50);
   });
 
   it('handles zero scores correctly', () => {
     const raw = '{"bias_score": 0, "controversy_score": 0}';
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 0, controversy_score: 0, camp_ratio: null });
+    expect(result.bias_score).toBe(0);
+    expect(result.controversy_score).toBe(0);
   });
 
   it('handles boundary value 100', () => {
     const raw = '{"bias_score": 100, "controversy_score": 100}';
     const result = parseScoreOutput(raw);
-    expect(result).toEqual({ bias_score: 100, controversy_score: 100, camp_ratio: null });
+    expect(result.bias_score).toBe(100);
+    expect(result.controversy_score).toBe(100);
   });
 
   it('uses default for missing bias_score key', () => {
@@ -240,6 +269,93 @@ Multiple lines here.
     expect(green).toBeGreaterThanOrEqual(0);
     expect(blue).toBeLessThanOrEqual(100);
     expect(green + white + blue + gray).toBe(100);
+  });
+
+  // ── v4: is_political ──
+
+  it('parses is_political=true from output', () => {
+    const raw = '{"bias_score": 30, "controversy_score": 60, "is_political": true, "emotion_intensity": 40}';
+    const result = parseScoreOutput(raw);
+    expect(result.is_political).toBe(true);
+    expect(result.bias_score).toBe(30);
+  });
+
+  it('parses is_political=false from output', () => {
+    const raw = '{"bias_score": 30, "controversy_score": 20, "is_political": false, "emotion_intensity": 10}';
+    const result = parseScoreOutput(raw);
+    expect(result.is_political).toBe(false);
+    // Non-political enforcement: bias_score forced to 50
+    expect(result.bias_score).toBe(50);
+  });
+
+  it('defaults is_political to true when missing', () => {
+    const raw = '{"bias_score": 70, "controversy_score": 40}';
+    const result = parseScoreOutput(raw);
+    expect(result.is_political).toBe(true);
+  });
+
+  it('defaults is_political to true when non-boolean', () => {
+    const raw = '{"bias_score": 70, "controversy_score": 40, "is_political": "yes"}';
+    const result = parseScoreOutput(raw);
+    expect(result.is_political).toBe(true);
+  });
+
+  it('forces bias_score=50 when is_political=false even if model says otherwise', () => {
+    const raw = '{"bias_score": 15, "controversy_score": 10, "is_political": false, "emotion_intensity": 5}';
+    const result = parseScoreOutput(raw);
+    expect(result.bias_score).toBe(50);
+    expect(result.controversy_score).toBe(10);
+    expect(result.emotion_intensity).toBe(5);
+  });
+
+  // ── v4: emotion_intensity ──
+
+  it('parses emotion_intensity from output', () => {
+    const raw = '{"bias_score": 50, "controversy_score": 30, "emotion_intensity": 75}';
+    const result = parseScoreOutput(raw);
+    expect(result.emotion_intensity).toBe(75);
+  });
+
+  it('defaults emotion_intensity to 50 when missing', () => {
+    const raw = '{"bias_score": 50, "controversy_score": 30}';
+    const result = parseScoreOutput(raw);
+    expect(result.emotion_intensity).toBe(50);
+  });
+
+  it('clamps emotion_intensity above 100 to 100', () => {
+    const raw = '{"bias_score": 50, "controversy_score": 30, "emotion_intensity": 150}';
+    const result = parseScoreOutput(raw);
+    expect(result.emotion_intensity).toBe(100);
+  });
+
+  it('clamps emotion_intensity below 0 to 0', () => {
+    const raw = '{"bias_score": 50, "controversy_score": 30, "emotion_intensity": -20}';
+    const result = parseScoreOutput(raw);
+    expect(result.emotion_intensity).toBe(0);
+  });
+
+  it('rounds emotion_intensity with Math.round', () => {
+    const raw = '{"bias_score": 50, "controversy_score": 30, "emotion_intensity": 42.7}';
+    const result = parseScoreOutput(raw);
+    expect(result.emotion_intensity).toBe(43);
+  });
+
+  it('defaults emotion_intensity when non-number', () => {
+    const raw = '{"bias_score": 50, "controversy_score": 30, "emotion_intensity": "high"}';
+    const result = parseScoreOutput(raw);
+    expect(result.emotion_intensity).toBe(50);
+  });
+
+  // ── v4: backward compatibility ──
+
+  it('handles v3 output format (missing is_political and emotion_intensity)', () => {
+    const raw = '{"bias_score": 65, "controversy_score": 45, "camp_ratio": {"green": 20, "white": 30, "blue": 40, "gray": 10}}';
+    const result = parseScoreOutput(raw);
+    expect(result.bias_score).toBe(65);
+    expect(result.controversy_score).toBe(45);
+    expect(result.is_political).toBe(true);
+    expect(result.emotion_intensity).toBe(50);
+    expect(result.camp_ratio).not.toBeNull();
   });
 });
 

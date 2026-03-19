@@ -717,6 +717,34 @@ const messages: Record<string, string> = {
   'knowledge.admin.error': '操作失敗',
 
   // ==============================================
+  // Analysis v4 — Emotion & Political
+  // ==============================================
+  'analysis.emotion_intensity': '情緒煽動程度',
+  'analysis.not_political': '非政治新聞',
+  'emotion.level.calm': '冷靜客觀',
+  'emotion.level.rational': '略帶立場',
+  'emotion.level.emotional': '情緒化',
+  'emotion.level.sensational': '煽情',
+  'emotion.level.extreme': '極端煽動',
+  'a11y.emotion_meter': '情緒煽動程度指標，分數 {score}，等級 {level}',
+
+  // ==============================================
+  // Group Analysis
+  // ==============================================
+  'group.title': '跨媒體分析報告',
+  'group.not_ready': '分析數量不足（需要3家以上不同媒體的分析結果，目前 {sources} 家 {articles} 篇）',
+  'group.ready': '產生跨媒體分析報告',
+  'group.generating': '正在產生報告...',
+  'group.camp_stats': '陣營統計',
+  'group.summary': '綜合摘要',
+  'group.bias_direction': '整體偏向',
+  'group.direction.green': '偏綠',
+  'group.direction.blue': '偏藍',
+  'group.direction.neutral': '中立',
+  'group.direction.diverse': '多元',
+  'group.source_breakdown': '各媒體分析',
+
+  // ==============================================
   // Power Pool
   // ==============================================
   'power_pool.title': '動力池',

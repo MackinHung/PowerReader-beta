@@ -4,10 +4,14 @@
   import BiasSpectrum from '$lib/components/data-viz/BiasSpectrum.svelte';
   import CampBar from '$lib/components/data-viz/CampBar.svelte';
   import ControversyMeter from '$lib/components/data-viz/ControversyMeter.svelte';
+  import EmotionMeter from '$lib/components/data-viz/EmotionMeter.svelte';
   import KnowledgePanel from '$lib/components/article/KnowledgePanel.svelte';
+  import { t } from '$lib/i18n/zh-TW.js';
   import { getMediaQueryStore } from '$lib/stores/mediaQuery.svelte.js';
 
   let { article = null, open = false, onclose } = $props();
+
+  let isPolitical = $derived(article?.is_political !== false);
   const media = getMediaQueryStore();
 
   function handleOpenOriginal() {
@@ -68,16 +72,14 @@
 {#snippet panelContent()}
   <h3 class="article-title">{article.title ?? ''}</h3>
 
-  {#if article.summary}
-    <Card variant="filled">
-      <div class="section">
-        <span class="section-label">摘要</span>
-        <p class="summary-text">{article.summary}</p>
-      </div>
-    </Card>
+  {#if !isPolitical}
+    <div class="not-political-badge">
+      <span class="material-symbols-outlined">info</span>
+      <span>{t('analysis.not_political')}</span>
+    </div>
   {/if}
 
-  {#if article.bias_score != null}
+  {#if isPolitical && article.bias_score != null}
     <Card variant="filled">
       <div class="section">
         <span class="section-label">立場偏向</span>
@@ -86,7 +88,7 @@
     </Card>
   {/if}
 
-  {#if article.camp_ratio}
+  {#if isPolitical && article.camp_ratio}
     <Card variant="filled">
       <div class="section">
         <span class="section-label">陣營比例</span>
@@ -101,6 +103,10 @@
 
   {#if article.controversy_score != null}
     <ControversyMeter level={article.controversy_score} />
+  {/if}
+
+  {#if article.emotion_intensity != null}
+    <EmotionMeter intensity={article.emotion_intensity} />
   {/if}
 
   {#if article.knowledge_items?.length}
@@ -209,6 +215,19 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+  }
+  .not-political-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: var(--md-sys-shape-corner-small);
+    background: var(--md-sys-color-secondary-container);
+    color: var(--md-sys-color-on-secondary-container);
+    font: var(--md-sys-typescale-label-medium-font);
+  }
+  .not-political-badge .material-symbols-outlined {
+    font-size: 18px;
   }
   .section-label {
     font: var(--md-sys-typescale-label-medium-font);

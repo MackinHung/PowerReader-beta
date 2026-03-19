@@ -79,6 +79,8 @@ export interface SubmitAnalysisPayload {
   bias_score: number;
   controversy_score: number;
   camp_ratio: CampRatio | null;
+  is_political: boolean;
+  emotion_intensity: number;
   points: string[];
   reasoning: string;
   key_phrases: string[];

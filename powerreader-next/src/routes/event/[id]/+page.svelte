@@ -11,6 +11,8 @@
   import AnalysisZone from '$lib/components/data-viz/AnalysisZone.svelte';
   import ArticleCard from '$lib/components/article/ArticleCard.svelte';
   import ProgressIndicator from '$lib/components/ui/ProgressIndicator.svelte';
+  import GroupReport from '$lib/components/data-viz/GroupReport.svelte';
+  import { t } from '$lib/i18n/zh-TW.js';
   import { getMediaQueryStore } from '$lib/stores/mediaQuery.svelte.js';
   import * as api from '$lib/core/api.js';
   import {
@@ -20,6 +22,11 @@
     buildShareData,
     getControversyTier,
   } from '$lib/pages/event-detail.js';
+  import {
+    checkGroupReadiness,
+    getGroupAnalysis,
+    runGroupAnalysis,
+  } from '$lib/core/group-analysis.js';
 
   const media = getMediaQueryStore();
   let clusterId = $derived(page.params.id);
@@ -30,12 +37,42 @@
   let error = $state(null);
   let shareMsg = $state('');
 
+  // Group analysis state
+  let groupReport = $state(null);
+  let groupLoading = $state(false);
+  let groupError = $state(null);
+
   // Derived state using helper functions
   let campDist = $derived(cluster?.camp_distribution || {});
   let analysisState = $derived(getAnalysisState(cluster));
   let analysisProgress = $derived(getAnalysisProgress(cluster, articles));
   let controversyTier = $derived(getControversyTier(cluster?.avg_controversy_score));
   let articlesBySource = $derived(groupArticlesBySource(articles));
+
+  // Build analyses map from articles that have bias_score (server-side analyzed)
+  let analysesMap = $derived(() => {
+    const map = new Map();
+    for (const art of articles) {
+      if (art.bias_score != null) {
+        map.set(art.article_id, {
+          bias_score: art.bias_score,
+          controversy_score: art.controversy_score ?? 0,
+          camp_ratio: art.camp_ratio ?? null,
+          is_political: art.is_political ?? true,
+          emotion_intensity: art.emotion_intensity ?? 50,
+          points: art.points ?? [],
+          key_phrases: art.key_phrases ?? [],
+          reasoning: '',
+          prompt_version: '',
+          mode: '',
+          latency_ms: 0,
+        });
+      }
+    }
+    return map;
+  });
+
+  let groupReadiness = $derived(checkGroupReadiness(articles, analysesMap()));
 
   $effect(() => {
     const id = clusterId;
@@ -47,11 +84,18 @@
     error = null;
     cluster = null;
     articles = [];
+    groupReport = null;
+    groupError = null;
     try {
       const result = await api.fetchClusterDetail(id);
       if (result.success) {
         cluster = result.data?.cluster;
         articles = result.data?.articles || [];
+        // Try loading cached group analysis
+        try {
+          const cached = await getGroupAnalysis(id);
+          if (cached) groupReport = cached;
+        } catch { /* ignore IDB errors */ }
       } else {
         error = result.error?.message || '無法載入事件';
       }
@@ -59,6 +103,40 @@
       error = e.message;
     } finally {
       loading = false;
+    }
+  }
+
+  async function handleGroupAnalysis() {
+    groupLoading = true;
+    groupError = null;
+    try {
+      // Simple inference function using server endpoint
+      async function runInference(systemPrompt, userMessage) {
+        const response = await fetch('/api/v1/inference', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: userMessage,
+            system_prompt: systemPrompt,
+            model_params: { think: false, temperature: 0.5 },
+          }),
+        });
+        if (!response.ok) throw new Error(`Server error: ${response.status}`);
+        const data = await response.json();
+        return data.raw_output || JSON.stringify(data);
+      }
+
+      const result = await runGroupAnalysis(
+        clusterId,
+        articles,
+        analysesMap(),
+        runInference
+      );
+      groupReport = result;
+    } catch (e) {
+      groupError = e.message;
+    } finally {
+      groupLoading = false;
     }
   }
 
@@ -180,6 +258,50 @@
         </div>
       {/if}
     </AnalysisZone>
+
+    <!-- Group Analysis Section -->
+    {#if analysisState !== 'none'}
+      <div class="group-analysis-section">
+        <h2 class="section-heading">
+          <span class="material-symbols-outlined">analytics</span>
+          {t('group.title')}
+        </h2>
+
+        {#if groupReport}
+          <!-- State C: completed -->
+          <GroupReport report={groupReport} />
+        {:else if groupReadiness.ready}
+          <!-- State B: ready to generate -->
+          <div class="group-action">
+            <Button
+              variant="outlined"
+              onclick={handleGroupAnalysis}
+              disabled={groupLoading}
+            >
+              {#if groupLoading}
+                <ProgressIndicator type="circular" size="small" />
+                {t('group.generating')}
+              {:else}
+                <span class="material-symbols-outlined">auto_awesome</span>
+                {t('group.ready')}
+              {/if}
+            </Button>
+            {#if groupError}
+              <p class="group-error">{groupError}</p>
+            {/if}
+          </div>
+        {:else}
+          <!-- State A: not enough data -->
+          <div class="group-not-ready">
+            <span class="material-symbols-outlined not-ready-icon">hourglass_empty</span>
+            <p>{t('group.not_ready', {
+              sources: String(groupReadiness.source_count),
+              articles: String(groupReadiness.analyzed_count)
+            })}</p>
+          </div>
+        {/if}
+      </div>
+    {/if}
 
     <!-- Cross-media Comparison (Light) -->
     {#if articlesBySource.length >= 2}
@@ -517,6 +639,45 @@
     color: var(--md-sys-color-on-surface-variant);
     background: var(--md-sys-color-surface-container-high);
     opacity: 0.7;
+  }
+
+  /* === Group Analysis === */
+  .group-analysis-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .group-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px;
+  }
+  .group-error {
+    margin: 0;
+    font: var(--md-sys-typescale-body-small-font);
+    color: var(--md-sys-color-error);
+  }
+  .group-not-ready {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 20px 16px;
+    text-align: center;
+    background: var(--md-sys-color-surface-container-low);
+    border-radius: var(--md-sys-shape-corner-medium);
+  }
+  .not-ready-icon {
+    font-size: 32px;
+    color: var(--md-sys-color-on-surface-variant);
+    opacity: 0.5;
+  }
+  .group-not-ready p {
+    margin: 0;
+    font: var(--md-sys-typescale-body-medium-font);
+    color: var(--md-sys-color-on-surface-variant);
   }
 
   /* === Articles List === */

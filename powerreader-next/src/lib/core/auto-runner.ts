@@ -389,10 +389,12 @@ async function _processArticle(article: Article): Promise<ProcessStatus> {
     const payload = {
       bias_score: analysisResult.bias_score,
       controversy_score: analysisResult.controversy_score,
+      is_political: analysisResult.is_political ?? true,
+      emotion_intensity: analysisResult.emotion_intensity ?? 50,
       reasoning: analysisResult.reasoning || '',
       key_phrases: analysisResult.key_phrases || [],
       narrative_points: analysisResult.points || [],
-      prompt_version: analysisResult.prompt_version || 'v3.0.0',
+      prompt_version: analysisResult.prompt_version || 'v4.0.0',
       analysis_duration_ms: analysisResult.latency_ms || 0,
       inference_mode: analysisResult.mode || 'unknown',
       user_hash: getUserHash() || ''

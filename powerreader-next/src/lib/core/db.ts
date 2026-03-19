@@ -13,7 +13,7 @@
  */
 
 const DB_NAME: string = 'PowerReader';       // config.js FRONTEND.INDEXEDDB_NAME
-const DB_VERSION: number = 2;                // config.js FRONTEND.INDEXEDDB_VERSION
+const DB_VERSION: number = 3;                // config.js FRONTEND.INDEXEDDB_VERSION
 const CACHE_DAYS: number = 10;               // config.js FRONTEND.INDEXEDDB_CACHE_DAYS
 
 /**
@@ -71,6 +71,12 @@ export function openDB(): Promise<IDBDatabase> {
         history.createIndex('by_status', 'status', { unique: false });
         history.createIndex('by_analyzed_at', 'analyzed_at', { unique: false });
       }
+
+      // 7. group_analyses (v3)
+      if (!db.objectStoreNames.contains('group_analyses')) {
+        const groups = db.createObjectStore('group_analyses', { keyPath: 'cluster_id' });
+        groups.createIndex('by_analyzed_at', 'analyzed_at', { unique: false });
+      }
     };
   });
 }
@@ -87,6 +93,7 @@ export async function cleanExpiredCache(): Promise<void> {
   await cleanStoreByIndex(db, 'articles', 'by_cached_at', cutoff);
   await cleanStoreByIndex(db, 'cached_results', 'by_cached_at', cutoff);
   await cleanStoreByIndex(db, 'auto_runner_history', 'by_analyzed_at', cutoff30d);
+  await cleanStoreByIndex(db, 'group_analyses', 'by_analyzed_at', cutoff30d);
 
   db.close();
 }

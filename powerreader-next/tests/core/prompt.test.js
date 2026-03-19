@@ -76,6 +76,35 @@ describe('assembleScoreSystemPrompt', () => {
     const b = assembleScoreSystemPrompt();
     expect(a).toBe(b);
   });
+
+  // v4 additions
+  it('contains "is_political" in output schema', () => {
+    const result = assembleScoreSystemPrompt();
+    expect(result).toContain('is_political');
+  });
+
+  it('contains "emotion_intensity" in output schema', () => {
+    const result = assembleScoreSystemPrompt();
+    expect(result).toContain('emotion_intensity');
+  });
+
+  it('contains political detection instruction', () => {
+    const result = assembleScoreSystemPrompt();
+    expect(result).toContain('判斷 is_political');
+  });
+
+  it('contains emotion scale definition (0-100)', () => {
+    const result = assembleScoreSystemPrompt();
+    expect(result).toMatch(/冷靜/);
+    expect(result).toMatch(/煽情/);
+    expect(result).toMatch(/極端/);
+  });
+
+  it('contains non-political rule (bias_score fixed 50)', () => {
+    const result = assembleScoreSystemPrompt();
+    expect(result).toContain('is_political=false');
+    expect(result).toContain('bias_score 固定 50');
+  });
 });
 
 // ---------------------------------------------------------------------------
