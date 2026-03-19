@@ -10,7 +10,7 @@
  *   element.textContent = t('common.label.source_count', { count: 3 }); // "來源: 3 家媒體"
  */
 
-const messages = {
+const messages: Record<string, string> = {
   // ==============================================
   // Bias Labels (shared/enums.js BIAS_CATEGORIES)
   // ==============================================
@@ -608,6 +608,18 @@ const messages = {
   'knowledge.not_found': '找不到此知識條目',
   'knowledge.back_to_list': '返回知識庫',
 
+  // Knowledge Stances (topic entries)
+  'knowledge.stances.title': '各黨立場比較',
+  'knowledge.stances.dpp': '民主進步黨',
+  'knowledge.stances.kmt': '中國國民黨',
+  'knowledge.stances.tpp': '台灣民眾黨',
+  'knowledge.stances.missing': '尚無此黨立場資料',
+  'knowledge.stances.compare': '立場比較',
+
+  // Knowledge Edit (Phase 4 placeholder)
+  'knowledge.edit.suggest': '建議編輯',
+  'knowledge.edit.login_required': '請先登入以建議編輯',
+
   // Knowledge Admin (dev page)
   'knowledge.admin.title': '知識庫管理',
   'knowledge.admin.api_key': 'Admin API Key',
@@ -688,14 +700,7 @@ const messages = {
   'a11y.notification.info': '資訊: {message}'
 };
 
-/**
- * Translation function with interpolation support.
- *
- * @param {string} key - i18n key (e.g. 'bias.label.center')
- * @param {Object} [params] - interpolation params (e.g. { count: 3 })
- * @returns {string} translated string, or the key itself if not found
- */
-export function t(key, params = {}) {
+export function t(key: string, params: Record<string, string | number> = {}): string {
   let msg = messages[key];
 
   if (!msg) {

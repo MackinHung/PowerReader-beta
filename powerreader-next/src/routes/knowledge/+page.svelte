@@ -12,7 +12,6 @@
     { key: 'politician', label: () => t('knowledge.type.politician') },
     { key: 'media', label: () => t('knowledge.type.media') },
     { key: 'topic', label: () => t('knowledge.type.topic') },
-    { key: 'term', label: () => t('knowledge.type.term') },
     { key: 'event', label: () => t('knowledge.type.event') }
   ];
 
@@ -23,9 +22,9 @@
     { key: 'TPP', label: () => t('knowledge.party.TPP') }
   ];
 
-  // Show party filter only for types that have party data
+  // Show party filter for types that have party data (topic always passes through)
   let showPartyFilter = $derived(
-    store.activeType === 'all' || store.activeType === 'politician'
+    store.activeType === 'all' || store.activeType === 'politician' || store.activeType === 'topic'
   );
 
   let searchInput = $state('');

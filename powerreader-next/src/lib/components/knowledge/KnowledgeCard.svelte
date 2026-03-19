@@ -7,7 +7,6 @@
     politician: 'person',
     media: 'newspaper',
     topic: 'topic',
-    term: 'menu_book',
     event: 'event'
   };
 
@@ -19,15 +18,20 @@
     TSP: '#C7002E'
   };
 
+  let isTopic = $derived(entry?.type === 'topic');
   let icon = $derived(TYPE_ICONS[entry?.type] || 'article');
   let typeLabel = $derived(t(`knowledge.type.${entry?.type}`) || entry?.type || '');
-  let partyLabel = $derived(entry?.party ? t(`knowledge.party.${entry.party}`) || entry.party : null);
-  let partyColor = $derived(entry?.party ? (PARTY_COLORS[entry.party] || '#888') : null);
-  let snippet = $derived(
-    (entry?.content || '').length > 120
-      ? (entry.content || '').slice(0, 120) + '...'
-      : (entry?.content || '')
+  let partyLabel = $derived(
+    !isTopic && entry?.party ? t(`knowledge.party.${entry.party}`) || entry.party : null
   );
+  let partyColor = $derived(
+    !isTopic && entry?.party ? (PARTY_COLORS[entry.party] || '#888') : null
+  );
+  let snippet = $derived(() => {
+    if (isTopic) return '';
+    const c = entry?.content || '';
+    return c.length > 120 ? c.slice(0, 120) + '...' : c;
+  });
 </script>
 
 <button class="knowledge-card" onclick={onclick} type="button">
@@ -39,7 +43,16 @@
     {/if}
   </div>
   <h3 class="card-title">{entry?.title || ''}</h3>
-  <p class="card-snippet">{snippet}</p>
+  {#if isTopic}
+    <div class="stance-dots">
+      <span class="dot" style="background-color: #1B9431"></span>
+      <span class="dot" style="background-color: #0047AB"></span>
+      <span class="dot" style="background-color: #28C8C8"></span>
+      <span class="stance-label">{t('knowledge.stances.compare')}</span>
+    </div>
+  {:else}
+    <p class="card-snippet">{snippet()}</p>
+  {/if}
 </button>
 
 <style>
@@ -109,5 +122,22 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
     line-height: 1.5;
+  }
+
+  .stance-dots {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .stance-label {
+    font: var(--md-sys-typescale-label-small-font);
+    color: var(--md-sys-color-on-surface-variant);
+    margin-left: 2px;
   }
 </style>

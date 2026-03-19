@@ -39,15 +39,20 @@ export function getKnowledgeStore() {
       }
 
       if (activeParty !== 'all') {
-        result = result.filter(e => e.party === activeParty);
+        result = result.filter(e => e.type === 'topic' || e.party === activeParty);
       }
 
       if (searchQuery.trim()) {
         const q = searchQuery.trim().toLowerCase();
-        result = result.filter(e =>
-          (e.title || '').toLowerCase().includes(q) ||
-          (e.content || '').toLowerCase().includes(q)
-        );
+        result = result.filter(e => {
+          if ((e.title || '').toLowerCase().includes(q)) return true;
+          if (e.type === 'topic' && e.stances) {
+            return Object.values(e.stances).some(
+              v => (v || '').toLowerCase().includes(q)
+            );
+          }
+          return (e.content || '').toLowerCase().includes(q);
+        });
       }
 
       return result;

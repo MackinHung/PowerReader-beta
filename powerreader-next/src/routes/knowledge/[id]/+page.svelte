@@ -2,6 +2,7 @@
   import { page } from '$app/state';
   import { untrack } from 'svelte';
   import { getKnowledgeStore } from '$lib/stores/knowledge.svelte.js';
+  import { TopicStanceView } from '$lib/components/knowledge/index.js';
   import { t } from '$lib/i18n/zh-TW.js';
 
   const store = getKnowledgeStore();
@@ -10,7 +11,6 @@
     politician: 'person',
     media: 'newspaper',
     topic: 'topic',
-    term: 'menu_book',
     event: 'event'
   };
 
@@ -24,10 +24,15 @@
 
   let entryId = $derived(page.params.id);
   let entry = $derived(store.getEntry(entryId));
+  let isTopic = $derived(entry?.type === 'topic');
   let icon = $derived(entry ? (TYPE_ICONS[entry.type] || 'article') : 'article');
   let typeLabel = $derived(entry ? (t(`knowledge.type.${entry.type}`) || entry.type) : '');
-  let partyLabel = $derived(entry?.party ? (t(`knowledge.party.${entry.party}`) || entry.party) : null);
-  let partyColor = $derived(entry?.party ? (PARTY_COLORS[entry.party] || '#888') : null);
+  let partyLabel = $derived(
+    !isTopic && entry?.party ? (t(`knowledge.party.${entry.party}`) || entry.party) : null
+  );
+  let partyColor = $derived(
+    !isTopic && entry?.party ? (PARTY_COLORS[entry.party] || '#888') : null
+  );
 
   // Ensure knowledge is loaded
   $effect(() => {
@@ -69,9 +74,13 @@
         {entry.id}
       </div>
 
-      <div class="entry-content">
-        {entry.content}
-      </div>
+      {#if isTopic && entry.stances}
+        <TopicStanceView stances={entry.stances} />
+      {:else}
+        <div class="entry-content">
+          {entry.content}
+        </div>
+      {/if}
     </article>
   {/if}
 </div>

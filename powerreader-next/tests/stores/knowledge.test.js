@@ -11,14 +11,14 @@ const mockEntries = [
   { id: 'p1', type: 'politician', title: 'Person A', content: 'Bio of A', party: 'KMT' },
   { id: 'p2', type: 'politician', title: 'Person B', content: 'Bio of B', party: 'DPP' },
   { id: 'e1', type: 'event', title: 'Event X', content: 'Details of event X', party: null },
-  { id: 't1', type: 'term', title: 'Term Y', content: 'Definition of term Y', party: null },
+  { id: 'tp1', type: 'topic', title: 'Topic W', stances: { DPP: 'DPP stance on W', KMT: 'KMT stance on W', TPP: 'TPP stance on W' } },
   { id: 'm1', type: 'media', title: 'Media Z', content: 'About media Z', party: null }
 ];
 
 const mockResponse = {
   generated_at: '2026-03-19T00:00:00Z',
   total: mockEntries.length,
-  types: { politician: 2, event: 1, term: 1, media: 1 },
+  types: { politician: 2, event: 1, topic: 1, media: 1 },
   parties: { KMT: 1, DPP: 1 },
   entries: mockEntries
 };
@@ -86,7 +86,7 @@ describe('Knowledge Store', () => {
     it('populates typeCounts and partyCounts', async () => {
       await store.loadKnowledge();
 
-      expect(store.typeCounts).toEqual({ politician: 2, event: 1, term: 1, media: 1 });
+      expect(store.typeCounts).toEqual({ politician: 2, event: 1, topic: 1, media: 1 });
       expect(store.partyCounts).toEqual({ KMT: 1, DPP: 1 });
     });
   });
@@ -106,10 +106,13 @@ describe('Knowledge Store', () => {
       expect(store.entries.every(e => e.type === 'politician')).toBe(true);
     });
 
-    it('filters by party', () => {
+    it('filters by party (includes topic pass-through)', () => {
       store.setParty('KMT');
-      expect(store.entries).toHaveLength(1);
-      expect(store.entries[0].party).toBe('KMT');
+      // Should include KMT politician + topic (topics always pass through party filter)
+      expect(store.entries).toHaveLength(2);
+      const types = store.entries.map(e => e.type);
+      expect(types).toContain('politician');
+      expect(types).toContain('topic');
     });
 
     it('filters by search query (title)', () => {
@@ -119,9 +122,9 @@ describe('Knowledge Store', () => {
     });
 
     it('filters by search query (content)', () => {
-      store.setSearch('definition');
+      store.setSearch('About media');
       expect(store.entries).toHaveLength(1);
-      expect(store.entries[0].id).toBe('t1');
+      expect(store.entries[0].id).toBe('m1');
     });
 
     it('combines type + party + search filters', () => {
@@ -172,6 +175,43 @@ describe('Knowledge Store', () => {
       expect(store.activeParty).toBe('all');
       expect(store.searchQuery).toBe('');
       expect(store.entries).toHaveLength(5);
+    });
+  });
+
+  describe('topic entries', () => {
+    beforeEach(async () => {
+      await store.loadKnowledge();
+    });
+
+    it('searches within stances for topic entries', () => {
+      store.setSearch('DPP stance');
+      expect(store.entries).toHaveLength(1);
+      expect(store.entries[0].id).toBe('tp1');
+    });
+
+    it('finds topic by title search', () => {
+      store.setSearch('Topic W');
+      expect(store.entries).toHaveLength(1);
+      expect(store.entries[0].id).toBe('tp1');
+    });
+
+    it('party filter does not hide topic entries', () => {
+      store.setParty('KMT');
+      const ids = store.entries.map(e => e.id);
+      expect(ids).toContain('tp1');
+      expect(ids).toContain('p1');
+    });
+
+    it('type filter works for topic', () => {
+      store.setType('topic');
+      expect(store.entries).toHaveLength(1);
+      expect(store.entries[0].type).toBe('topic');
+    });
+
+    it('topic search is case-insensitive', () => {
+      store.setSearch('dpp STANCE');
+      expect(store.entries).toHaveLength(1);
+      expect(store.entries[0].id).toBe('tp1');
     });
   });
 });

@@ -14,10 +14,11 @@ vi.mock('$lib/i18n/zh-TW.js', () => ({
       'knowledge.type.politician': '政治人物',
       'knowledge.type.media': '媒體',
       'knowledge.type.event': '事件',
-      'knowledge.type.term': '名詞',
+      'knowledge.type.topic': '議題',
       'knowledge.party.KMT': '國民黨',
       'knowledge.party.DPP': '民進黨',
-      'knowledge.party.TPP': '民眾黨'
+      'knowledge.party.TPP': '民眾黨',
+      'knowledge.stances.compare': '立場比較'
     };
     return map[key] || key;
   })
@@ -165,5 +166,69 @@ describe('KnowledgeCard', () => {
     });
 
     expect(container.querySelector('.type-icon').textContent).toBe('event');
+  });
+
+  // ── Topic entry tests ──
+
+  it('renders stance dots for topic entry', () => {
+    mount(KnowledgeCard, {
+      target: container,
+      props: {
+        entry: {
+          id: 'topic1', type: 'topic', title: 'Test Topic',
+          stances: { DPP: 'a', KMT: 'b', TPP: 'c' }
+        },
+        onclick: () => {}
+      }
+    });
+
+    const dots = container.querySelectorAll('.dot');
+    expect(dots.length).toBe(3);
+    expect(container.querySelector('.stance-label').textContent).toBe('立場比較');
+  });
+
+  it('does not show party badge for topic entry', () => {
+    mount(KnowledgeCard, {
+      target: container,
+      props: {
+        entry: {
+          id: 'topic1', type: 'topic', title: 'Test Topic',
+          stances: { DPP: 'a', KMT: 'b', TPP: 'c' }, party: 'DPP'
+        },
+        onclick: () => {}
+      }
+    });
+
+    expect(container.querySelector('.party-badge')).toBeNull();
+  });
+
+  it('does not show content snippet for topic entry', () => {
+    mount(KnowledgeCard, {
+      target: container,
+      props: {
+        entry: {
+          id: 'topic1', type: 'topic', title: 'Test Topic',
+          content: 'Should not appear', stances: { DPP: 'a' }
+        },
+        onclick: () => {}
+      }
+    });
+
+    expect(container.querySelector('.card-snippet')).toBeNull();
+  });
+
+  it('shows type badge for topic entry', () => {
+    mount(KnowledgeCard, {
+      target: container,
+      props: {
+        entry: {
+          id: 'topic1', type: 'topic', title: 'Test Topic',
+          stances: { DPP: 'a' }
+        },
+        onclick: () => {}
+      }
+    });
+
+    expect(container.querySelector('.type-badge').textContent).toBe('議題');
   });
 });
