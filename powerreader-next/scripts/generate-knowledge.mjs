@@ -14,7 +14,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, '..');
-const BATCH_DIR = resolve(PROJECT_ROOT, '..', 'knowledge_batch_payloads');
+const BATCH_DIR = resolve(PROJECT_ROOT, 'data', 'knowledge');
 const OUTPUT_DIR = resolve(PROJECT_ROOT, 'static', 'data');
 const OUTPUT_FILE = resolve(OUTPUT_DIR, 'knowledge.json');
 
