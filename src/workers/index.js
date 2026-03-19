@@ -86,9 +86,9 @@ export default {
     // Event cluster pre-computation: build all clusters every hour (non-blocking)
     ctx.waitUntil(buildAllClusters(env).catch(() => {}));
 
-    // Reset daily analysis counts at midnight UTC (cron runs hourly)
+    // Reset daily analysis counts at midnight Taiwan time (UTC+8 = UTC 16:00)
     const hour = new Date(event.scheduledTime).getUTCHours();
-    if (hour === 0) {
+    if (hour === 16) {
       ctx.waitUntil(
         env.DB.prepare(
           'UPDATE users SET daily_analysis_count = 0 WHERE daily_analysis_count > 0'

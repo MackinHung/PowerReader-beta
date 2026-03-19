@@ -739,79 +739,22 @@ describe('pre-analysis duplicate check', () => {
 // 9. Daily quota check before start
 // ══════════════════════════════════════════════
 
-describe('daily quota check', () => {
-  it('stops with quota_exhausted when daily limit reached', async () => {
+describe('daily points limit (no longer blocks analysis)', () => {
+  it('continues analysis even when daily points limit reached', async () => {
     mockIsAuthenticated.mockReturnValue(true);
     localStorage.setItem('powerreader_webllm_cached', '1');
+    setupMockDB();
 
-    mockFetchUserPoints.mockResolvedValue({
+    mockFetchArticles.mockResolvedValue({
       success: true,
-      data: { daily_analysis_count: 50, daily_analysis_limit: 50 },
+      data: { articles: [] },
     });
 
     await mod.startAutoRunner();
 
+    // Should proceed to analysis loop (stopped only due to no articles, NOT quota)
     const status = mod.getAutoRunnerStatus();
     expect(status.running).toBe(false);
-    expect(status.stopReason).toBe('auto_runner.quota_exhausted');
-  });
-
-  it('proceeds normally when quota remains', async () => {
-    mockIsAuthenticated.mockReturnValue(true);
-    localStorage.setItem('powerreader_webllm_cached', '1');
-    setupMockDB();
-
-    mockFetchUserPoints.mockResolvedValue({
-      success: true,
-      data: { daily_analysis_count: 10, daily_analysis_limit: 50 },
-    });
-
-    mockFetchArticles.mockResolvedValue({
-      success: true,
-      data: { articles: [] },
-    });
-
-    await mod.startAutoRunner();
-
-    // Should have proceeded past quota check (stopped due to no articles)
-    const status = mod.getAutoRunnerStatus();
-    expect(status.stopReason).toBe('auto_runner.error.no_articles');
-  });
-
-  it('proceeds when quota fetch fails (non-fatal)', async () => {
-    mockIsAuthenticated.mockReturnValue(true);
-    localStorage.setItem('powerreader_webllm_cached', '1');
-    setupMockDB();
-
-    mockFetchUserPoints.mockRejectedValue(new Error('Network error'));
-
-    mockFetchArticles.mockResolvedValue({
-      success: true,
-      data: { articles: [] },
-    });
-
-    await mod.startAutoRunner();
-
-    // Should proceed past quota check (non-fatal failure)
-    const status = mod.getAutoRunnerStatus();
-    expect(status.stopReason).toBe('auto_runner.error.no_articles');
-  });
-
-  it('proceeds when quota response has no data', async () => {
-    mockIsAuthenticated.mockReturnValue(true);
-    localStorage.setItem('powerreader_webllm_cached', '1');
-    setupMockDB();
-
-    mockFetchUserPoints.mockResolvedValue({ success: false });
-
-    mockFetchArticles.mockResolvedValue({
-      success: true,
-      data: { articles: [] },
-    });
-
-    await mod.startAutoRunner();
-
-    const status = mod.getAutoRunnerStatus();
     expect(status.stopReason).toBe('auto_runner.error.no_articles');
   });
 });

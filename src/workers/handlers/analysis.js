@@ -34,7 +34,7 @@ export async function createAnalysis(request, env, ctx, { params, user }) {
     });
   }
 
-  // Anti-cheat: check daily limit + cooldown (from REWARD config)
+  // Anti-cheat: check cooldown (from REWARD config)
   const userRow = await env.DB.prepare(
     'SELECT daily_analysis_count, cooldown_until FROM users WHERE user_hash = ?'
   ).bind(user_hash).first();
@@ -47,15 +47,12 @@ export async function createAnalysis(request, env, ctx, { params, user }) {
         error: { type: 'rate_limit_exceeded', message: '您已暫時被限制提交分析,請稍後再試' }
       });
     }
-
-    // Check daily analysis limit
-    if (userRow.daily_analysis_count >= REWARD.DAILY_ANALYSIS_LIMIT) {
-      return jsonResponse(429, {
-        success: false, data: null,
-        error: { type: 'rate_limit_exceeded', message: '今日分析次數已達上限' }
-      });
-    }
   }
+
+  // Determine if user has exceeded daily points limit (still allow analysis, just no points)
+  const dailyPointsExhausted = userRow
+    ? userRow.daily_analysis_count >= REWARD.DAILY_ANALYSIS_LIMIT
+    : false;
 
   // Anti-cheat: minimum analysis time (blocks instant automated submissions)
   // T05 spec: 5000ms aligns with Qwen3-4B WebLLM inference (~6s)
@@ -156,8 +153,9 @@ export async function createAnalysis(request, env, ctx, { params, user }) {
   ]);
 
   // Award random points for valid analysis (T05: weighted tiers, 10-50 cents)
+  // Skip points if daily limit reached — analysis still accepted, just no reward
   let pointsAwardedCents = 0;
-  if (quality_gate_result === 'passed') {
+  if (quality_gate_result === 'passed' && !dailyPointsExhausted) {
     try {
       pointsAwardedCents = rollPointRewardInline(REWARD.POINT_TIERS);
       await env.DB.prepare(`

@@ -408,7 +408,7 @@
   <!-- ═══ Daily Quota ═══ -->
   {#if authStore.isAuthenticated}
     <section class="section">
-      <h3 class="section-title">每日分析上限</h3>
+      <h3 class="section-title">每日可得點數上限</h3>
       <Card variant="filled">
         <div class="quota-section">
           <div class="quota-header">
@@ -424,7 +424,11 @@
               class:quota-bar-full={authStore.dailyQuota.remaining === 0}
             ></div>
           </div>
-          <span class="quota-reset-hint">每日 00:00 (台灣時間) 重置</span>
+          {#if authStore.dailyQuota.remaining === 0}
+            <span class="quota-reset-hint">今日點數已達上限，分析仍可繼續但不獲得點數</span>
+          {:else}
+            <span class="quota-reset-hint">每日 24:00 (台灣時間) 重置</span>
+          {/if}
         </div>
       </Card>
     </section>
