@@ -29,6 +29,7 @@ import { submitAnalysisFeedback, getAnalysisFeedbackStats } from './handlers/ana
 import { searchArticles } from './handlers/search.js';
 import { getEvents, getEventDetail } from './handlers/events.js';
 import { getClusters, getClusterDetail } from './handlers/clusters.js';
+import { proposeEdit, listPRs, getPRDetail, mergePR, closePR } from './handlers/knowledge-github.js';
 
 /**
  * Route table: [method, pattern, handler, options]
@@ -60,6 +61,13 @@ const ROUTES = [
   ['GET',  '/api/v1/knowledge/search',                searchKnowledge,     { auth: 'admin', rateLimit: true,  cache: 'no-store' }],
   ['GET',  '/api/v1/knowledge/list',                  listKnowledge,       { auth: 'admin', rateLimit: true,  cache: 'no-store' }],
   ['DELETE','/api/v1/knowledge/:id',                  deleteKnowledge,     { auth: 'admin', rateLimit: false, cache: 'no-store' }],
+
+  // Knowledge GitHub Review API (v3.0 — Git-based review workflow)
+  ['POST', '/api/v1/knowledge/github/propose',             proposeEdit, { auth: 'jwt', rateLimit: true,  cache: 'no-store' }],
+  ['GET',  '/api/v1/knowledge/github/prs',                 listPRs,     { auth: 'jwt', rateLimit: true,  cache: 'no-store' }],
+  ['GET',  '/api/v1/knowledge/github/prs/:number',         getPRDetail, { auth: 'jwt', rateLimit: true,  cache: 'no-store' }],
+  ['POST', '/api/v1/knowledge/github/prs/:number/merge',   mergePR,     { auth: 'jwt', rateLimit: true,  cache: 'no-store' }],
+  ['POST', '/api/v1/knowledge/github/prs/:number/close',   closePR,     { auth: 'jwt', rateLimit: true,  cache: 'no-store' }],
 
   // User API
   ['GET',    '/api/v1/auth/google',          googleAuth,          { auth: 'none', rateLimit: true,  cache: 'no-store' }],
