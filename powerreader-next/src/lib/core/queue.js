@@ -8,7 +8,7 @@
  * @license AGPL-3.0
  */
 
-import { runAnalysis } from './inference.js';
+import { runAnalysis, interruptInference } from './inference.js';
 import { fetchArticleKnowledge } from './api.js';
 import { createEventEmitter } from '$lib/utils/event-emitter.js';
 
@@ -97,6 +97,8 @@ export function cancelAnalysis(articleId) {
 
   // 正在執行中：標記取消，結果會被丟棄
   if (_currentJob && _currentJob.articleId === articleId) {
+    interruptInference();  // Stop GPU computation immediately
+    if (_currentJob.abortController) _currentJob.abortController.abort();
     _cancelledIds = new Set([..._cancelledIds, articleId]);
     _currentJob.reject(new AnalysisCancelledError(articleId));
     _currentJob = null;
@@ -115,6 +117,8 @@ export function cancelAll() {
   }
 
   if (_currentJob) {
+    interruptInference();  // Stop GPU computation immediately
+    if (_currentJob.abortController) _currentJob.abortController.abort();
     _cancelledIds = new Set([..._cancelledIds, _currentJob.articleId]);
     _currentJob.reject(new AnalysisCancelledError(_currentJob.articleId));
     _currentJob = null;
@@ -133,9 +137,10 @@ function _tryAdvance() {
   _pendingQueue = rest;
 
   const { articleId, article, options, resolve, reject } = next;
-  const promise = _executeJob(articleId, article, options);
+  const abortController = new AbortController();
+  const promise = _executeJob(articleId, article, options, abortController.signal);
 
-  _currentJob = { articleId, startedAt: Date.now(), promise, resolve, reject };
+  _currentJob = { articleId, startedAt: Date.now(), promise, resolve, reject, abortController };
   _notifyListeners();
 
   promise
@@ -164,7 +169,7 @@ function _tryAdvance() {
 }
 
 /** 執行完整分析管線：取得知識 → 推理 */
-async function _executeJob(articleId, article, options) {
+async function _executeJob(articleId, article, options, signal) {
   // 取得 RAG 知識條目（失敗時降級為空陣列）
   let knowledgeEntries = [];
   try {
@@ -182,7 +187,8 @@ async function _executeJob(articleId, article, options) {
     article,
     knowledgeEntries,
     mode: options.mode,
-    onStatus: options.onStatus
+    onStatus: options.onStatus,
+    signal
   });
 
   return { ...result, knowledgeEntries };

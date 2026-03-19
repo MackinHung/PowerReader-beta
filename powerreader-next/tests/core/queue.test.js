@@ -23,6 +23,7 @@ beforeEach(async () => {
 
   vi.doMock('../../src/lib/core/inference.js', () => ({
     runAnalysis: mockRunAnalysis,
+    interruptInference: vi.fn(),
   }));
   vi.doMock('../../src/lib/core/api.js', () => ({
     fetchArticleKnowledge: mockFetchKnowledge,
@@ -181,6 +182,7 @@ describe('enqueueAnalysis', () => {
       knowledgeEntries,
       mode: 'full',
       onStatus: undefined,
+      signal: expect.any(AbortSignal),
     });
     expect(result).toEqual({ ...analysisResult, knowledgeEntries });
   });

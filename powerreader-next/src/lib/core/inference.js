@@ -121,6 +121,24 @@ export async function getWebLLMEngine(onProgress) {
 }
 
 // =============================================
+// Interrupt GPU Inference
+// =============================================
+
+/**
+ * Interrupt any in-progress WebLLM generation on the GPU.
+ * Safe to call even if no inference is running.
+ */
+export function interruptInference() {
+  if (_webllmEngine) {
+    try {
+      _webllmEngine.interruptGenerate();
+    } catch {
+      // Engine may not have active generation — ignore
+    }
+  }
+}
+
+// =============================================
 // Cache Management
 // =============================================
 
@@ -218,7 +236,7 @@ export function getModeLabel(mode) {
  * @param {function} options.onStatus - Status callback (stage, elapsedMs, extra)
  * @returns {Promise<Object>} Analysis result with mode, latency_ms, and narrative points
  */
-export async function runAnalysis({ article, knowledgeEntries = [], mode, onStatus }) {
+export async function runAnalysis({ article, knowledgeEntries = [], mode, onStatus, signal }) {
   const selectedMode = mode || await detectBestMode();
   const startTime = Date.now();
 
@@ -236,7 +254,7 @@ export async function runAnalysis({ article, knowledgeEntries = [], mode, onStat
     let result;
 
     if (selectedMode === INFERENCE_MODES.WEBGPU) {
-      result = await runWebLLMInference(article, knowledgeEntries, updateStatus);
+      result = await runWebLLMInference(article, knowledgeEntries, updateStatus, signal);
     } else {
       result = await runServerInference(article, knowledgeEntries, updateStatus);
     }
@@ -261,7 +279,7 @@ export async function runAnalysis({ article, knowledgeEntries = [], mode, onStat
 // WebLLM Inference (WebGPU, Dual-Pass)
 // =============================================
 
-async function runWebLLMInference(article, knowledgeEntries, updateStatus) {
+async function runWebLLMInference(article, knowledgeEntries, updateStatus, signal) {
   // Streaming investigation: WebLLM supports stream:true but JSON output (Pass 1)
   // is not suitable for streaming. Pass 2 narrative could benefit but stability
   // varies across browsers. Keeping batch mode for reliability. Revisit when
@@ -302,6 +320,11 @@ async function runWebLLMInference(article, knowledgeEntries, updateStatus) {
 
   // Free KV cache between passes — critical for 6GB VRAM
   try { await engine.resetChat(); } catch {}
+
+  // Bail out if cancelled between passes — avoid starting Pass 2 on GPU
+  if (signal?.aborted) {
+    throw new Error('inference_cancelled');
+  }
 
   // Phase 2: Narrative analysis (informed by Pass 1 scores, 2x timeout)
   updateStatus('pass2_running');
