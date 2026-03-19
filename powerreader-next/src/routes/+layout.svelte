@@ -156,6 +156,10 @@
   }
 </script>
 
+<svelte:head>
+  <title>PowerReader - 台灣新聞立場分析</title>
+</svelte:head>
+
 <svelte:window onkeydown={handleKeydown} />
 
 {#if !isOnline}

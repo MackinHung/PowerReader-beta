@@ -138,6 +138,20 @@
   }
 </script>
 
+<svelte:head>
+  <title>{article?.title ? `${article.title} | PowerReader` : '文章詳情 | PowerReader'}</title>
+  {#if article?.title}
+    <meta property="og:title" content="{article.title} | PowerReader" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://powerreader.pages.dev/article/{articleId}" />
+    <meta name="twitter:title" content="{article.title} | PowerReader" />
+  {/if}
+  {#if article?.summary}
+    <meta property="og:description" content={article.summary} />
+    <meta name="twitter:description" content={article.summary} />
+  {/if}
+</svelte:head>
+
 <div class="article-page" class:desktop={media.isDesktop}>
   {#if loading}
     <div class="loading-state">

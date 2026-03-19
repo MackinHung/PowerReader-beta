@@ -91,6 +91,20 @@
   }
 </script>
 
+<svelte:head>
+  <title>{cluster?.representative_title ? `${cluster.representative_title} | PowerReader` : '事件詳情 | PowerReader'}</title>
+  {#if cluster?.representative_title}
+    <meta property="og:title" content="{cluster.representative_title} | PowerReader" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://powerreader.pages.dev/event/{clusterId}" />
+    <meta name="twitter:title" content="{cluster.representative_title} | PowerReader" />
+  {/if}
+  {#if cluster?.article_count}
+    <meta property="og:description" content="{cluster.representative_title} - {cluster.article_count} 篇報導 · {cluster.source_count} 家媒體 | PowerReader 台灣新聞立場分析" />
+    <meta name="twitter:description" content="{cluster.representative_title} - {cluster.article_count} 篇報導 · {cluster.source_count} 家媒體" />
+  {/if}
+</svelte:head>
+
 <div class="cluster-detail" class:desktop={media.isDesktop}>
   {#if loading}
     <div class="center-state">

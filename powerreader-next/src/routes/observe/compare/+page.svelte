@@ -61,6 +61,10 @@
   }
 </script>
 
+<svelte:head>
+  <title>媒體比較 | PowerReader</title>
+</svelte:head>
+
 <div class="compare-page">
   {#if loading}
     <div class="center-state">

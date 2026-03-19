@@ -14,7 +14,6 @@
   // Dynamic imports for heavy components
   let ClusterCard = $state(null);
   let ControversyPulse = $state(null);
-  let BlindspotAlert = $state(null);
   let CampBar = $state(null);
   let SourceBadge = $state(null);
 
@@ -29,10 +28,6 @@
 
     import('$lib/components/data-viz/ControversyPulse.svelte')
       .then(m => { ControversyPulse = m.default; })
-      .catch(() => {});
-
-    import('$lib/components/data-viz/BlindspotAlert.svelte')
-      .then(m => { BlindspotAlert = m.default; })
       .catch(() => {});
 
     import('$lib/components/data-viz/CampBar.svelte')
@@ -176,11 +171,9 @@
     return () => observer.disconnect();
   });
 
-  // Sort clusters: blindspot first, then by controversy score desc
+  // Sort clusters by controversy score desc
   let sortedClusters = $derived(() => {
     return [...eventsStore.clusters].sort((a, b) => {
-      if (a.is_blindspot && !b.is_blindspot) return -1;
-      if (!a.is_blindspot && b.is_blindspot) return 1;
       return (b.avg_controversy_score ?? 0) - (a.avg_controversy_score ?? 0);
     });
   });
@@ -196,10 +189,6 @@
     const sorted = sortedClusters();
     return sorted.length > 1 ? sorted.slice(1) : [];
   });
-
-  let blindspotCount = $derived(
-    eventsStore.clusters.filter(c => c.is_blindspot).length
-  );
 
   let hasClusters = $derived(eventsStore.clusters.length > 0);
   let hasUnclustered = $derived(unclusteredArticles.length > 0);
@@ -222,6 +211,10 @@
     return safeJsonParse(cluster.avg_camp_ratio, null);
   }
 </script>
+
+<svelte:head>
+  <title>PowerReader - 台灣新聞立場分析 | 首頁</title>
+</svelte:head>
 
 <div
   class="home-page"
@@ -292,13 +285,6 @@
         onclick={() => handleClusterClick(hero)}
         aria-label="精選事件: {hero.representative_title}"
       >
-        <!-- Blindspot Banner -->
-        {#if hero.is_blindspot && BlindspotAlert}
-          <div class="hero-blindspot">
-            <svelte:component this={BlindspotAlert} type={hero.blindspot_type} isBlindspot={true} />
-          </div>
-        {/if}
-
         <div class="hero-content">
           {#if hero.category}
             <span class="hero-category">{hero.category}</span>
@@ -347,14 +333,6 @@
 
         <div class="hero-bottom-line"></div>
       </button>
-    {/if}
-
-    <!-- Blindspot Radar Banner -->
-    {#if blindspotCount > 0}
-      <div class="radar-banner" role="alert">
-        <span class="material-symbols-outlined radar-icon">crisis_alert</span>
-        <span>偵測到 {blindspotCount} 個報導盲區</span>
-      </div>
     {/if}
 
     <!-- Section: Remaining Clusters -->
@@ -480,9 +458,6 @@
     outline: 2px solid var(--pr-gold);
     outline-offset: 2px;
   }
-  .hero-blindspot {
-    width: 100%;
-  }
   .hero-content {
     padding: 24px;
     display: flex;
@@ -543,22 +518,6 @@
   .hero-bottom-line {
     height: 3px;
     background: linear-gradient(to right, var(--pr-gold), var(--pr-gold-muted), transparent);
-  }
-
-  /* === Radar Banner === */
-  .radar-banner {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-    background: var(--md-sys-color-error-container);
-    color: var(--md-sys-color-on-error-container);
-    border-radius: var(--md-sys-shape-corner-small);
-    font: var(--md-sys-typescale-label-large-font);
-    animation: slide-in-top var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate);
-  }
-  .radar-icon {
-    font-size: 20px;
   }
 
   /* === Section Heading === */

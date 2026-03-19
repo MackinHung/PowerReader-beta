@@ -108,6 +108,10 @@
   }
 </script>
 
+<svelte:head>
+  <title>AI 分析 | PowerReader</title>
+</svelte:head>
+
 <div class="analyze-page" class:desktop={media.isDesktop}>
   <!-- ═══ Left: Controls ═══ -->
   <div class="analyze-controls">
