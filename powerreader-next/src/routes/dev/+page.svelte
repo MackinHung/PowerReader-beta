@@ -325,7 +325,7 @@
   let knowledgeSaving = $state(false);
   let deleteConfirmId = $state(null);
 
-  const KNOWLEDGE_TYPES = ['politician', 'media', 'topic', 'term', 'event'];
+  const KNOWLEDGE_TYPES = ['figure', 'issue', 'incident'];
   const KNOWLEDGE_PARTIES = ['', 'KMT', 'DPP', 'TPP', 'NPP', 'TSP'];
 
   function saveAdminKey() {
