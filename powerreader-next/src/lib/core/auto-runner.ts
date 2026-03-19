@@ -20,10 +20,12 @@ import { createEventEmitter } from '$lib/utils/event-emitter.js';
 import { promisifyRequest, promisifyTransaction } from '$lib/utils/idb-helpers.js';
 import { isMobileDevice } from '$lib/utils/device-detect.js';
 import { scanGPU, getCachedBenchmark } from './benchmark.js';
+import type { Article } from '$lib/types/models.js';
+import type { AutoRunnerStatus, AutoRunnerStats } from '$lib/types/inference.js';
 
 // ── Constants ──
 
-function getInterAnalysisDelay() {
+function getInterAnalysisDelay(): number {
   const benchmark = getCachedBenchmark();
   if (benchmark?.mode === 'gpu') return 1000;
   if (benchmark?.mode === 'cpu') return 3000;
@@ -38,27 +40,25 @@ const ANALYSIS_MODE_KEY = 'powerreader_analysis_mode';
 
 let _running = false;
 let _paused = false;
-let _stats = { analyzed: 0, skipped: 0, failed: 0 };
-let _currentArticle = null;
-let _startedAt = null;
-let _stopReason = null;
+let _stats: AutoRunnerStats = { analyzed: 0, skipped: 0, failed: 0 };
+let _currentArticle: Article | null = null;
+let _startedAt: number | null = null;
+let _stopReason: string | null = null;
 let _consecutiveFailures = 0;
-let _abortController = null;
-let _resumeResolver = null;
-const _emitter = createEventEmitter('AutoRunner');
+let _abortController: AbortController | null = null;
+let _resumeResolver: (() => void) | null = null;
+const _emitter = createEventEmitter<AutoRunnerStatus>('AutoRunner');
 
 // ── Event System ──
 
-function _notify() {
+function _notify(): void {
   _emitter.notify(getAutoRunnerStatus());
 }
 
 /**
  * Subscribe to auto-runner state changes. Returns unsubscribe function.
- * @param {Function} cb
- * @returns {Function} unsubscribe
  */
-export function onAutoRunnerUpdate(cb) {
+export function onAutoRunnerUpdate(cb: (status: AutoRunnerStatus) => void): () => void {
   return _emitter.subscribe(cb);
 }
 
@@ -67,7 +67,7 @@ export function onAutoRunnerUpdate(cb) {
 /**
  * Get current auto-runner status (immutable snapshot).
  */
-export function getAutoRunnerStatus() {
+export function getAutoRunnerStatus(): AutoRunnerStatus {
   return {
     running: _running,
     paused: _paused,
@@ -84,24 +84,22 @@ export function getAutoRunnerStatus() {
 
 /**
  * Read current analysis mode from localStorage.
- * @returns {'auto' | 'manual'}
  */
-export function isAutoModeEnabled() {
+export function isAutoModeEnabled(): boolean {
   return localStorage.getItem(ANALYSIS_MODE_KEY) === 'auto';
 }
 
 /**
  * Set analysis mode.
- * @param {'auto' | 'manual'} mode
  */
-export function setAnalysisMode(mode) {
+export function setAnalysisMode(mode: string): void {
   localStorage.setItem(ANALYSIS_MODE_KEY, mode);
 }
 
 /**
  * Start auto-runner loop. Requires: logged in + model cached.
  */
-export async function startAutoRunner() {
+export async function startAutoRunner(): Promise<void> {
   if (_running) return;
 
   if (isMobileDevice()) {
@@ -155,9 +153,9 @@ export async function startAutoRunner() {
 }
 
 /**
- * Smart toggle: running → pause; paused → force stop.
+ * Smart toggle: running -> pause; paused -> force stop.
  */
-export function stopAutoRunner() {
+export function stopAutoRunner(): void {
   if (!_running) return;
 
   if (_paused) {
@@ -170,7 +168,7 @@ export function stopAutoRunner() {
 /**
  * Pause auto-runner. Current analysis finishes, then loop suspends.
  */
-export function pauseAutoRunner() {
+export function pauseAutoRunner(): void {
   if (!_running || _paused) return;
   _paused = true;
   _stopReason = null;
@@ -181,7 +179,7 @@ export function pauseAutoRunner() {
 /**
  * Resume auto-runner from paused state.
  */
-export function resumeAutoRunner() {
+export function resumeAutoRunner(): void {
   if (!_running || !_paused) return;
   _paused = false;
   _abortController = new AbortController();
@@ -195,7 +193,7 @@ export function resumeAutoRunner() {
 /**
  * Force stop: cancel all running/queued analyses and exit.
  */
-export function forceStopAutoRunner() {
+export function forceStopAutoRunner(): void {
   if (!_running) return;
   cancelAll();
   _running = false;
@@ -214,7 +212,12 @@ export function forceStopAutoRunner() {
 
 // ── Internal: Main Loop ──
 
-async function _runLoop() {
+interface ProcessStatus {
+  type: 'success' | 'skipped_duplicate' | 'rate_limited' | 'failed_network' | 'failed_format' | 'failed_quality';
+  error: string | null;
+}
+
+async function _runLoop(): Promise<void> {
   while (_running) {
     if (_paused) {
       await _waitForResume();
@@ -287,24 +290,24 @@ async function _runLoop() {
 
 /**
  * Fetch articles ordered by event cluster priority:
- * 1. Fetch events → for each event, search for its articles
+ * 1. Fetch events -> for each event, search for its articles
  * 2. Group articles by cluster (same event together)
  * 3. Fallback to flat article list if no events available
  * 4. Filter out already-processed articles
  */
-async function _fetchClusterPrioritizedArticles() {
+async function _fetchClusterPrioritizedArticles(): Promise<Article[]> {
   const processedIds = await _getProcessedIds();
 
   // Try cluster-first approach
   try {
     const eventsResult = await fetchEvents({ page: 1, limit: 20 });
     const events = eventsResult.success
-      ? (eventsResult.data?.items || eventsResult.data?.events || [])
+      ? (eventsResult.data?.items || (eventsResult.data as any)?.events || [])
       : [];
 
     if (events.length > 0) {
-      const clusteredArticles = [];
-      const seenIds = new Set();
+      const clusteredArticles: Article[] = [];
+      const seenIds = new Set<string>();
 
       for (const event of events) {
         if (!_running) return [];
@@ -315,8 +318,8 @@ async function _fetchClusterPrioritizedArticles() {
 
         try {
           const searchResult = await searchArticles(shortTitle, { limit: 10 });
-          const articles = searchResult.success
-            ? (searchResult.data?.articles || searchResult.data?.items || [])
+          const articles: Article[] = searchResult.success
+            ? (searchResult.data?.articles || (searchResult.data as any)?.items || [])
             : [];
 
           for (const article of articles) {
@@ -332,7 +335,7 @@ async function _fetchClusterPrioritizedArticles() {
 
       // Filter out already-processed
       const candidates = clusteredArticles.filter(a =>
-        !(a.analysis_count > 0) && !processedIds.has(a.article_id)
+        !((a as any).analysis_count > 0) && !processedIds.has(a.article_id)
       );
 
       if (candidates.length > 0) return candidates;
@@ -347,11 +350,11 @@ async function _fetchClusterPrioritizedArticles() {
     limit: FETCH_BATCH_SIZE
   });
 
-  if (!result.success || !result.data?.articles?.length) return [];
+  if (!result.success || !(result.data as any)?.articles?.length) return [];
 
-  const candidates = result.data.articles.filter(a =>
+  const candidates = (result.data as any).articles.filter((a: any) =>
     !(a.analysis_count > 0) && !processedIds.has(a.article_id)
-  );
+  ) as Article[];
 
   return _fisherYatesShuffle(candidates);
 }
@@ -359,7 +362,7 @@ async function _fetchClusterPrioritizedArticles() {
 /**
  * Suspend loop until resume or force-stop.
  */
-function _waitForResume() {
+function _waitForResume(): Promise<void> {
   return new Promise((resolve) => {
     _resumeResolver = resolve;
   });
@@ -367,12 +370,12 @@ function _waitForResume() {
 
 // ── Internal: Process Single Article ──
 
-async function _processArticle(article) {
+async function _processArticle(article: Article): Promise<ProcessStatus> {
   try {
     // Fresh duplicate check — avoid wasting GPU time if someone else already analyzed
     try {
       const freshCheck = await fetchArticle(article.article_id);
-      if (freshCheck.success && freshCheck.data?.analysis_count > 0) {
+      if (freshCheck.success && (freshCheck.data as any)?.analysis_count > 0) {
         return { type: 'skipped_duplicate', error: null };
       }
     } catch {
@@ -407,7 +410,7 @@ async function _processArticle(article) {
     // Auto-submit to API
     const submitResult = await submitAnalysisResult(
       article.article_id,
-      payload,
+      payload as any,
       getAuthToken() || ''
     );
 
@@ -440,17 +443,17 @@ async function _processArticle(article) {
     if (err instanceof AnalysisCancelledError) {
       return { type: 'skipped_duplicate', error: null };
     }
-    return { type: 'failed_network', error: err.message };
+    return { type: 'failed_network', error: (err as Error).message };
   }
 }
 
 // ── Internal: IndexedDB Helpers ──
 
-async function _getProcessedIds() {
+async function _getProcessedIds(): Promise<Set<string>> {
   try {
     const db = await openDB();
     const tx = db.transaction('auto_runner_history', 'readonly');
-    const keys = await promisifyRequest(tx.objectStore('auto_runner_history').getAllKeys());
+    const keys = await promisifyRequest(tx.objectStore('auto_runner_history').getAllKeys()) as unknown as string[];
     db.close();
     return new Set(keys);
   } catch {
@@ -458,7 +461,7 @@ async function _getProcessedIds() {
   }
 }
 
-async function _recordHistory(articleId, status, errorMessage) {
+async function _recordHistory(articleId: string, status: string, errorMessage: string | null): Promise<void> {
   try {
     const db = await openDB();
     const tx = db.transaction('auto_runner_history', 'readwrite');
@@ -479,10 +482,8 @@ async function _recordHistory(articleId, status, errorMessage) {
 
 /**
  * Fisher-Yates shuffle (returns new array, does not mutate input).
- * @param {Array} arr
- * @returns {Array}
  */
-function _fisherYatesShuffle(arr) {
+function _fisherYatesShuffle<T>(arr: T[]): T[] {
   const result = [...arr];
   for (let i = result.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -495,13 +496,12 @@ function _fisherYatesShuffle(arr) {
 
 /**
  * Cancellable delay. Resolves early if abort signal fires.
- * @param {number} ms
  */
-function _delay(ms) {
+function _delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
     const timer = setTimeout(resolve, ms);
     if (_abortController) {
-      const onAbort = () => {
+      const onAbort = (): void => {
         clearTimeout(timer);
         resolve();
       };

@@ -5,6 +5,9 @@
  * Provides login/logout state, user info, and OAuth callback handling.
  */
 
+import type { UserProfile, UserPoints } from '$lib/types/models.js';
+import type { DailyQuota } from '$lib/types/stores.js';
+
 import {
   getAuthToken,
   getSessionId,
@@ -19,14 +22,14 @@ import {
 import { fetchUserMe, fetchUserPoints } from '$lib/core/api.js';
 
 // -- Reactive state (initialized from localStorage) --
-let authenticated = $state(isAuthenticated());
-let userHash = $state(getUserHash());
-let token = $state(getAuthToken());
-let privacyConsent = $state(hasPrivacyConsent());
-let userProfile = $state(null);
-let userPoints = $state(null);
-let loading = $state(false);
-let error = $state(null);
+let authenticated: boolean = $state(isAuthenticated());
+let userHash: string | null = $state(getUserHash());
+let token: string | null = $state(getAuthToken());
+let privacyConsent: boolean = $state(hasPrivacyConsent());
+let userProfile: UserProfile | null = $state(null);
+let userPoints: UserPoints | null = $state(null);
+let loading: boolean = $state(false);
+let error: string | null = $state(null);
 
 export function getAuthStore() {
   return {
@@ -37,7 +40,7 @@ export function getAuthStore() {
     get hasPrivacyConsent() { return privacyConsent; },
     get userProfile() { return userProfile; },
     get userPoints() { return userPoints; },
-    get dailyQuota() {
+    get dailyQuota(): DailyQuota {
       const used = userPoints?.daily_analysis_count ?? 0;
       const limit = userPoints?.daily_analysis_limit ?? 50;
       return { used, limit, remaining: Math.max(0, limit - used) };
@@ -48,10 +51,8 @@ export function getAuthStore() {
     /**
      * Handle OAuth callback with token and session ID.
      * Typically called from the /auth/callback route.
-     * @param {string} jwt - JWT token from server
-     * @param {string} sessionId - Session ID
      */
-    login(jwt, sessionId) {
+    login(jwt: string, sessionId: string): void {
       setAuthCredentials(jwt, sessionId);
       token = jwt;
       userHash = getUserHash();
@@ -60,7 +61,7 @@ export function getAuthStore() {
     },
 
     /** Clear all auth data and reset state. */
-    logout() {
+    logout(): void {
       clearAuth();
       token = null;
       userHash = null;
@@ -73,10 +74,8 @@ export function getAuthStore() {
     /**
      * Handle OAuth callback from URL parameters.
      * Extracts token and session from URL hash or query params.
-     * @param {URLSearchParams} params
-     * @returns {boolean} true if login succeeded
      */
-    handleCallback(params) {
+    handleCallback(params: URLSearchParams): boolean {
       const jwt = params.get('token');
       const sessionId = params.get('session');
 
@@ -90,7 +89,7 @@ export function getAuthStore() {
     },
 
     /** Record privacy consent. */
-    acceptPrivacy() {
+    acceptPrivacy(): void {
       setPrivacyConsent();
       privacyConsent = true;
     },
@@ -99,7 +98,7 @@ export function getAuthStore() {
      * Fetch current user profile from API.
      * Requires authenticated state.
      */
-    async fetchProfile() {
+    async fetchProfile(): Promise<void> {
       if (!authenticated || !token) return;
 
       loading = true;
@@ -115,7 +114,7 @@ export function getAuthStore() {
           }
         }
       } catch (e) {
-        error = e.message;
+        error = (e as Error).message;
       } finally {
         loading = false;
       }
@@ -125,7 +124,7 @@ export function getAuthStore() {
      * Fetch user points and vote rights from API.
      * Requires authenticated state.
      */
-    async fetchPoints() {
+    async fetchPoints(): Promise<void> {
       if (!authenticated || !token) return;
 
       try {
@@ -142,7 +141,7 @@ export function getAuthStore() {
      * Re-sync reactive state from localStorage.
      * Useful after page reload or external auth changes.
      */
-    sync() {
+    sync(): void {
       authenticated = isAuthenticated();
       token = getAuthToken();
       userHash = getUserHash();

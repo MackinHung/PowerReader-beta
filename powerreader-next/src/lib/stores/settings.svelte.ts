@@ -5,6 +5,8 @@
  * Persists changes automatically via $effect.
  */
 
+import type { AnalysisModeOption, ThemeOption } from '$lib/types/stores.js';
+
 const KEYS = {
   ANALYSIS_MODE: 'powerreader_analysis_mode',
   AUTO_SUBMIT: 'powerreader_auto_submit',
@@ -13,26 +15,26 @@ const KEYS = {
   THEME: 'powerreader_theme',
   LANGUAGE: 'powerreader_language',
   ONBOARDING_DONE: 'powerreader_onboarding_done'
-};
+} as const;
 
-function readBool(key, defaultVal = true) {
+function readBool(key: string, defaultVal: boolean = true): boolean {
   const val = localStorage.getItem(key);
   if (val === null) return defaultVal;
   return val === '1' || val === 'true';
 }
 
-function readString(key, defaultVal = '') {
+function readString(key: string, defaultVal: string = ''): string {
   return localStorage.getItem(key) || defaultVal;
 }
 
 // -- Reactive state (initialized from localStorage) --
-let analysisMode = $state(readString(KEYS.ANALYSIS_MODE, 'manual'));
-let autoSubmit = $state(readBool(KEYS.AUTO_SUBMIT, true));
-let notifications = $state(readBool(KEYS.NOTIFICATIONS, true));
-let cacheEnabled = $state(readBool(KEYS.CACHE_ENABLED, true));
-let theme = $state(readString(KEYS.THEME, 'system'));
-let language = $state(readString(KEYS.LANGUAGE, 'zh-TW'));
-let onboardingDone = $state(readBool(KEYS.ONBOARDING_DONE, false));
+let analysisMode: AnalysisModeOption = $state(readString(KEYS.ANALYSIS_MODE, 'manual') as AnalysisModeOption);
+let autoSubmit: boolean = $state(readBool(KEYS.AUTO_SUBMIT, true));
+let notifications: boolean = $state(readBool(KEYS.NOTIFICATIONS, true));
+let cacheEnabled: boolean = $state(readBool(KEYS.CACHE_ENABLED, true));
+let theme: ThemeOption = $state(readString(KEYS.THEME, 'system') as ThemeOption);
+let language: string = $state(readString(KEYS.LANGUAGE, 'zh-TW'));
+let onboardingDone: boolean = $state(readBool(KEYS.ONBOARDING_DONE, false));
 
 // -- Auto-persist via $effect --
 $effect.root(() => {
@@ -58,52 +60,42 @@ export function getSettingsStore() {
 
     // -- Setters --
 
-    /**
-     * @param {'auto'|'manual'} mode
-     */
-    setAnalysisMode(mode) {
+    setAnalysisMode(mode: AnalysisModeOption): void {
       analysisMode = mode;
     },
 
-    /** @param {boolean} enabled */
-    setAutoSubmit(enabled) {
+    setAutoSubmit(enabled: boolean): void {
       autoSubmit = enabled;
     },
 
-    /** @param {boolean} enabled */
-    setNotifications(enabled) {
+    setNotifications(enabled: boolean): void {
       notifications = enabled;
     },
 
-    /** @param {boolean} enabled */
-    setCacheEnabled(enabled) {
+    setCacheEnabled(enabled: boolean): void {
       cacheEnabled = enabled;
     },
 
-    /**
-     * @param {'light'|'dark'|'system'} t
-     */
-    setTheme(t) {
+    setTheme(t: ThemeOption): void {
       theme = t;
     },
 
-    /** @param {string} lang */
-    setLanguage(lang) {
+    setLanguage(lang: string): void {
       language = lang;
     },
 
     /** Mark onboarding as completed. */
-    completeOnboarding() {
+    completeOnboarding(): void {
       onboardingDone = true;
     },
 
     /** Reset onboarding (for testing). */
-    resetOnboarding() {
+    resetOnboarding(): void {
       onboardingDone = false;
     },
 
     /** Reset all settings to defaults. */
-    resetAll() {
+    resetAll(): void {
       analysisMode = 'manual';
       autoSubmit = true;
       notifications = true;

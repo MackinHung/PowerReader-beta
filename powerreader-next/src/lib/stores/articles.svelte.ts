@@ -5,19 +5,22 @@
  * Provides paginated fetching, search, and offline-first access.
  */
 
+import type { Article } from '$lib/types/models.js';
+import type { PageOneCache } from '$lib/types/stores.js';
+
 import * as api from '$lib/core/api.js';
 
-let articles = $state([]);
-let loading = $state(false);
-let error = $state(null);
-let hasMore = $state(true);
-let currentPage = $state(1);
-let currentFilter = $state('all');
-let currentSort = $state('published_at');
-let searchQuery = $state('');
+let articles: Article[] = $state([]);
+let loading: boolean = $state(false);
+let error: string | null = $state(null);
+let hasMore: boolean = $state(true);
+let currentPage: number = $state(1);
+let currentFilter: string = $state('all');
+let currentSort: string = $state('published_at');
+let searchQuery: string = $state('');
 
 // In-memory page-1 cache per category — instant re-tap
-const _pageOneCache = {};
+const _pageOneCache: Record<string, PageOneCache> = {};
 
 export function getArticlesStore() {
   return {
@@ -31,10 +34,8 @@ export function getArticlesStore() {
 
     /**
      * Fetch articles with optional filter and pagination.
-     * @param {string} filter - 'all' or source name
-     * @param {number} page - Page number (1-based)
      */
-    async fetchArticles(filter = 'all', page = 1) {
+    async fetchArticles(filter: string = 'all', page: number = 1): Promise<void> {
       // Instant return from memory cache for page 1 re-tap
       if (page === 1 && _pageOneCache[filter]) {
         articles = _pageOneCache[filter].articles;
@@ -59,7 +60,7 @@ export function getArticlesStore() {
           return;
         }
 
-        const incoming = result.data?.articles || [];
+        const incoming: Article[] = result.data?.articles || [];
 
         if (page === 1) {
           articles = incoming;
@@ -75,14 +76,14 @@ export function getArticlesStore() {
         currentPage = page;
         currentFilter = filter;
       } catch (e) {
-        error = e.message;
+        error = (e as Error).message;
       } finally {
         loading = false;
       }
     },
 
     /** Load next page using current filter. */
-    async loadMore() {
+    async loadMore(): Promise<void> {
       if (!loading && hasMore) {
         await this.fetchArticles(currentFilter, currentPage + 1);
       }
@@ -90,9 +91,8 @@ export function getArticlesStore() {
 
     /**
      * Search articles by keyword.
-     * @param {string} query
      */
-    async searchArticles(query) {
+    async searchArticles(query: string): Promise<void> {
       searchQuery = query;
       if (!query.trim()) {
         await this.fetchArticles(currentFilter, 1);
@@ -107,11 +107,12 @@ export function getArticlesStore() {
           error = result.error?.type || 'search_failed';
           return;
         }
-        articles = result.data?.articles || result.data?.items || [];
+        const searchData = result.data as { articles?: Article[]; items?: Article[] } | null;
+        articles = searchData?.articles || searchData?.items || [];
         hasMore = false;
         currentPage = 1;
       } catch (e) {
-        error = e.message;
+        error = (e as Error).message;
       } finally {
         loading = false;
       }
@@ -119,24 +120,21 @@ export function getArticlesStore() {
 
     /**
      * Find a single article from the loaded list.
-     * @param {string} id - article_id or article_hash
-     * @returns {Object|undefined}
      */
-    getArticle(id) {
+    getArticle(id: string): Article | undefined {
       return articles.find(a => a.article_id === id || a.article_hash === id);
     },
 
     /** Refresh from page 1 with current filter. */
-    async refreshArticles() {
+    async refreshArticles(): Promise<void> {
       delete _pageOneCache[currentFilter];
       await this.fetchArticles(currentFilter, 1);
     },
 
     /**
      * Change sort order and re-fetch.
-     * @param {string} sortBy - 'published_at' or other valid sort field
      */
-    async setSortBy(sortBy) {
+    async setSortBy(sortBy: string): Promise<void> {
       currentSort = sortBy;
       // Invalidate all caches — sort order affects all categories
       for (const key of Object.keys(_pageOneCache)) delete _pageOneCache[key];
@@ -144,7 +142,7 @@ export function getArticlesStore() {
     },
 
     /** Clear search and reset to default listing. */
-    async clearSearch() {
+    async clearSearch(): Promise<void> {
       searchQuery = '';
       await this.fetchArticles(currentFilter, 1);
     }

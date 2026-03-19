@@ -6,12 +6,7 @@
  * @license AGPL-3.0
  */
 
-/**
- * @param {number} score
- * @param {string} level
- * @returns {HTMLElement}
- */
-export function createControversyMeter(score, level) {
+export function createControversyMeter(score: number, level: string): HTMLElement {
   const el = document.createElement('div');
   el.className = 'controversy-meter';
   el.dataset.score = String(score);

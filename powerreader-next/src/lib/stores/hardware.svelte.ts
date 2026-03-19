@@ -7,6 +7,8 @@
  *   - Model download progress and lifecycle
  */
 
+import type { GPUScanResult, BenchmarkResult, InferenceMode, PreDownloadChecks } from '$lib/types/inference.js';
+
 import {
   scanGPU,
   runBenchmark,
@@ -35,25 +37,25 @@ import {
 } from '$lib/core/inference.js';
 
 // -- GPU info --
-let gpuInfo = $state(null);
-let gpuScanning = $state(false);
+let gpuInfo: GPUScanResult | null = $state(null);
+let gpuScanning: boolean = $state(false);
 
 // -- Benchmark --
-let benchmarkResult = $state(getCachedBenchmark());
-let benchmarking = $state(false);
-let benchmarkStage = $state(null);
+let benchmarkResult: BenchmarkResult | null = $state(getCachedBenchmark());
+let benchmarking: boolean = $state(false);
+let benchmarkStage: string | null = $state(null);
 
 // -- Model --
-let modelDownloaded = $state(false);
-let downloading = $state(false);
-let downloadProgress = $state(0);
-let downloadError = $state(null);
+let modelDownloaded: boolean = $state(false);
+let downloading: boolean = $state(false);
+let downloadProgress: number = $state(0);
+let downloadError: string | null = $state(null);
 
 // -- Pre-download checks --
-let preChecks = $state(null);
+let preChecks: PreDownloadChecks | null = $state(null);
 
 // -- Inference mode --
-let inferenceMode = $state(null);
+let inferenceMode: InferenceMode | null = $state(null);
 
 export function getHardwareStore() {
   return {
@@ -68,7 +70,7 @@ export function getHardwareStore() {
     get benchmarking() { return benchmarking; },
     get benchmarkStage() { return benchmarkStage; },
     get deviceTier() { return benchmarkResult?.mode || 'unknown'; },
-    get inferenceTimeout() {
+    get inferenceTimeout(): number {
       return benchmarkResult ? getTimeoutForTier(benchmarkResult.mode) : 90000;
     },
 
@@ -86,7 +88,7 @@ export function getHardwareStore() {
     /**
      * Scan GPU capabilities. Updates gpuInfo state.
      */
-    async detectHardware() {
+    async detectHardware(): Promise<void> {
       gpuScanning = true;
       try {
         gpuInfo = await scanGPU();
@@ -102,13 +104,13 @@ export function getHardwareStore() {
     /**
      * Run inference benchmark to classify device tier.
      */
-    async runBenchmark() {
+    async runBenchmark(): Promise<void> {
       benchmarking = true;
       benchmarkStage = 'scanning_gpu';
       try {
         const result = await runBenchmark(
           () => getWebLLMEngine(),
-          (progress) => { benchmarkStage = progress.stage; }
+          (progress: { stage: string }) => { benchmarkStage = progress.stage; }
         );
         benchmarkResult = result;
       } catch (e) {
@@ -120,7 +122,7 @@ export function getHardwareStore() {
     },
 
     /** Clear cached benchmark data and re-scan. */
-    async clearBenchmark() {
+    async clearBenchmark(): Promise<void> {
       clearBenchmark();
       benchmarkResult = null;
       benchmarkStage = null;
@@ -128,52 +130,48 @@ export function getHardwareStore() {
 
     /**
      * Save user's manual GPU selection.
-     * @param {string} device - GPU display name
-     * @param {number} vramMB - VRAM in MB
      */
-    saveGPUSelection(device, vramMB) {
+    saveGPUSelection(device: string, vramMB: number): void {
       saveUserGPUSelection(device, vramMB);
     },
 
     /**
      * Run pre-download condition checks (WiFi, battery, storage).
-     * @returns {Promise<{ canDownload: boolean, checks: Array }>}
      */
-    async checkPreDownload() {
+    async checkPreDownload(): Promise<PreDownloadChecks | null> {
       preChecks = await runPreDownloadChecks();
       return preChecks;
     },
 
     /**
      * Download the WebLLM model.
-     * @param {string} modelUrl - URL to download from
      */
-    async downloadModel(modelUrl) {
+    async downloadModel(modelUrl: string): Promise<void> {
       downloading = true;
       downloadError = null;
       downloadProgress = 0;
       try {
-        const completed = await downloadModel(modelUrl, (downloaded, total) => {
+        const completed = await downloadModel(modelUrl, (downloaded: number, total: number) => {
           downloadProgress = total > 0 ? downloaded / total : 0;
         });
         if (completed) {
           modelDownloaded = true;
         }
       } catch (e) {
-        downloadError = e.message;
+        downloadError = (e as Error).message;
       } finally {
         downloading = false;
       }
     },
 
     /** Pause active model download. */
-    pauseDownload() {
+    pauseDownload(): void {
       pauseDownload();
       downloading = false;
     },
 
     /** Delete downloaded model and clear caches. */
-    async deleteModel() {
+    async deleteModel(): Promise<void> {
       await deleteModel();
       await clearAllModelCaches();
       modelDownloaded = false;
@@ -182,7 +180,7 @@ export function getHardwareStore() {
     },
 
     /** Check if model is already downloaded. */
-    async checkModelStatus() {
+    async checkModelStatus(): Promise<boolean> {
       modelDownloaded = await isModelDownloaded();
       // Also check WebLLM cache flag
       if (!modelDownloaded && localStorage.getItem('powerreader_webllm_cached') === '1') {

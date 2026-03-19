@@ -5,6 +5,9 @@
  * Tracks queue status, auto-runner state, and current analysis progress.
  */
 
+import type { QueueStatus, AutoRunnerStatus, AnalysisStage } from '$lib/types/inference.js';
+import type { Article, AnalysisResult } from '$lib/types/models.js';
+
 import {
   enqueueAnalysis,
   cancelAnalysis,
@@ -26,23 +29,23 @@ import {
 } from '$lib/core/auto-runner.js';
 
 // -- Queue state --
-let queueStatus = $state(getQueueStatus());
+let queueStatus: QueueStatus = $state(getQueueStatus());
 
 // -- Auto-runner state --
-let autoRunnerStatus = $state(getAutoRunnerStatus());
+let autoRunnerStatus: AutoRunnerStatus = $state(getAutoRunnerStatus());
 
 // -- Current manual analysis tracking --
-let currentAnalysis = $state(null);
-let analysisError = $state(null);
-let analysisStage = $state(null);
-let analysisEta = $state(null);
-let analysisProgress = $state(0);
+let currentAnalysis: { articleId: string; startedAt: number } | null = $state(null);
+let analysisError: string | null = $state(null);
+let analysisStage: AnalysisStage | null = $state(null);
+let analysisEta: number | null = $state(null);
+let analysisProgress: number = $state(0);
 
 export function getAnalysisStore() {
   // Subscribe to event emitters via $effect in the consuming component,
   // or call init() once on app startup.
-  let _unsubQueue = null;
-  let _unsubAutoRunner = null;
+  let _unsubQueue: (() => void) | null = null;
+  let _unsubAutoRunner: (() => void) | null = null;
 
   return {
     // -- Getters: Queue --
@@ -76,11 +79,11 @@ export function getAnalysisStore() {
      * Initialize event subscriptions. Call once on app mount.
      * Returns a cleanup function.
      */
-    init() {
-      _unsubQueue = onQueueChange((status) => {
+    init(): () => void {
+      _unsubQueue = onQueueChange((status: QueueStatus) => {
         queueStatus = status;
       });
-      _unsubAutoRunner = onAutoRunnerUpdate((status) => {
+      _unsubAutoRunner = onAutoRunnerUpdate((status: AutoRunnerStatus) => {
         autoRunnerStatus = status;
       });
 
@@ -92,18 +95,15 @@ export function getAnalysisStore() {
 
     /**
      * Enqueue a manual analysis for a single article.
-     * @param {string} articleId
-     * @param {Object} article - Full article object
-     * @returns {Promise<Object>} Analysis result
      */
-    async analyze(articleId, article) {
+    async analyze(articleId: string, article: Article): Promise<AnalysisResult> {
       currentAnalysis = { articleId, startedAt: Date.now() };
       analysisError = null;
       analysisStage = 'preparing';
 
       try {
         const result = await enqueueAnalysis(articleId, article, {
-          onStatus: (stage, elapsed, extra) => {
+          onStatus: (stage: AnalysisStage, elapsed: number, extra?: { eta?: number | null; progress?: number }) => {
             analysisStage = stage;
             analysisEta = extra?.eta || null;
             analysisProgress = extra?.progress || 0;
@@ -115,7 +115,7 @@ export function getAnalysisStore() {
         analysisProgress = 0;
         return result;
       } catch (e) {
-        analysisError = e.message;
+        analysisError = (e as Error).message;
         currentAnalysis = null;
         analysisStage = null;
         analysisEta = null;
@@ -126,9 +126,8 @@ export function getAnalysisStore() {
 
     /**
      * Cancel a specific analysis by article ID.
-     * @param {string} articleId
      */
-    cancel(articleId) {
+    cancel(articleId: string): void {
       cancelAnalysis(articleId);
       if (currentAnalysis?.articleId === articleId) {
         currentAnalysis = null;
@@ -139,7 +138,7 @@ export function getAnalysisStore() {
     },
 
     /** Cancel all queued and running analyses. */
-    cancelAll() {
+    cancelAll(): void {
       cancelAll();
       currentAnalysis = null;
       analysisStage = null;
@@ -150,35 +149,34 @@ export function getAnalysisStore() {
     // -- Auto-runner controls --
 
     /** Start the background auto-analysis loop. */
-    async startAuto() {
+    async startAuto(): Promise<void> {
       await startAutoRunner();
     },
 
     /** Smart toggle: running -> pause, paused -> force stop. */
-    stopAuto() {
+    stopAuto(): void {
       stopAutoRunner();
     },
 
     /** Pause auto-runner (current analysis finishes, then suspends). */
-    pauseAuto() {
+    pauseAuto(): void {
       pauseAutoRunner();
     },
 
     /** Resume auto-runner from paused state. */
-    resumeAuto() {
+    resumeAuto(): void {
       resumeAutoRunner();
     },
 
     /** Force-stop all auto-runner activity immediately. */
-    forceStopAuto() {
+    forceStopAuto(): void {
       forceStopAutoRunner();
     },
 
     /**
      * Toggle analysis mode between 'auto' and 'manual'.
-     * @param {'auto'|'manual'} mode
      */
-    setMode(mode) {
+    setMode(mode: 'auto' | 'manual'): void {
       setAnalysisMode(mode);
     }
   };

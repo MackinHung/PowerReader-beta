@@ -26,13 +26,35 @@ import { formatVRAM } from './settings-helpers.js';
 import { isMobileDevice } from '../utils/device-detect.js';
 import { getAuthToken, isAuthenticated } from '../core/auth.js';
 import { t } from '../i18n/zh-TW.js';
+import type { Article, AnalysisResult, CampRatio } from '../types/index.js';
+import type { FeedbackType, GPUScanResult, QueueStatus } from '../types/index.js';
+
+// ── Types ──
+
+interface ArticleDetail extends Article {
+  camp_ratio?: CampRatio | string | null;
+  controversy_score?: number | null;
+  controversy_level?: string;
+  analysis_count?: number;
+  url?: string;
+  bias_score?: number | null;
+}
+
+interface RouteParams {
+  hash: string;
+}
+
+interface PreAnalysisChecks {
+  canAnalyze: boolean;
+  issues: Array<{ type: string; message: string }>;
+}
 
 // ── Constants ──
 
 const GPU_CONSENT_KEY = 'powerreader_gpu_consent';
 
 // Source display names
-const SOURCE_NAMES = {
+const SOURCE_NAMES: Record<string, string> = {
   liberty_times: '自由時報', taiwan_apple_daily: '蘋果日報',
   china_times: '中國時報', united_daily_news: '聯合報',
   common_wealth: '天下雜誌', business_weekly: '商業週刊',
@@ -47,7 +69,7 @@ const SOURCE_NAMES = {
   '關鍵評論網': '關鍵評論網', '科技新報': '科技新報', '風傳媒': '風傳媒'
 };
 
-const CONTROVERSY_LABELS = {
+const CONTROVERSY_LABELS: Record<string, string> = {
   non_political: '非政治',
   general_policy: '一般政策',
   partisan_clash: '政黨交鋒',
@@ -57,10 +79,10 @@ const CONTROVERSY_LABELS = {
 
 // ── Module State ──
 
-let _currentArticleId = null;
-let _unsubscribeQueue = null;
+let _currentArticleId: string | null = null;
+let _unsubscribeQueue: (() => void) | null = null;
 
-function formatDate(isoDate) {
+function formatDate(isoDate: string | undefined | null): string {
   if (!isoDate) return '';
   try {
     return new Date(isoDate).toLocaleDateString('zh-TW', {
@@ -72,16 +94,14 @@ function formatDate(isoDate) {
   }
 }
 
-function getSourceName(sourceKey) {
+function getSourceName(sourceKey: string): string {
   return SOURCE_NAMES[sourceKey] || sourceKey;
 }
 
 /**
  * Render article detail page.
- * @param {HTMLElement} container
- * @param {Object} params - Route params { hash: article_id }
  */
-export async function renderArticle(container, params) {
+export async function renderArticle(container: HTMLElement, params: RouteParams): Promise<void> {
   const articleId = params.hash;
 
   // Document switching: cancel previous analysis
@@ -112,7 +132,7 @@ export async function renderArticle(container, params) {
     return;
   }
 
-  const article = result.data;
+  const article = result.data as ArticleDetail;
   renderArticleContent(container, article);
 
   loadFeedbackSection(container, articleId);
@@ -122,7 +142,7 @@ export async function renderArticle(container, params) {
 
 // ── Article Content ──
 
-function renderArticleContent(container, article) {
+function renderArticleContent(container: HTMLElement, article: ArticleDetail): void {
   const backBtn = document.createElement('button');
   backBtn.className = 'btn btn--text article-detail__back';
   backBtn.textContent = '返回';
@@ -172,7 +192,6 @@ function renderArticleContent(container, article) {
     const summarySection = document.createElement('section');
     summarySection.className = 'article-detail__summary';
 
-    // Supplement 1: Legal protection for summary (Collapsible)
     const details = document.createElement('details');
     details.className = 'article-detail__summary-collapsible';
 
@@ -207,14 +226,12 @@ function renderArticleContent(container, article) {
     container.appendChild(linkWrapper);
   }
 
-  // Feedback + Report section
   const feedbackSection = document.createElement('section');
   feedbackSection.id = 'feedback-section';
   feedbackSection.className = 'article-detail__feedback';
   feedbackSection.setAttribute('aria-label', '文章回饋');
   container.appendChild(feedbackSection);
 
-  // Analysis section (replaces old analyze button)
   const analysisSection = document.createElement('section');
   analysisSection.id = 'analysis-section';
   analysisSection.className = 'article-detail__analysis';
@@ -230,43 +247,35 @@ function renderArticleContent(container, article) {
 
 // ── Analysis (Manual Trigger) ──
 
-async function startAutoAnalysis(container, article) {
-  const section = container.querySelector('#analysis-section');
+async function startAutoAnalysis(container: HTMLElement, article: ArticleDetail): Promise<void> {
+  const section = container.querySelector('#analysis-section') as HTMLElement | null;
   if (!section) return;
 
-  // Global one-per-article limit: if already analyzed, show message instead of button
-  if (article.analysis_count > 0) {
+  if ((article.analysis_count ?? 0) > 0) {
     _renderAlreadyAnalyzed(section, article);
     return;
   }
 
-  // Check if this article is already in the queue (auto-runner or manual)
   const queueStatus = getQueueStatus();
   const articleId = article.article_id;
   const isInQueue = (queueStatus.currentJob && queueStatus.currentJob.articleId === articleId)
     || queueStatus.pending.includes(articleId);
 
   if (isInQueue) {
-    // Article already being analyzed — show live progress (dedup returns same promise)
     enqueueAndTrack(section, article);
     return;
   }
 
-  // If auto-runner is active, show info banner with manual override
   const runnerStatus = getAutoRunnerStatus();
   if (runnerStatus.running) {
     _renderAutoRunnerBanner(section, article);
     return;
   }
 
-  // Show manual analysis button (user clicks to start)
   renderManualAnalyzeButton(section, article);
 }
 
-/**
- * Render message when article has already been analyzed.
- */
-function _renderAlreadyAnalyzed(section, article) {
+function _renderAlreadyAnalyzed(section: HTMLElement, article: ArticleDetail): void {
   section.innerHTML = '';
 
   const wrapper = document.createElement('div');
@@ -285,11 +294,7 @@ function _renderAlreadyAnalyzed(section, article) {
   section.appendChild(wrapper);
 }
 
-/**
- * Show a prominent manual "分析此文章" button.
- * When clicked, runs pre-analysis checks and proceeds through gates.
- */
-function renderManualAnalyzeButton(section, article) {
+function renderManualAnalyzeButton(section: HTMLElement, article: ArticleDetail): void {
   section.innerHTML = '';
 
   const wrapper = document.createElement('div');
@@ -318,25 +323,17 @@ function renderManualAnalyzeButton(section, article) {
   section.appendChild(wrapper);
 }
 
-/**
- * Check if user has given one-time GPU consent.
- * @returns {boolean}
- */
-export function isGPUConsentGiven() {
+export function isGPUConsentGiven(): boolean {
   return localStorage.getItem(GPU_CONSENT_KEY) === '1';
 }
 
-/**
- * Run pre-analysis checks and proceed through the single GPU consent gate.
- */
-async function proceedToAnalysis(section, article) {
+async function proceedToAnalysis(section: HTMLElement, article: ArticleDetail): Promise<void> {
   const checks = await runPreAnalysisChecks(article);
   if (!checks.canAnalyze) {
     renderAnalysisBlocked(section, checks, article);
     return;
   }
 
-  // Single gate: one-time GPU informed consent
   if (!isGPUConsentGiven()) {
     renderGPUConsent(section, article);
     return;
@@ -345,10 +342,7 @@ async function proceedToAnalysis(section, article) {
   enqueueAndTrack(section, article);
 }
 
-/**
- * Show banner when auto-runner is active, with manual override button.
- */
-function _renderAutoRunnerBanner(section, article) {
+function _renderAutoRunnerBanner(section: HTMLElement, article: ArticleDetail): void {
   section.innerHTML = '';
 
   const banner = document.createElement('div');
@@ -370,7 +364,7 @@ function _renderAutoRunnerBanner(section, article) {
   section.appendChild(banner);
 }
 
-function renderAnalysisBlocked(section, checks, article) {
+function renderAnalysisBlocked(section: HTMLElement, checks: PreAnalysisChecks, article: ArticleDetail): void {
   section.innerHTML = '';
   for (const issue of checks.issues) {
     const item = document.createElement('div');
@@ -394,11 +388,7 @@ function renderAnalysisBlocked(section, checks, article) {
   }
 }
 
-/**
- * Render GPU consent card — single gate for first-time analysis.
- * Blocks mobile users and devices without WebGPU with clear messages.
- */
-async function renderGPUConsent(section, article) {
+async function renderGPUConsent(section: HTMLElement, article: ArticleDetail): Promise<void> {
   section.innerHTML = '';
 
   const card = document.createElement('div');
@@ -409,7 +399,6 @@ async function renderGPUConsent(section, article) {
   heading.textContent = 'AI 本機分析說明';
   card.appendChild(heading);
 
-  // ── Block: mobile device ──
   if (isMobileDevice()) {
     const msg = document.createElement('p');
     msg.className = 'gpu-consent-card__blocked';
@@ -425,10 +414,8 @@ async function renderGPUConsent(section, article) {
     return;
   }
 
-  // ── Scan GPU ──
   const gpuInfo = await scanGPU();
 
-  // ── Block: no WebGPU ──
   if (!gpuInfo.supported) {
     const msg = document.createElement('p');
     msg.className = 'gpu-consent-card__blocked';
@@ -444,7 +431,6 @@ async function renderGPUConsent(section, article) {
     return;
   }
 
-  // ── GPU info display ──
   const userOverride = getUserGPUSelection();
 
   if (userOverride) {
@@ -456,14 +442,11 @@ async function renderGPUConsent(section, article) {
   } else if (gpuInfo.archInfo) {
     card.appendChild(_gpuInfoRow('GPU', gpuInfo.archInfo.label + ' (' + gpuInfo.archInfo.series + ')'));
     card.appendChild(_gpuInfoRow('顯存', gpuInfo.archInfo.vramRange));
-
-    // Inline GPU picker when device name is unknown
     _renderInlineGPUPicker(card, gpuInfo);
   } else {
     card.appendChild(_gpuInfoRow('GPU', gpuInfo.vendor || '未知'));
   }
 
-  // ── Privacy & model info ──
   const modelHint = document.createElement('p');
   modelHint.className = 'gpu-consent-card__info';
   modelHint.textContent = '首次使用將下載約 4.5GB AI 模型至瀏覽器';
@@ -474,7 +457,6 @@ async function renderGPUConsent(section, article) {
   privacyHint.textContent = '分析完全在您的裝置上執行，不上傳原文';
   card.appendChild(privacyHint);
 
-  // ── Confirm button ──
   const confirmBtn = document.createElement('button');
   confirmBtn.className = 'btn btn--primary btn--large';
   confirmBtn.textContent = '確認，開始分析';
@@ -487,7 +469,7 @@ async function renderGPUConsent(section, article) {
   section.appendChild(card);
 }
 
-function _gpuInfoRow(label, value) {
+function _gpuInfoRow(label: string, value: string): HTMLElement {
   const row = document.createElement('div');
   row.className = 'gpu-consent-card__row';
   const labelEl = document.createElement('span');
@@ -501,7 +483,7 @@ function _gpuInfoRow(label, value) {
   return row;
 }
 
-function _renderInlineGPUPicker(card, gpuInfo) {
+function _renderInlineGPUPicker(card: HTMLElement, gpuInfo: GPUScanResult): void {
   const options = getGPUOptionsForArch(gpuInfo.architecture);
   if (!options || options.length === 0) return;
 
@@ -535,15 +517,13 @@ function _renderInlineGPUPicker(card, gpuInfo) {
   card.appendChild(select);
 }
 
-function enqueueAndTrack(section, article) {
+function enqueueAndTrack(section: HTMLElement, article: ArticleDetail): void {
   const articleId = article.article_id;
   const startTime = Date.now();
 
-  // Show initial waiting state
   renderWaitingStatus(section);
 
-  // Subscribe to queue changes for position updates
-  _unsubscribeQueue = onQueueChange((status) => {
+  _unsubscribeQueue = onQueueChange((status: QueueStatus) => {
     if (_currentArticleId !== articleId) return;
     const isRunning = status.currentJob && status.currentJob.articleId === articleId;
     const queuePos = status.pending.indexOf(articleId);
@@ -570,7 +550,7 @@ function enqueueAndTrack(section, article) {
     });
 }
 
-function renderWaitingStatus(section, position) {
+function renderWaitingStatus(section: HTMLElement, position?: number): void {
   section.innerHTML = '';
   const msg = document.createElement('p');
   msg.className = 'analyze-status__message';
@@ -586,7 +566,7 @@ function renderWaitingStatus(section, position) {
   section.appendChild(progress);
 }
 
-function renderAnalysisError(section, err, article) {
+function renderAnalysisError(section: HTMLElement, err: Error, article: ArticleDetail): void {
   section.innerHTML = '';
   const errMsg = document.createElement('p');
   errMsg.className = 'error-state';
@@ -609,7 +589,7 @@ function renderAnalysisError(section, err, article) {
 
 // ── Error State ──
 
-function renderDetailError(container, message) {
+function renderDetailError(container: HTMLElement, message: string): void {
   const el = document.createElement('div');
   el.className = 'error-state';
   el.setAttribute('role', 'alert');
@@ -629,13 +609,10 @@ function renderDetailError(container, message) {
 
 // ── Feedback + Report ──
 
-const REPORT_REASONS = ['analysis_inaccurate', 'analysis_abnormal', 'cannot_analyze', 'data_abnormal', 'other'];
+const REPORT_REASONS: string[] = ['analysis_inaccurate', 'analysis_abnormal', 'cannot_analyze', 'data_abnormal', 'other'];
 
-/**
- * Load and render feedback section (like/dislike + report).
- */
-async function loadFeedbackSection(container, articleId) {
-  const section = container.querySelector('#feedback-section');
+async function loadFeedbackSection(container: HTMLElement, articleId: string): Promise<void> {
+  const section = container.querySelector('#feedback-section') as HTMLElement | null;
   if (!section) return;
 
   section.innerHTML = '';
@@ -643,35 +620,32 @@ async function loadFeedbackSection(container, articleId) {
   const wrapper = document.createElement('div');
   wrapper.className = 'feedback-bar';
 
-  // Like button
   const likeBtn = document.createElement('button');
   likeBtn.className = 'feedback-btn feedback-btn--like';
   likeBtn.setAttribute('aria-label', t('feedback.like'));
 
   const likeIcon = document.createElement('span');
   likeIcon.className = 'feedback-btn__icon';
-  likeIcon.textContent = '\u25B2'; // ▲
+  likeIcon.textContent = '\u25B2';
   const likeCount = document.createElement('span');
   likeCount.className = 'feedback-btn__count';
   likeCount.textContent = '0';
   likeBtn.appendChild(likeIcon);
   likeBtn.appendChild(likeCount);
 
-  // Dislike button
   const dislikeBtn = document.createElement('button');
   dislikeBtn.className = 'feedback-btn feedback-btn--dislike';
   dislikeBtn.setAttribute('aria-label', t('feedback.dislike'));
 
   const dislikeIcon = document.createElement('span');
   dislikeIcon.className = 'feedback-btn__icon';
-  dislikeIcon.textContent = '\u25BC'; // ▼
+  dislikeIcon.textContent = '\u25BC';
   const dislikeCountEl = document.createElement('span');
   dislikeCountEl.className = 'feedback-btn__count';
   dislikeCountEl.textContent = '0';
   dislikeBtn.appendChild(dislikeIcon);
   dislikeBtn.appendChild(dislikeCountEl);
 
-  // Report button
   const reportBtn = document.createElement('button');
   reportBtn.className = 'feedback-btn feedback-btn--report';
   reportBtn.setAttribute('aria-label', t('report.button'));
@@ -682,23 +656,21 @@ async function loadFeedbackSection(container, articleId) {
   wrapper.appendChild(reportBtn);
   section.appendChild(wrapper);
 
-  // Feedback message area
   const msgEl = document.createElement('p');
   msgEl.className = 'feedback-bar__message';
   msgEl.hidden = true;
   section.appendChild(msgEl);
 
-  // Fetch current stats
   const stats = await fetchArticleFeedbackStats(articleId);
   if (stats.success && stats.data) {
-    likeCount.textContent = String(stats.data.likes || 0);
-    dislikeCountEl.textContent = String(stats.data.dislikes || 0);
+    const statsData = stats.data as { likes: number; dislikes: number; user_feedback?: string };
+    likeCount.textContent = String(statsData.likes || 0);
+    dislikeCountEl.textContent = String(statsData.dislikes || 0);
 
-    if (stats.data.user_feedback) {
-      // Already submitted — lock both buttons
+    if (statsData.user_feedback) {
       likeBtn.disabled = true;
       dislikeBtn.disabled = true;
-      if (stats.data.user_feedback === 'like') {
+      if (statsData.user_feedback === 'like') {
         likeBtn.classList.add('feedback-btn--active');
       } else {
         dislikeBtn.classList.add('feedback-btn--active');
@@ -706,46 +678,49 @@ async function loadFeedbackSection(container, articleId) {
     }
   }
 
-  // Click handlers
   likeBtn.addEventListener('click', () => handleFeedbackClick(articleId, 'like', likeBtn, dislikeBtn, likeCount, dislikeCountEl, msgEl));
   dislikeBtn.addEventListener('click', () => handleFeedbackClick(articleId, 'dislike', likeBtn, dislikeBtn, likeCount, dislikeCountEl, msgEl));
   reportBtn.addEventListener('click', () => showReportDialog(articleId, 'article', msgEl));
 }
 
-async function handleFeedbackClick(articleId, type, likeBtn, dislikeBtn, likeCountEl, dislikeCountEl, msgEl) {
+async function handleFeedbackClick(
+  articleId: string,
+  type: FeedbackType,
+  likeBtn: HTMLButtonElement,
+  dislikeBtn: HTMLButtonElement,
+  likeCountEl: HTMLElement,
+  dislikeCountEl: HTMLElement,
+  msgEl: HTMLElement
+): Promise<void> {
   if (!isAuthenticated()) {
     showFeedbackMessage(msgEl, t('feedback.login_required'), 'warning');
     return;
   }
 
-  // Disable both buttons immediately to prevent double-click
   likeBtn.disabled = true;
   dislikeBtn.disabled = true;
 
-  const token = getAuthToken();
+  const token = getAuthToken() || '';
   const result = await submitArticleFeedback(articleId, type, token);
 
   if (result.success) {
     showFeedbackMessage(msgEl, t('feedback.submit_success'), 'success');
 
-    // Update counts and lock buttons permanently
     const stats = await fetchArticleFeedbackStats(articleId);
     if (stats.success && stats.data) {
-      likeCountEl.textContent = String(stats.data.likes || 0);
-      dislikeCountEl.textContent = String(stats.data.dislikes || 0);
+      const statsData = stats.data as { likes: number; dislikes: number; user_feedback?: string };
+      likeCountEl.textContent = String(statsData.likes || 0);
+      dislikeCountEl.textContent = String(statsData.dislikes || 0);
 
-      if (stats.data.user_feedback === 'like') {
+      if (statsData.user_feedback === 'like') {
         likeBtn.classList.add('feedback-btn--active');
-      } else if (stats.data.user_feedback === 'dislike') {
+      } else if (statsData.user_feedback === 'dislike') {
         dislikeBtn.classList.add('feedback-btn--active');
       }
     }
-    // Buttons remain disabled — one-time only
   } else if (result.error?.type === 'already_submitted') {
     showFeedbackMessage(msgEl, t('feedback.already_submitted'), 'warning');
-    // Buttons remain disabled
   } else {
-    // Re-enable on error so user can retry
     likeBtn.disabled = false;
     dislikeBtn.disabled = false;
     const msg = result.error?.message || t('feedback.submit_error');
@@ -753,26 +728,19 @@ async function handleFeedbackClick(articleId, type, likeBtn, dislikeBtn, likeCou
   }
 }
 
-function showFeedbackMessage(msgEl, text, type) {
+function showFeedbackMessage(msgEl: HTMLElement, text: string, type: string): void {
   msgEl.textContent = text;
   msgEl.className = `feedback-bar__message feedback-bar__message--${type}`;
   msgEl.hidden = false;
   setTimeout(() => { msgEl.hidden = true; }, 3000);
 }
 
-/**
- * Show report dialog overlay.
- * @param {string} targetId - article_id or analysis_id
- * @param {'article'|'analysis'} targetType
- * @param {HTMLElement} msgEl - message element for feedback
- */
-function showReportDialog(targetId, targetType, msgEl) {
+function showReportDialog(targetId: string, targetType: 'article' | 'analysis', msgEl: HTMLElement): void {
   if (!isAuthenticated()) {
     showFeedbackMessage(msgEl, t('report.login_required'), 'warning');
     return;
   }
 
-  // Overlay
   const overlay = document.createElement('div');
   overlay.className = 'report-overlay';
   overlay.setAttribute('role', 'dialog');
@@ -786,7 +754,6 @@ function showReportDialog(targetId, targetType, msgEl) {
   heading.textContent = t('report.title');
   dialog.appendChild(heading);
 
-  // Reason radio buttons
   const reasonGroup = document.createElement('div');
   reasonGroup.className = 'report-dialog__reasons';
 
@@ -808,7 +775,6 @@ function showReportDialog(targetId, targetType, msgEl) {
   }
   dialog.appendChild(reasonGroup);
 
-  // Description textarea
   const descInput = document.createElement('textarea');
   descInput.className = 'report-dialog__desc';
   descInput.placeholder = t('report.description_placeholder');
@@ -816,7 +782,6 @@ function showReportDialog(targetId, targetType, msgEl) {
   descInput.maxLength = 500;
   dialog.appendChild(descInput);
 
-  // Actions
   const actions = document.createElement('div');
   actions.className = 'report-dialog__actions';
 
@@ -824,13 +789,13 @@ function showReportDialog(targetId, targetType, msgEl) {
   submitBtn.className = 'btn btn--primary';
   submitBtn.textContent = t('report.submit');
   submitBtn.addEventListener('click', async () => {
-    const selectedRadio = reasonGroup.querySelector('input[name="report-reason"]:checked');
+    const selectedRadio = reasonGroup.querySelector('input[name="report-reason"]:checked') as HTMLInputElement | null;
     if (!selectedRadio) return;
 
     submitBtn.disabled = true;
     submitBtn.textContent = '...';
 
-    const token = getAuthToken();
+    const token = getAuthToken() || '';
     const desc = descInput.value.trim() || undefined;
 
     const apiFn = targetType === 'article' ? reportArticle : (await import('../core/api.js')).reportAnalysis;
@@ -859,8 +824,7 @@ function showReportDialog(targetId, targetType, msgEl) {
   overlay.appendChild(dialog);
   document.body.appendChild(overlay);
 
-  // Focus first radio
-  const firstRadio = reasonGroup.querySelector('input[type="radio"]');
+  const firstRadio = reasonGroup.querySelector('input[type="radio"]') as HTMLInputElement | null;
   if (firstRadio) firstRadio.focus();
 }
 

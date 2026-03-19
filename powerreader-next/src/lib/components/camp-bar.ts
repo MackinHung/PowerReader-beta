@@ -6,11 +6,9 @@
  * @license AGPL-3.0
  */
 
-/**
- * @param {Object} campData
- * @returns {HTMLElement}
- */
-export function createCampBar(campData) {
+import type { CampRatio } from '../types/index.js';
+
+export function createCampBar(campData: CampRatio): HTMLElement {
   const el = document.createElement('div');
   el.className = 'camp-bar';
   return el;

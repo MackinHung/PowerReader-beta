@@ -116,7 +116,7 @@ export function formatKnowledgeAsL2(entries: KnowledgeEntry[]): string {
 
   const lines = relevant.map((entry: KnowledgeEntry) => {
     const label = typeLabels[entry.type] || entry.type || '其他';
-    const text = entry.content || (entry as Record<string, unknown>).snippet as string || entry.title || '';
+    const text = entry.content || (entry as unknown as Record<string, unknown>).snippet as string || entry.title || '';
     return `- [${label}] ${text}`;
   });
 

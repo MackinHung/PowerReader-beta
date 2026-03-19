@@ -761,3 +761,98 @@ export async function deleteUserAccount(token: string): Promise<ApiResponse<unkn
     headers: { 'Authorization': `Bearer ${token}` }
   });
 }
+
+// =============================================
+// Knowledge GitHub API (edit/review workflow)
+// =============================================
+
+interface ProposeEditPayload {
+  entry_id: string;
+  batch_file: string;
+  changes: Record<string, unknown>;
+  reason: string;
+  content_hash: string;
+}
+
+interface ProposeEditResult {
+  pr_number: number;
+  pr_url: string;
+}
+
+interface KnowledgePR {
+  number: number;
+  title: string;
+  user: string;
+  created_at: string;
+  labels: string[];
+}
+
+interface PRDetail {
+  pr: {
+    number: number;
+    title: string;
+    body: string;
+    state: string;
+    created_at: string;
+    user: string;
+    head_branch: string;
+    mergeable: boolean | null;
+  };
+  diff: { removed: string[]; added: string[] } | null;
+  changed_files: {
+    filename: string;
+    status: string;
+    additions: number;
+    deletions: number;
+  }[];
+}
+
+/**
+ * POST /api/v1/knowledge/github/propose — propose a knowledge edit via PR.
+ */
+export async function proposeKnowledgeEdit(token: string, payload: ProposeEditPayload): Promise<ApiResponse<ProposeEditResult>> {
+  return apiFetch<ProposeEditResult>('/knowledge/github/propose', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(payload)
+  });
+}
+
+/**
+ * GET /api/v1/knowledge/github/prs — list open knowledge edit PRs.
+ */
+export async function fetchKnowledgePRs(token: string): Promise<ApiResponse<{ prs: KnowledgePR[] }>> {
+  return apiFetch<{ prs: KnowledgePR[] }>('/knowledge/github/prs', {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+}
+
+/**
+ * GET /api/v1/knowledge/github/prs/:number — PR detail with diff.
+ */
+export async function fetchKnowledgePRDetail(token: string, prNumber: number): Promise<ApiResponse<PRDetail>> {
+  return apiFetch<PRDetail>(`/knowledge/github/prs/${prNumber}`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+}
+
+/**
+ * POST /api/v1/knowledge/github/prs/:number/merge — merge a PR (admin).
+ */
+export async function mergeKnowledgePR(token: string, prNumber: number): Promise<ApiResponse<{ merged: boolean }>> {
+  return apiFetch<{ merged: boolean }>(`/knowledge/github/prs/${prNumber}/merge`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+}
+
+/**
+ * POST /api/v1/knowledge/github/prs/:number/close — close a PR (admin).
+ */
+export async function closeKnowledgePR(token: string, prNumber: number, reason?: string): Promise<ApiResponse<{ closed: boolean }>> {
+  return apiFetch<{ closed: boolean }>(`/knowledge/github/prs/${prNumber}/close`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({ reason: reason || '' })
+  });
+}

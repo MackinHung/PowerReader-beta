@@ -26,6 +26,8 @@ import { parseScoreOutput, parseNarrativeOutput } from './output-parser.js';
 import { isMobileDevice } from '$lib/utils/device-detect.js';
 import { recordLatency, estimateRemaining, getDualPassProgress } from './eta.js';
 import { getCachedBenchmark, getTimeoutForTier } from './benchmark.js';
+import type { Article, AnalysisResult, KnowledgeEntry, ScoreOutput } from '$lib/types/models.js';
+import type { InferenceMode, AnalysisRunOptions, StatusCallback } from '$lib/types/inference.js';
 
 // =============================================
 // Configuration
@@ -47,14 +49,11 @@ const PASS2_MAX_TOKENS = 512;   // Narrative JSON ~200-400 tokens
 
 /**
  * Race a promise against a timeout. Rejects with 'inference_timeout' on expiry.
- * @param {Promise} promise
- * @param {number} ms
- * @returns {Promise}
  */
-function withTimeout(promise, ms) {
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
     promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error('inference_timeout')), ms))
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('inference_timeout')), ms))
   ]);
 }
 
@@ -66,23 +65,22 @@ function withTimeout(promise, ms) {
 export const INFERENCE_MODES = {
   WEBGPU: 'webgpu',
   SERVER: 'server'
-};
+} as const;
 
 // =============================================
 // WebLLM Engine (Singleton)
 // =============================================
 
-let _webllmEngine = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _webllmEngine: any = null;
 let _webllmLoading = false;
 
 /**
  * Get or create the WebLLM engine (singleton).
  * Downloads model on first call (~3.4GB).
- *
- * @param {function} onProgress - Progress callback ({ text, progress })
- * @returns {Promise<Object>} WebLLM MLCEngine instance
  */
-export async function getWebLLMEngine(onProgress) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function getWebLLMEngine(onProgress?: (progress: { text: string; progress: number }) => void): Promise<any> {
   if (_webllmEngine) return _webllmEngine;
   if (_webllmLoading) {
     // Wait for in-progress loading
@@ -98,7 +96,7 @@ export async function getWebLLMEngine(onProgress) {
     const webllm = await import(/* webpackIgnore: true */ WEBLLM_CDN);
 
     _webllmEngine = await webllm.CreateMLCEngine(MODEL_ID, {
-      initProgressCallback: (report) => {
+      initProgressCallback: (report: { text?: string; progress?: number }) => {
         if (onProgress) {
           onProgress({
             text: report.text || '',
@@ -128,7 +126,7 @@ export async function getWebLLMEngine(onProgress) {
  * Interrupt any in-progress WebLLM generation on the GPU.
  * Safe to call even if no inference is running.
  */
-export function interruptInference() {
+export function interruptInference(): void {
   if (_webllmEngine) {
     try {
       _webllmEngine.interruptGenerate();
@@ -145,10 +143,8 @@ export function interruptInference() {
 /**
  * Clear all WebLLM model caches from browser Cache API.
  * This removes ALL downloaded models (old and current).
- *
- * @returns {Promise<number>} Approximate freed MB
  */
-export async function clearAllModelCaches() {
+export async function clearAllModelCaches(): Promise<number> {
   let freedBytes = 0;
 
   try {
@@ -186,9 +182,8 @@ export async function clearAllModelCaches() {
 
 /**
  * Check WebGPU availability.
- * @returns {Promise<boolean>}
  */
-export async function hasWebGPU() {
+export async function hasWebGPU(): Promise<boolean> {
   if (!navigator.gpu) return false;
   try {
     const adapter = await navigator.gpu.requestAdapter();
@@ -201,9 +196,8 @@ export async function hasWebGPU() {
 /**
  * Detect best available inference mode.
  * Priority: WebGPU -> Server
- * @returns {Promise<string>} INFERENCE_MODES value
  */
-export async function detectBestMode() {
+export async function detectBestMode(): Promise<InferenceMode> {
   if (isMobileDevice()) return INFERENCE_MODES.SERVER;
   if (await hasWebGPU()) return INFERENCE_MODES.WEBGPU;
   return INFERENCE_MODES.SERVER;
@@ -211,11 +205,9 @@ export async function detectBestMode() {
 
 /**
  * Get i18n label for inference mode.
- * @param {string} mode
- * @returns {string}
  */
-export function getModeLabel(mode) {
-  const labels = {
+export function getModeLabel(mode: string): string {
+  const labels: Record<string, string> = {
     [INFERENCE_MODES.WEBGPU]: t('model.inference.webgpu'),
     [INFERENCE_MODES.SERVER]: t('model.inference.server')
   };
@@ -228,30 +220,23 @@ export function getModeLabel(mode) {
 
 /**
  * Run dual-pass bias analysis on an article.
- *
- * @param {Object} options
- * @param {Object} options.article - Full article object
- * @param {Array} options.knowledgeEntries - RAG Layer 2 entries
- * @param {string} options.mode - Forced inference mode (optional)
- * @param {function} options.onStatus - Status callback (stage, elapsedMs, extra)
- * @returns {Promise<Object>} Analysis result with mode, latency_ms, and narrative points
  */
-export async function runAnalysis({ article, knowledgeEntries = [], mode, onStatus, signal }) {
-  const selectedMode = mode || await detectBestMode();
+export async function runAnalysis({ article, knowledgeEntries = [], mode, onStatus, signal }: AnalysisRunOptions): Promise<AnalysisResult> {
+  const selectedMode: InferenceMode = mode || await detectBestMode();
   const startTime = Date.now();
 
-  const updateStatus = (stage, extra) => {
+  const updateStatus: StatusCallback = (stage, elapsedMs, extra) => {
     const elapsed = Date.now() - startTime;
     const tier = getCachedBenchmark()?.mode || 'cpu';
     const progress = getDualPassProgress(stage, elapsed, tier);
-    const eta = estimateRemaining(tier, stage.includes('pass2') ? 'pass2' : 'pass1', elapsed);
-    if (onStatus) onStatus(stage, elapsed, { ...extra, eta, progress });
+    const etaEstimate = estimateRemaining(tier, stage.includes('pass2') ? 'pass2' : 'pass1', elapsed);
+    if (onStatus) onStatus(stage, elapsed, { ...extra, eta: etaEstimate?.remainingMs ?? null, progress });
   };
 
-  updateStatus('preparing');
+  updateStatus('preparing', 0);
 
   try {
-    let result;
+    let result: AnalysisResult;
 
     if (selectedMode === INFERENCE_MODES.WEBGPU) {
       result = await runWebLLMInference(article, knowledgeEntries, updateStatus, signal);
@@ -263,12 +248,12 @@ export async function runAnalysis({ article, knowledgeEntries = [], mode, onStat
   } catch (err) {
     // If WebGPU inference fails, fallback to server
     if (selectedMode !== INFERENCE_MODES.SERVER) {
-      updateStatus('fallback_to_server');
+      updateStatus('fallback_to_server', Date.now() - startTime);
       try {
         const result = await runServerInference(article, knowledgeEntries, updateStatus);
         return { ...result, mode: INFERENCE_MODES.SERVER, latency_ms: Date.now() - startTime };
       } catch (serverErr) {
-        throw new Error(`All inference modes failed. WebGPU: ${err.message}. Server: ${serverErr.message}`);
+        throw new Error(`All inference modes failed. WebGPU: ${(err as Error).message}. Server: ${(serverErr as Error).message}`);
       }
     }
     throw err;
@@ -279,28 +264,29 @@ export async function runAnalysis({ article, knowledgeEntries = [], mode, onStat
 // WebLLM Inference (WebGPU, Dual-Pass)
 // =============================================
 
-async function runWebLLMInference(article, knowledgeEntries, updateStatus, signal) {
+async function runWebLLMInference(article: Article, knowledgeEntries: KnowledgeEntry[], updateStatus: StatusCallback, signal?: AbortSignal): Promise<AnalysisResult> {
   // Streaming investigation: WebLLM supports stream:true but JSON output (Pass 1)
   // is not suitable for streaming. Pass 2 narrative could benefit but stability
   // varies across browsers. Keeping batch mode for reliability. Revisit when
   // WebLLM streaming API stabilizes.
 
   // Phase 0: Load model
-  updateStatus('loading_model');
+  updateStatus('loading_model', 0);
   const engine = await getWebLLMEngine((progress) => {
-    updateStatus('loading_model', progress);
+    updateStatus('loading_model', 0, progress);
   });
 
   const userMessage = assembleUserMessage(article, knowledgeEntries);
   const tier = getCachedBenchmark()?.mode || 'cpu';
 
   // Phase 1: Score extraction (per-pass timeout)
-  updateStatus('pass1_running');
+  updateStatus('pass1_running', 0);
   const pass1Start = Date.now();
   const pass1Timeout = getTimeoutForTier(tier);
   const pass1SystemPrompt = assembleScoreSystemPrompt() + QWEN3_NO_THINK;
 
-  const pass1Response = await withTimeout(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pass1Response: any = await withTimeout(
     engine.chat.completions.create({
       messages: [
         { role: 'system', content: pass1SystemPrompt },
@@ -314,9 +300,9 @@ async function runWebLLMInference(article, knowledgeEntries, updateStatus, signa
 
   recordLatency(tier, 'pass1', Date.now() - pass1Start);
 
-  const pass1Raw = pass1Response.choices[0]?.message?.content || '';
-  const scores = parseScoreOutput(pass1Raw);
-  updateStatus('pass1_done');
+  const pass1Raw: string = pass1Response.choices[0]?.message?.content || '';
+  const scores: ScoreOutput = parseScoreOutput(pass1Raw);
+  updateStatus('pass1_done', Date.now() - pass1Start);
 
   // Free KV cache between passes — critical for 6GB VRAM
   try { await engine.resetChat(); } catch {}
@@ -327,12 +313,13 @@ async function runWebLLMInference(article, knowledgeEntries, updateStatus, signa
   }
 
   // Phase 2: Narrative analysis (informed by Pass 1 scores, 2x timeout)
-  updateStatus('pass2_running');
+  updateStatus('pass2_running', 0);
   const pass2Start = Date.now();
   const pass2Timeout = getTimeoutForTier(tier) * 2;
   const pass2SystemPrompt = assembleNarrativeSystemPrompt(scores.bias_score, scores.controversy_score) + QWEN3_NO_THINK;
 
-  let pass2Response;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let pass2Response: any;
   try {
     pass2Response = await withTimeout(
       engine.chat.completions.create({
@@ -348,23 +335,24 @@ async function runWebLLMInference(article, knowledgeEntries, updateStatus, signa
   } catch (err) {
     // Pass 2 timeout — return partial result (pass 1 scores preserved)
     recordLatency(tier, 'pass2', Date.now() - pass2Start);
-    updateStatus('pass2_done');
+    updateStatus('pass2_done', Date.now() - pass2Start);
     return {
       ...scores,
       points: [],
       reasoning: '',
       key_phrases: [],
       prompt_version: 'v3.0.0',
-      partial: true,
-      _debug: { pass1_system: pass1SystemPrompt, pass1_raw: pass1Raw, pass2_error: err.message }
+      mode: 'webgpu',
+      latency_ms: 0,
+      _debug: { pass1_system: pass1SystemPrompt, pass1_raw: pass1Raw, pass2_error: (err as Error).message }
     };
   }
 
   recordLatency(tier, 'pass2', Date.now() - pass2Start);
 
-  const pass2Raw = pass2Response.choices[0]?.message?.content || '';
+  const pass2Raw: string = pass2Response.choices[0]?.message?.content || '';
   const narrative = parseNarrativeOutput(pass2Raw);
-  updateStatus('pass2_done');
+  updateStatus('pass2_done', Date.now() - pass2Start);
 
   // Fallback: derive key_phrases from points if model didn't provide them
   const key_phrases = narrative.key_phrases.length > 0
@@ -377,6 +365,8 @@ async function runWebLLMInference(article, knowledgeEntries, updateStatus, signa
     reasoning: narrative.points.join('\n'),
     key_phrases,
     prompt_version: 'v3.0.0',
+    mode: 'webgpu',
+    latency_ms: 0,
     _debug: {
       pass1_system: pass1SystemPrompt,
       pass1_user: userMessage.substring(0, 500),
@@ -391,8 +381,8 @@ async function runWebLLMInference(article, knowledgeEntries, updateStatus, signa
 // Server Inference (Cloudflare Workers AI)
 // =============================================
 
-async function runServerInference(article, knowledgeEntries, updateStatus) {
-  updateStatus('running');
+async function runServerInference(article: Article, knowledgeEntries: KnowledgeEntry[], updateStatus: StatusCallback): Promise<AnalysisResult> {
+  updateStatus('running', 0);
 
   const response = await fetch('/api/v1/inference', {
     method: 'POST',
@@ -410,14 +400,17 @@ async function runServerInference(article, knowledgeEntries, updateStatus) {
   }
 
   const data = await response.json();
-  updateStatus('generating');
+  updateStatus('generating', 0);
 
   return {
     bias_score: data.bias_score ?? 50,
     controversy_score: data.controversy_score ?? 0,
+    camp_ratio: data.camp_ratio ?? null,
     points: data.points || [],
     reasoning: data.reasoning || '',
     key_phrases: data.key_phrases || [],
-    prompt_version: data.prompt_version || 'server'
+    prompt_version: data.prompt_version || 'server',
+    mode: 'server',
+    latency_ms: 0
   };
 }

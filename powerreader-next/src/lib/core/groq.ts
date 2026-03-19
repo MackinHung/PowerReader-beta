@@ -16,6 +16,7 @@ import {
   assembleUserMessage
 } from './prompt.js';
 import { parseScoreOutput, parseNarrativeOutput } from './output-parser.js';
+import type { Article, AnalysisResult, KnowledgeEntry } from '$lib/types/models.js';
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const DEFAULT_MODEL = 'llama-3.1-8b-instant';
@@ -25,54 +26,49 @@ const FETCH_TIMEOUT_MS = 30000;
 
 /**
  * Get stored Groq API key.
- * @returns {string|null}
  */
-export function getGroqApiKey() {
+export function getGroqApiKey(): string | null {
   try { return localStorage.getItem(GROQ_KEY_STORAGE); } catch { return null; }
 }
 
 /**
  * Set Groq API key.
- * @param {string} key
  */
-export function setGroqApiKey(key) {
+export function setGroqApiKey(key: string): void {
   try { localStorage.setItem(GROQ_KEY_STORAGE, key); } catch {}
 }
 
 /**
  * Get stored Groq model.
- * @returns {string}
  */
-export function getGroqModel() {
+export function getGroqModel(): string {
   try { return localStorage.getItem(GROQ_MODEL_STORAGE) || DEFAULT_MODEL; } catch { return DEFAULT_MODEL; }
 }
 
 /**
  * Set Groq model.
- * @param {string} model
  */
-export function setGroqModel(model) {
+export function setGroqModel(model: string): void {
   try { localStorage.setItem(GROQ_MODEL_STORAGE, model); } catch {}
 }
 
 /**
  * Check if Groq testing mode is configured.
- * @returns {boolean}
  */
-export function isGroqConfigured() {
+export function isGroqConfigured(): boolean {
   const key = getGroqApiKey();
   return !!key && key.length > 10;
 }
 
+interface ChatMessage {
+  role: string;
+  content: string;
+}
+
 /**
  * Call Groq chat completions API.
- * @param {string} apiKey
- * @param {string} model
- * @param {Array} messages - [{role, content}]
- * @param {number} maxTokens
- * @returns {Promise<string>} assistant message content
  */
-async function callGroq(apiKey, model, messages, maxTokens = 512) {
+async function callGroq(apiKey: string, model: string, messages: ChatMessage[], maxTokens: number = 512): Promise<string> {
   const response = await fetch(GROQ_API_URL, {
     method: 'POST',
     headers: {
@@ -101,14 +97,8 @@ async function callGroq(apiKey, model, messages, maxTokens = 512) {
 /**
  * Run dual-pass analysis via Groq API.
  * Same prompt structure as WebLLM inference.
- *
- * @param {Object} article - Article object
- * @param {Array} knowledgeEntries - RAG knowledge entries
- * @param {string} [apiKey] - Groq API key (falls back to stored key)
- * @param {string} [model] - Groq model (falls back to stored model)
- * @returns {Promise<Object>} Analysis result matching WebLLM output shape
  */
-export async function runGroqAnalysis(article, knowledgeEntries = [], apiKey, model) {
+export async function runGroqAnalysis(article: Article, knowledgeEntries: KnowledgeEntry[] = [], apiKey?: string, model?: string): Promise<AnalysisResult> {
   const key = apiKey || getGroqApiKey();
   if (!key) throw new Error('Groq API key not configured');
   const selectedModel = model || getGroqModel();

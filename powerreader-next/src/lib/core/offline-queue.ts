@@ -12,13 +12,16 @@ import { openDB } from './db.js';
 import { promisifyRequest, promisifyTransaction } from '$lib/utils/idb-helpers.js';
 import { API_BASE } from './api.js';
 
+interface PendingSyncItem {
+  type: string;
+  payload: Record<string, unknown>;
+  created_at: string;
+}
+
 /**
  * Enqueue a pending operation for background sync.
- * @param {string} type - 'feedback' | 'analysis'
- * @param {Object} payload - Operation payload
- * @returns {Promise<void>}
  */
-export async function enqueuePendingSync(type, payload) {
+export async function enqueuePendingSync(type: string, payload: Record<string, unknown>): Promise<void> {
   const db = await openDB();
   const tx = db.transaction('pending_sync', 'readwrite');
   tx.objectStore('pending_sync').put({
@@ -33,8 +36,8 @@ export async function enqueuePendingSync(type, payload) {
   try {
     if ('serviceWorker' in navigator) {
       const registration = await navigator.serviceWorker.ready;
-      if (registration.sync) {
-        await registration.sync.register('pending-sync');
+      if ((registration as any).sync) {
+        await (registration as any).sync.register('pending-sync');
       }
     }
   } catch (e) {
@@ -45,9 +48,8 @@ export async function enqueuePendingSync(type, payload) {
 
 /**
  * Get count of pending sync items.
- * @returns {Promise<number>}
  */
-export async function getPendingSyncCount() {
+export async function getPendingSyncCount(): Promise<number> {
   try {
     const db = await openDB();
     const tx = db.transaction('pending_sync', 'readonly');
@@ -61,17 +63,16 @@ export async function getPendingSyncCount() {
 
 /**
  * Process all pending sync items. Sends each to API, deletes on success.
- * @returns {Promise<{synced: number, failed: number}>}
  */
-export async function processPendingSync() {
+export async function processPendingSync(): Promise<{ synced: number; failed: number }> {
   let synced = 0;
   let failed = 0;
 
   try {
     const db = await openDB();
     const tx = db.transaction('pending_sync', 'readonly');
-    const items = await promisifyRequest(tx.objectStore('pending_sync').getAll());
-    const keys = await promisifyRequest(tx.objectStore('pending_sync').getAllKeys());
+    const items = await promisifyRequest(tx.objectStore('pending_sync').getAll()) as PendingSyncItem[];
+    const keys = await promisifyRequest(tx.objectStore('pending_sync').getAllKeys()) as IDBValidKey[];
     db.close();
 
     for (let i = 0; i < items.length; i++) {
@@ -79,21 +80,22 @@ export async function processPendingSync() {
       const key = keys[i];
 
       try {
-        let url, body;
-        const headers = { 'Content-Type': 'application/json' };
+        let url: string;
+        let body: string;
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
 
         if (item.type === 'feedback') {
-          url = `${API_BASE}/articles/${encodeURIComponent(item.payload.articleId)}/feedback`;
+          url = `${API_BASE}/articles/${encodeURIComponent(item.payload.articleId as string)}/feedback`;
           body = JSON.stringify({ type: item.payload.feedbackType });
         } else if (item.type === 'analysis') {
-          url = `${API_BASE}/articles/${encodeURIComponent(item.payload.articleId)}/analysis`;
+          url = `${API_BASE}/articles/${encodeURIComponent(item.payload.articleId as string)}/analysis`;
           body = JSON.stringify(item.payload.data);
         } else {
           continue;
         }
 
         if (item.payload.token) {
-          headers['Authorization'] = `Bearer ${item.payload.token}`;
+          headers['Authorization'] = `Bearer ${item.payload.token as string}`;
         }
 
         const resp = await fetch(url, { method: 'POST', headers, body });
@@ -122,9 +124,8 @@ export async function processPendingSync() {
 
 /**
  * Clear all pending sync items.
- * @returns {Promise<void>}
  */
-export async function clearPendingSync() {
+export async function clearPendingSync(): Promise<void> {
   try {
     const db = await openDB();
     const tx = db.transaction('pending_sync', 'readwrite');

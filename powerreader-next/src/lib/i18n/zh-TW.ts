@@ -616,9 +616,40 @@ const messages: Record<string, string> = {
   'knowledge.stances.missing': '尚無此黨立場資料',
   'knowledge.stances.compare': '立場比較',
 
-  // Knowledge Edit (Phase 4 placeholder)
+  // Knowledge Edit
   'knowledge.edit.suggest': '建議編輯',
   'knowledge.edit.login_required': '請先登入以建議編輯',
+  'knowledge.edit.title': '編輯知識條目',
+  'knowledge.edit.reason': '修改原因',
+  'knowledge.edit.reason_placeholder': '請簡述修改原因...',
+  'knowledge.edit.submit': '提交建議',
+  'knowledge.edit.submitting': '提交中...',
+  'knowledge.edit.success': '建議已提交',
+  'knowledge.edit.success_detail': '已建立 Pull Request，管理者將會審核',
+  'knowledge.edit.conflict': '內容已被他人修改，請重新載入',
+  'knowledge.edit.pr_exists': '此條目已有待審核的編輯建議',
+  'knowledge.edit.view_pr': '查看 PR',
+
+  // Knowledge Review (admin)
+  'knowledge.review.title': '編輯審核',
+  'knowledge.review.no_permission': '您沒有審核權限',
+  'knowledge.review.empty': '目前沒有待審核的編輯',
+  'knowledge.review.approve': '核准合併',
+  'knowledge.review.reject': '駁回',
+  'knowledge.review.reject_reason': '駁回原因',
+  'knowledge.review.merged': '已合併，網站將自動更新',
+  'knowledge.review.closed': '已駁回',
+  'knowledge.review.submitter': '提交者',
+  'knowledge.review.date': '提交日期',
+  'knowledge.review.loading': '載入中...',
+  'knowledge.review.merging': '合併中...',
+  'knowledge.review.closing': '駁回中...',
+
+  // Diff View
+  'knowledge.diff.before': '修改前',
+  'knowledge.diff.after': '修改後',
+  'knowledge.diff.changed': '已變更',
+  'knowledge.diff.unchanged': '未變更',
 
   // Knowledge Admin (dev page)
   'knowledge.admin.title': '知識庫管理',

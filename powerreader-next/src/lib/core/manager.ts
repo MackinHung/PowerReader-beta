@@ -12,6 +12,7 @@
 
 import { t } from '$lib/i18n/zh-TW.js';
 import { promisifyRequest, promisifyTransaction } from '$lib/utils/idb-helpers.js';
+import type { PreDownloadChecks, PreDownloadCheck } from '$lib/types/inference.js';
 
 // Model constants (from shared/config.js)
 const MODEL_SIZE_MB = 3400;
@@ -21,7 +22,7 @@ const MIN_STORAGE_MB = 4000;
 const CHUNK_SIZE = 1024 * 1024; // 1MB chunks for progress tracking
 
 // Download state
-let downloadController = null;
+let downloadController: AbortController | null = null;
 let downloadedBytes = 0;
 let isPaused = false;
 
@@ -31,10 +32,9 @@ let isPaused = false;
 
 /**
  * Check if device is on WiFi.
- * @returns {{ ok: boolean, reason?: string }}
  */
-export function checkWifi() {
-  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+export function checkWifi(): { ok: boolean; reason?: string } {
+  const conn = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
   if (!conn) {
     // Cannot detect — allow download with warning
     return { ok: true };
@@ -47,14 +47,13 @@ export function checkWifi() {
 
 /**
  * Check battery level.
- * @returns {Promise<{ ok: boolean, reason?: string }>}
  */
-export async function checkBattery() {
-  if (!navigator.getBattery) {
+export async function checkBattery(): Promise<{ ok: boolean; reason?: string }> {
+  if (!(navigator as any).getBattery) {
     return { ok: true }; // Cannot detect — allow
   }
   try {
-    const battery = await navigator.getBattery();
+    const battery = await (navigator as any).getBattery();
     if (battery.charging) return { ok: true };
     if (battery.level * 100 >= MIN_BATTERY_PCT) return { ok: true };
     return { ok: false, reason: t('model.download.low_battery') };
@@ -65,9 +64,8 @@ export async function checkBattery() {
 
 /**
  * Check available storage.
- * @returns {Promise<{ ok: boolean, reason?: string, availableMB?: number }>}
  */
-export async function checkStorage() {
+export async function checkStorage(): Promise<{ ok: boolean; reason?: string; availableMB?: number }> {
   if (!navigator.storage || !navigator.storage.estimate) {
     return { ok: true };
   }
@@ -86,16 +84,15 @@ export async function checkStorage() {
 
 /**
  * Run all pre-download checks.
- * @returns {Promise<{ canDownload: boolean, checks: Array<{ name: string, ok: boolean, reason?: string }> }>}
  */
-export async function runPreDownloadChecks() {
+export async function runPreDownloadChecks(): Promise<PreDownloadChecks> {
   const [wifi, battery, storage] = await Promise.all([
     checkWifi(),
     checkBattery(),
     checkStorage()
   ]);
 
-  const checks = [
+  const checks: PreDownloadCheck[] = [
     { name: 'wifi', ...wifi },
     { name: 'battery', ...battery },
     { name: 'storage', ...storage }
@@ -111,9 +108,8 @@ export async function runPreDownloadChecks() {
 
 /**
  * Check if model is already downloaded.
- * @returns {Promise<boolean>}
  */
-export async function isModelDownloaded() {
+export async function isModelDownloaded(): Promise<boolean> {
   // WebLLM caches models in browser Cache API automatically.
   // Below checks cover pre-WebLLM downloads (OPFS / IndexedDB).
   try {
@@ -136,7 +132,7 @@ export async function isModelDownloaded() {
     const req = tx.objectStore('model_files').get('qwen-4b-manifest');
     const result = await promisifyRequest(req);
     db.close();
-    return result && result.complete === true;
+    return result && (result as any).complete === true;
   } catch (e) {
     return false;
   }
@@ -144,9 +140,8 @@ export async function isModelDownloaded() {
 
 /**
  * Get download progress (0.0 - 1.0).
- * @returns {number}
  */
-export function getDownloadProgress() {
+export function getDownloadProgress(): number {
   if (MODEL_SIZE_BYTES === 0) return 0;
   return Math.min(1, downloadedBytes / MODEL_SIZE_BYTES);
 }
@@ -157,11 +152,8 @@ export function getDownloadProgress() {
 
 /**
  * Start or resume model download.
- * @param {string} modelUrl - URL to download model from (R2 bucket)
- * @param {function} onProgress - Callback (downloadedBytes, totalBytes)
- * @returns {Promise<boolean>} true if download completed
  */
-export async function downloadModel(modelUrl, onProgress) {
+export async function downloadModel(modelUrl: string, onProgress?: (downloaded: number, total: number) => void): Promise<boolean> {
   if (!modelUrl) {
     throw new Error('Model URL not provided');
   }
@@ -169,7 +161,7 @@ export async function downloadModel(modelUrl, onProgress) {
   isPaused = false;
   downloadController = new AbortController();
 
-  const headers = {};
+  const headers: Record<string, string> = {};
   if (downloadedBytes > 0) {
     headers['Range'] = `bytes=${downloadedBytes}-`;
   }
@@ -184,8 +176,8 @@ export async function downloadModel(modelUrl, onProgress) {
       throw new Error(`Download failed: HTTP ${response.status}`);
     }
 
-    const reader = response.body.getReader();
-    const chunks = [];
+    const reader = response.body!.getReader();
+    const chunks: Uint8Array[] = [];
 
     while (true) {
       if (isPaused) {
@@ -209,7 +201,7 @@ export async function downloadModel(modelUrl, onProgress) {
 
     return true;
   } catch (err) {
-    if (err.name === 'AbortError') {
+    if ((err as Error).name === 'AbortError') {
       return false; // Paused or cancelled
     }
     throw err;
@@ -219,7 +211,7 @@ export async function downloadModel(modelUrl, onProgress) {
 /**
  * Pause active download.
  */
-export function pauseDownload() {
+export function pauseDownload(): void {
   isPaused = true;
   if (downloadController) {
     downloadController.abort();
@@ -228,9 +220,8 @@ export function pauseDownload() {
 
 /**
  * Delete downloaded model.
- * @returns {Promise<void>}
  */
-export async function deleteModel() {
+export async function deleteModel(): Promise<void> {
   try {
     if (navigator.storage && navigator.storage.getDirectory) {
       const root = await navigator.storage.getDirectory();
@@ -258,7 +249,7 @@ export async function deleteModel() {
 // Internal: Storage
 // =============================================
 
-async function storeModelData(chunks) {
+async function storeModelData(chunks: Uint8Array[]): Promise<void> {
   // Try OPFS first
   try {
     if (navigator.storage && navigator.storage.getDirectory) {
@@ -266,7 +257,7 @@ async function storeModelData(chunks) {
       const handle = await root.getFileHandle('qwen-4b.bin', { create: true });
       const writable = await handle.createWritable();
       for (const chunk of chunks) {
-        await writable.write(chunk);
+        await writable.write(chunk as unknown as FileSystemWriteChunkType);
       }
       await writable.close();
 
@@ -282,7 +273,7 @@ async function storeModelData(chunks) {
   await markModelComplete();
 }
 
-async function markModelComplete() {
+async function markModelComplete(): Promise<void> {
   try {
     const { openDB } = await import('./db.js');
     const db = await openDB();

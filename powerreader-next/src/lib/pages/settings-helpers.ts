@@ -10,14 +10,7 @@
 
 import { t } from '../i18n/zh-TW.js';
 
-/**
- * Format VRAM size for display.
- * Shows GB for >= 1024 MB, MB otherwise, "無法偵測" for 0/falsy.
- *
- * @param {number|null|undefined} mb - VRAM in megabytes
- * @returns {string} Human-readable VRAM string
- */
-export function formatVRAM(mb) {
+export function formatVRAM(mb: number | null | undefined): string {
   if (!mb) return t('settings.hw.vram_unknown');
 
   if (mb >= 1024) {
@@ -30,13 +23,7 @@ export function formatVRAM(mb) {
   return `${mb} MB`;
 }
 
-/**
- * Format ISO 8601 date string to human-readable TW locale.
- *
- * @param {string|null|undefined} isoString
- * @returns {string} Formatted date or "—"
- */
-export function formatBenchmarkDate(isoString) {
+export function formatBenchmarkDate(isoString: string | null | undefined): string {
   if (!isoString) return '—';
 
   try {
@@ -55,13 +42,7 @@ export function formatBenchmarkDate(isoString) {
   }
 }
 
-/**
- * Format benchmark mode for display.
- *
- * @param {string} mode - 'gpu' | 'cpu' | 'none'
- * @returns {{ text: string, color: string }}
- */
-export function formatBenchmarkMode(mode) {
+export function formatBenchmarkMode(mode: string): { text: string; color: string } {
   if (mode === 'gpu') {
     return { text: t('settings.hw.mode_gpu'), color: 'var(--color-controversy-low)' };
   }
@@ -71,15 +52,7 @@ export function formatBenchmarkMode(mode) {
   return { text: t('settings.hw.mode_none'), color: 'var(--color-bias-extreme)' };
 }
 
-/**
- * Create a label-value info row element.
- *
- * @param {string} label
- * @param {string} value
- * @param {string} [color]
- * @returns {HTMLElement}
- */
-export function createInfoRow(label, value, color) {
+export function createInfoRow(label: string, value: string, color?: string): HTMLElement {
   const row = document.createElement('div');
   row.className = 'settings-about__row';
 

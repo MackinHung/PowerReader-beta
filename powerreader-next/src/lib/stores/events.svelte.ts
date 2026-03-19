@@ -5,24 +5,27 @@
  * Supports both legacy events (blindspot_events) and new pre-computed clusters.
  */
 
+import type { BlindspotEvent, EventCluster, Article } from '$lib/types/models.js';
+import type { ExpandedArticles } from '$lib/types/stores.js';
+
 import * as api from '$lib/core/api.js';
 
 // Legacy events state
-let events = $state([]);
-let loading = $state(false);
-let error = $state(null);
-let hasMore = $state(true);
-let currentPage = $state(1);
-let expandedArticles = $state({});
-let expandingId = $state(null);
+let events: BlindspotEvent[] = $state([]);
+let loading: boolean = $state(false);
+let error: string | null = $state(null);
+let hasMore: boolean = $state(true);
+let currentPage: number = $state(1);
+let expandedArticles: ExpandedArticles = $state({});
+let expandingId: string | null = $state(null);
 
 // Pre-computed clusters state
-let clusters = $state([]);
-let clustersLoading = $state(false);
-let clustersError = $state(null);
-let clustersHasMore = $state(true);
-let clustersPage = $state(1);
-let unclusteredArticleIds = $state([]);
+let clusters: EventCluster[] = $state([]);
+let clustersLoading: boolean = $state(false);
+let clustersError: string | null = $state(null);
+let clustersHasMore: boolean = $state(true);
+let clustersPage: number = $state(1);
+let unclusteredArticleIds: string[] = $state([]);
 
 export function getEventsStore() {
   return {
@@ -46,10 +49,8 @@ export function getEventsStore() {
 
     /**
      * Fetch pre-computed clusters with pagination.
-     * @param {number} page - Page number (1-based)
-     * @param {string} [category] - Optional category filter
      */
-    async fetchClusters(page = 1, category) {
+    async fetchClusters(page: number = 1, category?: string): Promise<void> {
       clustersLoading = true;
       clustersError = null;
       try {
@@ -60,7 +61,7 @@ export function getEventsStore() {
           return;
         }
 
-        const incoming = result.data?.clusters || [];
+        const incoming: EventCluster[] = result.data?.clusters || [];
 
         if (page === 1) {
           clusters = incoming;
@@ -72,21 +73,21 @@ export function getEventsStore() {
         clustersHasMore = incoming.length >= 20;
         clustersPage = page;
       } catch (e) {
-        clustersError = e.message;
+        clustersError = (e as Error).message;
       } finally {
         clustersLoading = false;
       }
     },
 
     /** Load next page of clusters. */
-    async loadMoreClusters(category) {
+    async loadMoreClusters(category?: string): Promise<void> {
       if (!clustersLoading && clustersHasMore) {
         await this.fetchClusters(clustersPage + 1, category);
       }
     },
 
     /** Refresh clusters from page 1. */
-    async refreshClusters(category) {
+    async refreshClusters(category?: string): Promise<void> {
       await this.fetchClusters(1, category);
     },
 
@@ -96,9 +97,8 @@ export function getEventsStore() {
 
     /**
      * Fetch event clusters with pagination.
-     * @param {number} page - Page number (1-based)
      */
-    async fetchEvents(page = 1) {
+    async fetchEvents(page: number = 1): Promise<void> {
       loading = true;
       error = null;
       try {
@@ -109,7 +109,8 @@ export function getEventsStore() {
           return;
         }
 
-        const incoming = result.data?.items || result.data?.events || [];
+        const eventsData = result.data as { items?: BlindspotEvent[]; events?: BlindspotEvent[] } | null;
+        const incoming: BlindspotEvent[] = eventsData?.items || eventsData?.events || [];
 
         if (page === 1) {
           events = incoming;
@@ -120,14 +121,14 @@ export function getEventsStore() {
         hasMore = incoming.length >= 20;
         currentPage = page;
       } catch (e) {
-        error = e.message;
+        error = (e as Error).message;
       } finally {
         loading = false;
       }
     },
 
     /** Load next page of events. */
-    async loadMore() {
+    async loadMore(): Promise<void> {
       if (!loading && hasMore) {
         await this.fetchEvents(currentPage + 1);
       }
@@ -138,10 +139,8 @@ export function getEventsStore() {
      * Uses search API as workaround (GET /events/{id} returns 500).
      * Truncates title to avoid backend 500 on long Chinese queries.
      * Only caches if results were found; empty results allow retry.
-     * @param {string} clusterId
-     * @param {string} title - Event title to search for
      */
-    async expandEvent(clusterId, title) {
+    async expandEvent(clusterId: string, title: string): Promise<void> {
       if (expandedArticles[clusterId]?.length > 0) return;
 
       expandingId = clusterId;
@@ -150,17 +149,19 @@ export function getEventsStore() {
         // Try 15 chars first, fallback to 8 chars if no results.
         const shortTitle = (title || '').slice(0, 15);
         let result = await api.searchArticles(shortTitle);
-        let articles = result.success
-          ? (result.data?.articles || result.data?.items || [])
-          : [];
+        let searchData = result.success
+          ? (result.data as { articles?: Article[]; items?: Article[] } | null)
+          : null;
+        let articles: Article[] = searchData?.articles || searchData?.items || [];
 
         // Fallback: try shorter query if no results
         if (articles.length === 0 && shortTitle.length > 8) {
           const shorterTitle = (title || '').slice(0, 8);
           result = await api.searchArticles(shorterTitle);
-          articles = result.success
-            ? (result.data?.articles || result.data?.items || [])
-            : [];
+          searchData = result.success
+            ? (result.data as { articles?: Article[]; items?: Article[] } | null)
+            : null;
+          articles = searchData?.articles || searchData?.items || [];
         }
 
         if (articles.length > 0) {
@@ -175,24 +176,21 @@ export function getEventsStore() {
 
     /**
      * Collapse an expanded event cluster.
-     * @param {string} clusterId
      */
-    collapseEvent(clusterId) {
+    collapseEvent(clusterId: string): void {
       const { [clusterId]: _, ...rest } = expandedArticles;
       expandedArticles = rest;
     },
 
     /**
      * Get expanded articles for a cluster.
-     * @param {string} clusterId
-     * @returns {Array|undefined}
      */
-    getExpandedArticles(clusterId) {
+    getExpandedArticles(clusterId: string): Article[] | undefined {
       return expandedArticles[clusterId];
     },
 
     /** Refresh events from page 1. */
-    async refreshEvents() {
+    async refreshEvents(): Promise<void> {
       await this.fetchEvents(1);
     }
   };

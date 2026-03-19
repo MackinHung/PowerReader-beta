@@ -6,10 +6,6 @@
  * @license AGPL-3.0
  */
 
-/**
- * @param {HTMLElement} container
- * @param {string} articleId
- */
-export function loadClusterPanel(container, articleId) {
+export function loadClusterPanel(container: HTMLElement, articleId: string): void {
   // Stub implementation
 }
