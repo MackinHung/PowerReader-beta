@@ -182,12 +182,13 @@ describe('generateKnowledgeJson', () => {
     expect(written).toHaveProperty('types');
     expect(written).toHaveProperty('parties');
     expect(written).toHaveProperty('entries');
-    expect(written.entries[0]).toEqual({
+    expect(written.entries[0]).toMatchObject({
       id: 'p1',
       type: 'politician',
       title: 'A',
       content: 'c',
-      party: 'DPP'
+      party: 'DPP',
+      _batch: 'batch_001'
     });
   });
 
@@ -199,5 +200,75 @@ describe('generateKnowledgeJson', () => {
     const result = generateKnowledgeJson();
 
     expect(result.total).toBe(0);
+  });
+
+  it('passes through stances for topic entries', () => {
+    mockExistsSync.mockReturnValue(true);
+    mockReaddirSync.mockReturnValue(['batch_001.json']);
+    mockReadFileSync.mockReturnValueOnce(JSON.stringify({
+      entries: [{
+        id: 'top_abc123',
+        type: 'topic',
+        title: 'Issue X',
+        stances: { DPP: 'stance-a', KMT: 'stance-b', TPP: 'stance-c' }
+      }]
+    }));
+
+    const result = generateKnowledgeJson();
+
+    expect(result.total).toBe(1);
+    expect(result.types).toEqual({ topic: 1 });
+    const written = JSON.parse(mockWriteFileSync.mock.calls[0][1]);
+    expect(written.entries[0].stances).toEqual({ DPP: 'stance-a', KMT: 'stance-b', TPP: 'stance-c' });
+    expect(written.entries[0]).not.toHaveProperty('content');
+    expect(written.entries[0]).not.toHaveProperty('party');
+  });
+
+  it('adds _batch field tracking source file', () => {
+    mockExistsSync.mockReturnValue(true);
+    mockReaddirSync.mockReturnValue(['batch_007.json']);
+    mockReadFileSync.mockReturnValueOnce(JSON.stringify({
+      entries: [{ id: 'p1', type: 'politician', title: 'A', content: 'c', party: 'DPP' }]
+    }));
+
+    generateKnowledgeJson();
+
+    const written = JSON.parse(mockWriteFileSync.mock.calls[0][1]);
+    expect(written.entries[0]._batch).toBe('batch_007');
+  });
+
+  it('does not count topic entries in party statistics', () => {
+    mockExistsSync.mockReturnValue(true);
+    mockReaddirSync.mockReturnValue(['batch_001.json']);
+    mockReadFileSync.mockReturnValueOnce(JSON.stringify({
+      entries: [
+        { id: 'p1', type: 'politician', title: 'A', content: 'c', party: 'KMT' },
+        { id: 'top_1', type: 'topic', title: 'Issue', stances: { DPP: 's1', KMT: 's2', TPP: 's3' } }
+      ]
+    }));
+
+    const result = generateKnowledgeJson();
+
+    expect(result.total).toBe(2);
+    expect(result.types).toEqual({ politician: 1, topic: 1 });
+    // Only the politician should be counted in parties
+    expect(result.parties).toEqual({ KMT: 1 });
+  });
+
+  it('output has no type:term after migration', () => {
+    mockExistsSync.mockReturnValue(true);
+    mockReaddirSync.mockReturnValue(['batch_001.json']);
+    mockReadFileSync.mockReturnValueOnce(JSON.stringify({
+      entries: [
+        { id: 'p1', type: 'politician', title: 'A', content: 'c', party: 'DPP' },
+        { id: 'e1', type: 'event', title: 'B', content: 'c' },
+        { id: 'top_1', type: 'topic', title: 'C', stances: { DPP: 's', KMT: 's', TPP: 's' } }
+      ]
+    }));
+
+    const result = generateKnowledgeJson();
+
+    expect(result.types).not.toHaveProperty('term');
+    expect(result.types).toEqual({ politician: 1, event: 1, topic: 1 });
   });
 });

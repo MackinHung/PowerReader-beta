@@ -29,3 +29,6 @@ vite.config.ts.timestamp-*
 
 # Generated data
 /static/data/knowledge.json
+
+# Migration backups
+data/knowledge/.backup/

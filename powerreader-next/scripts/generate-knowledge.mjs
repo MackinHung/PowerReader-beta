@@ -44,6 +44,7 @@ export function generateKnowledgeJson() {
   const entriesMap = new Map();
 
   for (const file of files) {
+    const batchName = file.replace(/\.json$/, '');
     try {
       const raw = readFileSync(resolve(BATCH_DIR, file), 'utf-8');
       const data = JSON.parse(raw);
@@ -51,13 +52,22 @@ export function generateKnowledgeJson() {
 
       for (const entry of entries) {
         if (entry.id) {
-          entriesMap.set(entry.id, {
+          const mapped = {
             id: entry.id,
             type: entry.type || 'unknown',
             title: entry.title || '',
-            content: entry.content || '',
-            party: entry.party || null
-          });
+            _batch: batchName
+          };
+
+          if (entry.type === 'topic' && entry.stances) {
+            // Topic entries carry stances instead of content/party
+            mapped.stances = entry.stances;
+          } else {
+            mapped.content = entry.content || '';
+            mapped.party = entry.party || null;
+          }
+
+          entriesMap.set(entry.id, mapped);
         }
       }
     } catch (err) {
@@ -68,12 +78,13 @@ export function generateKnowledgeJson() {
   const allEntries = [...entriesMap.values()];
 
   // Compute type and party counts
+  // Topic entries do not count toward party stats (party info is in stances)
   const types = {};
   const parties = {};
 
   for (const entry of allEntries) {
     types[entry.type] = (types[entry.type] || 0) + 1;
-    if (entry.party) {
+    if (entry.type !== 'topic' && entry.party) {
       parties[entry.party] = (parties[entry.party] || 0) + 1;
     }
   }
