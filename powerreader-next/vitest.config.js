@@ -11,7 +11,7 @@ export default defineConfig({
 		conditions: ['browser'],
 		alias: {
 			$lib: path.resolve(__dirname, './src/lib'),
-			$app: path.resolve(__dirname, './.svelte-kit/runtime/app')
+			$app: path.resolve(__dirname, './tests/__mocks__/$app')
 		}
 	},
 	test: {

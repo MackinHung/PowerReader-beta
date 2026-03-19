@@ -1,14 +1,25 @@
 <script>
   import { page } from '$app/state';
+  import { goto } from '$app/navigation';
   import { untrack } from 'svelte';
-  import Card from '$lib/components/ui/Card.svelte';
   import Button from '$lib/components/ui/Button.svelte';
+  import IconButton from '$lib/components/ui/IconButton.svelte';
   import CampBar from '$lib/components/data-viz/CampBar.svelte';
-  import ControversyMeter from '$lib/components/data-viz/ControversyMeter.svelte';
+  import ControversyPulse from '$lib/components/data-viz/ControversyPulse.svelte';
+  import BlindspotAlert from '$lib/components/data-viz/BlindspotAlert.svelte';
+  import ClusterTimeline from '$lib/components/data-viz/ClusterTimeline.svelte';
+  import AnalysisZone from '$lib/components/data-viz/AnalysisZone.svelte';
   import ArticleCard from '$lib/components/article/ArticleCard.svelte';
   import ProgressIndicator from '$lib/components/ui/ProgressIndicator.svelte';
   import { getMediaQueryStore } from '$lib/stores/mediaQuery.svelte.js';
   import * as api from '$lib/core/api.js';
+  import {
+    getAnalysisState,
+    getAnalysisProgress,
+    groupArticlesBySource,
+    buildShareData,
+    getControversyTier,
+  } from '$lib/pages/event-detail.js';
 
   const media = getMediaQueryStore();
   let clusterId = $derived(page.params.id);
@@ -17,45 +28,14 @@
   let articles = $state([]);
   let loading = $state(true);
   let error = $state(null);
+  let shareMsg = $state('');
 
-  const BLINDSPOT_LABELS = {
-    green_only: '僅綠營報導',
-    blue_only: '僅藍營報導',
-    white_missing: '缺乏中立報導',
-    imbalanced: '報導失衡'
-  };
-
-  const CONTROVERSY_COLORS = [
-    { max: 20, color: '#4CAF50', label: '低' },
-    { max: 40, color: '#8BC34A', label: '中低' },
-    { max: 60, color: '#FFC107', label: '中' },
-    { max: 80, color: '#FF9800', label: '中高' },
-    { max: 100, color: '#F44336', label: '高' },
-  ];
-
+  // Derived state using helper functions
   let campDist = $derived(cluster?.camp_distribution || {});
-  let hasAnalysis = $derived(
-    (cluster?.analyzed_count ?? 0) > 0 ||
-    (campDist.green ?? 0) + (campDist.white ?? 0) + (campDist.blue ?? 0) > 0
-  );
-  let blindspotLabel = $derived(
-    cluster?.blindspot_type ? (BLINDSPOT_LABELS[cluster.blindspot_type] || cluster.blindspot_type) : null
-  );
-  let controversyConfig = $derived(() => {
-    const s = cluster?.avg_controversy_score;
-    if (s == null) return null;
-    return CONTROVERSY_COLORS.find(c => s <= c.max) || CONTROVERSY_COLORS[4];
-  });
-
-  // Group articles by source for comparison table
-  let articlesBySource = $derived(() => {
-    const map = {};
-    for (const art of articles) {
-      if (!map[art.source]) map[art.source] = [];
-      map[art.source].push(art);
-    }
-    return Object.entries(map).sort((a, b) => b[1].length - a[1].length);
-  });
+  let analysisState = $derived(getAnalysisState(cluster));
+  let analysisProgress = $derived(getAnalysisProgress(cluster, articles));
+  let controversyTier = $derived(getControversyTier(cluster?.avg_controversy_score));
+  let articlesBySource = $derived(groupArticlesBySource(articles));
 
   $effect(() => {
     const id = clusterId;
@@ -82,15 +62,26 @@
     }
   }
 
-  function formatDate(dateStr) {
-    if (!dateStr) return '';
-    const d = new Date(dateStr);
-    return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  function handleArticleClick(article) {
+    goto(`/article/${article.article_id}`);
   }
 
-  function handleArticleClick(article) {
-    if (article.primary_url) {
-      window.open(article.primary_url, '_blank', 'noopener');
+  function handleArticleAnalyze(article) {
+    goto(`/analyze/${article.article_id}`);
+  }
+
+  async function handleShare() {
+    const data = buildShareData(cluster, clusterId);
+    try {
+      if (navigator.share) {
+        await navigator.share(data);
+      } else {
+        await navigator.clipboard.writeText(data.url);
+        shareMsg = '已複製連結';
+        setTimeout(() => { shareMsg = ''; }, 2000);
+      }
+    } catch {
+      // User cancelled share dialog
     }
   }
 </script>
@@ -121,83 +112,77 @@
       <Button variant="outlined" onclick={() => loadCluster(clusterId)}>重試</Button>
     </div>
   {:else if cluster}
+    <!-- BlindspotAlert banner (top-level, prominent) -->
+    <BlindspotAlert type={cluster.blindspot_type} isBlindspot={analysisState !== 'none' && cluster.is_blindspot} />
+
     <!-- Header (Light) -->
     <div class="detail-header">
-      <div class="header-badges">
-        {#if cluster.category}
-          <span class="category-badge">{cluster.category}</span>
-        {/if}
-        {#if blindspotLabel}
-          <span class="blindspot-badge">{blindspotLabel}</span>
-        {/if}
-        <span class="meta-badge">{cluster.article_count} 篇 · {cluster.source_count} 家媒體</span>
+      <div class="header-row">
+        <div class="header-badges">
+          {#if cluster.category}
+            <span class="category-badge">{cluster.category}</span>
+          {/if}
+          <span class="meta-badge">{cluster.article_count} 篇 · {cluster.source_count} 家媒體</span>
+        </div>
+        <div class="header-actions">
+          {#if shareMsg}
+            <span class="share-msg">{shareMsg}</span>
+          {/if}
+          <IconButton icon="share" label="分享" onclick={handleShare} />
+        </div>
       </div>
       <h1 class="detail-title">{cluster.representative_title}</h1>
-      <span class="detail-time">
-        <span class="material-symbols-outlined time-icon">schedule</span>
-        {formatDate(cluster.earliest_published_at)} — {formatDate(cluster.latest_published_at)}
-      </span>
+      <ClusterTimeline earliest={cluster.earliest_published_at} latest={cluster.latest_published_at} />
     </div>
 
     <!-- Analysis Zone (Dark) -->
-    <div class="analysis-zone">
-      <h3 class="zone-title">分析數據</h3>
-      <div class="zone-content">
+    <AnalysisZone title="分析數據">
+      <!-- Analysis Progress -->
+      <div class="analysis-progress">
+        <span class="progress-text">已分析 {analysisProgress.analyzed}/{analysisProgress.total} 篇</span>
+        <div class="progress-bar-container">
+          <div class="progress-bar" style="width: {analysisProgress.percentage}%"></div>
+        </div>
+      </div>
+
+      {#if analysisState === 'none'}
+        <!-- Empty state: no analysis yet -->
+        <div class="zone-empty">
+          <span class="material-symbols-outlined empty-icon">psychology</span>
+          <p>尚無分析資料</p>
+          <p class="empty-hint">協助分析此事件的文章，貢獻您的 GPU 算力</p>
+        </div>
+      {:else}
         <div class="zone-grid">
           <!-- Controversy -->
-          {#if controversyConfig()}
+          {#if controversyTier}
             <div class="zone-item">
               <span class="zone-label">平均爭議程度</span>
               <div class="controversy-row">
-                <div class="heat-bar-container">
-                  <div
-                    class="heat-bar"
-                    style="width: {cluster.avg_controversy_score}%; background: {controversyConfig().color}"
-                  ></div>
-                </div>
-                <span class="controversy-label" style="color: {controversyConfig().color}">
-                  {controversyConfig().label} ({Math.round(cluster.avg_controversy_score)})
+                <ControversyPulse score={controversyTier.score} dark={true} />
+                <span class="controversy-label" style="color: {controversyTier.color}">
+                  {controversyTier.label}
                 </span>
               </div>
             </div>
           {/if}
 
-          <!-- Camp Distribution (only when analysis data exists) -->
-          {#if hasAnalysis}
-            <div class="zone-item">
-              <span class="zone-label">陣營比例</span>
-              <CampBar
-                green={campDist.green ?? 0}
-                white={campDist.white ?? 0}
-                blue={campDist.blue ?? 0}
-                dark={true}
-              />
-            </div>
-          {:else}
-            <div class="zone-item">
-              <span class="zone-label">陣營比例</span>
-              <span class="zone-pending">尚無分析資料</span>
-            </div>
-          {/if}
-        </div>
-
-        <!-- Blindspot Alert (only when analysis data exists) -->
-        {#if hasAnalysis && cluster.is_blindspot && blindspotLabel}
-          <div class="zone-blindspot">
-            <span class="material-symbols-outlined">warning</span>
-            <div>
-              <strong>{blindspotLabel}</strong>
-              {#if cluster.missing_camp}
-                <p class="alert-desc">此事件缺少{cluster.missing_camp === 'pan_green' ? '泛綠' : cluster.missing_camp === 'pan_blue' ? '泛藍' : '中立'}觀點的報導</p>
-              {/if}
-            </div>
+          <!-- Camp Distribution -->
+          <div class="zone-item">
+            <span class="zone-label">陣營比例</span>
+            <CampBar
+              green={campDist.green ?? 0}
+              white={campDist.white ?? 0}
+              blue={campDist.blue ?? 0}
+              dark={true}
+            />
           </div>
-        {/if}
-      </div>
-    </div>
+        </div>
+      {/if}
+    </AnalysisZone>
 
     <!-- Cross-media Comparison (Light) -->
-    {#if articlesBySource().length >= 2}
+    {#if articlesBySource.length >= 2}
       <div class="comparison-section">
         <h2 class="section-heading">
           <span class="material-symbols-outlined">compare_arrows</span>
@@ -209,7 +194,7 @@
             <span class="col-title">標題</span>
             <span class="col-bias">偏向</span>
           </div>
-          {#each articlesBySource() as [source, sourceArticles], rowIdx}
+          {#each articlesBySource as [source, sourceArticles], rowIdx}
             <div class="comparison-row" class:odd={rowIdx % 2 === 1}>
               <div class="comparison-source">
                 <span class="source-name">{source}</span>
@@ -217,7 +202,10 @@
               </div>
               <div class="comparison-articles">
                 {#each sourceArticles as art}
-                  <div class="comparison-article">
+                  <button
+                    class="comparison-article"
+                    onclick={() => handleArticleClick(art)}
+                  >
                     <span class="art-title">{art.title}</span>
                     {#if art.bias_score != null}
                       <span class="art-bias" class:green={art.bias_score <= 40} class:blue={art.bias_score >= 60}>
@@ -226,7 +214,7 @@
                     {:else}
                       <span class="art-bias pending">待分析</span>
                     {/if}
-                  </div>
+                  </button>
                 {/each}
               </div>
             </div>
@@ -246,6 +234,7 @@
           <ArticleCard
             {article}
             onclick={() => handleArticleClick(article)}
+            onanalyze={() => handleArticleAnalyze(article)}
           />
         {/each}
       </div>
@@ -287,23 +276,32 @@
     flex-direction: column;
     gap: 8px;
   }
+  .header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
   .header-badges {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
     align-items: center;
   }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .share-msg {
+    font: var(--md-sys-typescale-label-small-font);
+    color: var(--md-sys-color-primary);
+  }
   .category-badge {
     font: var(--md-sys-typescale-label-small-font);
     color: var(--md-sys-color-on-primary-container);
     background: var(--md-sys-color-primary-container);
-    padding: 2px 10px;
-    border-radius: var(--md-sys-shape-corner-extra-small);
-  }
-  .blindspot-badge {
-    font: var(--md-sys-typescale-label-small-font);
-    color: var(--md-sys-color-error);
-    background: var(--md-sys-color-error-container);
     padding: 2px 10px;
     border-radius: var(--md-sys-shape-corner-extra-small);
   }
@@ -317,36 +315,57 @@
     color: var(--md-sys-color-on-surface);
     line-height: 1.4;
   }
-  .detail-time {
-    display: inline-flex;
+
+  /* === Analysis Progress === */
+  .analysis-progress {
+    display: flex;
     align-items: center;
-    gap: 4px;
-    font: var(--md-sys-typescale-label-medium-font);
-    color: var(--md-sys-color-on-surface-variant);
+    gap: 12px;
   }
-  .time-icon {
-    font-size: 16px;
+  .progress-text {
+    font: var(--md-sys-typescale-label-medium-font);
+    color: var(--pr-analysis-on-surface-variant);
+    white-space: nowrap;
+  }
+  .progress-bar-container {
+    flex: 1;
+    height: 4px;
+    background: var(--pr-analysis-border);
+    border-radius: var(--md-sys-shape-corner-full);
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    background: var(--pr-analysis-gold);
+    border-radius: var(--md-sys-shape-corner-full);
+    transition: width var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-standard);
   }
 
-  /* === Analysis Zone (Dark) === */
-  .analysis-zone {
-    background: var(--pr-analysis-surface);
-    border-radius: var(--md-sys-shape-corner-medium);
-    padding: 24px;
-    border: 1px solid var(--pr-analysis-border);
-  }
-  .zone-title {
-    font: 700 18px/24px var(--pr-font-serif);
-    color: var(--pr-analysis-gold);
-    margin: 0 0 16px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--pr-analysis-border);
-  }
-  .zone-content {
+  /* === Analysis Zone Empty State === */
+  .zone-empty {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    align-items: center;
+    gap: 8px;
+    padding: 24px 16px;
+    text-align: center;
   }
+  .empty-icon {
+    font-size: 40px;
+    color: var(--pr-analysis-on-surface-variant);
+    opacity: 0.5;
+  }
+  .zone-empty p {
+    margin: 0;
+    font: var(--md-sys-typescale-body-medium-font);
+    color: var(--pr-analysis-on-surface-variant);
+  }
+  .empty-hint {
+    opacity: 0.7;
+    font: var(--md-sys-typescale-body-small-font) !important;
+  }
+
+  /* === Zone Grid === */
   .zone-grid {
     display: flex;
     flex-direction: column;
@@ -373,44 +392,9 @@
     align-items: center;
     gap: 12px;
   }
-  .heat-bar-container {
-    flex: 1;
-    height: 8px;
-    background: var(--pr-analysis-border);
-    border-radius: var(--md-sys-shape-corner-full);
-    overflow: hidden;
-  }
-  .heat-bar {
-    height: 100%;
-    border-radius: var(--md-sys-shape-corner-full);
-    transition: width var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-standard);
-  }
   .controversy-label {
     font: var(--md-sys-typescale-label-medium-font);
     white-space: nowrap;
-  }
-  .zone-blindspot {
-    display: flex;
-    gap: 12px;
-    padding: 12px 16px;
-    background: rgba(179, 38, 30, 0.15);
-    border-radius: var(--md-sys-shape-corner-small);
-    color: #F9DEDC;
-    border: 1px solid rgba(179, 38, 30, 0.3);
-  }
-  .zone-blindspot .material-symbols-outlined {
-    flex-shrink: 0;
-    font-size: 24px;
-    color: #F44336;
-  }
-  .zone-blindspot strong {
-    font: var(--md-sys-typescale-title-small-font);
-    color: #F9DEDC;
-  }
-  .alert-desc {
-    margin: 4px 0 0;
-    font: var(--md-sys-typescale-body-small-font);
-    color: var(--pr-analysis-on-surface-variant);
   }
 
   /* === Section Heading === */
@@ -498,6 +482,16 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 8px;
+    background: none;
+    border: none;
+    padding: 4px;
+    border-radius: var(--md-sys-shape-corner-extra-small);
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+  }
+  .comparison-article:hover {
+    background: var(--md-sys-color-surface-container);
   }
   .art-title {
     font: var(--md-sys-typescale-body-small-font);
@@ -523,12 +517,6 @@
     color: var(--md-sys-color-on-surface-variant);
     background: var(--md-sys-color-surface-container-high);
     opacity: 0.7;
-  }
-  .zone-pending {
-    font: var(--md-sys-typescale-body-small-font);
-    color: var(--pr-analysis-on-surface-variant);
-    opacity: 0.6;
-    font-style: italic;
   }
 
   /* === Articles List === */
