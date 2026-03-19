@@ -8,20 +8,19 @@
  * @license AGPL-3.0
  */
 
-const LS_PREFIX = 'pr_eta_';
-const WINDOW_SIZE = 10;
+import type { EtaEstimate } from '$lib/types/inference.js';
+
+const LS_PREFIX: string = 'pr_eta_';
+const WINDOW_SIZE: number = 10;
 
 /**
  * Record a latency measurement.
- * @param {string} tier - 'gpu' | 'cpu'
- * @param {string} pass - 'pass1' | 'pass2'
- * @param {number} ms - Elapsed milliseconds
  */
-export function recordLatency(tier, pass, ms) {
+export function recordLatency(tier: string, pass: string, ms: number): void {
   const key = `${LS_PREFIX}${tier}_${pass}`;
   try {
     const raw = localStorage.getItem(key);
-    const entries = raw ? JSON.parse(raw) : [];
+    const entries: number[] = raw ? JSON.parse(raw) : [];
     const updated = [...entries, ms].slice(-WINDOW_SIZE);
     localStorage.setItem(key, JSON.stringify(updated));
   } catch {
@@ -31,17 +30,13 @@ export function recordLatency(tier, pass, ms) {
 
 /**
  * Estimate remaining time for a pass.
- * @param {string} tier
- * @param {string} pass
- * @param {number} elapsedMs - Time already spent
- * @returns {{ remainingMs: number, confidence: number } | null}
  */
-export function estimateRemaining(tier, pass, elapsedMs) {
+export function estimateRemaining(tier: string, pass: string, elapsedMs: number): EtaEstimate | null {
   const key = `${LS_PREFIX}${tier}_${pass}`;
   try {
     const raw = localStorage.getItem(key);
     if (!raw) return null;
-    const entries = JSON.parse(raw);
+    const entries: number[] = JSON.parse(raw);
     if (!entries.length) return null;
 
     const sorted = [...entries].sort((a, b) => a - b);
@@ -57,12 +52,8 @@ export function estimateRemaining(tier, pass, elapsedMs) {
 
 /**
  * Get dual-pass progress as 0~1.
- * @param {string} stage
- * @param {number} elapsedMs
- * @param {string} tier - 'gpu' | 'cpu'
- * @returns {number}
  */
-export function getDualPassProgress(stage, elapsedMs, tier) {
+export function getDualPassProgress(stage: string, elapsedMs: number, tier: string): number {
   if (stage === 'done' || stage === 'pass2_done') return 1;
   if (stage === 'preparing') return 0.02;
   if (stage === 'loading_model') return 0.07;

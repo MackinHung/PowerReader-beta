@@ -10,10 +10,46 @@
  */
 
 import { openDB } from './db.js';
+import type {
+  ApiResponse,
+  FetchArticlesParams,
+  FetchEventsParams,
+  FetchBlindspotEventsParams,
+  FetchClustersParams,
+  FetchContributionsParams,
+  FetchKnowledgeListParams,
+  SearchArticlesParams,
+  SearchKnowledgeParams,
+  FeedbackType,
+  SubmitAnalysisPayload,
+  PaginationMeta
+} from '$lib/types/api.js';
+import type {
+  Article,
+  BlindspotEvent,
+  EventCluster,
+  UserProfile,
+  UserPoints,
+  Contribution,
+  KnowledgeEntry,
+  AnalysisResult,
+  SourceProfile
+} from '$lib/types/models.js';
 
 export const API_BASE = 'https://powerreader-api.watermelom5404.workers.dev/api/v1';
 const FETCH_TIMEOUT_MS = 10000;
 const CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
+
+interface CachedRecord<T = unknown> {
+  cache_key: string;
+  data: T;
+  cached_at: string;
+}
+
+interface CachedArticle extends Article {
+  article_hash: string;
+  cached_at: string;
+}
 
 // =============================================
 // Internal: Fetch wrapper
@@ -23,7 +59,7 @@ const CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
  * Generic fetch with unified error handling.
  * Returns { success, data, error } — never throws.
  */
-async function apiFetch(path, options = {}) {
+async function apiFetch<T = unknown>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
   const url = `${API_BASE}${path}`;
 
   try {
@@ -44,8 +80,9 @@ async function apiFetch(path, options = {}) {
     }
 
     return json;
-  } catch (err) {
-    if (err.name === 'TimeoutError' || err.name === 'AbortError') {
+  } catch (err: unknown) {
+    const name = (err as { name?: string }).name;
+    if (name === 'TimeoutError' || name === 'AbortError') {
       return { success: false, data: null, error: { type: 'timeout' } };
     }
     return { success: false, data: null, error: { type: 'network' } };
@@ -56,7 +93,7 @@ async function apiFetch(path, options = {}) {
 // Internal: IndexedDB cache helpers
 // =============================================
 
-async function cacheArticle(article) {
+async function cacheArticle(article: Article): Promise<void> {
   try {
     const db = await openDB();
     const tx = db.transaction('articles', 'readwrite');
@@ -65,7 +102,7 @@ async function cacheArticle(article) {
       article_hash: article.article_id,
       cached_at: new Date().toISOString()
     });
-    await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = () => rej(tx.error); });
+    await new Promise<void>((res, rej) => { tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); });
     db.close();
   } catch (e) {
     console.error('[API] Cache article failed:', e);
@@ -76,7 +113,7 @@ async function cacheArticle(article) {
  * Batch-cache multiple articles in a single IDB transaction.
  * ~3x faster than serial cacheArticle() calls for 20 articles.
  */
-async function batchCacheArticles(articlesList) {
+async function batchCacheArticles(articlesList: Article[]): Promise<void> {
   if (!articlesList.length) return;
   try {
     const db = await openDB();
@@ -90,14 +127,14 @@ async function batchCacheArticles(articlesList) {
         cached_at: now
       });
     }
-    await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = () => rej(tx.error); });
+    await new Promise<void>((res, rej) => { tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); });
     db.close();
   } catch (e) {
     console.error('[API] Batch cache articles failed:', e);
   }
 }
 
-async function cacheResponse(cacheKey, data) {
+async function cacheResponse(cacheKey: string, data: unknown): Promise<void> {
   try {
     const db = await openDB();
     const tx = db.transaction('cached_results', 'readwrite');
@@ -106,19 +143,19 @@ async function cacheResponse(cacheKey, data) {
       data,
       cached_at: new Date().toISOString()
     });
-    await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = () => rej(tx.error); });
+    await new Promise<void>((res, rej) => { tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); });
     db.close();
   } catch (e) {
     console.error('[API] Cache response failed:', e);
   }
 }
 
-async function getCachedResponse(cacheKey) {
+async function getCachedResponse<T = unknown>(cacheKey: string): Promise<T | null> {
   try {
     const db = await openDB();
     const tx = db.transaction('cached_results', 'readonly');
     const req = tx.objectStore('cached_results').get(cacheKey);
-    const result = await new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); });
+    const result = await new Promise<CachedRecord<T> | undefined>((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); });
     db.close();
     return result ? result.data : null;
   } catch (e) {
@@ -126,12 +163,12 @@ async function getCachedResponse(cacheKey) {
   }
 }
 
-async function getCachedArticle(articleId) {
+async function getCachedArticle(articleId: string): Promise<CachedArticle | null> {
   try {
     const db = await openDB();
     const tx = db.transaction('articles', 'readonly');
     const req = tx.objectStore('articles').get(articleId);
-    const result = await new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); });
+    const result = await new Promise<CachedArticle | undefined>((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); });
     db.close();
     return result || null;
   } catch (e) {
@@ -139,12 +176,12 @@ async function getCachedArticle(articleId) {
   }
 }
 
-async function getAllCachedArticles() {
+async function getAllCachedArticles(): Promise<CachedArticle[]> {
   try {
     const db = await openDB();
     const tx = db.transaction('articles', 'readonly');
     const req = tx.objectStore('articles').getAll();
-    const result = await new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); });
+    const result = await new Promise<CachedArticle[]>((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); });
     db.close();
     return result || [];
   } catch (e) {
@@ -156,12 +193,12 @@ async function getAllCachedArticles() {
  * Return cached response only if it's within CACHE_TTL_MS.
  * Returns null if missing or stale — caller should fetch from API.
  */
-async function getFreshCachedResponse(cacheKey) {
+async function getFreshCachedResponse<T = unknown>(cacheKey: string): Promise<T | null> {
   try {
     const db = await openDB();
     const tx = db.transaction('cached_results', 'readonly');
     const req = tx.objectStore('cached_results').get(cacheKey);
-    const record = await new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); });
+    const record = await new Promise<CachedRecord<T> | undefined>((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); });
     db.close();
     if (!record) return null;
     const age = Date.now() - new Date(record.cached_at).getTime();
@@ -174,12 +211,12 @@ async function getFreshCachedResponse(cacheKey) {
 /**
  * Return cached article only if it's within CACHE_TTL_MS.
  */
-async function getFreshCachedArticle(articleId) {
+async function getFreshCachedArticle(articleId: string): Promise<CachedArticle | null> {
   try {
     const db = await openDB();
     const tx = db.transaction('articles', 'readonly');
     const req = tx.objectStore('articles').get(articleId);
-    const record = await new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); });
+    const record = await new Promise<CachedArticle | undefined>((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); });
     db.close();
     if (!record) return null;
     const age = Date.now() - new Date(record.cached_at).getTime();
@@ -193,6 +230,11 @@ async function getFreshCachedArticle(articleId) {
 // Public API
 // =============================================
 
+interface ArticlesData {
+  articles: Article[];
+  pagination: PaginationMeta;
+}
+
 /**
  * GET /api/v1/articles — paginated article list.
  */
@@ -203,11 +245,11 @@ export async function fetchArticles({
   sort_order = 'desc',
   source,
   category
-} = {}) {
+}: FetchArticlesParams = {}): Promise<ApiResponse<ArticlesData>> {
   const cacheKey = `articles:${page}:${limit}:${sort_by}:${sort_order}:${source || ''}:${category || ''}`;
 
   if (!navigator.onLine) {
-    const cached = await getCachedResponse(cacheKey);
+    const cached = await getCachedResponse<ArticlesData>(cacheKey);
     if (cached) return { success: true, data: cached, error: null };
 
     const articles = await getAllCachedArticles();
@@ -218,14 +260,14 @@ export async function fetchArticles({
     };
   }
 
-  const fresh = await getFreshCachedResponse(cacheKey);
+  const fresh = await getFreshCachedResponse<ArticlesData>(cacheKey);
   if (fresh) return { success: true, data: fresh, error: null };
 
-  const params = new URLSearchParams({ page, limit, sort_by, sort_order });
+  const params = new URLSearchParams({ page: String(page), limit: String(limit), sort_by, sort_order });
   if (source) params.set('source', source);
   if (category) params.set('category', category);
 
-  const result = await apiFetch(`/articles?${params}`);
+  const result = await apiFetch<ArticlesData>(`/articles?${params}`);
 
   if (result.success && result.data) {
     // Non-blocking cache writes — don't delay API response
@@ -239,7 +281,7 @@ export async function fetchArticles({
 /**
  * GET /api/v1/articles/:article_id — single article detail.
  */
-export async function fetchArticle(articleId) {
+export async function fetchArticle(articleId: string): Promise<ApiResponse<Article>> {
   if (!navigator.onLine) {
     const cached = await getCachedArticle(articleId);
     if (cached) return { success: true, data: cached, error: null };
@@ -249,7 +291,7 @@ export async function fetchArticle(articleId) {
   const fresh = await getFreshCachedArticle(articleId);
   if (fresh) return { success: true, data: fresh, error: null };
 
-  const result = await apiFetch(`/articles/${encodeURIComponent(articleId)}`);
+  const result = await apiFetch<Article>(`/articles/${encodeURIComponent(articleId)}`);
   if (result.success && result.data) {
     await cacheArticle(result.data);
   }
@@ -259,19 +301,19 @@ export async function fetchArticle(articleId) {
 /**
  * GET /api/v1/articles/:article_id/cluster — similarity cluster.
  */
-export async function fetchArticleCluster(articleId) {
+export async function fetchArticleCluster(articleId: string): Promise<ApiResponse<{ articles: Article[] }>> {
   const cacheKey = `cluster:${articleId}`;
 
   if (!navigator.onLine) {
-    const cached = await getCachedResponse(cacheKey);
+    const cached = await getCachedResponse<{ articles: Article[] }>(cacheKey);
     if (cached) return { success: true, data: cached, error: null };
     return { success: false, data: null, error: { type: 'offline' } };
   }
 
-  const fresh = await getFreshCachedResponse(cacheKey);
+  const fresh = await getFreshCachedResponse<{ articles: Article[] }>(cacheKey);
   if (fresh) return { success: true, data: fresh, error: null };
 
-  const result = await apiFetch(`/articles/${encodeURIComponent(articleId)}/cluster`);
+  const result = await apiFetch<{ articles: Article[] }>(`/articles/${encodeURIComponent(articleId)}/cluster`);
   if (result.success && result.data) {
     await cacheResponse(cacheKey, result.data);
   }
@@ -281,19 +323,19 @@ export async function fetchArticleCluster(articleId) {
 /**
  * GET /api/v1/articles/:article_id/knowledge — RAG knowledge entries.
  */
-export async function fetchArticleKnowledge(articleId) {
+export async function fetchArticleKnowledge(articleId: string): Promise<ApiResponse<{ knowledge_entries: KnowledgeEntry[] }>> {
   const cacheKey = `knowledge:${articleId}`;
 
   if (!navigator.onLine) {
-    const cached = await getCachedResponse(cacheKey);
+    const cached = await getCachedResponse<{ knowledge_entries: KnowledgeEntry[] }>(cacheKey);
     if (cached) return { success: true, data: cached, error: null };
     return { success: false, data: null, error: { type: 'offline' } };
   }
 
-  const fresh = await getFreshCachedResponse(cacheKey);
+  const fresh = await getFreshCachedResponse<{ knowledge_entries: KnowledgeEntry[] }>(cacheKey);
   if (fresh) return { success: true, data: fresh, error: null };
 
-  const result = await apiFetch(`/articles/${encodeURIComponent(articleId)}/knowledge`);
+  const result = await apiFetch<{ knowledge_entries: KnowledgeEntry[] }>(`/articles/${encodeURIComponent(articleId)}/knowledge`);
   if (result.success && result.data) {
     await cacheResponse(cacheKey, result.data);
   }
@@ -307,8 +349,8 @@ export async function fetchArticleKnowledge(articleId) {
 /**
  * GET /api/v1/user/me — current user info.
  */
-export async function fetchUserMe(token) {
-  return apiFetch('/user/me', {
+export async function fetchUserMe(token: string): Promise<ApiResponse<UserProfile>> {
+  return apiFetch<UserProfile>('/user/me', {
     headers: { 'Authorization': `Bearer ${token}` }
   });
 }
@@ -316,22 +358,20 @@ export async function fetchUserMe(token) {
 /**
  * GET /api/v1/user/me/points — user points and vote rights.
  */
-export async function fetchUserPoints(token) {
-  return apiFetch('/user/me/points', {
+export async function fetchUserPoints(token: string): Promise<ApiResponse<UserPoints>> {
+  return apiFetch<UserPoints>('/user/me/points', {
     headers: { 'Authorization': `Bearer ${token}` }
   });
 }
 
 /**
  * GET /api/v1/user/me/contributions — contribution history.
- * @param {string} token
- * @param {Object} [opts] - { page, limit, days }
  */
-export async function fetchUserContributions(token, { page = 1, limit = 20, days } = {}) {
-  const params = new URLSearchParams({ page, limit });
-  if (days) params.set('days', days);
+export async function fetchUserContributions(token: string, { page = 1, limit = 20, days }: FetchContributionsParams = {}): Promise<ApiResponse<{ contributions: Contribution[]; pagination: PaginationMeta }>> {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (days) params.set('days', String(days));
 
-  return apiFetch(`/user/me/contributions?${params}`, {
+  return apiFetch<{ contributions: Contribution[]; pagination: PaginationMeta }>(`/user/me/contributions?${params}`, {
     headers: { 'Authorization': `Bearer ${token}` }
   });
 }
@@ -339,19 +379,19 @@ export async function fetchUserContributions(token, { page = 1, limit = 20, days
 /**
  * GET /api/v1/articles/:article_id/analyses — all analysis results.
  */
-export async function fetchArticleAnalyses(articleId) {
+export async function fetchArticleAnalyses(articleId: string): Promise<ApiResponse<{ analyses: AnalysisResult[] }>> {
   const cacheKey = `analyses:${articleId}`;
 
   if (!navigator.onLine) {
-    const cached = await getCachedResponse(cacheKey);
+    const cached = await getCachedResponse<{ analyses: AnalysisResult[] }>(cacheKey);
     if (cached) return { success: true, data: cached, error: null };
     return { success: false, data: null, error: { type: 'offline' } };
   }
 
-  const fresh = await getFreshCachedResponse(cacheKey);
+  const fresh = await getFreshCachedResponse<{ analyses: AnalysisResult[] }>(cacheKey);
   if (fresh) return { success: true, data: fresh, error: null };
 
-  const result = await apiFetch(`/articles/${encodeURIComponent(articleId)}/analyses`);
+  const result = await apiFetch<{ analyses: AnalysisResult[] }>(`/articles/${encodeURIComponent(articleId)}/analyses`);
   if (result.success && result.data) {
     await cacheResponse(cacheKey, result.data);
   }
@@ -361,7 +401,7 @@ export async function fetchArticleAnalyses(articleId) {
 /**
  * POST /api/v1/articles/:article_id/analysis — Submit analysis result.
  */
-export async function submitAnalysisResult(articleId, payload, token) {
+export async function submitAnalysisResult(articleId: string, payload: SubmitAnalysisPayload, token: string): Promise<ApiResponse<unknown>> {
   return apiFetch(`/articles/${encodeURIComponent(articleId)}/analysis`, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${token}` },
@@ -376,22 +416,22 @@ export async function submitAnalysisResult(articleId, payload, token) {
 /**
  * GET /api/v1/blindspot/events — paginated blindspot events.
  */
-export async function fetchBlindspotEvents({ page = 1, limit = 20, type } = {}) {
+export async function fetchBlindspotEvents({ page = 1, limit = 20, type }: FetchBlindspotEventsParams = {}): Promise<ApiResponse<{ items: BlindspotEvent[]; pagination: PaginationMeta }>> {
   const cacheKey = `blindspot:${page}:${limit}:${type || ''}`;
 
   if (!navigator.onLine) {
-    const cached = await getCachedResponse(cacheKey);
+    const cached = await getCachedResponse<{ items: BlindspotEvent[]; pagination: PaginationMeta }>(cacheKey);
     if (cached) return { success: true, data: cached, error: null };
     return { success: false, data: null, error: { type: 'offline' } };
   }
 
-  const fresh = await getFreshCachedResponse(cacheKey);
+  const fresh = await getFreshCachedResponse<{ items: BlindspotEvent[]; pagination: PaginationMeta }>(cacheKey);
   if (fresh) return { success: true, data: fresh, error: null };
 
-  const params = new URLSearchParams({ page, limit });
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (type) params.set('type', type);
 
-  const result = await apiFetch(`/blindspot/events?${params}`);
+  const result = await apiFetch<{ items: BlindspotEvent[]; pagination: PaginationMeta }>(`/blindspot/events?${params}`);
   if (result.success && result.data) {
     await cacheResponse(cacheKey, result.data);
   }
@@ -405,19 +445,19 @@ export async function fetchBlindspotEvents({ page = 1, limit = 20, type } = {}) 
 /**
  * GET /api/v1/sources — all source tendency profiles.
  */
-export async function fetchSources() {
+export async function fetchSources(): Promise<ApiResponse<{ sources: SourceProfile[] }>> {
   const cacheKey = 'sources:all';
 
   if (!navigator.onLine) {
-    const cached = await getCachedResponse(cacheKey);
+    const cached = await getCachedResponse<{ sources: SourceProfile[] }>(cacheKey);
     if (cached) return { success: true, data: cached, error: null };
     return { success: false, data: null, error: { type: 'offline' } };
   }
 
-  const fresh = await getFreshCachedResponse(cacheKey);
+  const fresh = await getFreshCachedResponse<{ sources: SourceProfile[] }>(cacheKey);
   if (fresh) return { success: true, data: fresh, error: null };
 
-  const result = await apiFetch('/sources');
+  const result = await apiFetch<{ sources: SourceProfile[] }>('/sources');
   if (result.success && result.data) {
     await cacheResponse(cacheKey, result.data);
   }
@@ -427,19 +467,19 @@ export async function fetchSources() {
 /**
  * GET /api/v1/sources/:source — detailed source transparency.
  */
-export async function fetchSource(source) {
+export async function fetchSource(source: string): Promise<ApiResponse<SourceProfile>> {
   const cacheKey = `source:${source}`;
 
   if (!navigator.onLine) {
-    const cached = await getCachedResponse(cacheKey);
+    const cached = await getCachedResponse<SourceProfile>(cacheKey);
     if (cached) return { success: true, data: cached, error: null };
     return { success: false, data: null, error: { type: 'offline' } };
   }
 
-  const fresh = await getFreshCachedResponse(cacheKey);
+  const fresh = await getFreshCachedResponse<SourceProfile>(cacheKey);
   if (fresh) return { success: true, data: fresh, error: null };
 
-  const result = await apiFetch(`/sources/${encodeURIComponent(source)}`);
+  const result = await apiFetch<SourceProfile>(`/sources/${encodeURIComponent(source)}`);
   if (result.success && result.data) {
     await cacheResponse(cacheKey, result.data);
   }
@@ -453,7 +493,7 @@ export async function fetchSource(source) {
 /**
  * POST /api/v1/articles/:article_id/feedback — submit like/dislike.
  */
-export async function submitArticleFeedback(articleId, type, token) {
+export async function submitArticleFeedback(articleId: string, type: FeedbackType, token: string): Promise<ApiResponse<unknown>> {
   return apiFetch(`/articles/${encodeURIComponent(articleId)}/feedback`, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${token}` },
@@ -464,8 +504,8 @@ export async function submitArticleFeedback(articleId, type, token) {
 /**
  * GET /api/v1/articles/:article_id/feedback/stats — aggregated feedback.
  */
-export async function fetchArticleFeedbackStats(articleId) {
-  return apiFetch(`/articles/${encodeURIComponent(articleId)}/feedback/stats`);
+export async function fetchArticleFeedbackStats(articleId: string): Promise<ApiResponse<{ likes: number; dislikes: number }>> {
+  return apiFetch<{ likes: number; dislikes: number }>(`/articles/${encodeURIComponent(articleId)}/feedback/stats`);
 }
 
 // =============================================
@@ -475,7 +515,7 @@ export async function fetchArticleFeedbackStats(articleId) {
 /**
  * POST /api/v1/analyses/:analysis_id/feedback — submit like/dislike.
  */
-export async function submitAnalysisFeedback(analysisId, type, token) {
+export async function submitAnalysisFeedback(analysisId: string, type: FeedbackType, token: string): Promise<ApiResponse<unknown>> {
   return apiFetch(`/analyses/${encodeURIComponent(analysisId)}/feedback`, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${token}` },
@@ -486,8 +526,8 @@ export async function submitAnalysisFeedback(analysisId, type, token) {
 /**
  * GET /api/v1/analyses/:analysis_id/feedback/stats — aggregated feedback.
  */
-export async function fetchAnalysisFeedbackStats(analysisId) {
-  return apiFetch(`/analyses/${encodeURIComponent(analysisId)}/feedback/stats`);
+export async function fetchAnalysisFeedbackStats(analysisId: string): Promise<ApiResponse<{ likes: number; dislikes: number }>> {
+  return apiFetch<{ likes: number; dislikes: number }>(`/analyses/${encodeURIComponent(analysisId)}/feedback/stats`);
 }
 
 // =============================================
@@ -497,8 +537,8 @@ export async function fetchAnalysisFeedbackStats(analysisId) {
 /**
  * POST /api/v1/articles/:article_id/report — report article.
  */
-export async function reportArticle(articleId, reason, description, token) {
-  const body = { reason };
+export async function reportArticle(articleId: string, reason: string, description: string | undefined, token: string): Promise<ApiResponse<unknown>> {
+  const body: { reason: string; description?: string } = { reason };
   if (description) body.description = description;
   return apiFetch(`/articles/${encodeURIComponent(articleId)}/report`, {
     method: 'POST',
@@ -510,8 +550,8 @@ export async function reportArticle(articleId, reason, description, token) {
 /**
  * POST /api/v1/analyses/:analysis_id/report — report analysis.
  */
-export async function reportAnalysis(analysisId, reason, description, token) {
-  const body = { reason };
+export async function reportAnalysis(analysisId: string, reason: string, description: string | undefined, token: string): Promise<ApiResponse<unknown>> {
+  const body: { reason: string; description?: string } = { reason };
   if (description) body.description = description;
   return apiFetch(`/analyses/${encodeURIComponent(analysisId)}/report`, {
     method: 'POST',
@@ -527,20 +567,20 @@ export async function reportAnalysis(analysisId, reason, description, token) {
 /**
  * GET /api/v1/search?q=keyword — article text search.
  */
-export async function searchArticles(query, { page = 1, limit = 20 } = {}) {
+export async function searchArticles(query: string, { page = 1, limit = 20 }: SearchArticlesParams = {}): Promise<ApiResponse<{ articles: Article[]; pagination: PaginationMeta }>> {
   const cacheKey = `search:${query}:${page}:${limit}`;
 
   if (!navigator.onLine) {
-    const cached = await getCachedResponse(cacheKey);
+    const cached = await getCachedResponse<{ articles: Article[]; pagination: PaginationMeta }>(cacheKey);
     if (cached) return { success: true, data: cached, error: null };
     return { success: false, data: null, error: { type: 'offline' } };
   }
 
-  const fresh = await getFreshCachedResponse(cacheKey);
+  const fresh = await getFreshCachedResponse<{ articles: Article[]; pagination: PaginationMeta }>(cacheKey);
   if (fresh) return { success: true, data: fresh, error: null };
 
-  const params = new URLSearchParams({ q: query, page, limit });
-  const result = await apiFetch(`/search?${params}`);
+  const params = new URLSearchParams({ q: query, page: String(page), limit: String(limit) });
+  const result = await apiFetch<{ articles: Article[]; pagination: PaginationMeta }>(`/search?${params}`);
   if (result.success && result.data) {
     await cacheResponse(cacheKey, result.data);
   }
@@ -554,22 +594,22 @@ export async function searchArticles(query, { page = 1, limit = 20 } = {}) {
 /**
  * GET /api/v1/events — paginated event clusters.
  */
-export async function fetchEvents({ page = 1, limit = 20, type } = {}) {
+export async function fetchEvents({ page = 1, limit = 20, type }: FetchEventsParams = {}): Promise<ApiResponse<{ items: BlindspotEvent[]; pagination: PaginationMeta }>> {
   const cacheKey = `events:${page}:${limit}:${type || ''}`;
 
   if (!navigator.onLine) {
-    const cached = await getCachedResponse(cacheKey);
+    const cached = await getCachedResponse<{ items: BlindspotEvent[]; pagination: PaginationMeta }>(cacheKey);
     if (cached) return { success: true, data: cached, error: null };
     return { success: false, data: null, error: { type: 'offline' } };
   }
 
-  const fresh = await getFreshCachedResponse(cacheKey);
+  const fresh = await getFreshCachedResponse<{ items: BlindspotEvent[]; pagination: PaginationMeta }>(cacheKey);
   if (fresh) return { success: true, data: fresh, error: null };
 
-  const params = new URLSearchParams({ page, limit });
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (type) params.set('type', type);
 
-  const result = await apiFetch(`/events?${params}`);
+  const result = await apiFetch<{ items: BlindspotEvent[]; pagination: PaginationMeta }>(`/events?${params}`);
   if (result.success && result.data) {
     await cacheResponse(cacheKey, result.data);
   }
@@ -579,19 +619,19 @@ export async function fetchEvents({ page = 1, limit = 20, type } = {}) {
 /**
  * GET /api/v1/events/:cluster_id — event detail with articles.
  */
-export async function fetchEventDetail(clusterId) {
+export async function fetchEventDetail(clusterId: string): Promise<ApiResponse<EventCluster & { articles: Article[] }>> {
   const cacheKey = `event:${clusterId}`;
 
   if (!navigator.onLine) {
-    const cached = await getCachedResponse(cacheKey);
+    const cached = await getCachedResponse<EventCluster & { articles: Article[] }>(cacheKey);
     if (cached) return { success: true, data: cached, error: null };
     return { success: false, data: null, error: { type: 'offline' } };
   }
 
-  const fresh = await getFreshCachedResponse(cacheKey);
+  const fresh = await getFreshCachedResponse<EventCluster & { articles: Article[] }>(cacheKey);
   if (fresh) return { success: true, data: fresh, error: null };
 
-  const result = await apiFetch(`/events/${encodeURIComponent(clusterId)}`);
+  const result = await apiFetch<EventCluster & { articles: Article[] }>(`/events/${encodeURIComponent(clusterId)}`);
   if (result.success && result.data) {
     await cacheResponse(cacheKey, result.data);
   }
@@ -605,22 +645,22 @@ export async function fetchEventDetail(clusterId) {
 /**
  * GET /api/v1/clusters — paginated pre-computed clusters.
  */
-export async function fetchClusters({ page = 1, limit = 20, category } = {}) {
+export async function fetchClusters({ page = 1, limit = 20, category }: FetchClustersParams = {}): Promise<ApiResponse<{ clusters: EventCluster[]; unclustered_article_ids: string[]; pagination: PaginationMeta }>> {
   const cacheKey = `clusters:${page}:${limit}:${category || ''}`;
 
   if (!navigator.onLine) {
-    const cached = await getCachedResponse(cacheKey);
+    const cached = await getCachedResponse<{ clusters: EventCluster[]; unclustered_article_ids: string[]; pagination: PaginationMeta }>(cacheKey);
     if (cached) return { success: true, data: cached, error: null };
     return { success: false, data: null, error: { type: 'offline' } };
   }
 
-  const fresh = await getFreshCachedResponse(cacheKey);
+  const fresh = await getFreshCachedResponse<{ clusters: EventCluster[]; unclustered_article_ids: string[]; pagination: PaginationMeta }>(cacheKey);
   if (fresh) return { success: true, data: fresh, error: null };
 
-  const params = new URLSearchParams({ page, limit });
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (category && category !== 'all') params.set('category', category);
 
-  const result = await apiFetch(`/clusters?${params}`);
+  const result = await apiFetch<{ clusters: EventCluster[]; unclustered_article_ids: string[]; pagination: PaginationMeta }>(`/clusters?${params}`);
   if (result.success && result.data) {
     await cacheResponse(cacheKey, result.data);
   }
@@ -630,19 +670,19 @@ export async function fetchClusters({ page = 1, limit = 20, category } = {}) {
 /**
  * GET /api/v1/clusters/:cluster_id — cluster detail with articles.
  */
-export async function fetchClusterDetail(clusterId) {
+export async function fetchClusterDetail(clusterId: string): Promise<ApiResponse<EventCluster & { articles: Article[] }>> {
   const cacheKey = `cluster-detail:${clusterId}`;
 
   if (!navigator.onLine) {
-    const cached = await getCachedResponse(cacheKey);
+    const cached = await getCachedResponse<EventCluster & { articles: Article[] }>(cacheKey);
     if (cached) return { success: true, data: cached, error: null };
     return { success: false, data: null, error: { type: 'offline' } };
   }
 
-  const fresh = await getFreshCachedResponse(cacheKey);
+  const fresh = await getFreshCachedResponse<EventCluster & { articles: Article[] }>(cacheKey);
   if (fresh) return { success: true, data: fresh, error: null };
 
-  const result = await apiFetch(`/clusters/${encodeURIComponent(clusterId)}`);
+  const result = await apiFetch<EventCluster & { articles: Article[] }>(`/clusters/${encodeURIComponent(clusterId)}`);
   if (result.success && result.data) {
     await cacheResponse(cacheKey, result.data);
   }
@@ -656,12 +696,12 @@ export async function fetchClusterDetail(clusterId) {
 /**
  * GET /api/v1/knowledge/list — List knowledge entries (admin).
  */
-export async function fetchKnowledgeList(adminKey, { page = 1, limit = 50, type, party } = {}) {
-  const params = new URLSearchParams({ page, limit });
+export async function fetchKnowledgeList(adminKey: string, { page = 1, limit = 50, type, party }: FetchKnowledgeListParams = {}): Promise<ApiResponse<{ entries: KnowledgeEntry[]; pagination: PaginationMeta }>> {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (type) params.set('type', type);
   if (party) params.set('party', party);
 
-  return apiFetch(`/knowledge/list?${params}`, {
+  return apiFetch<{ entries: KnowledgeEntry[]; pagination: PaginationMeta }>(`/knowledge/list?${params}`, {
     headers: { 'Authorization': `Bearer ${adminKey}` }
   });
 }
@@ -669,8 +709,8 @@ export async function fetchKnowledgeList(adminKey, { page = 1, limit = 50, type,
 /**
  * POST /api/v1/knowledge/upsert — Add/update a knowledge entry (admin).
  */
-export async function upsertKnowledgeEntry(adminKey, entry) {
-  return apiFetch('/knowledge/upsert', {
+export async function upsertKnowledgeEntry(adminKey: string, entry: Omit<KnowledgeEntry, 'score'>): Promise<ApiResponse<KnowledgeEntry>> {
+  return apiFetch<KnowledgeEntry>('/knowledge/upsert', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${adminKey}` },
     body: JSON.stringify(entry)
@@ -680,7 +720,7 @@ export async function upsertKnowledgeEntry(adminKey, entry) {
 /**
  * DELETE /api/v1/knowledge/:id — Delete a knowledge entry (admin).
  */
-export async function deleteKnowledgeEntry(adminKey, id) {
+export async function deleteKnowledgeEntry(adminKey: string, id: string): Promise<ApiResponse<unknown>> {
   return apiFetch(`/knowledge/${encodeURIComponent(id)}`, {
     method: 'DELETE',
     headers: { 'Authorization': `Bearer ${adminKey}` }
@@ -690,11 +730,11 @@ export async function deleteKnowledgeEntry(adminKey, id) {
 /**
  * GET /api/v1/knowledge/search — Search knowledge entries (admin).
  */
-export async function searchKnowledgeEntries(adminKey, query, { topK = 10, type } = {}) {
-  const params = new URLSearchParams({ q: query, topK });
+export async function searchKnowledgeEntries(adminKey: string, query: string, { topK = 10, type }: SearchKnowledgeParams = {}): Promise<ApiResponse<{ entries: KnowledgeEntry[] }>> {
+  const params = new URLSearchParams({ q: query, topK: String(topK) });
   if (type) params.set('type', type);
 
-  return apiFetch(`/knowledge/search?${params}`, {
+  return apiFetch<{ entries: KnowledgeEntry[] }>(`/knowledge/search?${params}`, {
     headers: { 'Authorization': `Bearer ${adminKey}` }
   });
 }
@@ -706,7 +746,7 @@ export async function searchKnowledgeEntries(adminKey, query, { topK = 10, type 
 /**
  * GET /api/v1/user/me/export — export all user data (PDPA compliance).
  */
-export async function exportUserData(token) {
+export async function exportUserData(token: string): Promise<ApiResponse<unknown>> {
   return apiFetch('/user/me/export', {
     headers: { 'Authorization': `Bearer ${token}` }
   });
@@ -715,7 +755,7 @@ export async function exportUserData(token) {
 /**
  * DELETE /api/v1/user/me — delete user account (PDPA compliance).
  */
-export async function deleteUserAccount(token) {
+export async function deleteUserAccount(token: string): Promise<ApiResponse<unknown>> {
   return apiFetch('/user/me', {
     method: 'DELETE',
     headers: { 'Authorization': `Bearer ${token}` }

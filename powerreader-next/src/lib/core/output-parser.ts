@@ -11,13 +11,16 @@
  * @license AGPL-3.0
  */
 
-const SCORE_DEFAULTS = {
+import type { ScoreOutput, NarrativeOutput } from '$lib/types/models.js';
+import type { CampRatio } from '$lib/types/api.js';
+
+const SCORE_DEFAULTS: ScoreOutput = {
   bias_score: 50,
   controversy_score: 0,
   camp_ratio: null
 };
 
-const NARRATIVE_DEFAULTS = {
+const NARRATIVE_DEFAULTS: NarrativeOutput = {
   points: [],
   key_phrases: []
 };
@@ -25,11 +28,8 @@ const NARRATIVE_DEFAULTS = {
 /**
  * Strip <think>...</think> blocks from reasoning model output.
  * DeepSeek-R1 and similar models emit these before actual content.
- *
- * @param {string} raw - Raw model output
- * @returns {string} Output with thinking blocks removed
  */
-function stripThinkBlocks(raw) {
+function stripThinkBlocks(raw: string): string {
   if (!raw) return raw;
   // Remove all <think>...</think> blocks (greedy, handles multiline)
   return raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
@@ -39,11 +39,8 @@ function stripThinkBlocks(raw) {
  * Try to extract and parse JSON from raw model output.
  * Handles: <think> blocks, extra text wrapping, single quotes (4B quirk),
  * markdown code fences.
- *
- * @param {string} raw - Raw model output string
- * @returns {Object|null} Parsed object, or null on failure
  */
-function extractJSON(raw) {
+function extractJSON(raw: string): Record<string, unknown> | null {
   if (!raw || typeof raw !== 'string') return null;
 
   // Strip reasoning model <think> blocks
@@ -56,7 +53,7 @@ function extractJSON(raw) {
   const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
   if (!jsonMatch) return null;
 
-  let jsonStr = jsonMatch[0];
+  const jsonStr = jsonMatch[0];
 
   // Attempt standard parse
   try {
@@ -76,19 +73,16 @@ function extractJSON(raw) {
  * Parse and validate camp_ratio from parsed JSON.
  * Expects { green, white, blue, gray } with values 0-100 summing to ~100.
  * Returns null if invalid.
- *
- * @param {Object|undefined} raw - Raw camp_ratio object from model output
- * @returns {{ green: number, white: number, blue: number, gray: number } | null}
  */
-function parseCampRatio(raw) {
+function parseCampRatio(raw: unknown): CampRatio | null {
   if (!raw || typeof raw !== 'object') return null;
 
-  const keys = ['green', 'white', 'blue', 'gray'];
-  const values = {};
+  const keys = ['green', 'white', 'blue', 'gray'] as const;
+  const values: Record<string, number> = {};
 
   for (const key of keys) {
-    if (typeof raw[key] !== 'number') return null;
-    values[key] = Math.round(Math.max(0, Math.min(100, raw[key])));
+    if (typeof (raw as Record<string, unknown>)[key] !== 'number') return null;
+    values[key] = Math.round(Math.max(0, Math.min(100, (raw as Record<string, number>)[key])));
   }
 
   // Normalize: if sum is off (model quirk), scale proportionally
@@ -103,16 +97,13 @@ function parseCampRatio(raw) {
     values.gray = 100 - values.green - values.white - values.blue;
   }
 
-  return values;
+  return values as unknown as CampRatio;
 }
 
 /**
  * Parse Pass 1 output: score extraction.
- *
- * @param {string} rawOutput - Raw model output string
- * @returns {{ bias_score: number, controversy_score: number, camp_ratio: { green: number, white: number, blue: number, gray: number } | null }}
  */
-export function parseScoreOutput(rawOutput) {
+export function parseScoreOutput(rawOutput: string): ScoreOutput {
   const parsed = extractJSON(rawOutput);
   if (!parsed) return { ...SCORE_DEFAULTS };
 
@@ -129,20 +120,17 @@ export function parseScoreOutput(rawOutput) {
 
 /**
  * Parse Pass 2 output: narrative points.
- *
- * @param {string} rawOutput - Raw model output string
- * @returns {{ points: string[] }}
  */
-export function parseNarrativeOutput(rawOutput) {
+export function parseNarrativeOutput(rawOutput: string): NarrativeOutput {
   const parsed = extractJSON(rawOutput);
   if (!parsed) return { ...NARRATIVE_DEFAULTS };
 
   const points = Array.isArray(parsed.points)
-    ? parsed.points.filter(p => typeof p === 'string' && p.trim().length > 0).slice(0, 8)
+    ? parsed.points.filter((p: unknown) => typeof p === 'string' && (p as string).trim().length > 0).slice(0, 8)
     : NARRATIVE_DEFAULTS.points;
 
   const key_phrases = Array.isArray(parsed.key_phrases)
-    ? parsed.key_phrases.filter(p => typeof p === 'string' && p.trim().length > 0).slice(0, 10)
+    ? parsed.key_phrases.filter((p: unknown) => typeof p === 'string' && (p as string).trim().length > 0).slice(0, 10)
     : NARRATIVE_DEFAULTS.key_phrases;
 
   return { points, key_phrases };

@@ -12,23 +12,22 @@
  *   5. model_files    - Downloaded model binary chunks (keyPath: key)
  */
 
-const DB_NAME = 'PowerReader';       // config.js FRONTEND.INDEXEDDB_NAME
-const DB_VERSION = 2;                // config.js FRONTEND.INDEXEDDB_VERSION
-const CACHE_DAYS = 10;               // config.js FRONTEND.INDEXEDDB_CACHE_DAYS
+const DB_NAME: string = 'PowerReader';       // config.js FRONTEND.INDEXEDDB_NAME
+const DB_VERSION: number = 2;                // config.js FRONTEND.INDEXEDDB_VERSION
+const CACHE_DAYS: number = 10;               // config.js FRONTEND.INDEXEDDB_CACHE_DAYS
 
 /**
  * Open (or create) the PowerReader IndexedDB database.
- * @returns {Promise<IDBDatabase>}
  */
-export function openDB() {
+export function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
 
-    request.onupgradeneeded = (event) => {
-      const db = event.target.result;
+    request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
+      const db = (event.target as IDBOpenDBRequest).result;
 
       // 1. articles
       if (!db.objectStoreNames.contains('articles')) {
@@ -80,7 +79,7 @@ export function openDB() {
  * Delete articles and cached_results older than CACHE_DAYS.
  * Should be called on app startup and periodically.
  */
-export async function cleanExpiredCache() {
+export async function cleanExpiredCache(): Promise<void> {
   const db = await openDB();
   const cutoff = new Date(Date.now() - CACHE_DAYS * 24 * 60 * 60 * 1000).toISOString();
   const cutoff30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -94,12 +93,8 @@ export async function cleanExpiredCache() {
 
 /**
  * Delete all records in a store whose indexed date field is older than cutoff.
- * @param {IDBDatabase} db
- * @param {string} storeName
- * @param {string} indexName
- * @param {string} cutoffISO - ISO date string threshold
  */
-function cleanStoreByIndex(db, storeName, indexName, cutoffISO) {
+function cleanStoreByIndex(db: IDBDatabase, storeName: string, indexName: string, cutoffISO: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(storeName, 'readwrite');
     const store = tx.objectStore(storeName);
@@ -107,8 +102,8 @@ function cleanStoreByIndex(db, storeName, indexName, cutoffISO) {
     const range = IDBKeyRange.upperBound(cutoffISO);
     const cursor = index.openCursor(range);
 
-    cursor.onsuccess = (event) => {
-      const c = event.target.result;
+    cursor.onsuccess = (event: Event) => {
+      const c = (event.target as IDBRequest<IDBCursorWithValue | null>).result;
       if (c) {
         c.delete();
         c.continue();
@@ -124,7 +119,7 @@ function cleanStoreByIndex(db, storeName, indexName, cutoffISO) {
  * Request persistent storage so the browser does not evict IndexedDB data.
  * Non-critical: logs result but does not throw.
  */
-export async function requestPersistentStorage() {
+export async function requestPersistentStorage(): Promise<void> {
   try {
     if (navigator.storage && navigator.storage.persist) {
       await navigator.storage.persist();

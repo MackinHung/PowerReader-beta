@@ -1,5 +1,5 @@
 /**
- * PowerReader - Score → Category Mapping (Client-side)
+ * PowerReader - Score -> Category Mapping (Client-side)
  *
  * SSOT Mirror: Boundaries from shared/config.js ANALYSIS.BIAS_BOUNDARIES
  * and ANALYSIS.CONTROVERSY_BOUNDARIES. If those change, update here.
@@ -8,10 +8,12 @@
  * @license AGPL-3.0
  */
 
+import type { BiasCategory, ControversyLevel } from '$lib/types/models.js';
+
 // Bias boundaries: [5, 40, 48, 52, 60, 95]
 // Categories: extreme_left | left | center_left | center | center_right | right | extreme_right
 
-export function getBiasCategoryFromScore(score) {
+export function getBiasCategoryFromScore(score: number): BiasCategory {
   if (score < 5) return 'extreme_left';
   if (score < 40) return 'left';
   if (score < 48) return 'center_left';
@@ -28,7 +30,7 @@ export function getBiasCategoryFromScore(score) {
 // 61-80: core_conflict (核心對立議題)
 // 81-100: national_security (國安外交重大爭議)
 
-export function getControversyLevelFromScore(score) {
+export function getControversyLevelFromScore(score: number): ControversyLevel {
   if (score <= 20) return 'non_political';
   if (score <= 40) return 'general_policy';
   if (score <= 60) return 'partisan_clash';

@@ -9,13 +9,36 @@
  * @license AGPL-3.0
  */
 
-/**
- * @typedef {{ vramMB: number, type: 'discrete'|'integrated'|'unified' }} GPUEntry
- * @typedef {{ pattern: RegExp } & GPUEntry} GPUTableEntry
- */
+type GPUType = 'discrete' | 'integrated' | 'unified';
 
-/** @type {GPUTableEntry[]} */
-const GPU_VRAM_TABLE = [
+interface GPUTableEntry {
+  pattern: RegExp;
+  vramMB: number;
+  type: GPUType;
+}
+
+interface GPULookupResult {
+  vramMB: number;
+  type: GPUType | 'unknown';
+}
+
+interface ArchInfo {
+  label: string;
+  vramRange: string;
+  series: string;
+}
+
+interface ArchTableEntry extends ArchInfo {
+  vendor: RegExp;
+  arch: RegExp;
+}
+
+interface GPUOption {
+  name: string;
+  vramMB: number;
+}
+
+const GPU_VRAM_TABLE: GPUTableEntry[] = [
   // ── NVIDIA RTX 50 series ──────────────────────
   { pattern: /RTX\s*5090/i, vramMB: 32768, type: 'discrete' },
   { pattern: /RTX\s*5080/i, vramMB: 16384, type: 'discrete' },
@@ -124,11 +147,8 @@ const GPU_VRAM_TABLE = [
 
 /**
  * Look up GPU VRAM from the known device database.
- *
- * @param {string} deviceName - GPU device name from adapter.info.device
- * @returns {{ vramMB: number, type: 'discrete'|'integrated'|'unified'|'unknown' }}
  */
-export function lookupGPU(deviceName) {
+export function lookupGPU(deviceName: string): GPULookupResult {
   if (!deviceName) return { vramMB: 0, type: 'unknown' };
 
   for (const entry of GPU_VRAM_TABLE) {
@@ -149,15 +169,7 @@ export function lookupGPU(deviceName) {
 // adapter.info.vendor + adapter.info.architecture and provide a
 // VRAM range for that generation.
 
-/**
- * @typedef {Object} ArchInfo
- * @property {string} label - Human-readable architecture name
- * @property {string} vramRange - VRAM range string (e.g. "6 ~ 11 GB")
- * @property {string} series - GPU series description
- */
-
-/** @type {Array<{ vendor: RegExp, arch: RegExp } & ArchInfo>} */
-const ARCH_VRAM_TABLE = [
+const ARCH_VRAM_TABLE: ArchTableEntry[] = [
   // NVIDIA
   { vendor: /nvidia/i, arch: /blackwell/i, label: 'NVIDIA Blackwell', vramRange: '8 ~ 32 GB', series: 'RTX 50' },
   { vendor: /nvidia/i, arch: /ada/i, label: 'NVIDIA Ada Lovelace', vramRange: '8 ~ 24 GB', series: 'RTX 40' },
@@ -175,12 +187,8 @@ const ARCH_VRAM_TABLE = [
 
 /**
  * Look up GPU info by vendor + architecture when device name is unavailable.
- *
- * @param {string} vendor - adapter.info.vendor
- * @param {string} architecture - adapter.info.architecture
- * @returns {ArchInfo|null} Architecture info, or null if no match
  */
-export function lookupByArch(vendor, architecture) {
+export function lookupByArch(vendor: string, architecture: string): ArchInfo | null {
   if (!vendor && !architecture) return null;
 
   for (const entry of ARCH_VRAM_TABLE) {
@@ -196,8 +204,7 @@ export function lookupByArch(vendor, architecture) {
 // GPU picker — options grouped by architecture
 // ══════════════════════════════════════════════════
 
-/** @type {Object<string, Array<{ name: string, vramMB: number }>>} */
-const ARCH_GPU_OPTIONS = {
+const ARCH_GPU_OPTIONS: Record<string, GPUOption[]> = {
   blackwell: [
     { name: 'RTX 5090', vramMB: 32768 },
     { name: 'RTX 5080', vramMB: 16384 },
@@ -289,11 +296,8 @@ const ARCH_GPU_OPTIONS = {
 
 /**
  * Get the list of GPU options for a given architecture (for user picker).
- *
- * @param {string} architecture - adapter.info.architecture (e.g. 'turing')
- * @returns {Array<{ name: string, vramMB: number }>|null}
  */
-export function getGPUOptionsForArch(architecture) {
+export function getGPUOptionsForArch(architecture: string): GPUOption[] | null {
   if (!architecture) return null;
   const key = architecture.toLowerCase().replace(/\s+/g, '');
   return ARCH_GPU_OPTIONS[key] || null;

@@ -2,9 +2,9 @@
  * Escape HTML special characters to prevent XSS
  * MANDATORY for all user-facing content
  */
-export function escapeHtml(str) {
+export function escapeHtml(str: string): string {
   if (typeof str !== 'string') return '';
-  const map = {
+  const map: Record<string, string> = {
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',

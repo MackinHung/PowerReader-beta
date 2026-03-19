@@ -8,9 +8,11 @@
  * @license AGPL-3.0
  */
 
+import type { BrowserInfo } from '$lib/types/inference.js';
+
 const MOBILE_UA_PATTERN = /Android|iPhone|iPad|iPod|Mobile|webOS/i;
 
-const WEBGPU_BROWSER_REQUIREMENTS = {
+const WEBGPU_BROWSER_REQUIREMENTS: Record<string, number> = {
   Chrome: 113,
   Edge: 113,
   Firefox: Infinity, // experimental, flag required
@@ -23,10 +25,8 @@ const WEBGPU_BROWSER_REQUIREMENTS = {
  *   1. UA string matches mobile patterns
  *   2. Touch points > 0
  *   3. Screen width < 1024
- *
- * @returns {boolean}
  */
-export function isMobileDevice() {
+export function isMobileDevice(): boolean {
   let signals = 0;
 
   if (MOBILE_UA_PATTERN.test(navigator.userAgent)) signals++;
@@ -39,10 +39,8 @@ export function isMobileDevice() {
 /**
  * Parse browser name and version from the user agent string.
  * Returns WebGPU compatibility information.
- *
- * @returns {{ name: string, version: number, webgpuMinVersion: number, isCompatible: boolean, message: string }}
  */
-export function getBrowserInfo() {
+export function getBrowserInfo(): BrowserInfo {
   const ua = navigator.userAgent;
   let name = 'Unknown';
   let version = 0;

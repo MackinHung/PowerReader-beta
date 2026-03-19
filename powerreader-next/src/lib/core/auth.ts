@@ -14,34 +14,30 @@
  * Consent UI is now handled by Svelte components.
  */
 
-const TOKEN_KEY = 'powerreader_token';
-const SESSION_KEY = 'powerreader_session';
-const CONSENT_KEY = 'powerreader_privacy_consent';
-const USER_HASH_KEY = 'powerreader_user_hash';
+const TOKEN_KEY: string = 'powerreader_token';
+const SESSION_KEY: string = 'powerreader_session';
+const CONSENT_KEY: string = 'powerreader_privacy_consent';
+const USER_HASH_KEY: string = 'powerreader_user_hash';
 
 /**
  * Get stored JWT token.
- * @returns {string|null} JWT token or null if not logged in
  */
-export function getAuthToken() {
+export function getAuthToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
 
 /**
  * Get stored session ID.
- * @returns {string|null}
  */
-export function getSessionId() {
+export function getSessionId(): string | null {
   return localStorage.getItem(SESSION_KEY);
 }
 
 /**
  * Store authentication credentials after OAuth callback.
  * Also extracts user_hash from JWT payload for client-side use.
- * @param {string} token - JWT token
- * @param {string} sessionId - Session ID
  */
-export function setAuthCredentials(token, sessionId) {
+export function setAuthCredentials(token: string, sessionId: string): void {
   localStorage.setItem(TOKEN_KEY, token);
   localStorage.setItem(SESSION_KEY, sessionId);
 
@@ -55,15 +51,13 @@ export function setAuthCredentials(token, sessionId) {
 /**
  * Extract user_hash from JWT payload without verification.
  * Server always re-verifies JWT — this is for client-side display only.
- * @param {string} token - JWT string
- * @returns {string|null} user_hash or null
  */
-function extractUserHashFromJwt(token) {
+function extractUserHashFromJwt(token: string): string | null {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
-    const payload = JSON.parse(atob(parts[1]));
-    return payload.user_hash || payload.sub || null;
+    const payload: Record<string, unknown> = JSON.parse(atob(parts[1]));
+    return (payload.user_hash as string) || (payload.sub as string) || null;
   } catch {
     return null;
   }
@@ -72,7 +66,7 @@ function extractUserHashFromJwt(token) {
 /**
  * Clear all authentication data (logout).
  */
-export function clearAuth() {
+export function clearAuth(): void {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(SESSION_KEY);
   localStorage.removeItem(USER_HASH_KEY);
@@ -81,9 +75,8 @@ export function clearAuth() {
 /**
  * Get stored user_hash (extracted from JWT on login).
  * For already-logged-in users missing user_hash, re-extracts from stored token.
- * @returns {string|null}
  */
-export function getUserHash() {
+export function getUserHash(): string | null {
   let hash = localStorage.getItem(USER_HASH_KEY);
   if (!hash) {
     // Backfill: re-extract from stored token for existing sessions
@@ -98,16 +91,14 @@ export function getUserHash() {
 
 /**
  * Check if a JWT token's exp claim is in the past.
- * @param {string} token - JWT string
- * @returns {boolean} true if expired or unparseable
  */
-function isTokenExpired(token) {
+function isTokenExpired(token: string): boolean {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return true;
-    const payload = JSON.parse(atob(parts[1]));
+    const payload: Record<string, unknown> = JSON.parse(atob(parts[1]));
     if (!payload.exp) return false; // No exp claim = never expires
-    return Date.now() >= payload.exp * 1000;
+    return Date.now() >= (payload.exp as number) * 1000;
   } catch {
     return true;
   }
@@ -116,9 +107,8 @@ function isTokenExpired(token) {
 /**
  * Check if user is currently authenticated with a non-expired token.
  * If token exists but is expired, clears auth and returns false.
- * @returns {boolean}
  */
-export function isAuthenticated() {
+export function isAuthenticated(): boolean {
   const token = localStorage.getItem(TOKEN_KEY);
   if (!token) return false;
   if (isTokenExpired(token)) {
@@ -130,15 +120,14 @@ export function isAuthenticated() {
 
 /**
  * Check if user has given privacy consent.
- * @returns {boolean}
  */
-export function hasPrivacyConsent() {
+export function hasPrivacyConsent(): boolean {
   return localStorage.getItem(CONSENT_KEY) === '1';
 }
 
 /**
  * Record that user has given privacy consent.
  */
-export function setPrivacyConsent() {
+export function setPrivacyConsent(): void {
   localStorage.setItem(CONSENT_KEY, '1');
 }

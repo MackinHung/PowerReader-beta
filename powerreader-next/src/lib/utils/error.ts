@@ -9,12 +9,14 @@
  */
 
 import { t } from '$lib/i18n/zh-TW.js';
+import type { ApiError } from '$lib/types/api.js';
+
+type ErrorInput = ApiError | Error | null | undefined;
 
 /**
  * HTTP status code to i18n key mapping.
- * @type {Record<number, string>}
  */
-const STATUS_MAP = {
+const STATUS_MAP: Record<number, string> = {
   400: 'error.message.validation',
   401: 'error.message.unauthorized',
   403: 'error.message.unauthorized',
@@ -27,9 +29,8 @@ const STATUS_MAP = {
 
 /**
  * Error type string to i18n key mapping.
- * @type {Record<string, string>}
  */
-const TYPE_MAP = {
+const TYPE_MAP: Record<string, string> = {
   // Network
   'network': 'error.network.offline',
   'timeout': 'error.network.timeout',
@@ -55,24 +56,18 @@ const TYPE_MAP = {
 
 /**
  * Get a user-friendly error message from an error object.
- *
- * @param {Object} error - Error info (from API response or caught exception)
- * @param {number} [error.status] - HTTP status code
- * @param {string} [error.type] - Error type string
- * @param {string} [error.message] - Raw error message (NOT shown to user)
- * @returns {string} Translated user-facing error message
  */
-export function getUserErrorMessage(error) {
+export function getUserErrorMessage(error: ErrorInput): string {
   if (!error) return t('error.message.generic');
 
   // Check by error type first (more specific)
-  if (error.type && TYPE_MAP[error.type]) {
-    return t(TYPE_MAP[error.type]);
+  if ('type' in error && (error as ApiError).type && TYPE_MAP[(error as ApiError).type]) {
+    return t(TYPE_MAP[(error as ApiError).type]);
   }
 
   // Check by HTTP status code
-  if (error.status && STATUS_MAP[error.status]) {
-    return t(STATUS_MAP[error.status]);
+  if ('status' in error && (error as ApiError).status && STATUS_MAP[(error as ApiError).status!]) {
+    return t(STATUS_MAP[(error as ApiError).status!]);
   }
 
   // Detect network errors from native Error objects
@@ -80,11 +75,11 @@ export function getUserErrorMessage(error) {
     return t('error.network.offline');
   }
 
-  if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+  if (error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
     return t('error.network.timeout');
   }
 
-  if (error.name === 'QuotaExceededError') {
+  if (error instanceof Error && error.name === 'QuotaExceededError') {
     return t('error.storage.full');
   }
 

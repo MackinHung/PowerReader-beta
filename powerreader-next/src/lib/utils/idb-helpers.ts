@@ -10,11 +10,8 @@
 
 /**
  * Wrap an IDBRequest into a Promise.
- *
- * @param {IDBRequest} request
- * @returns {Promise<any>} Resolves with request.result
  */
-export function promisifyRequest(request) {
+export function promisifyRequest<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -23,11 +20,8 @@ export function promisifyRequest(request) {
 
 /**
  * Wrap an IDBTransaction completion into a Promise.
- *
- * @param {IDBTransaction} transaction
- * @returns {Promise<void>}
  */
-export function promisifyTransaction(transaction) {
+export function promisifyTransaction(transaction: IDBTransaction): Promise<void> {
   return new Promise((resolve, reject) => {
     transaction.oncomplete = () => resolve();
     transaction.onerror = () => reject(transaction.error);
