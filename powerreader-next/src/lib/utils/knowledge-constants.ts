@@ -13,8 +13,6 @@ export const KNOWLEDGE_CATEGORIES = {
   FIGURE: 'figure',        // 政治人物（原 politician）
   ISSUE: 'issue',          // 國家議題（原 topic）
   INCIDENT: 'incident',    // 社會事件（原 event）
-  MEDIA: 'media',          // 媒體（保留，未使用）
-  TERM: 'term',            // 名詞（保留，未使用）
 } as const;
 
 /** Legacy type names mapped to new names */
@@ -38,7 +36,18 @@ export const SOURCE_TYPES = {
   COMMUNITY: 'community',
 } as const;
 
-/** Character limit per structured sub-field */
+/**
+ * Character limits per type.
+ * - Figure: title+period+background sum ≤120
+ * - Issue: description ≤50, each stance ≤50
+ * - Incident: title+date+description+keywords sum ≤120
+ */
+export const FIGURE_TOTAL_CHAR_LIMIT = 120;
+export const ISSUE_DESC_CHAR_LIMIT = 50;
+export const ISSUE_STANCE_CHAR_LIMIT = 50;
+export const INCIDENT_TOTAL_CHAR_LIMIT = 120;
+
+/** @deprecated Use type-specific limits instead */
 export const FIELD_CHAR_LIMIT = 120;
 
 /** Valid source type values */

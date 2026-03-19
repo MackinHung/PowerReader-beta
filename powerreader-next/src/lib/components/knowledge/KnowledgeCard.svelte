@@ -7,7 +7,6 @@
   const TYPE_ICONS = {
     politician: 'person',
     figure: 'person',
-    media: 'newspaper',
     topic: 'topic',
     issue: 'topic',
     event: 'event',
@@ -45,7 +44,7 @@
   let snippet = $derived(() => {
     if (entryIsIssue) return '';
     // Prefer structured field, fall back to content
-    const c = entry?.experience || entry?.description || entry?.content || '';
+    const c = entry?.background || entry?.description || entry?.content || '';
     return c.length > 120 ? c.slice(0, 120) + '...' : c;
   });
 </script>

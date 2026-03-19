@@ -625,9 +625,8 @@ const messages: Record<string, string> = {
   'knowledge.source.community': '社群編輯',
 
   // Knowledge Structured Fields
-  'knowledge.field.period': '任期/活躍時期',
-  'knowledge.field.background': '學歷/出身',
-  'knowledge.field.experience': '經歷/政績',
+  'knowledge.field.period': '任期',
+  'knowledge.field.background': '背景',
   'knowledge.field.description': '描述',
   'knowledge.field.date': '日期',
   'knowledge.field.keywords': '關鍵字',

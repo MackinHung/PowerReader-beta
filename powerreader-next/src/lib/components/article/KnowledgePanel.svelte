@@ -30,10 +30,9 @@
           </button>
           {#if expandedIndex === i}
             <div class="item-content">
-              {#if item.period || item.background || item.experience}
+              {#if item.period || item.background}
                 {#if item.period}<p><strong>任期:</strong> {item.period}</p>{/if}
                 {#if item.background}<p><strong>背景:</strong> {item.background}</p>{/if}
-                {#if item.experience}<p><strong>經歷:</strong> {item.experience}</p>{/if}
               {:else if item.description}
                 <p>{item.description}</p>
               {:else}

@@ -152,7 +152,6 @@ function searchEntryMatches(entry, query) {
   // Figure sub-fields
   if ((entry.period || '').toLowerCase().includes(query)) return true;
   if ((entry.background || '').toLowerCase().includes(query)) return true;
-  if ((entry.experience || '').toLowerCase().includes(query)) return true;
 
   // Issue/Incident description
   if ((entry.description || '').toLowerCase().includes(query)) return true;

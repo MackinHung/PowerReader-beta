@@ -4,8 +4,7 @@
   import { getAuthStore } from '$lib/stores/auth.svelte.js';
   import { getKnowledgeStore } from '$lib/stores/knowledge.svelte.js';
   import { proposeKnowledgeEdit } from '$lib/core/api.js';
-  import { isFigureType, isIssueType, isIncidentType } from '$lib/utils/knowledge-constants.js';
-  import { FIELD_CHAR_LIMIT } from '$lib/utils/knowledge-constants.js';
+  import { isFigureType, isIssueType, isIncidentType, FIGURE_TOTAL_CHAR_LIMIT, ISSUE_DESC_CHAR_LIMIT, ISSUE_STANCE_CHAR_LIMIT, INCIDENT_TOTAL_CHAR_LIMIT } from '$lib/utils/knowledge-constants.js';
   import { t } from '$lib/i18n/zh-TW.js';
 
   const auth = getAuthStore();
@@ -27,7 +26,6 @@
   // Figure fields
   let editPeriod = $state('');
   let editBackground = $state('');
-  let editExperience = $state('');
   let editContent = $state('');  // fallback for legacy data
 
   // Issue fields
@@ -54,7 +52,6 @@
       if (isFigureType(entry.type)) {
         editPeriod = entry.period || '';
         editBackground = entry.background || '';
-        editExperience = entry.experience || '';
       } else if (isIssueType(entry.type)) {
         editDescription = entry.description || '';
         if (entry.stances) {
@@ -82,9 +79,8 @@
     if (entryIsFigure) {
       if (editPeriod !== (entry.period || '')) return true;
       if (editBackground !== (entry.background || '')) return true;
-      if (editExperience !== (entry.experience || '')) return true;
       // Legacy fallback content
-      if (!entry.period && !entry.background && !entry.experience) {
+      if (!entry.period && !entry.background) {
         if (editContent !== (entry.content || '')) return true;
       }
     } else if (entryIsIssue) {
@@ -120,8 +116,7 @@
     if (entryIsFigure) {
       if (editPeriod !== (entry.period || '')) changes.period = editPeriod;
       if (editBackground !== (entry.background || '')) changes.background = editBackground;
-      if (editExperience !== (entry.experience || '')) changes.experience = editExperience;
-      if (!entry.period && !entry.background && !entry.experience && editContent !== (entry.content || '')) {
+      if (!entry.period && !entry.background && editContent !== (entry.content || '')) {
         changes.content = editContent;
       }
     } else if (entryIsIssue) {
@@ -229,22 +224,19 @@
       </div>
 
       {#if entryIsFigure}
+        {@const figureTotal = editTitle.length + editPeriod.length + editBackground.length}
+        <div class="char-total" class:exceeded={figureTotal > FIGURE_TOTAL_CHAR_LIMIT}>
+          合計: {figureTotal}/{FIGURE_TOTAL_CHAR_LIMIT}
+        </div>
         <div class="form-field">
           <label for="edit-period">{t('knowledge.field.period')}</label>
-          <textarea id="edit-period" bind:value={editPeriod} rows="2" maxlength={FIELD_CHAR_LIMIT}></textarea>
-          <span class="char-count" class:exceeded={editPeriod.length > FIELD_CHAR_LIMIT}>{editPeriod.length}/{FIELD_CHAR_LIMIT}</span>
+          <textarea id="edit-period" bind:value={editPeriod} rows="2"></textarea>
         </div>
         <div class="form-field">
           <label for="edit-background">{t('knowledge.field.background')}</label>
-          <textarea id="edit-background" bind:value={editBackground} rows="2" maxlength={FIELD_CHAR_LIMIT}></textarea>
-          <span class="char-count" class:exceeded={editBackground.length > FIELD_CHAR_LIMIT}>{editBackground.length}/{FIELD_CHAR_LIMIT}</span>
+          <textarea id="edit-background" bind:value={editBackground} rows="2"></textarea>
         </div>
-        <div class="form-field">
-          <label for="edit-experience">{t('knowledge.field.experience')}</label>
-          <textarea id="edit-experience" bind:value={editExperience} rows="2" maxlength={FIELD_CHAR_LIMIT}></textarea>
-          <span class="char-count" class:exceeded={editExperience.length > FIELD_CHAR_LIMIT}>{editExperience.length}/{FIELD_CHAR_LIMIT}</span>
-        </div>
-        {#if !entry.period && !entry.background && !entry.experience && entry.content}
+        {#if !entry.period && !entry.background && entry.content}
           <div class="form-field">
             <label for="edit-content">{t('knowledge.admin.form.content')} (legacy)</label>
             <textarea id="edit-content" bind:value={editContent} rows="4"></textarea>
@@ -253,33 +245,36 @@
       {:else if entryIsIssue}
         <div class="form-field">
           <label for="edit-description">{t('knowledge.field.description')}</label>
-          <textarea id="edit-description" bind:value={editDescription} rows="2" maxlength={FIELD_CHAR_LIMIT}></textarea>
-          <span class="char-count" class:exceeded={editDescription.length > FIELD_CHAR_LIMIT}>{editDescription.length}/{FIELD_CHAR_LIMIT}</span>
+          <textarea id="edit-description" bind:value={editDescription} rows="2" maxlength={ISSUE_DESC_CHAR_LIMIT}></textarea>
+          <span class="char-count" class:exceeded={editDescription.length > ISSUE_DESC_CHAR_LIMIT}>{editDescription.length}/{ISSUE_DESC_CHAR_LIMIT}</span>
         </div>
         <div class="form-field">
           <label for="edit-stance-dpp">{t('knowledge.stances.dpp')}</label>
-          <textarea id="edit-stance-dpp" bind:value={editStanceDPP} rows="3" maxlength={FIELD_CHAR_LIMIT}></textarea>
-          <span class="char-count" class:exceeded={editStanceDPP.length > FIELD_CHAR_LIMIT}>{editStanceDPP.length}/{FIELD_CHAR_LIMIT}</span>
+          <textarea id="edit-stance-dpp" bind:value={editStanceDPP} rows="2" maxlength={ISSUE_STANCE_CHAR_LIMIT}></textarea>
+          <span class="char-count" class:exceeded={editStanceDPP.length > ISSUE_STANCE_CHAR_LIMIT}>{editStanceDPP.length}/{ISSUE_STANCE_CHAR_LIMIT}</span>
         </div>
         <div class="form-field">
           <label for="edit-stance-kmt">{t('knowledge.stances.kmt')}</label>
-          <textarea id="edit-stance-kmt" bind:value={editStanceKMT} rows="3" maxlength={FIELD_CHAR_LIMIT}></textarea>
-          <span class="char-count" class:exceeded={editStanceKMT.length > FIELD_CHAR_LIMIT}>{editStanceKMT.length}/{FIELD_CHAR_LIMIT}</span>
+          <textarea id="edit-stance-kmt" bind:value={editStanceKMT} rows="2" maxlength={ISSUE_STANCE_CHAR_LIMIT}></textarea>
+          <span class="char-count" class:exceeded={editStanceKMT.length > ISSUE_STANCE_CHAR_LIMIT}>{editStanceKMT.length}/{ISSUE_STANCE_CHAR_LIMIT}</span>
         </div>
         <div class="form-field">
           <label for="edit-stance-tpp">{t('knowledge.stances.tpp')}</label>
-          <textarea id="edit-stance-tpp" bind:value={editStanceTPP} rows="3" maxlength={FIELD_CHAR_LIMIT}></textarea>
-          <span class="char-count" class:exceeded={editStanceTPP.length > FIELD_CHAR_LIMIT}>{editStanceTPP.length}/{FIELD_CHAR_LIMIT}</span>
+          <textarea id="edit-stance-tpp" bind:value={editStanceTPP} rows="2" maxlength={ISSUE_STANCE_CHAR_LIMIT}></textarea>
+          <span class="char-count" class:exceeded={editStanceTPP.length > ISSUE_STANCE_CHAR_LIMIT}>{editStanceTPP.length}/{ISSUE_STANCE_CHAR_LIMIT}</span>
         </div>
       {:else if entryIsIncident}
+        {@const incidentTotal = editTitle.length + editDate.length + editIncidentDesc.length + editKeywords.length}
+        <div class="char-total" class:exceeded={incidentTotal > INCIDENT_TOTAL_CHAR_LIMIT}>
+          合計: {incidentTotal}/{INCIDENT_TOTAL_CHAR_LIMIT}
+        </div>
         <div class="form-field">
           <label for="edit-date">{t('knowledge.field.date')}</label>
           <input id="edit-date" type="date" bind:value={editDate} />
         </div>
         <div class="form-field">
           <label for="edit-incident-desc">{t('knowledge.field.description')}</label>
-          <textarea id="edit-incident-desc" bind:value={editIncidentDesc} rows="3" maxlength={FIELD_CHAR_LIMIT}></textarea>
-          <span class="char-count" class:exceeded={editIncidentDesc.length > FIELD_CHAR_LIMIT}>{editIncidentDesc.length}/{FIELD_CHAR_LIMIT}</span>
+          <textarea id="edit-incident-desc" bind:value={editIncidentDesc} rows="3"></textarea>
         </div>
         <div class="form-field">
           <label for="edit-keywords">{t('knowledge.field.keywords')} (comma separated)</label>
@@ -471,6 +466,17 @@
     text-align: right;
   }
   .char-count.exceeded {
+    color: var(--md-sys-color-error);
+    font-weight: 600;
+  }
+
+  .char-total {
+    font: var(--md-sys-typescale-label-large-font);
+    color: var(--md-sys-color-on-surface-variant);
+    text-align: right;
+    padding: 4px 0;
+  }
+  .char-total.exceeded {
     color: var(--md-sys-color-error);
     font-weight: 600;
   }

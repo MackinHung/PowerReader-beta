@@ -71,15 +71,14 @@ export interface KnowledgeBase {
 export interface FigureEntry extends KnowledgeBase {
   type: 'figure' | 'politician';
   party?: 'KMT' | 'DPP' | 'TPP' | 'NPP' | 'TSP';
-  period?: string;       // 任期/活躍時期 ≤120字
-  background?: string;   // 學歷/出身 ≤120字
-  experience?: string;   // 經歷/政績 ≤120字
+  period?: string;       // 任期 (title+period+background sum ≤120)
+  background?: string;   // 背景 (title+period+background sum ≤120)
 }
 
 /** 國家議題 (issue) — was "topic" */
 export interface IssueEntry extends KnowledgeBase {
   type: 'issue' | 'topic';
-  description?: string;  // 中立客觀描述 ≤120字
+  description?: string;  // 中立客觀描述 ≤50字
   stances?: {
     DPP: string;
     KMT: string;
@@ -90,9 +89,9 @@ export interface IssueEntry extends KnowledgeBase {
 /** 社會事件 (incident) — was "event" */
 export interface IncidentEntry extends KnowledgeBase {
   type: 'incident' | 'event';
-  date?: string;         // ISO 日期 "2025-01-15"
-  description?: string;  // 事件描述 ≤120字
-  keywords?: string[];   // 關鍵字陣列
+  date?: string;         // ISO 日期 (title+date+desc+kw sum ≤120)
+  description?: string;  // 事件描述 (title+date+desc+kw sum ≤120)
+  keywords?: string[];   // 關鍵字陣列 (title+date+desc+kw sum ≤120)
 }
 
 /** Union type for all knowledge entries */

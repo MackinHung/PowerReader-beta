@@ -9,7 +9,10 @@
  */
 
 import {
-  FIELD_CHAR_LIMIT,
+  FIGURE_TOTAL_CHAR_LIMIT,
+  ISSUE_DESC_CHAR_LIMIT,
+  ISSUE_STANCE_CHAR_LIMIT,
+  INCIDENT_TOTAL_CHAR_LIMIT,
   VALID_SOURCE_TYPES,
   VALID_PARTIES,
   isFigureType,
@@ -26,14 +29,13 @@ function isNonEmptyString(val: unknown): val is string {
   return typeof val === 'string' && val.trim().length > 0;
 }
 
-function checkCharLimit(value: unknown, fieldName: string, errors: string[]): void {
-  if (typeof value === 'string' && value.length > FIELD_CHAR_LIMIT) {
-    errors.push(`${fieldName} exceeds ${FIELD_CHAR_LIMIT} chars`);
-  }
-}
-
 /**
  * Validate a knowledge entry with type-specific rules.
+ *
+ * Limits:
+ * - Figure: title+period+background sum ≤120
+ * - Issue: description ≤50, each stance ≤50
+ * - Incident: title+date+description+keywords sum ≤120
  */
 export function validateKnowledge(entry: Record<string, unknown>): ValidationResult {
   const errors: string[] = [];
@@ -43,27 +45,39 @@ export function validateKnowledge(entry: Record<string, unknown>): ValidationRes
   if (!isNonEmptyString(entry.title)) errors.push('title is required');
 
   const type = entry.type as string;
+  const titleLen = typeof entry.title === 'string' ? entry.title.length : 0;
 
   // Type-specific validation
   if (isFigureType(type)) {
-    checkCharLimit(entry.period, 'period', errors);
-    checkCharLimit(entry.background, 'background', errors);
-    checkCharLimit(entry.experience, 'experience', errors);
+    const periodLen = typeof entry.period === 'string' ? entry.period.length : 0;
+    const bgLen = typeof entry.background === 'string' ? entry.background.length : 0;
+    const total = titleLen + periodLen + bgLen;
+    if (total > FIGURE_TOTAL_CHAR_LIMIT) {
+      errors.push(`figure fields total (${total}) exceeds ${FIGURE_TOTAL_CHAR_LIMIT} chars`);
+    }
     if (entry.party && !VALID_PARTIES.includes(entry.party as typeof VALID_PARTIES[number])) {
       errors.push('invalid party');
     }
   } else if (isIssueType(type)) {
-    checkCharLimit(entry.description, 'description', errors);
+    if (typeof entry.description === 'string' && entry.description.length > ISSUE_DESC_CHAR_LIMIT) {
+      errors.push(`description exceeds ${ISSUE_DESC_CHAR_LIMIT} chars`);
+    }
     if (entry.stances && typeof entry.stances === 'object') {
       const stances = entry.stances as Record<string, unknown>;
       for (const [party, text] of Object.entries(stances)) {
-        if (typeof text === 'string' && text.length > FIELD_CHAR_LIMIT) {
-          errors.push(`stance ${party} exceeds ${FIELD_CHAR_LIMIT} chars`);
+        if (typeof text === 'string' && text.length > ISSUE_STANCE_CHAR_LIMIT) {
+          errors.push(`stance ${party} exceeds ${ISSUE_STANCE_CHAR_LIMIT} chars`);
         }
       }
     }
   } else if (isIncidentType(type)) {
-    checkCharLimit(entry.description, 'description', errors);
+    const dateLen = typeof entry.date === 'string' ? entry.date.length : 0;
+    const descLen = typeof entry.description === 'string' ? entry.description.length : 0;
+    const kwLen = Array.isArray(entry.keywords) ? (entry.keywords as string[]).join(',').length : 0;
+    const total = titleLen + dateLen + descLen + kwLen;
+    if (total > INCIDENT_TOTAL_CHAR_LIMIT) {
+      errors.push(`incident fields total (${total}) exceeds ${INCIDENT_TOTAL_CHAR_LIMIT} chars`);
+    }
     if (entry.keywords && !Array.isArray(entry.keywords)) {
       errors.push('keywords must be array');
     }

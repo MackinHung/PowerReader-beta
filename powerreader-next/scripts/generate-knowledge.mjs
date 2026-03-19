@@ -81,7 +81,6 @@ export function generateKnowledgeJson() {
             if (entry.party) mapped.party = entry.party;
             if (entry.period) mapped.period = entry.period;
             if (entry.background) mapped.background = entry.background;
-            if (entry.experience) mapped.experience = entry.experience;
           }
 
           entriesMap.set(entry.id, mapped);

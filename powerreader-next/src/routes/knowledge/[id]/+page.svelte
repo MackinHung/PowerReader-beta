@@ -15,7 +15,6 @@
   const TYPE_ICONS = {
     politician: 'person',
     figure: 'person',
-    media: 'newspaper',
     topic: 'topic',
     issue: 'topic',
     event: 'event',
@@ -131,13 +130,7 @@
             <p class="entry-content">{entry.background}</p>
           </div>
         {/if}
-        {#if entry.experience}
-          <div class="entry-section">
-            <h2 class="section-label">{t('knowledge.field.experience')}</h2>
-            <p class="entry-content">{entry.experience}</p>
-          </div>
-        {/if}
-        {#if entry.content && !entry.period && !entry.background && !entry.experience}
+        {#if entry.content && !entry.period && !entry.background}
           <div class="entry-content">{entry.content}</div>
         {/if}
       {:else if entryIsIncident}

@@ -112,10 +112,8 @@ export function formatKnowledgeAsL2(entries: KnowledgeEntry[]): string {
     figure: '人物',
     topic: '議題',
     issue: '議題',
-    term: '名詞',
     event: '事件',
     incident: '事件',
-    media: '媒體'
   };
 
   const lines = relevant.map((entry: KnowledgeEntry) => {
@@ -135,10 +133,10 @@ function serializeEntry(entry: KnowledgeEntry): string {
   const e = entry as Record<string, unknown>;
   const type = entry.type;
 
-  // Figure type: title(party): period。background。experience
+  // Figure type: title(party): period。background
   if (type === 'figure' || type === 'politician') {
     const party = e.party ? `(${e.party})` : '';
-    const parts = [e.period, e.background, e.experience].filter(Boolean);
+    const parts = [e.period, e.background].filter(Boolean);
     if (parts.length > 0) {
       return `${entry.title}${party}: ${parts.join('。')}`;
     }

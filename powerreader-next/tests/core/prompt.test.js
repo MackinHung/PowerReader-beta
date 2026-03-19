@@ -167,10 +167,10 @@ describe('formatKnowledgeAsL2', () => {
     expect(result).toContain('兩岸關係');
   });
 
-  it('formats term type as [名詞]', () => {
+  it('formats term type with raw type label (deprecated)', () => {
     const entries = [{ type: 'term', content: 'GDP' }];
     const result = formatKnowledgeAsL2(entries);
-    expect(result).toContain('[名詞]');
+    expect(result).toContain('[term]');
     expect(result).toContain('GDP');
   });
 
@@ -181,10 +181,10 @@ describe('formatKnowledgeAsL2', () => {
     expect(result).toContain('太陽花學運');
   });
 
-  it('formats media type as [媒體]', () => {
+  it('formats media type with raw type label (deprecated)', () => {
     const entries = [{ type: 'media', content: '自由時報' }];
     const result = formatKnowledgeAsL2(entries);
-    expect(result).toContain('[媒體]');
+    expect(result).toContain('[media]');
     expect(result).toContain('自由時報');
   });
 
@@ -223,7 +223,7 @@ describe('formatKnowledgeAsL2', () => {
   it('uses empty string when content, snippet, and title are all missing', () => {
     const entries = [{ type: 'term' }];
     const result = formatKnowledgeAsL2(entries);
-    expect(result).toContain('[名詞] ');
+    expect(result).toContain('[term] ');
   });
 
   it('formats multiple entries with line breaks', () => {
