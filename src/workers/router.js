@@ -16,7 +16,7 @@ import { verifyJwt, verifyServiceToken } from './middleware/auth.js';
 // Handler imports
 import { getArticles, getArticle, createArticle, createArticleBatch, getArticleCluster } from './handlers/articles.js';
 import { createAnalysis, getAnalyses } from './handlers/analysis.js';
-import { getArticleKnowledge, upsertKnowledge, batchUpsertKnowledge, searchKnowledge, listKnowledge } from './handlers/knowledge.js';
+import { getArticleKnowledge, upsertKnowledge, batchUpsertKnowledge, searchKnowledge, listKnowledge, deleteKnowledge } from './handlers/knowledge.js';
 import { googleAuth, googleOAuthCallback, getMe, deleteMe, exportMe, getContributions } from './handlers/auth.js';
 import { getPoints } from './handlers/points.js';
 import { submitReward, recordFailure, getRewardsSummary } from './handlers/rewards.js';
@@ -59,6 +59,7 @@ const ROUTES = [
   ['POST', '/api/v1/knowledge/batch',                 batchUpsertKnowledge,{ auth: 'admin', rateLimit: false, cache: 'no-store' }],
   ['GET',  '/api/v1/knowledge/search',                searchKnowledge,     { auth: 'admin', rateLimit: true,  cache: 'no-store' }],
   ['GET',  '/api/v1/knowledge/list',                  listKnowledge,       { auth: 'admin', rateLimit: true,  cache: 'no-store' }],
+  ['DELETE','/api/v1/knowledge/:id',                  deleteKnowledge,     { auth: 'admin', rateLimit: false, cache: 'no-store' }],
 
   // User API
   ['GET',    '/api/v1/auth/google',          googleAuth,          { auth: 'none', rateLimit: true,  cache: 'no-store' }],

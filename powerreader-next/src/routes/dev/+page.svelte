@@ -13,6 +13,8 @@
   import { getAuthToken, isAuthenticated } from '$lib/core/auth.js';
   import { getUserHash } from '$lib/core/auth.js';
 
+  import { t } from '$lib/i18n/zh-TW.js';
+
   // ── State ──
   let apiKey = $state(getGroqApiKey() || '');
   let model = $state(getGroqModel());
@@ -309,6 +311,134 @@
   );
   let totalClusters = $derived(events.length);
 
+  // ── Knowledge Admin State ──
+  let adminApiKey = $state(typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('pr_admin_key') || '' : '');
+  let knowledgeEntries = $state([]);
+  let knowledgeLoading = $state(false);
+  let knowledgePagination = $state({ page: 1, total: 0, total_pages: 0 });
+  let knowledgeTypeFilter = $state('');
+  let knowledgePartyFilter = $state('');
+  let knowledgeMsg = $state({ text: '', type: '' });
+  let showKnowledgeForm = $state(false);
+  let editingEntry = $state(null);
+  let knowledgeForm = $state({ id: '', type: 'politician', title: '', content: '', party: '' });
+  let knowledgeSaving = $state(false);
+  let deleteConfirmId = $state(null);
+
+  const KNOWLEDGE_TYPES = ['politician', 'media', 'topic', 'term', 'event'];
+  const KNOWLEDGE_PARTIES = ['', 'KMT', 'DPP', 'TPP', 'NPP', 'TSP'];
+
+  function saveAdminKey() {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem('pr_admin_key', adminApiKey.trim());
+    }
+  }
+
+  async function loadKnowledgeList(page = 1) {
+    if (!adminApiKey.trim()) {
+      knowledgeMsg = { text: 'Please enter Admin API Key', type: 'error' };
+      return;
+    }
+    knowledgeLoading = true;
+    knowledgeMsg = { text: '', type: '' };
+    try {
+      const opts = { page, limit: 20 };
+      if (knowledgeTypeFilter) opts.type = knowledgeTypeFilter;
+      if (knowledgePartyFilter) opts.party = knowledgePartyFilter;
+      const result = await api.fetchKnowledgeList(adminApiKey.trim(), opts);
+      if (result.success) {
+        knowledgeEntries = result.data?.entries || [];
+        knowledgePagination = result.data?.pagination || { page, total: 0, total_pages: 0 };
+      } else {
+        knowledgeMsg = { text: `Error: ${result.error?.type || 'unknown'}`, type: 'error' };
+      }
+    } catch (e) {
+      knowledgeMsg = { text: e.message, type: 'error' };
+    } finally {
+      knowledgeLoading = false;
+    }
+  }
+
+  function openAddForm() {
+    editingEntry = null;
+    knowledgeForm = { id: '', type: 'politician', title: '', content: '', party: '' };
+    showKnowledgeForm = true;
+  }
+
+  function openEditForm(entry) {
+    editingEntry = entry;
+    knowledgeForm = {
+      id: entry.id,
+      type: entry.type || 'politician',
+      title: entry.title || '',
+      content: entry.content || '',
+      party: entry.party || ''
+    };
+    showKnowledgeForm = true;
+    // If editing, fetch full content from search
+    if (!entry.content) {
+      api.searchKnowledgeEntries(adminApiKey.trim(), entry.title, { topK: 1 })
+        .then(result => {
+          const match = result.data?.results?.find(r => r.id === entry.id);
+          if (match?.content) {
+            knowledgeForm = { ...knowledgeForm, content: match.content };
+          }
+        })
+        .catch(() => {});
+    }
+  }
+
+  function closeForm() {
+    showKnowledgeForm = false;
+    editingEntry = null;
+  }
+
+  async function saveKnowledgeEntry() {
+    if (!knowledgeForm.title.trim() || !knowledgeForm.content.trim()) {
+      knowledgeMsg = { text: 'Title and content are required', type: 'error' };
+      return;
+    }
+    knowledgeSaving = true;
+    knowledgeMsg = { text: '', type: '' };
+    try {
+      const entry = {
+        id: knowledgeForm.id || `${knowledgeForm.type.slice(0, 3)}_${Date.now().toString(16)}`,
+        type: knowledgeForm.type,
+        title: knowledgeForm.title.trim(),
+        content: knowledgeForm.content.trim(),
+        party: knowledgeForm.party || null
+      };
+      const result = await api.upsertKnowledgeEntry(adminApiKey.trim(), entry);
+      if (result.success) {
+        knowledgeMsg = { text: t('knowledge.admin.success'), type: 'success' };
+        closeForm();
+        await loadKnowledgeList(knowledgePagination.page);
+      } else {
+        knowledgeMsg = { text: `${t('knowledge.admin.error')}: ${result.error?.message || result.error?.type}`, type: 'error' };
+      }
+    } catch (e) {
+      knowledgeMsg = { text: e.message, type: 'error' };
+    } finally {
+      knowledgeSaving = false;
+    }
+  }
+
+  async function confirmDelete(id) {
+    knowledgeMsg = { text: '', type: '' };
+    try {
+      const result = await api.deleteKnowledgeEntry(adminApiKey.trim(), id);
+      if (result.success) {
+        knowledgeMsg = { text: t('knowledge.admin.success'), type: 'success' };
+        deleteConfirmId = null;
+        await loadKnowledgeList(knowledgePagination.page);
+      } else {
+        knowledgeMsg = { text: `${t('knowledge.admin.error')}: ${result.error?.message || result.error?.type}`, type: 'error' };
+      }
+    } catch (e) {
+      knowledgeMsg = { text: e.message, type: 'error' };
+    }
+  }
+
   // ── Init ──
   $effect(() => {
     untrack(() => loadEvents());
@@ -450,6 +580,169 @@
       {/if}
     </div>
   </Card>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- Knowledge Admin Section                        -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <Card variant="filled">
+    <div class="config-section">
+      <h2>{t('knowledge.admin.title')}</h2>
+      <div class="field">
+        <label for="admin-key">{t('knowledge.admin.api_key')}</label>
+        <input
+          id="admin-key"
+          type="password"
+          bind:value={adminApiKey}
+          oninput={saveAdminKey}
+          placeholder={t('knowledge.admin.api_key_placeholder')}
+          class="text-input"
+        />
+      </div>
+
+      <div class="controls-row">
+        <Button onclick={() => loadKnowledgeList(1)}>{t('knowledge.admin.load_list')}</Button>
+        <Button onclick={openAddForm}>{t('knowledge.admin.add')}</Button>
+      </div>
+
+      {#if knowledgeMsg.text}
+        <div class="knowledge-msg" class:msg-error={knowledgeMsg.type === 'error'} class:msg-success={knowledgeMsg.type === 'success'}>
+          {knowledgeMsg.text}
+        </div>
+      {/if}
+
+      <!-- Type / Party Filter -->
+      <div class="filter-row">
+        <select bind:value={knowledgeTypeFilter} class="text-input filter-select" onchange={() => loadKnowledgeList(1)}>
+          <option value="">All Types</option>
+          {#each KNOWLEDGE_TYPES as kt}
+            <option value={kt}>{t(`knowledge.type.${kt}`)}</option>
+          {/each}
+        </select>
+        <select bind:value={knowledgePartyFilter} class="text-input filter-select" onchange={() => loadKnowledgeList(1)}>
+          <option value="">All Parties</option>
+          {#each KNOWLEDGE_PARTIES.filter(p => p) as kp}
+            <option value={kp}>{t(`knowledge.party.${kp}`)}</option>
+          {/each}
+        </select>
+      </div>
+
+      <!-- Knowledge Table -->
+      {#if knowledgeLoading}
+        <ProgressIndicator type="circular" />
+      {:else if knowledgeEntries.length > 0}
+        <div class="knowledge-table-wrap">
+          <table class="knowledge-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>{t('knowledge.admin.form.type')}</th>
+                <th>{t('knowledge.admin.form.title')}</th>
+                <th>{t('knowledge.admin.form.party')}</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each knowledgeEntries as ke (ke.id)}
+                <tr>
+                  <td class="cell-id">{ke.id}</td>
+                  <td>{t(`knowledge.type.${ke.type}`) || ke.type}</td>
+                  <td class="cell-title">{ke.title}</td>
+                  <td>{ke.party ? t(`knowledge.party.${ke.party}`) || ke.party : '-'}</td>
+                  <td class="cell-actions">
+                    <button class="icon-btn" onclick={() => openEditForm(ke)} title={t('knowledge.admin.edit')}>
+                      <span class="material-symbols-outlined">edit</span>
+                    </button>
+                    {#if deleteConfirmId === ke.id}
+                      <button class="icon-btn danger" onclick={() => confirmDelete(ke.id)} title="Confirm">
+                        <span class="material-symbols-outlined">check</span>
+                      </button>
+                      <button class="icon-btn" onclick={() => { deleteConfirmId = null; }} title="Cancel">
+                        <span class="material-symbols-outlined">close</span>
+                      </button>
+                    {:else}
+                      <button class="icon-btn danger" onclick={() => { deleteConfirmId = ke.id; }} title={t('knowledge.admin.delete')}>
+                        <span class="material-symbols-outlined">delete</span>
+                      </button>
+                    {/if}
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {#if knowledgePagination.total_pages > 1}
+          <div class="pagination-row">
+            <button
+              class="page-btn"
+              disabled={knowledgePagination.page <= 1}
+              onclick={() => loadKnowledgeList(knowledgePagination.page - 1)}
+            >Prev</button>
+            <span class="page-info">
+              {knowledgePagination.page} / {knowledgePagination.total_pages}
+              ({knowledgePagination.total} total)
+            </span>
+            <button
+              class="page-btn"
+              disabled={knowledgePagination.page >= knowledgePagination.total_pages}
+              onclick={() => loadKnowledgeList(knowledgePagination.page + 1)}
+            >Next</button>
+          </div>
+        {/if}
+      {:else}
+        <p class="log-empty">No entries loaded</p>
+      {/if}
+    </div>
+  </Card>
+
+  <!-- Knowledge Add/Edit Dialog -->
+  {#if showKnowledgeForm}
+    <div class="dialog-overlay" onclick={closeForm} role="presentation">
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <div class="dialog-content" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+        <h3>{editingEntry ? t('knowledge.admin.edit') : t('knowledge.admin.add')}</h3>
+        <div class="form-fields">
+          <div class="field">
+            <label for="ke-id">{t('knowledge.admin.form.id')}</label>
+            <input id="ke-id" class="text-input" bind:value={knowledgeForm.id}
+              placeholder="auto-generated if empty" disabled={!!editingEntry} />
+          </div>
+          <div class="field">
+            <label for="ke-type">{t('knowledge.admin.form.type')}</label>
+            <select id="ke-type" class="text-input" bind:value={knowledgeForm.type}>
+              {#each KNOWLEDGE_TYPES as kt}
+                <option value={kt}>{t(`knowledge.type.${kt}`)}</option>
+              {/each}
+            </select>
+          </div>
+          <div class="field">
+            <label for="ke-title">{t('knowledge.admin.form.title')}</label>
+            <input id="ke-title" class="text-input" bind:value={knowledgeForm.title} />
+          </div>
+          <div class="field">
+            <label for="ke-content">{t('knowledge.admin.form.content')}</label>
+            <textarea id="ke-content" class="text-input textarea" bind:value={knowledgeForm.content} rows="6"></textarea>
+          </div>
+          <div class="field">
+            <label for="ke-party">{t('knowledge.admin.form.party')}</label>
+            <select id="ke-party" class="text-input" bind:value={knowledgeForm.party}>
+              <option value="">{t('knowledge.admin.form.party_none')}</option>
+              {#each KNOWLEDGE_PARTIES.filter(p => p) as kp}
+                <option value={kp}>{t(`knowledge.party.${kp}`)}</option>
+              {/each}
+            </select>
+          </div>
+        </div>
+        <div class="dialog-actions">
+          <Button onclick={closeForm}>{t('common.button.cancel')}</Button>
+          <Button onclick={saveKnowledgeEntry} disabled={knowledgeSaving}>
+            {knowledgeSaving ? t('common.label.loading') : t('knowledge.admin.save')}
+          </Button>
+        </div>
+      </div>
+    </div>
+  {/if}
 
   <!-- Logs -->
   <Card variant="filled">
@@ -643,5 +936,158 @@
     margin: 0;
     color: var(--md-sys-color-on-surface-variant);
     font: var(--md-sys-typescale-body-small-font);
+  }
+
+  /* Knowledge Admin */
+  .knowledge-msg {
+    padding: 8px 12px;
+    border-radius: var(--md-sys-shape-corner-small);
+    font: var(--md-sys-typescale-body-small-font);
+  }
+  .msg-error {
+    background: color-mix(in srgb, var(--md-sys-color-error) 12%, transparent);
+    color: var(--md-sys-color-error);
+  }
+  .msg-success {
+    background: color-mix(in srgb, var(--camp-green, #4caf50) 12%, transparent);
+    color: var(--camp-green, #4caf50);
+  }
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .filter-select {
+    flex: 1;
+    min-width: 120px;
+  }
+  .knowledge-table-wrap {
+    overflow-x: auto;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+  .knowledge-table {
+    width: 100%;
+    border-collapse: collapse;
+    font: var(--md-sys-typescale-body-small-font);
+  }
+  .knowledge-table th, .knowledge-table td {
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  }
+  .knowledge-table th {
+    font: var(--md-sys-typescale-label-medium-font);
+    color: var(--md-sys-color-on-surface-variant);
+    position: sticky;
+    top: 0;
+    background: var(--md-sys-color-surface-container);
+  }
+  .cell-id {
+    font-family: monospace;
+    font-size: 11px;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .cell-title {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .cell-actions {
+    display: flex;
+    gap: 2px;
+    white-space: nowrap;
+  }
+  .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-radius: 50%;
+    color: var(--md-sys-color-on-surface-variant);
+  }
+  .icon-btn:hover {
+    background: var(--md-sys-color-surface-container-high);
+  }
+  .icon-btn.danger {
+    color: var(--md-sys-color-error);
+  }
+  .icon-btn .material-symbols-outlined {
+    font-size: 18px;
+  }
+  .pagination-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 8px 0;
+  }
+  .page-btn {
+    padding: 4px 12px;
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: var(--md-sys-shape-corner-small);
+    background: var(--md-sys-color-surface);
+    color: var(--md-sys-color-primary);
+    cursor: pointer;
+    font: var(--md-sys-typescale-label-medium-font);
+  }
+  .page-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  .page-info {
+    font: var(--md-sys-typescale-label-small-font);
+    color: var(--md-sys-color-on-surface-variant);
+  }
+
+  /* Dialog */
+  .dialog-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 16px;
+  }
+  .dialog-content {
+    background: var(--md-sys-color-surface);
+    border-radius: var(--md-sys-shape-corner-medium, 12px);
+    padding: 24px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .dialog-content h3 {
+    margin: 0;
+    font: var(--md-sys-typescale-title-large-font);
+    color: var(--md-sys-color-on-surface);
+  }
+  .form-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .textarea {
+    resize: vertical;
+    min-height: 100px;
+    font-family: inherit;
+  }
+  .dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
   }
 </style>

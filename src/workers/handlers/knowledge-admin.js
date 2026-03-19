@@ -294,6 +294,51 @@ export async function listKnowledge(request, env, ctx, { url }) {
   });
 }
 
+/**
+ * DELETE /api/v1/knowledge/:id — Delete a knowledge entry (Admin)
+ * Removes from D1 and Vectorize index.
+ */
+export async function deleteKnowledge(request, env, ctx, { params }) {
+  const { id } = params;
+
+  if (!id || typeof id !== 'string' || id.trim().length === 0) {
+    return jsonResponse(400, {
+      success: false, data: null,
+      error: { type: 'validation_error', message: 'id parameter is required' }
+    });
+  }
+
+  // Check if entry exists in D1
+  const existing = await env.DB.prepare(
+    'SELECT id FROM knowledge_entries WHERE id = ?'
+  ).bind(id).first();
+
+  if (!existing) {
+    return jsonResponse(404, {
+      success: false, data: null,
+      error: { type: 'not_found', message: 'Knowledge entry not found' }
+    });
+  }
+
+  // Delete from Vectorize
+  try {
+    await env.KNOWLEDGE_INDEX.deleteByIds([id]);
+  } catch {
+    // Vectorize deletion failure is non-fatal — entry may not be indexed
+  }
+
+  // Delete from D1
+  await env.DB.prepare(
+    'DELETE FROM knowledge_entries WHERE id = ?'
+  ).bind(id).run();
+
+  return jsonResponse(200, {
+    success: true,
+    data: { id, deleted: true },
+    error: null
+  });
+}
+
 // ============================================================
 // Internal helpers
 // ============================================================

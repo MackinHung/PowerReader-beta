@@ -650,6 +650,56 @@ export async function fetchClusterDetail(clusterId) {
 }
 
 // =============================================
+// Admin Knowledge API (for dev page)
+// =============================================
+
+/**
+ * GET /api/v1/knowledge/list — List knowledge entries (admin).
+ */
+export async function fetchKnowledgeList(adminKey, { page = 1, limit = 50, type, party } = {}) {
+  const params = new URLSearchParams({ page, limit });
+  if (type) params.set('type', type);
+  if (party) params.set('party', party);
+
+  return apiFetch(`/knowledge/list?${params}`, {
+    headers: { 'Authorization': `Bearer ${adminKey}` }
+  });
+}
+
+/**
+ * POST /api/v1/knowledge/upsert — Add/update a knowledge entry (admin).
+ */
+export async function upsertKnowledgeEntry(adminKey, entry) {
+  return apiFetch('/knowledge/upsert', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${adminKey}` },
+    body: JSON.stringify(entry)
+  });
+}
+
+/**
+ * DELETE /api/v1/knowledge/:id — Delete a knowledge entry (admin).
+ */
+export async function deleteKnowledgeEntry(adminKey, id) {
+  return apiFetch(`/knowledge/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${adminKey}` }
+  });
+}
+
+/**
+ * GET /api/v1/knowledge/search — Search knowledge entries (admin).
+ */
+export async function searchKnowledgeEntries(adminKey, query, { topK = 10, type } = {}) {
+  const params = new URLSearchParams({ q: query, topK });
+  if (type) params.set('type', type);
+
+  return apiFetch(`/knowledge/search?${params}`, {
+    headers: { 'Authorization': `Bearer ${adminKey}` }
+  });
+}
+
+// =============================================
 // PDPA Compliance API
 // =============================================
 

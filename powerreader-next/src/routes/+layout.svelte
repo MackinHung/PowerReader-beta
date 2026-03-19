@@ -17,6 +17,7 @@
   const navItems = [
     { icon: 'home', label: '首頁', href: '/' },
     { icon: 'explore', label: '觀察', href: '/observe' },
+    { icon: 'menu_book', label: '知識', href: '/knowledge' },
     { icon: 'psychology', label: '分析', href: '/analyze' },
     { icon: 'person', label: '我的', href: '/profile' }
   ];
@@ -26,21 +27,23 @@
     '/observe': '觀察',
     '/observe/blindspot': '觀察',
     '/observe/compare': '觀察',
+    '/knowledge': '知識庫',
     '/analyze': '分析',
     '/profile': '我的',
     '/settings': '設定'
   };
 
-  // Dynamic title for event detail pages
+  // Dynamic title for event/knowledge detail pages
   let dynamicTitle = $derived(() => {
     if (currentPath.startsWith('/event/')) return '事件詳情';
+    if (currentPath.startsWith('/knowledge/') && currentPath !== '/knowledge') return '知識詳情';
     return null;
   });
 
   let currentPath = $derived(page.url.pathname);
   let title = $derived(dynamicTitle() || titles[currentPath] || 'PowerReader');
   let showBack = $derived(
-    !['/', '/observe', '/observe/blindspot', '/observe/compare', '/analyze', '/profile'].includes(currentPath)
+    !['/', '/observe', '/observe/blindspot', '/observe/compare', '/knowledge', '/analyze', '/profile'].includes(currentPath)
   );
   let showNav = $derived(
     !currentPath.startsWith('/onboarding') && !currentPath.startsWith('/auth')

@@ -19,6 +19,14 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, '..');
 
 // Check if path contains non-ASCII characters
+// Pre-build: generate knowledge.json from batch payloads
+try {
+  const { generateKnowledgeJson } = await import('./generate-knowledge.mjs');
+  generateKnowledgeJson();
+} catch (e) {
+  console.warn('[build] Knowledge generation skipped:', e.message);
+}
+
 const hasNonAscii = /[^\x00-\x7F]/.test(PROJECT_ROOT);
 
 if (!hasNonAscii) {

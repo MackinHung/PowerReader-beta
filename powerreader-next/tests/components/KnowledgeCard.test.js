@@ -1,0 +1,169 @@
+/**
+ * Unit tests for KnowledgeCard.svelte
+ *
+ * Tests cover: rendering, type icons, party badges, click handler, snippet truncation
+ */
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { mount } from 'svelte';
+import KnowledgeCard from '../../src/lib/components/knowledge/KnowledgeCard.svelte';
+
+// Mock i18n
+vi.mock('$lib/i18n/zh-TW.js', () => ({
+  t: vi.fn((key) => {
+    const map = {
+      'knowledge.type.politician': '政治人物',
+      'knowledge.type.media': '媒體',
+      'knowledge.type.event': '事件',
+      'knowledge.type.term': '名詞',
+      'knowledge.party.KMT': '國民黨',
+      'knowledge.party.DPP': '民進黨',
+      'knowledge.party.TPP': '民眾黨'
+    };
+    return map[key] || key;
+  })
+}));
+
+function createContainer() {
+  const el = document.createElement('div');
+  document.body.appendChild(el);
+  return el;
+}
+
+describe('KnowledgeCard', () => {
+  let container;
+
+  beforeEach(() => {
+    container = createContainer();
+  });
+
+  it('renders entry title', () => {
+    mount(KnowledgeCard, {
+      target: container,
+      props: {
+        entry: { id: 'p1', type: 'politician', title: 'Test Person', content: 'Bio text', party: null },
+        onclick: () => {}
+      }
+    });
+
+    expect(container.textContent).toContain('Test Person');
+  });
+
+  it('renders type badge', () => {
+    mount(KnowledgeCard, {
+      target: container,
+      props: {
+        entry: { id: 'p1', type: 'politician', title: 'Test', content: 'c', party: null },
+        onclick: () => {}
+      }
+    });
+
+    expect(container.querySelector('.type-badge').textContent).toBe('政治人物');
+  });
+
+  it('renders type icon for politician', () => {
+    mount(KnowledgeCard, {
+      target: container,
+      props: {
+        entry: { id: 'p1', type: 'politician', title: 'Test', content: 'c', party: null },
+        onclick: () => {}
+      }
+    });
+
+    expect(container.querySelector('.type-icon').textContent).toBe('person');
+  });
+
+  it('renders party badge for KMT', () => {
+    mount(KnowledgeCard, {
+      target: container,
+      props: {
+        entry: { id: 'p1', type: 'politician', title: 'Test', content: 'c', party: 'KMT' },
+        onclick: () => {}
+      }
+    });
+
+    const badge = container.querySelector('.party-badge');
+    expect(badge).toBeTruthy();
+    expect(badge.textContent).toBe('國民黨');
+    expect(badge.style.backgroundColor).toBe('rgb(0, 71, 171)');
+  });
+
+  it('renders party badge for DPP', () => {
+    mount(KnowledgeCard, {
+      target: container,
+      props: {
+        entry: { id: 'p1', type: 'politician', title: 'Test', content: 'c', party: 'DPP' },
+        onclick: () => {}
+      }
+    });
+
+    const badge = container.querySelector('.party-badge');
+    expect(badge.textContent).toBe('民進黨');
+    expect(badge.style.backgroundColor).toBe('rgb(27, 148, 49)');
+  });
+
+  it('does not render party badge when null', () => {
+    mount(KnowledgeCard, {
+      target: container,
+      props: {
+        entry: { id: 'e1', type: 'event', title: 'Test', content: 'c', party: null },
+        onclick: () => {}
+      }
+    });
+
+    expect(container.querySelector('.party-badge')).toBeNull();
+  });
+
+  it('truncates content to 120 chars', () => {
+    const longContent = 'A'.repeat(200);
+    mount(KnowledgeCard, {
+      target: container,
+      props: {
+        entry: { id: 'p1', type: 'politician', title: 'Test', content: longContent, party: null },
+        onclick: () => {}
+      }
+    });
+
+    const snippet = container.querySelector('.card-snippet').textContent;
+    expect(snippet.length).toBeLessThanOrEqual(124); // 120 + "..."
+    expect(snippet).toContain('...');
+  });
+
+  it('does not truncate short content', () => {
+    mount(KnowledgeCard, {
+      target: container,
+      props: {
+        entry: { id: 'p1', type: 'politician', title: 'Test', content: 'Short bio', party: null },
+        onclick: () => {}
+      }
+    });
+
+    const snippet = container.querySelector('.card-snippet').textContent;
+    expect(snippet).toBe('Short bio');
+  });
+
+  it('calls onclick when clicked', async () => {
+    const spy = vi.fn();
+    mount(KnowledgeCard, {
+      target: container,
+      props: {
+        entry: { id: 'p1', type: 'politician', title: 'Test', content: 'c', party: null },
+        onclick: spy
+      }
+    });
+
+    container.querySelector('.knowledge-card').click();
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders event type icon', () => {
+    mount(KnowledgeCard, {
+      target: container,
+      props: {
+        entry: { id: 'e1', type: 'event', title: 'Test', content: 'c', party: null },
+        onclick: () => {}
+      }
+    });
+
+    expect(container.querySelector('.type-icon').textContent).toBe('event');
+  });
+});

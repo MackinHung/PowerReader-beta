@@ -1,11 +1,12 @@
 // PowerReader Next - Service Worker
-const CACHE_NAME = 'pr-next-v4';
+const CACHE_NAME = 'pr-next-v5';
 const APP_SHELL = [
   '/',
   '/200.html',
   '/manifest.json',
   '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/icons/icon-512x512.png',
+  '/data/knowledge.json'
 ];
 
 // Install: cache app shell

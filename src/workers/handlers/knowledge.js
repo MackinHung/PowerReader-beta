@@ -18,5 +18,6 @@ export {
   upsertKnowledge,
   batchUpsertKnowledge,
   searchKnowledge,
-  listKnowledge
+  listKnowledge,
+  deleteKnowledge
 } from './knowledge-admin.js';
