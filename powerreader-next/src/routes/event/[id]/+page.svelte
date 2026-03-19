@@ -34,6 +34,10 @@
   ];
 
   let campDist = $derived(cluster?.camp_distribution || {});
+  let hasAnalysis = $derived(
+    (cluster?.analyzed_count ?? 0) > 0 ||
+    (campDist.green ?? 0) + (campDist.white ?? 0) + (campDist.blue ?? 0) > 0
+  );
   let blindspotLabel = $derived(
     cluster?.blindspot_type ? (BLINDSPOT_LABELS[cluster.blindspot_type] || cluster.blindspot_type) : null
   );
@@ -158,20 +162,27 @@
             </div>
           {/if}
 
-          <!-- Camp Distribution -->
-          <div class="zone-item">
-            <span class="zone-label">陣營比例</span>
-            <CampBar
-              green={campDist.green ?? 0}
-              white={campDist.white ?? 0}
-              blue={campDist.blue ?? 0}
-              dark={true}
-            />
-          </div>
+          <!-- Camp Distribution (only when analysis data exists) -->
+          {#if hasAnalysis}
+            <div class="zone-item">
+              <span class="zone-label">陣營比例</span>
+              <CampBar
+                green={campDist.green ?? 0}
+                white={campDist.white ?? 0}
+                blue={campDist.blue ?? 0}
+                dark={true}
+              />
+            </div>
+          {:else}
+            <div class="zone-item">
+              <span class="zone-label">陣營比例</span>
+              <span class="zone-pending">尚無分析資料</span>
+            </div>
+          {/if}
         </div>
 
-        <!-- Blindspot Alert (inside dark zone) -->
-        {#if cluster.is_blindspot && blindspotLabel}
+        <!-- Blindspot Alert (only when analysis data exists) -->
+        {#if hasAnalysis && cluster.is_blindspot && blindspotLabel}
           <div class="zone-blindspot">
             <span class="material-symbols-outlined">warning</span>
             <div>
@@ -212,6 +223,8 @@
                       <span class="art-bias" class:green={art.bias_score <= 40} class:blue={art.bias_score >= 60}>
                         {art.bias_score}
                       </span>
+                    {:else}
+                      <span class="art-bias pending">待分析</span>
                     {/if}
                   </div>
                 {/each}
@@ -506,6 +519,17 @@
   }
   .art-bias.green { color: var(--camp-green); background: rgba(46, 125, 50, 0.08); }
   .art-bias.blue { color: var(--camp-blue); background: rgba(21, 101, 192, 0.08); }
+  .art-bias.pending {
+    color: var(--md-sys-color-on-surface-variant);
+    background: var(--md-sys-color-surface-container-high);
+    opacity: 0.7;
+  }
+  .zone-pending {
+    font: var(--md-sys-typescale-body-small-font);
+    color: var(--pr-analysis-on-surface-variant);
+    opacity: 0.6;
+    font-style: italic;
+  }
 
   /* === Articles List === */
   .articles-list {

@@ -408,7 +408,7 @@
   <!-- ═══ Daily Quota ═══ -->
   {#if authStore.isAuthenticated}
     <section class="section">
-      <h3 class="section-title">每日分析配額</h3>
+      <h3 class="section-title">每日分析上限</h3>
       <Card variant="filled">
         <div class="quota-section">
           <div class="quota-header">

@@ -52,26 +52,6 @@ describe('ClusterCardV2', () => {
 		expect(screen.getByText('72')).toBeTruthy();
 	});
 
-	it('shows blindspot alert for green_only', () => {
-		render(ClusterCardV2, {
-			props: {
-				cluster: makeCluster({
-					is_blindspot: true,
-					blindspot_type: 'green_only',
-				})
-			}
-		});
-		expect(screen.getByRole('alert')).toBeTruthy();
-		expect(screen.getByText(/僅綠營報導/)).toBeTruthy();
-	});
-
-	it('has blindspot class when is_blindspot true', () => {
-		const { container } = render(ClusterCardV2, {
-			props: { cluster: makeCluster({ is_blindspot: true, blindspot_type: 'blue_only' }) }
-		});
-		expect(container.querySelector('.blindspot')).toBeTruthy();
-	});
-
 	it('has hot class when controversy > 60', () => {
 		const { container } = render(ClusterCardV2, {
 			props: { cluster: makeCluster({ avg_controversy_score: 75 }) }

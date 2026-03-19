@@ -5,13 +5,11 @@
    * Issue stance shown via StancePrism (AI-analyzed, not pre-labeled).
    *
    * Visual states:
-   *   - Alert: red pulsing border + BlindspotAlert banner
    *   - Hot:   warm glow shadow + ControversyPulse animation
    *   - Calm:  flat, balanced colors
    */
   import Card from '$lib/components/ui/Card.svelte';
   import ControversyPulse from '$lib/components/data-viz/ControversyPulse.svelte';
-  import BlindspotAlert from '$lib/components/data-viz/BlindspotAlert.svelte';
   import StancePrism from '$lib/components/data-viz/StancePrism.svelte';
   import SourceBadge from './SourceBadge.svelte';
   import ClusterTimeline from '$lib/components/data-viz/ClusterTimeline.svelte';
@@ -26,8 +24,6 @@
   let sources = $derived(safeJsonParse(cluster.sources_json, []));
   let avgCampRatio = $derived(safeJsonParse(cluster.avg_camp_ratio, null));
 
-  // Visual state derivations
-  let isBlindspot = $derived(!!cluster.is_blindspot);
   let controversy = $derived(cluster.avg_controversy_score ?? 0);
   let isHot = $derived(controversy > 60);
 
@@ -48,7 +44,6 @@
 
 <div
   class="cluster-v2-wrapper"
-  class:blindspot={isBlindspot}
   class:hot={isHot}
   onclick={onclick}
   onkeydown={handleKeydown}
@@ -56,9 +51,6 @@
   tabindex="0"
   aria-label="事件: {cluster.representative_title ?? ''}, {cluster.article_count ?? 0} 篇報導"
 >
-  <!-- Blindspot Banner (conditional) -->
-  <BlindspotAlert type={cluster.blindspot_type} {isBlindspot} />
-
   <Card variant="editorial">
     <div class="v2-inner">
       <!-- Header -->
@@ -128,14 +120,8 @@
     outline-offset: 2px;
   }
 
-  /* Blindspot state: pulsing red border */
-  .cluster-v2-wrapper.blindspot {
-    border: 2px solid var(--md-sys-color-error);
-    animation: pulse-border 2s ease-in-out infinite;
-  }
-
   /* Hot state: warm glow shadow */
-  .cluster-v2-wrapper.hot:not(.blindspot) {
+  .cluster-v2-wrapper.hot {
     animation: glow-warm 3s ease-in-out infinite;
   }
 

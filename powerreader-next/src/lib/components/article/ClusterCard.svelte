@@ -12,13 +12,6 @@
 
   let { cluster = {}, onclick } = $props();
 
-  const BLINDSPOT_LABELS = {
-    green_only: '僅綠營報導',
-    blue_only: '僅藍營報導',
-    white_missing: '缺乏中立報導',
-    imbalanced: '報導失衡',
-  };
-
   function safeJsonParse(str, fallback) {
     if (typeof str !== 'string') return str || fallback;
     try { return JSON.parse(str); } catch { return fallback; }
@@ -26,18 +19,6 @@
 
   let campDist = $derived(safeJsonParse(cluster.camp_distribution, {}));
   let sources = $derived(safeJsonParse(cluster.sources_json, []));
-
-  let blindspotLabel = $derived(
-    cluster.blindspot_type ? (BLINDSPOT_LABELS[cluster.blindspot_type] || cluster.blindspot_type) : null
-  );
-
-  let blindspotClass = $derived(() => {
-    if (!cluster.is_blindspot) return '';
-    const t = cluster.blindspot_type;
-    if (t === 'green_only') return 'blindspot-green';
-    if (t === 'blue_only') return 'blindspot-blue';
-    return 'blindspot-imbalanced';
-  });
 
   function handleKeydown(e) {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -48,7 +29,7 @@
 </script>
 
 <div
-  class="cluster-card-wrapper {blindspotClass()}"
+  class="cluster-card-wrapper"
   onclick={onclick}
   onkeydown={handleKeydown}
   role="button"
@@ -62,9 +43,6 @@
         <div class="header-badges">
           {#if cluster.category}
             <span class="category-badge">{cluster.category}</span>
-          {/if}
-          {#if blindspotLabel}
-            <span class="blindspot-badge">{blindspotLabel}</span>
           {/if}
         </div>
         <span class="meta-badge">{cluster.article_count ?? 0} 篇 · {cluster.source_count ?? 0} 家媒體</span>
@@ -123,17 +101,6 @@
     outline-offset: 2px;
   }
 
-  /* Blindspot left border accents */
-  .cluster-card-wrapper.blindspot-green {
-    border-left: 3px solid var(--camp-green);
-  }
-  .cluster-card-wrapper.blindspot-blue {
-    border-left: 3px solid var(--camp-blue);
-  }
-  .cluster-card-wrapper.blindspot-imbalanced {
-    border-left: 3px solid var(--md-sys-color-error);
-  }
-
   .cluster-inner {
     display: flex;
     flex-direction: column;
@@ -157,13 +124,6 @@
     font: var(--md-sys-typescale-label-small-font);
     color: var(--md-sys-color-on-tertiary-container);
     background: var(--md-sys-color-tertiary-container);
-    padding: 2px 10px;
-    border-radius: var(--md-sys-shape-corner-extra-small);
-  }
-  .blindspot-badge {
-    font: var(--md-sys-typescale-label-small-font);
-    color: var(--md-sys-color-error);
-    background: var(--md-sys-color-error-container);
     padding: 2px 10px;
     border-radius: var(--md-sys-shape-corner-extra-small);
   }
