@@ -4,7 +4,12 @@
  * Reactive store for browsing knowledge base entries.
  * Loads from build-time static JSON (zero API cost).
  * Provides client-side filtering by type, party, and text search.
+ *
+ * Schema v2: figure/issue/incident types with backward compat for
+ * legacy politician/topic/event names.
  */
+
+import { isFigureType, isIssueType, isIncidentType } from '$lib/utils/knowledge-constants.js';
 
 let allEntries = $state([]);
 let loading = $state(false);
@@ -30,29 +35,23 @@ export function getKnowledgeStore() {
 
     /**
      * Filtered entries based on current type, party, and search query.
+     * Supports both new (figure/issue/incident) and legacy (politician/topic/event) type names.
      */
     get entries() {
       let result = allEntries;
 
       if (activeType !== 'all') {
-        result = result.filter(e => e.type === activeType);
+        result = result.filter(e => matchesTypeFilter(e.type, activeType));
       }
 
       if (activeParty !== 'all') {
-        result = result.filter(e => e.type === 'topic' || e.party === activeParty);
+        // Issue/topic entries always pass through party filter (their party info is in stances)
+        result = result.filter(e => isIssueType(e.type) || e.party === activeParty);
       }
 
       if (searchQuery.trim()) {
         const q = searchQuery.trim().toLowerCase();
-        result = result.filter(e => {
-          if ((e.title || '').toLowerCase().includes(q)) return true;
-          if (e.type === 'topic' && e.stances) {
-            return Object.values(e.stances).some(
-              v => (v || '').toLowerCase().includes(q)
-            );
-          }
-          return (e.content || '').toLowerCase().includes(q);
-        });
+        result = result.filter(e => searchEntryMatches(e, q));
       }
 
       return result;
@@ -127,4 +126,50 @@ export function getKnowledgeStore() {
       searchQuery = '';
     }
   };
+}
+
+/**
+ * Match an entry type against the active filter, handling both
+ * new (figure/issue/incident) and legacy (politician/topic/event) names.
+ */
+function matchesTypeFilter(entryType, filterType) {
+  if (entryType === filterType) return true;
+  if (isFigureType(filterType) && isFigureType(entryType)) return true;
+  if (isIssueType(filterType) && isIssueType(entryType)) return true;
+  if (isIncidentType(filterType) && isIncidentType(entryType)) return true;
+  return false;
+}
+
+/**
+ * Full-text search across all relevant fields of an entry.
+ * Searches title, content, period, background, experience, description,
+ * keywords, and stances.
+ */
+function searchEntryMatches(entry, query) {
+  if ((entry.title || '').toLowerCase().includes(query)) return true;
+  if ((entry.content || '').toLowerCase().includes(query)) return true;
+
+  // Figure sub-fields
+  if ((entry.period || '').toLowerCase().includes(query)) return true;
+  if ((entry.background || '').toLowerCase().includes(query)) return true;
+  if ((entry.experience || '').toLowerCase().includes(query)) return true;
+
+  // Issue/Incident description
+  if ((entry.description || '').toLowerCase().includes(query)) return true;
+
+  // Issue stances
+  if (entry.stances) {
+    if (Object.values(entry.stances).some(v => (v || '').toLowerCase().includes(query))) {
+      return true;
+    }
+  }
+
+  // Incident keywords
+  if (Array.isArray(entry.keywords)) {
+    if (entry.keywords.some(k => (k || '').toLowerCase().includes(query))) {
+      return true;
+    }
+  }
+
+  return false;
 }

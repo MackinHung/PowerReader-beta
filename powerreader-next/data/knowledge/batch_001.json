@@ -2,353 +2,453 @@
   "entries": [
     {
       "id": "pol_874e10959258",
-      "type": "politician",
+      "type": "figure",
       "title": "朱立倫",
       "content": "2001-2009年任桃園縣長，2009-2010年任行政院副院長，2010-2018年任新北市長，2015/01-2016/01及2021/09-2025/11兩度任國民黨主席。2024年代表國民黨參選總統失利，任期屆滿後由鄭麗文接任。黨內溫和路線掌舵者。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_b3b86427b4ba",
-      "type": "politician",
+      "type": "figure",
       "title": "侯友宜",
       "content": "警政出身，曾任新北市副市長（長達8年）。2018/12起任新北市長，2022/12連任，任期至2026/12。2024年代表國民黨參選總統，同年1月落敗。執政風格務實穩健，民調長居縣市長滿意度前列。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_906575a42b34",
-      "type": "politician",
+      "type": "figure",
       "title": "韓國瑜",
       "content": "2018/12-2020/06任高雄市長，因罷免案去職。2024/02/01當選第11屆立法院院長，任期至2028年。以庶民語言著稱，2020年曾代表國民黨參選總統落敗，後轉型成黨內重要制衡力量。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_63b426d2e401",
-      "type": "politician",
+      "type": "figure",
       "title": "盧秀燕",
       "content": "歷任立法委員多屆（2002-2018年）。2018/12首度當選台中市長，2022/12連任，任期至2026/12，成為台中縣市合併升格後首位連任市長。施政以空污治理與地方公共建設為主軸。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_e12f0c9cd20d",
-      "type": "politician",
+      "type": "figure",
       "title": "蔣萬安",
       "content": "蔣介石曾孫、蔣孝嚴之子。哥倫比亞大學法學院畢業，曾任台北地檢署檢察官。2016-2022年任立法委員三屆。2022/11當選台北市長，成為台北史上最年輕市長，任期至2026年。主打科技執政，為黨內「蔣家」品牌最具代表性的第四代人物。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_d673cf0a4d7e",
-      "type": "politician",
+      "type": "figure",
       "title": "江啟臣",
       "content": "美國德州大學奧斯丁分校政治博士。2020/03-2021/09任國民黨主席，任內推動青年化改革。多屆立法委員，外交與國防領域專業著稱。2024年再當選立法委員，持續在黨內扮演知識型改革者角色。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_85c551c9ceb3",
-      "type": "politician",
+      "type": "figure",
       "title": "趙少康",
       "content": "曾任立法委員，主持TVBS新聞台知名政論節目。2024年與侯友宜搭檔代表國民黨參選正副總統，同年1月落敗。為黨內保守派代表，媒體影響力長期延伸政治話語權，「戰鬥藍」路線精神領袖。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_26987c21cbca",
-      "type": "politician",
+      "type": "figure",
       "title": "馬英九",
       "content": "2000/04-2005/08任國民黨主席。2006-2010年任台北市長。2008/05-2016/05任中華民國第12、13任總統。卸任後持續介入兩岸事務，2023年訪問中國大陸，為近年台灣前總統首度赴中。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_29903c5ac3a2",
-      "type": "politician",
+      "type": "figure",
       "title": "傅崐萁",
       "content": "2009-2021年任花蓮縣長（含補選），多次引發爭議。2022年轉任國民黨立法委員，2024年再次當選，並任黨團總召。以直接強硬風格著稱，為黨內「外圍實力派」代表，影響力覆蓋東部選區。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_71c44a394fd9",
-      "type": "politician",
+      "type": "figure",
       "title": "張善政",
       "content": "工程師出身。2014/12-2016/05任行政院院長。2022/12當選桃園市長，任期至2026年。以科技治理聞名，強調數位轉型與智慧城市，為國民黨「理工派」執政代表人物。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_65ddf0f9291b",
-      "type": "politician",
+      "type": "figure",
       "title": "謝國樑",
       "content": "2026年任職基隆市市長，曾經任職立法委員，2024年經歷罷免案挑戰但最終未通過，持續維持基隆市的執政權。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_adf3ffa053b7",
-      "type": "politician",
+      "type": "figure",
       "title": "連勝文",
       "content": "2026年任職國民黨副主席，前副總統連戰之子，長期參與黨務運作、青年發展及國際交流事務。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_065a6a6cc93b",
-      "type": "politician",
+      "type": "figure",
       "title": "夏立言",
       "content": "2026年任職國民黨副主席，資深外交官出身，近年多次代表國民黨進行兩岸交流與高層溝通。2022年至2024年多次率團訪問中國大陸，負責維持兩岸溝通管道，並代表黨中央參與2023年底的藍白合君悅會談。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_404498852f9e",
-      "type": "politician",
+      "type": "figure",
       "title": "黃健庭",
       "content": "2026年任職國民黨秘書長，前台東縣縣長，負責黨內實際行政運作與各項選舉的基層協調。2022至2024年擔任國民黨秘書長，負責協調兩場重大選舉的黨內提名事務，並在藍白合談判中扮演行政幕僚長的角色，穩定黨務體系運作。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_e0cfb3981e76",
-      "type": "politician",
+      "type": "figure",
       "title": "柯志恩",
       "content": "2026年任職立法委員、國民黨智庫執行長，曾參選高雄市市長，被視為2026年高雄市長選舉的黨內熱門人選。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_8e19b11bb43b",
-      "type": "politician",
+      "type": "figure",
       "title": "羅智強",
       "content": "曾任馬英九總統府副秘書長，以兩岸政策與外交著稱。2020-2024年任台北市議員，2024年當選立法委員。善用社群媒體，風格鮮明強硬，被視為藍營新媒體戰場最具攻擊性的代表人物。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_e63da472af95",
-      "type": "politician",
+      "type": "figure",
       "title": "徐巧芯",
       "content": "2026年任職立法委員（2024年當選），由台北市議員轉戰成功，以揭弊和強悍的媒體發言風格著稱。2022年高票連任台北市議員，2024年1月當選台北市第七選區立委，成為黨內戰鬥藍的空戰主力。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_16151a067039",
-      "type": "politician",
+      "type": "figure",
       "title": "王鴻薇",
       "content": "2026年任職立法委員，由台北市議員轉戰，以犀利問政及揭發政治爭議案件聞名。2022年揭發論文案引發政壇風暴，2023年1月贏得北市立委補選，並於2024年成功連任，是國會重要的監督火力。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_9470e1a81759",
-      "type": "politician",
+      "type": "figure",
       "title": "洪孟楷",
       "content": "2026年任職立法委員，曾經任職國民黨立法院黨團書記長，為黨內年輕世代在國會的重要論述與發言代表。2024年1月於新北第一選區以全台最高票連任，擔任國民黨書記長期間，在國會議事攻防中扮演第一線的指揮與發言角色。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_068decf9d2ff",
-      "type": "politician",
+      "type": "figure",
       "title": "王育敏",
       "content": "2026年任職立法委員，曾經任職嘉義縣縣長候選人、兒福聯盟執行長，主攻社會福利與兒童權益政策。2022年11月參選嘉義縣長失利後回任台中市副市長，2024年1月再度進入不分區立委名單，持續專注於兒少與社會福利政策。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_0e288e9f91dd",
-      "type": "politician",
+      "type": "figure",
       "title": "王金平",
       "content": "前立法院院長，雖逐漸淡出第一線，但在中南部地方派系與黨內大老中仍保有居中協調的影響力。國民黨本土派重量級領袖，擔任中華民國立法院院長長達17年，擅長朝野協商，2013年因馬王政爭與馬英九產生嚴重政治衝突。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_20c9490fc402",
-      "type": "politician",
+      "type": "figure",
       "title": "謝龍介",
       "content": "多次競選台南市長均落敗，但以高票累積知名度。2024年當選立法委員。擅長本土語言與庶民互動，是國民黨在南台灣深耕的在地代言人。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_91d664985510",
-      "type": "politician",
+      "type": "figure",
       "title": "陳玉珍",
       "content": "2026年任職金門縣立法委員，作風強悍，常在立法院議事攻防中扮演衝鋒與佔據版面的角色，具備全國高知名度。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_1c248e4d16b9",
-      "type": "politician",
+      "type": "figure",
       "title": "許淑華",
       "content": "2026年任職南投縣縣長，曾經任職立法委員，外號神力女超人，在南投地方具備深厚民意基礎與強大的執政實力。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_af2b206c1068",
-      "type": "politician",
+      "type": "figure",
       "title": "張麗善",
       "content": "2026年任職雲林縣縣長，出身雲林張派，成功鞏固國民黨在雲林的執政版圖，為中台灣重要的農業縣市首長。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_6d5e68a5f50a",
-      "type": "politician",
+      "type": "figure",
       "title": "黃敏惠",
       "content": "2026年任職嘉義市市長，多次回鍋執政且施政滿意度長期名列前茅，為國民黨在南台灣最堅實的防線。2022年12月在嘉義市長延選中勝出，創下地方自治史上四度當選且任期最長的紀錄，在黨內擁有極高的政治聲望與協調能力。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_a1c5ad9b3c21",
-      "type": "politician",
+      "type": "figure",
       "title": "王惠美",
       "content": "2026年任職彰化縣縣長，掌握百萬人口大縣的執政權，施政風格穩健，為中部選戰的關鍵諸侯。2022年11月高票連任彰化縣長，展現穩健的基層實力，在2024年大選期間成功整合彰化地方組織，為黨內中台灣重要執政指標。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_a1f9dfd99cb0",
-      "type": "politician",
+      "type": "figure",
       "title": "翁曉玲",
       "content": "2026年任職不分區立法委員（2024年就任），學者出身，在立法院推動國會改革及憲法法庭相關修法，為黨內法制攻防的焦點人物。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_ab2cb281ba79",
-      "type": "politician",
+      "type": "figure",
       "title": "吳宗憲",
       "content": "2026年任職不分區立法委員（2024年就任），前檢察官及新北市法制局長，專攻司法及法制委員會，負責黨團法律論述與法案推動。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_01e8aaf4751f",
-      "type": "politician",
+      "type": "figure",
       "title": "李彥秀",
       "content": "2026年任職立法委員，曾經任職國民黨文傳會主委與副秘書長，出身南港政治家族，具備扎實的地方服務與組織動員能力。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_841226ae9e75",
-      "type": "politician",
+      "type": "figure",
       "title": "賴士葆",
       "content": "資深立法委員，長期深耕台北市文山區，在財政與經濟議題上具備高度專業，為國會黨團內的資深穩定力量。2020至2022年間擔任國民黨資深立委。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_7f373d10efdc",
-      "type": "politician",
+      "type": "figure",
       "title": "顏寬恒",
       "content": "2026年任職立法委員（2024年重返國會），台中黑派代表人物，展現地方派系在基層的強大動員與復甦能力。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_8c8785f37941",
-      "type": "politician",
+      "type": "figure",
       "title": "葉元之",
       "content": "2026年任職立法委員（2024年當選），由新北市議員成功轉戰，極度活躍於政論節目與網路社群，擅長空戰與話題行銷。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_3795a65fb8a1",
-      "type": "politician",
+      "type": "figure",
       "title": "牛煦庭",
       "content": "2026年任職立法委員（2024年當選），青年世代代表，具備良好論述能力，成功為國民黨在桃園都會區收復失土。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_954534f96b6e",
-      "type": "politician",
+      "type": "figure",
       "title": "廖偉翔",
       "content": "2026年任職立法委員（2024年當選），國民黨年輕世代台中F4之一，象徵黨內在中台灣的新血輪與世代交替指標。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_f3d0aa08d551",
-      "type": "politician",
+      "type": "figure",
       "title": "凌濤",
       "content": "2026年任職桃園市議員、國民黨智庫副執行長，常擔任黨內對外發言與政治攻防的刺客，為黨主席朱立倫的嫡系子弟兵。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_d02fd8e5c7d0",
-      "type": "politician",
+      "type": "figure",
       "title": "林姿妙",
       "content": "2026年任職宜蘭縣縣長，基層身段極度柔軟，雖面臨司法案件挑戰，仍在2022年順利連任，主導宜蘭地方政局。2022年11月雖面臨司法案件爭議，仍以顯著票數差連任宜蘭縣長，證明其在基層服務及社會福利政策上的高度黏著度。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_1ab265c80a44",
-      "type": "politician",
+      "type": "figure",
       "title": "蘇清泉",
       "content": "2026年任職不分區立法委員，安泰醫院榮譽院長，長期深耕屏東縣，為2026年屏東縣縣長選舉的國民黨熱門佈局人選。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_fcae5335a126",
-      "type": "politician",
+      "type": "figure",
       "title": "徐榛蔚",
       "content": "2026年任職花蓮縣縣長，與立委傅崐萁共同穩固花蓮政治版圖，在地方基層具備極高的支持度與施政滿意度。2022年11月順利連任花蓮縣長，長期深耕東台灣，與其夫傅崐萁共同建構國民黨在花蓮不可撼動的政治堡壘。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_be5867e5b592",
-      "type": "politician",
+      "type": "figure",
       "title": "楊文科",
       "content": "2026年任職新竹縣縣長，科技界出身，主掌台灣高科技產業重鎮，致力於新竹縣的基礎建設與產學發展。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_249f24b2a03d",
-      "type": "politician",
+      "type": "figure",
       "title": "洪秀柱",
       "content": "前國民黨主席、前立法院副院長，雖退出第一線，但在黨內深藍族群及兩岸論述上仍具備一定的精神號召力。國民黨首位女性黨主席，曾經任職立法院副院長。2016年曾獲提名參選總統（後發生換柱風波），政治光譜偏向深藍。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_86a54abd2833",
-      "type": "politician",
+      "type": "figure",
       "title": "李四川",
       "content": "2026年任職台北市副市長，工程專業與行政經驗豐富，基層聲望極高，被外界視為2026年新北市長選舉的極熱門潛在人選。2020年6月隨著韓國瑜罷免案通過而卸下高雄市副市長職務。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_df08383b8031",
-      "type": "politician",
+      "type": "figure",
       "title": "饒慶鈴",
       "content": "2026年任職台東縣縣長，順利連任並穩固東台灣藍營版圖，施政主打觀光發展與慢經濟品牌。2022年11月成功連任台東縣長，任內積極推動台東農產品外銷，並在2023年與對岸溝通恢復鳳梨釋迦輸入，落實務實交流。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_45da9a062560",
-      "type": "politician",
+      "type": "figure",
       "title": "張嘉郡",
       "content": "2026年任職不分區立法委員，雲林張派核心人物，重返立院後積極為中南部農業縣市爭取建設與資源。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_dd91e4b3a278",
-      "type": "politician",
+      "type": "figure",
       "title": "羅廷瑋",
       "content": "2026年任職立法委員（2024年當選），由台中市議員轉戰成功，為黨內年輕世代台中F4成員，主攻青年與民生議題。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_38bb8d73f9c7",
-      "type": "politician",
+      "type": "figure",
       "title": "黃健豪",
       "content": "2026年任職立法委員（2024年當選），同為台中F4成員，成功擊敗綠營資深對手，為藍營在中台灣的新生代戰將。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_2e3761d36ab8",
-      "type": "politician",
+      "type": "figure",
       "title": "馬文君",
       "content": "資深立法委員，長期深耕南投並坐鎮外交及國防委員會，在潛艦國造等重大國防議題上為黨內主要的攻防發動者。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_74ee8aafd366",
-      "type": "politician",
+      "type": "figure",
       "title": "林思銘",
       "content": "2026年任職立法委員，具備律師背景，擔任國民黨立法院黨團幹部（如首席副書記長），協助操盤國會法案攻防與協商。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_03909f2c0457",
-      "type": "politician",
+      "type": "figure",
       "title": "陳菁徽",
       "content": "2026年任職不分區立法委員（2024年就任），婦產科名醫出身，專注於少子化、人工生殖法修法及醫療衛生政策推動。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_53f4d5bbfff0",
-      "type": "politician",
+      "type": "figure",
       "title": "葛如鈞",
       "content": "2026年任職不分區立法委員（2024年就任），人稱寶博士，為國民黨引進AI、區塊鏈等前瞻數位科技專業論述的代表。2024年1月獲選為不分區立委，代號寶博士，是台灣國會首位具備AI、NFT與區塊鏈專業背景的科技立委，推動數位治理政策。",
-      "party": "KMT"
+      "party": "KMT",
+      "source_type": "ai",
+      "report_count": 0
     }
   ]
 }

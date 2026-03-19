@@ -4,6 +4,8 @@
   import { getAuthStore } from '$lib/stores/auth.svelte.js';
   import { getKnowledgeStore } from '$lib/stores/knowledge.svelte.js';
   import { proposeKnowledgeEdit } from '$lib/core/api.js';
+  import { isFigureType, isIssueType, isIncidentType } from '$lib/utils/knowledge-constants.js';
+  import { FIELD_CHAR_LIMIT } from '$lib/utils/knowledge-constants.js';
   import { t } from '$lib/i18n/zh-TW.js';
 
   const auth = getAuthStore();
@@ -11,18 +13,33 @@
 
   let entryId = $derived(page.url.searchParams.get('id') || '');
   let entry = $derived(knowledge.getEntry(entryId));
-  let isTopic = $derived(entry?.type === 'topic');
+  let entryIsFigure = $derived(entry ? isFigureType(entry.type) : false);
+  let entryIsIssue = $derived(entry ? isIssueType(entry.type) : false);
+  let entryIsIncident = $derived(entry ? isIncidentType(entry.type) : false);
 
-  // Form state
+  // Form state — common
   let editTitle = $state('');
-  let editContent = $state('');
+  let editReason = $state('');
+  let submitting = $state(false);
+  let submitResult = $state(null);
+  let formInitialized = $state(false);
+
+  // Figure fields
+  let editPeriod = $state('');
+  let editBackground = $state('');
+  let editExperience = $state('');
+  let editContent = $state('');  // fallback for legacy data
+
+  // Issue fields
+  let editDescription = $state('');
   let editStanceDPP = $state('');
   let editStanceKMT = $state('');
   let editStanceTPP = $state('');
-  let editReason = $state('');
-  let submitting = $state(false);
-  let submitResult = $state(null); // { success, pr_url, pr_number } | { error, errorType }
-  let formInitialized = $state(false);
+
+  // Incident fields
+  let editDate = $state('');
+  let editIncidentDesc = $state('');
+  let editKeywords = $state('');
 
   // Load knowledge and init form when entry is available
   $effect(() => {
@@ -33,10 +50,22 @@
     if (entry && !formInitialized) {
       editTitle = entry.title || '';
       editContent = entry.content || '';
-      if (entry.stances) {
-        editStanceDPP = entry.stances.DPP || '';
-        editStanceKMT = entry.stances.KMT || '';
-        editStanceTPP = entry.stances.TPP || '';
+
+      if (isFigureType(entry.type)) {
+        editPeriod = entry.period || '';
+        editBackground = entry.background || '';
+        editExperience = entry.experience || '';
+      } else if (isIssueType(entry.type)) {
+        editDescription = entry.description || '';
+        if (entry.stances) {
+          editStanceDPP = entry.stances.DPP || '';
+          editStanceKMT = entry.stances.KMT || '';
+          editStanceTPP = entry.stances.TPP || '';
+        }
+      } else if (isIncidentType(entry.type)) {
+        editDate = entry.date || '';
+        editIncidentDesc = entry.description || '';
+        editKeywords = Array.isArray(entry.keywords) ? entry.keywords.join(', ') : '';
       }
       formInitialized = true;
     }
@@ -49,11 +78,30 @@
   function hasChanges() {
     if (!entry) return false;
     if (editTitle !== (entry.title || '')) return true;
-    if (!isTopic && editContent !== (entry.content || '')) return true;
-    if (isTopic && entry.stances) {
-      if (editStanceDPP !== (entry.stances.DPP || '')) return true;
-      if (editStanceKMT !== (entry.stances.KMT || '')) return true;
-      if (editStanceTPP !== (entry.stances.TPP || '')) return true;
+
+    if (entryIsFigure) {
+      if (editPeriod !== (entry.period || '')) return true;
+      if (editBackground !== (entry.background || '')) return true;
+      if (editExperience !== (entry.experience || '')) return true;
+      // Legacy fallback content
+      if (!entry.period && !entry.background && !entry.experience) {
+        if (editContent !== (entry.content || '')) return true;
+      }
+    } else if (entryIsIssue) {
+      if (editDescription !== (entry.description || '')) return true;
+      if (entry.stances) {
+        if (editStanceDPP !== (entry.stances.DPP || '')) return true;
+        if (editStanceKMT !== (entry.stances.KMT || '')) return true;
+        if (editStanceTPP !== (entry.stances.TPP || '')) return true;
+      }
+    } else if (entryIsIncident) {
+      if (editDate !== (entry.date || '')) return true;
+      if (editIncidentDesc !== (entry.description || '')) return true;
+      const origKeywords = Array.isArray(entry.keywords) ? entry.keywords.join(', ') : '';
+      if (editKeywords !== origKeywords) return true;
+      if (!entry.description && editContent !== (entry.content || '')) return true;
+    } else {
+      if (editContent !== (entry.content || '')) return true;
     }
     return false;
   }
@@ -68,16 +116,31 @@
     if (editTitle !== (entry.title || '')) {
       changes.title = editTitle;
     }
-    if (isTopic) {
+
+    if (entryIsFigure) {
+      if (editPeriod !== (entry.period || '')) changes.period = editPeriod;
+      if (editBackground !== (entry.background || '')) changes.background = editBackground;
+      if (editExperience !== (entry.experience || '')) changes.experience = editExperience;
+      if (!entry.period && !entry.background && !entry.experience && editContent !== (entry.content || '')) {
+        changes.content = editContent;
+      }
+    } else if (entryIsIssue) {
+      if (editDescription !== (entry.description || '')) changes.description = editDescription;
       const newStances = {};
       if (editStanceDPP !== (entry.stances?.DPP || '')) newStances.DPP = editStanceDPP;
       if (editStanceKMT !== (entry.stances?.KMT || '')) newStances.KMT = editStanceKMT;
       if (editStanceTPP !== (entry.stances?.TPP || '')) newStances.TPP = editStanceTPP;
       if (Object.keys(newStances).length > 0) {
-        changes.content = JSON.stringify({
-          ...entry.stances,
-          ...newStances
-        });
+        changes.stances = { ...entry.stances, ...newStances };
+      }
+    } else if (entryIsIncident) {
+      if (editDate !== (entry.date || '')) changes.date = editDate;
+      if (editIncidentDesc !== (entry.description || '')) changes.description = editIncidentDesc;
+      if (editKeywords !== (Array.isArray(entry.keywords) ? entry.keywords.join(', ') : '')) {
+        changes.keywords = editKeywords.split(',').map(k => k.trim()).filter(Boolean);
+      }
+      if (!entry.description && editContent !== (entry.content || '')) {
+        changes.content = editContent;
       }
     } else {
       if (editContent !== (entry.content || '')) {
@@ -87,7 +150,7 @@
 
     const result = await proposeKnowledgeEdit(auth.token, {
       entry_id: entry.id,
-      batch_file: entry.batch_file || 'batch_001',
+      batch_file: entry._batch || entry.batch_file || 'batch_001',
       changes,
       reason: editReason,
       content_hash: entry.content_hash || ''
@@ -144,25 +207,90 @@
       <a href="/knowledge/{entryId}" class="back-btn">{t('knowledge.back_to_list')}</a>
     </div>
   {:else}
+    <!-- Edit Guidelines -->
+    <div class="guidelines-panel">
+      <h3 class="guidelines-title">
+        <span class="material-symbols-outlined">info</span>
+        {t('knowledge.edit.guidelines_title')}
+      </h3>
+      <ul class="guidelines-list">
+        <li>{t('knowledge.edit.guideline_objective')}</li>
+        <li>{t('knowledge.edit.guideline_verifiable')}</li>
+        <li>{t('knowledge.edit.guideline_no_slur')}</li>
+        <li>{t('knowledge.edit.guideline_date_format')}</li>
+        <li>{t('knowledge.edit.guideline_char_limit')}</li>
+      </ul>
+    </div>
+
     <form class="edit-form" onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
       <div class="form-field">
         <label for="edit-title">{t('knowledge.admin.form.title')}</label>
         <input id="edit-title" type="text" bind:value={editTitle} />
       </div>
 
-      {#if isTopic}
+      {#if entryIsFigure}
+        <div class="form-field">
+          <label for="edit-period">{t('knowledge.field.period')}</label>
+          <textarea id="edit-period" bind:value={editPeriod} rows="2" maxlength={FIELD_CHAR_LIMIT}></textarea>
+          <span class="char-count" class:exceeded={editPeriod.length > FIELD_CHAR_LIMIT}>{editPeriod.length}/{FIELD_CHAR_LIMIT}</span>
+        </div>
+        <div class="form-field">
+          <label for="edit-background">{t('knowledge.field.background')}</label>
+          <textarea id="edit-background" bind:value={editBackground} rows="2" maxlength={FIELD_CHAR_LIMIT}></textarea>
+          <span class="char-count" class:exceeded={editBackground.length > FIELD_CHAR_LIMIT}>{editBackground.length}/{FIELD_CHAR_LIMIT}</span>
+        </div>
+        <div class="form-field">
+          <label for="edit-experience">{t('knowledge.field.experience')}</label>
+          <textarea id="edit-experience" bind:value={editExperience} rows="2" maxlength={FIELD_CHAR_LIMIT}></textarea>
+          <span class="char-count" class:exceeded={editExperience.length > FIELD_CHAR_LIMIT}>{editExperience.length}/{FIELD_CHAR_LIMIT}</span>
+        </div>
+        {#if !entry.period && !entry.background && !entry.experience && entry.content}
+          <div class="form-field">
+            <label for="edit-content">{t('knowledge.admin.form.content')} (legacy)</label>
+            <textarea id="edit-content" bind:value={editContent} rows="4"></textarea>
+          </div>
+        {/if}
+      {:else if entryIsIssue}
+        <div class="form-field">
+          <label for="edit-description">{t('knowledge.field.description')}</label>
+          <textarea id="edit-description" bind:value={editDescription} rows="2" maxlength={FIELD_CHAR_LIMIT}></textarea>
+          <span class="char-count" class:exceeded={editDescription.length > FIELD_CHAR_LIMIT}>{editDescription.length}/{FIELD_CHAR_LIMIT}</span>
+        </div>
         <div class="form-field">
           <label for="edit-stance-dpp">{t('knowledge.stances.dpp')}</label>
-          <textarea id="edit-stance-dpp" bind:value={editStanceDPP} rows="3"></textarea>
+          <textarea id="edit-stance-dpp" bind:value={editStanceDPP} rows="3" maxlength={FIELD_CHAR_LIMIT}></textarea>
+          <span class="char-count" class:exceeded={editStanceDPP.length > FIELD_CHAR_LIMIT}>{editStanceDPP.length}/{FIELD_CHAR_LIMIT}</span>
         </div>
         <div class="form-field">
           <label for="edit-stance-kmt">{t('knowledge.stances.kmt')}</label>
-          <textarea id="edit-stance-kmt" bind:value={editStanceKMT} rows="3"></textarea>
+          <textarea id="edit-stance-kmt" bind:value={editStanceKMT} rows="3" maxlength={FIELD_CHAR_LIMIT}></textarea>
+          <span class="char-count" class:exceeded={editStanceKMT.length > FIELD_CHAR_LIMIT}>{editStanceKMT.length}/{FIELD_CHAR_LIMIT}</span>
         </div>
         <div class="form-field">
           <label for="edit-stance-tpp">{t('knowledge.stances.tpp')}</label>
-          <textarea id="edit-stance-tpp" bind:value={editStanceTPP} rows="3"></textarea>
+          <textarea id="edit-stance-tpp" bind:value={editStanceTPP} rows="3" maxlength={FIELD_CHAR_LIMIT}></textarea>
+          <span class="char-count" class:exceeded={editStanceTPP.length > FIELD_CHAR_LIMIT}>{editStanceTPP.length}/{FIELD_CHAR_LIMIT}</span>
         </div>
+      {:else if entryIsIncident}
+        <div class="form-field">
+          <label for="edit-date">{t('knowledge.field.date')}</label>
+          <input id="edit-date" type="date" bind:value={editDate} />
+        </div>
+        <div class="form-field">
+          <label for="edit-incident-desc">{t('knowledge.field.description')}</label>
+          <textarea id="edit-incident-desc" bind:value={editIncidentDesc} rows="3" maxlength={FIELD_CHAR_LIMIT}></textarea>
+          <span class="char-count" class:exceeded={editIncidentDesc.length > FIELD_CHAR_LIMIT}>{editIncidentDesc.length}/{FIELD_CHAR_LIMIT}</span>
+        </div>
+        <div class="form-field">
+          <label for="edit-keywords">{t('knowledge.field.keywords')} (comma separated)</label>
+          <input id="edit-keywords" type="text" bind:value={editKeywords} />
+        </div>
+        {#if !entry.description && entry.content}
+          <div class="form-field">
+            <label for="edit-content">{t('knowledge.admin.form.content')} (legacy)</label>
+            <textarea id="edit-content" bind:value={editContent} rows="4"></textarea>
+          </div>
+        {/if}
       {:else}
         <div class="form-field">
           <label for="edit-content">{t('knowledge.admin.form.content')}</label>
@@ -280,6 +408,30 @@
     font: var(--md-sys-typescale-label-large-font);
   }
 
+  .guidelines-panel {
+    padding: 12px 16px;
+    background: var(--md-sys-color-secondary-container, #e8f0fe);
+    border-radius: var(--md-sys-shape-corner-medium, 12px);
+  }
+  .guidelines-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 8px;
+    font: var(--md-sys-typescale-title-small-font);
+    color: var(--md-sys-color-on-secondary-container);
+  }
+  .guidelines-title .material-symbols-outlined {
+    font-size: 18px;
+  }
+  .guidelines-list {
+    margin: 0;
+    padding-left: 20px;
+    font: var(--md-sys-typescale-body-small-font);
+    color: var(--md-sys-color-on-secondary-container);
+    line-height: 1.8;
+  }
+
   .edit-form {
     display: flex;
     flex-direction: column;
@@ -311,6 +463,16 @@
   .form-field textarea:focus {
     outline: 2px solid var(--md-sys-color-primary);
     border-color: transparent;
+  }
+
+  .char-count {
+    font: var(--md-sys-typescale-label-small-font);
+    color: var(--md-sys-color-on-surface-variant);
+    text-align: right;
+  }
+  .char-count.exceeded {
+    color: var(--md-sys-color-error);
+    font-weight: 600;
   }
 
   .error-message {

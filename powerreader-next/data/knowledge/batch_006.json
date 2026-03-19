@@ -2,353 +2,453 @@
   "entries": [
     {
       "id": "pol_566abbca06cb",
-      "type": "politician",
+      "type": "figure",
       "title": "吳思瑤",
       "content": "2020-2022年間擔任立法委員。在擔任黨團幹事長期間，展現出強大的政治論辯力與媒體溝通能力，深耕台北北投與天母地區。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_07efe7a3f7d0",
-      "type": "politician",
+      "type": "figure",
       "title": "李永得",
       "content": "2020-2022年間擔任文化部部長。推動《文化藝術獎助及促進條例》修法，並在疫情期間針對藝文界提供紓困與振興計畫。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_b7fd42ce2b8b",
-      "type": "politician",
+      "type": "figure",
       "title": "沈榮津",
       "content": "2020-2022年間擔任行政院副院長。憑藉豐富的經濟部背景，在疫情期間負責口罩國家隊調度及推動半導體與離岸風電產業發展。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_32a5ff6b9264",
-      "type": "politician",
+      "type": "figure",
       "title": "蔡適應",
       "content": "2020-2022年間擔任立法委員。作為基隆在國會的重要代表，2022年獲提名參選基隆市長，代表林右昌執政績效的接棒者。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_a274baef8b37",
-      "type": "politician",
+      "type": "figure",
       "title": "江聰淵",
       "content": "2020-2022年間擔任宜蘭市市長。2022年獲黨內正國會體系支持參選宜蘭縣長，是黨內在宜蘭長期栽培的接班首長。前宜蘭市長、2022 宜蘭縣長候選人，目前持續深耕基層，為 2026 年奪回宜蘭縣政權做準備。前宜蘭市長。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_93b9140fdcfd",
-      "type": "politician",
+      "type": "figure",
       "title": "徐定禎",
       "content": "2020-2022年間擔任民進黨苗栗縣黨部主委。2022年獲徵召參選苗栗縣長，在傳統艱困選區中試圖集結綠營與中間勢力挑戰翻轉。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_36d626ae1ca1",
-      "type": "politician",
+      "type": "figure",
       "title": "邱議瑩",
       "content": "2020-2022年間擔任立法委員。深耕高雄農村區域，專注於農民權益與地方建設，在國會議事中展現極高的戰鬥力與資歷。民進黨客家籍女性領袖，24歲即當選國大代表（1991），立法委員（截至2026/03），長期關注農業與客家權益。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_8614dd5bb7e3",
-      "type": "politician",
+      "type": "figure",
       "title": "莊瑞雄",
       "content": "2020-2022年間擔任不分區立法委員。身為英系戰將，活躍於政論節目，並於2022年屏東縣長黨內初選中扮演重要競爭角色。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_594820720f1a",
-      "type": "politician",
+      "type": "figure",
       "title": "王美花",
       "content": "2020年6月接任經濟部部長。2020-2022年間負責處理百年大旱供水調度、台積電擴廠行政協調及應對全球供應鏈重組等重大經濟議題。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_40667d8f45aa",
-      "type": "politician",
+      "type": "figure",
       "title": "陳宗彥",
       "content": "2020-2022年間擔任內政部政務次長。在疫情期間兼任中央流行疫情指揮中心副指揮官，協助邊境管理與社區防疫措施之執行。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_a1a986d0e4c5",
-      "type": "politician",
+      "type": "figure",
       "title": "羅秉成",
       "content": "2020-2022年間擔任行政院政務委員兼發言人。負責法律政務協調，並作為蘇貞昌內閣對外政策說明的核心窗口，協助處理萊豬與公投等爭議。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_8346b5d0e2a7",
-      "type": "politician",
+      "type": "figure",
       "title": "林萬億",
       "content": "2020-2022年間持續擔任行政院政務委員。主導蔡英文政府的社會福利政策，包括長照2.0的深化與少子女化對策計畫的推動。政務委員（截至2026/03）。2025年推動長照3.0升級方案細節規劃。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_2aaee1e084b8",
-      "type": "politician",
+      "type": "figure",
       "title": "管碧玲",
       "content": "1958年生，高雄師範大學國文系。多屆高雄市立委，以問政犀利、監督海巡著稱。2023/01起任海洋委員會主任委員兼海巡署署長，截至2026/03持續任職。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_f3a4182e5e07",
-      "type": "politician",
+      "type": "figure",
       "title": "劉世芳",
       "content": "2020-2022年間擔任立法委員。深耕高雄左楠區，擔任黨團書記長期間，強勢主導多項重大國防預算與轉型正義法案的推動。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_2eb721ce3fe3",
-      "type": "politician",
+      "type": "figure",
       "title": "賴品妤",
       "content": "2020年2月就職立法委員。作為國會最年輕成員，2020-2022年間專注於交通建設與動漫文創產業，在年輕族群中具備極高社群影響力。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_a6d14992f7dc",
-      "type": "politician",
+      "type": "figure",
       "title": "洪申翰",
       "content": "2020-2022年間擔任不分區立法委員。身為環團出身的代表，在國會中推動能源轉型、淨零排放及勞工權益，是民進黨與公民社會連結的重要人選。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_1ca3669538bb",
-      "type": "politician",
+      "type": "figure",
       "title": "林楚茵",
       "content": "2020-2022年間擔任立法委員。憑藉媒體資歷，在立法院專注於金融、洗錢防制及媒體通訊議題，並在選戰期間擔任重要的議題火力支援角色。2024年順利連任不分區立委，並擔任民進黨發言人。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_afb3e0636db4",
-      "type": "politician",
+      "type": "figure",
       "title": "鍾佳濱",
       "content": "2020-2022年間擔任立法委員。深耕屏東，在國會專注於財政與地方發展，並於2022年參與屏東縣長初選，展現專業從政的論述實力。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_f607a27a886a",
-      "type": "politician",
+      "type": "figure",
       "title": "蔡培慧",
       "content": "2020-2022年間擔任行政院中部聯合服務中心執行長。2022年受徵召參選南投縣縣長，長期關注農業轉型與農村基層議題。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_02b8c02385da",
-      "type": "politician",
+      "type": "figure",
       "title": "王美惠",
       "content": "2020年2月就職立法委員。以嘉義市最高票當選，2020-2022年間在立法院以親民接地氣的形象著稱，專注於地方建設與內政議題。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_418ef6ae60f4",
-      "type": "politician",
+      "type": "figure",
       "title": "陳亭妃",
       "content": "2020-2022年間擔任立法委員。身為正國會核心成員，長期深耕台南，在教育文化委員會表現活躍，並積極參與2022年地方選舉的輔選工作。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_f9006ac1320f",
-      "type": "politician",
+      "type": "figure",
       "title": "郭國文",
       "content": "2020-2022年間擔任立法委員。深耕台南山區，專注於財經法案與南科擴張議題，在黨內被視為務實派的財經幕僚與區域立委。2024年1月順利連任台南市立委。同年5月當選民進黨台南市黨部主委。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_823ffa14f676",
-      "type": "politician",
+      "type": "figure",
       "title": "林宜瑾",
       "content": "2020年2月就任立法委員。深耕台南永康與新市，2020-2022年間在立法院專注於體育發展與性別平等議題，展現新一代女性立委的問政力。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_d8eeb1b81309",
-      "type": "politician",
+      "type": "figure",
       "title": "周江杰",
       "content": "2020-2022年間擔任民進黨中央黨部發言人及客家部主任。2022年獲提名參選新竹縣縣長，代表民進黨在客家地區深耕年輕化的嘗試。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_8bf02061a19f",
-      "type": "politician",
+      "type": "figure",
       "title": "吳怡農",
       "content": "2021-2022年間擔任民進黨台北市黨部主委。推動黨務改革與青年入黨，並在2022年底參與台北市第三選區立委補選的籌備工作。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_7dfe2dd97520",
-      "type": "politician",
+      "type": "figure",
       "title": "蘇震清",
       "content": "2020-2022年間為屏東縣立法委員。2020年因涉及SOGO案遭起訴後退黨，但在國會運作及地方政治實力上仍與民進黨體系維持複雜關係。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_7b1e572441b3",
-      "type": "politician",
+      "type": "figure",
       "title": "李昆澤",
       "content": "2020-2022年間擔任立法委員。長期在交通委員會深耕，推動高雄捷運延伸線及地方各項基礎建設，展現低調務實的從政風格。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_baba815d3047",
-      "type": "politician",
+      "type": "figure",
       "title": "陳菊",
       "content": "2020年8月就任監察院院長兼第一屆國家人權委員會主任委員。2020-2022年間雖依規定退出黨務運作，但作為美麗島世代象徵，其政治聲望對民進黨內部的穩定仍具備深遠影響力。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_f70b73217398",
-      "type": "politician",
+      "type": "figure",
       "title": "陳吉仲",
       "content": "2020-2022年間擔任行政院農業委員會主任委員。這段期間負責處理萊豬進口後的農業配套、中國禁止台灣鳳梨等多項水果進口之因應措施，以及推動農民退休儲金制度。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_4a558f080c1e",
-      "type": "politician",
+      "type": "figure",
       "title": "鄭運鵬",
       "content": "2020-2022年間擔任立法委員及黨團幹事長。2022年8月在林智堅因論文爭議退選後，緊急臨危受命代表民進黨參選桃園市長，展現其在黨內調度與議題攻防的高機動性。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_220e6d9a097f",
-      "type": "politician",
+      "type": "figure",
       "title": "劉建國",
       "content": "2020-2022年間擔任立法委員。長期關注雲林地方醫療與農業權益，並於2022年代表民進黨參選雲林縣縣長，試圖挑戰地方家族政治勢力。立委（截至2026/03），2025年12月31日獲中執會徵召參選2026年雲林縣長。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_f75cdab3151d",
-      "type": "politician",
+      "type": "figure",
       "title": "蔡易餘",
       "content": "2020-2022年間擔任立法委員。深耕嘉義縣基層，在國會中活躍於法律與人權委員會，並以靈活的社群操作與體重議題等親民形象提升民進黨在年輕族群的能見度。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_5038d7c62776",
-      "type": "politician",
+      "type": "figure",
       "title": "何志偉",
       "content": "2020-2022年間擔任立法委員。深耕台北市士林、大同區，專注於國防外交與地方選民服務，2022年地方選舉期間因對於黨內選戰布局與黑道議題的敢言風格而引發高度討論。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_f1dfc01c65b4",
-      "type": "politician",
+      "type": "figure",
       "title": "吳秉叡",
       "content": "2020-2022年間擔任立法委員。身為蘇貞昌系統（蘇系）的核心成員，在立法院內負責協調各項重大法案，並長期耕耘新北市新莊地區，是黨內在國會的重要法律專業戰力。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_37dda5ef7084",
-      "type": "politician",
+      "type": "figure",
       "title": "蘇治芬",
       "content": "2020-2022年間擔任立法委員。身為民進黨在雲林的重要精神領袖，在國會中強勢推動能源轉型與農業保險，並在2022年選戰中扮演輔選地方縣長的關鍵角色。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_a3ebd828681f",
-      "type": "politician",
+      "type": "figure",
       "title": "邱志偉",
       "content": "2020-2022年間擔任立法委員。深耕高雄北區，專注於經濟與教育委員會，長期推動高雄科學園區擴張及地方基礎建設，展現穩定且專業的問政風格。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_f29a511f7d39",
-      "type": "politician",
+      "type": "figure",
       "title": "賴瑞隆",
       "content": "2020-2022年間擔任立法委員。深耕高雄前鎮、小港地區，2022年擔任民進黨中央評議委員會（中評會）主委，負責處理黨內紀律與選舉爭議裁決，職位極其關鍵。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_14f8f01f018d",
-      "type": "politician",
+      "type": "figure",
       "title": "張廖萬堅",
       "content": "2020-2022年間擔任立法委員。深耕台中西屯、南屯，專注於教育文化委員會，推動多項體育設施升級與校園環境改善，是黨內在台中地區極具口碑的專業立委。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_3af692d96f58",
-      "type": "politician",
+      "type": "figure",
       "title": "黃世杰",
       "content": "2020年2月就任立法委員。具備法律背景，2020-2022年間在國會展現精準的法案審議能力，並於2022年桃園市長選戰中擔任重要的法律諮詢與政策攻防角色。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_7a0ea4bbf613",
-      "type": "politician",
+      "type": "figure",
       "title": "林淑芬",
       "content": "2020-2022年間擔任立法委員。深耕新北市蘆洲、五股，以敢於挑戰黨意與捍衛勞權食安著稱，雖然在萊豬表決等議題上與黨中央立場相左，但在基層仍擁有強大民意支持。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_a5ea76473540",
-      "type": "politician",
+      "type": "figure",
       "title": "吳玉琴",
       "content": "2020-2022年間擔任不分區立法委員。身為社福領域專家，這段期間主導多項長照政策、身心障礙者權益法案的修訂，是蔡英文政府社福政策在國會的關鍵執行者。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_61ab8e09373e",
-      "type": "politician",
+      "type": "figure",
       "title": "陳歐珀",
       "content": "2020-2022年間擔任立法委員。深耕宜蘭，在國會專注於交通建設與觀光議題，致力於推動高鐵延伸宜蘭等重大交通工程計畫。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_bdb128204866",
-      "type": "politician",
+      "type": "figure",
       "title": "陳素月",
       "content": "2020-2022年間擔任立法委員。深耕彰化地區，專注於交通委員會，推動彰化地區鐵路高架化與水利建設，展現務實踏實的女性從政風格。立委（截至2026/03），2025年12月31日獲中執會徵召參選2026年彰化縣長。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_1521cb006a1b",
-      "type": "politician",
+      "type": "figure",
       "title": "李俊俋",
       "content": "2020-2022年6月擔任總統府副秘書長。負責幕僚協調與溝通工作，2022年獲徵召參選嘉義市市長，展現其從中央回到地方深耕的政治承擔。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_673a0b031f4e",
-      "type": "politician",
+      "type": "figure",
       "title": "趙怡翔",
       "content": "2020-2021年擔任駐美代表處政治組組長，被譽為口譯哥。2021年返台準備參選，2022年成功當選台北市議員，被視為民進黨內具備國際視野的新生代戰力。台北市議員（截至2026/03）。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_183414c09e49",
-      "type": "politician",
+      "type": "figure",
       "title": "王世堅",
       "content": "2020-2022年間擔任台北市議員。以犀利的問政風格與對柯文哲市府的強烈監督著稱，雖然在黨內言論偶爾引起爭議，但在2022年選舉中以超高票連任，展現強大社會基層支持。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_2a9fe5bf14f6",
-      "type": "politician",
+      "type": "figure",
       "title": "楊曜",
       "content": "2020-2022年間擔任澎湖縣立法委員。長期在國會為離島發聲，專注於澎湖的交通、醫療與觀光發展，是民進黨在離島地區最穩定且資深的民意代表。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_11a611586481",
-      "type": "politician",
+      "type": "figure",
       "title": "邱國正",
       "content": "2021年2月接任國防部部長。2021-2022年間面對日益嚴峻的台海局勢與共機擾台，主導國軍義務役期延長評估及後備軍人召集制度（新制教召）的改革實施。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_3fadc0f0244d",
-      "type": "politician",
+      "type": "figure",
       "title": "蔡清祥",
       "content": "2020-2022年間持續擔任法務部部長。任內推動《民法》成年年齡下修至18歲的修法工作，並在2022年間強化針對科技犯罪、洗錢防制與司法改革相關法案的執行。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_61f25f555a42",
-      "type": "politician",
+      "type": "figure",
       "title": "許銘春",
       "content": "2020-2022年間持續擔任勞動部部長。這段期間負責處理疫情期間的勞工紓困貸款、推動《勞工職業災害保險及保護法》立法，並多次協調基本工資的調漲。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     }
   ]
 }

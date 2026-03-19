@@ -3,16 +3,16 @@
   import { untrack } from 'svelte';
   import { KnowledgeCard } from '$lib/components/knowledge/index.js';
   import { getKnowledgeStore } from '$lib/stores/knowledge.svelte.js';
+  import { isFigureType, isIssueType } from '$lib/utils/knowledge-constants.js';
   import { t } from '$lib/i18n/zh-TW.js';
 
   const store = getKnowledgeStore();
 
   const TYPE_TABS = [
     { key: 'all', label: () => t('knowledge.filter.all') },
-    { key: 'politician', label: () => t('knowledge.type.politician') },
-    { key: 'media', label: () => t('knowledge.type.media') },
-    { key: 'topic', label: () => t('knowledge.type.topic') },
-    { key: 'event', label: () => t('knowledge.type.event') }
+    { key: 'figure', label: () => t('knowledge.type.figure') },
+    { key: 'issue', label: () => t('knowledge.type.issue') },
+    { key: 'incident', label: () => t('knowledge.type.incident') }
   ];
 
   const PARTY_TABS = [
@@ -22,9 +22,9 @@
     { key: 'TPP', label: () => t('knowledge.party.TPP') }
   ];
 
-  // Show party filter for types that have party data (topic always passes through)
+  // Show party filter for types that have party data (issue always passes through)
   let showPartyFilter = $derived(
-    store.activeType === 'all' || store.activeType === 'politician' || store.activeType === 'topic'
+    store.activeType === 'all' || isFigureType(store.activeType) || isIssueType(store.activeType)
   );
 
   let searchInput = $state('');

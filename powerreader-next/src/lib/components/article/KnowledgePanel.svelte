@@ -30,7 +30,25 @@
           </button>
           {#if expandedIndex === i}
             <div class="item-content">
-              <p>{item.content}</p>
+              {#if item.period || item.background || item.experience}
+                {#if item.period}<p><strong>任期:</strong> {item.period}</p>{/if}
+                {#if item.background}<p><strong>背景:</strong> {item.background}</p>{/if}
+                {#if item.experience}<p><strong>經歷:</strong> {item.experience}</p>{/if}
+              {:else if item.description}
+                <p>{item.description}</p>
+              {:else}
+                <p>{item.content}</p>
+              {/if}
+              {#if item.stances}
+                <div class="stance-mini">
+                  {#each Object.entries(item.stances) as [party, text]}
+                    <p><strong>{party}:</strong> {text}</p>
+                  {/each}
+                </div>
+              {/if}
+              {#if item.keywords?.length}
+                <p class="keywords-mini">{item.keywords.join(', ')}</p>
+              {/if}
             </div>
           {/if}
         </div>
@@ -119,10 +137,22 @@
     background: var(--md-sys-color-surface-container);
   }
   .item-content p {
-    margin: 0;
+    margin: 0 0 4px;
     font: var(--md-sys-typescale-body-small-font);
     color: var(--md-sys-color-on-surface-variant);
     line-height: 1.5;
     white-space: pre-wrap;
+  }
+  .item-content p:last-child {
+    margin-bottom: 0;
+  }
+  .stance-mini {
+    margin-top: 4px;
+    padding-left: 8px;
+    border-left: 2px solid var(--md-sys-color-outline-variant);
+  }
+  .keywords-mini {
+    font-style: italic;
+    opacity: 0.8;
   }
 </style>

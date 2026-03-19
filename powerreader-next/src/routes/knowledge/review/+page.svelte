@@ -179,6 +179,16 @@
                   newEntry={parseDiffEntries(prDetail.diff, 'new')}
                 />
 
+                <!-- Review Checklist -->
+                <div class="review-checklist">
+                  <h4 class="checklist-title">{t('knowledge.review.checklist_title')}</h4>
+                  <label class="checklist-item"><input type="checkbox" /> {t('knowledge.review.check_objective')}</label>
+                  <label class="checklist-item"><input type="checkbox" /> {t('knowledge.review.check_verifiable')}</label>
+                  <label class="checklist-item"><input type="checkbox" /> {t('knowledge.review.check_char_limit')}</label>
+                  <label class="checklist-item"><input type="checkbox" /> {t('knowledge.review.check_no_slur')}</label>
+                  <label class="checklist-item"><input type="checkbox" /> {t('knowledge.review.check_format')}</label>
+                </div>
+
                 <div class="pr-actions">
                   <button
                     class="action-btn action-btn--approve"
@@ -458,5 +468,32 @@
   .reject-input:focus {
     outline: 2px solid var(--md-sys-color-primary);
     border-color: transparent;
+  }
+
+  .review-checklist {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 16px;
+    background: var(--md-sys-color-secondary-container, #e8f0fe);
+    border-radius: var(--md-sys-shape-corner-small, 8px);
+  }
+  .checklist-title {
+    margin: 0 0 4px;
+    font: var(--md-sys-typescale-title-small-font);
+    color: var(--md-sys-color-on-secondary-container);
+  }
+  .checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font: var(--md-sys-typescale-body-small-font);
+    color: var(--md-sys-color-on-secondary-container);
+    cursor: pointer;
+  }
+  .checklist-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--md-sys-color-primary);
   }
 </style>

@@ -59,12 +59,29 @@ export function generateKnowledgeJson() {
             _batch: batchName
           };
 
-          if (entry.type === 'topic' && entry.stances) {
-            // Topic entries carry stances instead of content/party
-            mapped.stances = entry.stances;
+          // Common v2 fields
+          if (entry.source_type) mapped.source_type = entry.source_type;
+          if (entry.report_count != null) mapped.report_count = entry.report_count;
+
+          // Type-specific fields
+          const t = entry.type;
+          if (t === 'issue' || t === 'topic') {
+            // Issue entries carry stances and optional description
+            if (entry.stances) mapped.stances = entry.stances;
+            if (entry.description) mapped.description = entry.description;
+          } else if (t === 'incident' || t === 'event') {
+            // Incident entries may have date, description, keywords
+            if (entry.content) mapped.content = entry.content;
+            if (entry.date) mapped.date = entry.date;
+            if (entry.description) mapped.description = entry.description;
+            if (entry.keywords) mapped.keywords = entry.keywords;
           } else {
-            mapped.content = entry.content || '';
-            mapped.party = entry.party || null;
+            // Figure entries (and other types) carry content, party, and structured fields
+            if (entry.content) mapped.content = entry.content;
+            if (entry.party) mapped.party = entry.party;
+            if (entry.period) mapped.period = entry.period;
+            if (entry.background) mapped.background = entry.background;
+            if (entry.experience) mapped.experience = entry.experience;
           }
 
           entriesMap.set(entry.id, mapped);
@@ -78,13 +95,14 @@ export function generateKnowledgeJson() {
   const allEntries = [...entriesMap.values()];
 
   // Compute type and party counts
-  // Topic entries do not count toward party stats (party info is in stances)
+  // Issue/topic entries do not count toward party stats (party info is in stances)
   const types = {};
   const parties = {};
 
   for (const entry of allEntries) {
     types[entry.type] = (types[entry.type] || 0) + 1;
-    if (entry.type !== 'topic' && entry.party) {
+    const isIssueType = entry.type === 'issue' || entry.type === 'topic';
+    if (!isIssueType && entry.party) {
       parties[entry.party] = (parties[entry.party] || 0) + 1;
     }
   }

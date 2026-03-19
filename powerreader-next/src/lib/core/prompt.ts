@@ -96,7 +96,8 @@ export function assembleUserMessage(article: Article, knowledgeEntries: Knowledg
 
 /**
  * Format RAG knowledge entries as Layer 2 injection text.
- * Maps knowledge types to Chinese tags: politician->人物, topic->議題, term->名詞, event->事件
+ * Schema v2: serializes structured fields for figure/issue/incident types.
+ * Falls back to flat content for legacy entries.
  */
 export function formatKnowledgeAsL2(entries: KnowledgeEntry[]): string {
   if (!Array.isArray(entries) || entries.length === 0) return '';
@@ -108,17 +109,67 @@ export function formatKnowledgeAsL2(entries: KnowledgeEntry[]): string {
 
   const typeLabels: Record<string, string> = {
     politician: '人物',
+    figure: '人物',
     topic: '議題',
+    issue: '議題',
     term: '名詞',
     event: '事件',
+    incident: '事件',
     media: '媒體'
   };
 
   const lines = relevant.map((entry: KnowledgeEntry) => {
     const label = typeLabels[entry.type] || entry.type || '其他';
-    const text = entry.content || (entry as unknown as Record<string, unknown>).snippet as string || entry.title || '';
+    const text = serializeEntry(entry);
     return `- [${label}] ${text}`;
   });
 
   return `[背景知識]\n以下為可能相關的背景知識，請自行判斷哪些與本文直接相關，忽略無關項目。\n${lines.join('\n')}`;
+}
+
+/**
+ * Serialize a knowledge entry to a compact text representation for prompt injection.
+ * Prefers structured fields when available, falls back to flat content.
+ */
+function serializeEntry(entry: KnowledgeEntry): string {
+  const e = entry as Record<string, unknown>;
+  const type = entry.type;
+
+  // Figure type: title(party): period。background。experience
+  if (type === 'figure' || type === 'politician') {
+    const party = e.party ? `(${e.party})` : '';
+    const parts = [e.period, e.background, e.experience].filter(Boolean);
+    if (parts.length > 0) {
+      return `${entry.title}${party}: ${parts.join('。')}`;
+    }
+    return e.content as string || entry.title || '';
+  }
+
+  // Issue type: title: description\n立場比較:\nDPP: ...\nKMT: ...\nTPP: ...
+  if (type === 'issue' || type === 'topic') {
+    const stances = e.stances as Record<string, string> | undefined;
+    const desc = e.description ? `${entry.title}: ${e.description}` : entry.title;
+    if (stances) {
+      const stanceLines = ['DPP', 'KMT', 'TPP']
+        .filter(p => stances[p])
+        .map(p => `${p}: ${stances[p]}`);
+      if (stanceLines.length > 0) {
+        return `${desc}\n立場比較:\n${stanceLines.join('\n')}`;
+      }
+    }
+    return desc;
+  }
+
+  // Incident type: title(date): description [keywords]
+  if (type === 'incident' || type === 'event') {
+    const date = e.date ? `(${e.date})` : '';
+    const desc = (e.description || e.content || '') as string;
+    const kw = Array.isArray(e.keywords) && e.keywords.length > 0
+      ? ` [${(e.keywords as string[]).join(', ')}]`
+      : '';
+    return `${entry.title}${date}: ${desc}${kw}`;
+  }
+
+  // Fallback for unknown types
+  return (e.content as string) || (e as Record<string, unknown>).snippet as string || entry.title || '';
 }

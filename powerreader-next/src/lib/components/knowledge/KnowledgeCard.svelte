@@ -1,13 +1,17 @@
 <script>
   import { t } from '$lib/i18n/zh-TW.js';
+  import { isFigureType, isIssueType } from '$lib/utils/knowledge-constants.js';
 
   let { entry, onclick } = $props();
 
   const TYPE_ICONS = {
     politician: 'person',
+    figure: 'person',
     media: 'newspaper',
     topic: 'topic',
-    event: 'event'
+    issue: 'topic',
+    event: 'event',
+    incident: 'event'
   };
 
   const PARTY_COLORS = {
@@ -18,18 +22,30 @@
     TSP: '#C7002E'
   };
 
-  let isTopic = $derived(entry?.type === 'topic');
+  const SOURCE_LABELS = {
+    ai: () => t('knowledge.source.ai'),
+    human: () => t('knowledge.source.human'),
+    community: () => t('knowledge.source.community')
+  };
+
+  let entryIsIssue = $derived(isIssueType(entry?.type));
   let icon = $derived(TYPE_ICONS[entry?.type] || 'article');
   let typeLabel = $derived(t(`knowledge.type.${entry?.type}`) || entry?.type || '');
   let partyLabel = $derived(
-    !isTopic && entry?.party ? t(`knowledge.party.${entry.party}`) || entry.party : null
+    !entryIsIssue && entry?.party ? t(`knowledge.party.${entry.party}`) || entry.party : null
   );
   let partyColor = $derived(
-    !isTopic && entry?.party ? (PARTY_COLORS[entry.party] || '#888') : null
+    !entryIsIssue && entry?.party ? (PARTY_COLORS[entry.party] || '#888') : null
+  );
+  let sourceLabel = $derived(
+    entry?.source_type && SOURCE_LABELS[entry.source_type]
+      ? SOURCE_LABELS[entry.source_type]()
+      : null
   );
   let snippet = $derived(() => {
-    if (isTopic) return '';
-    const c = entry?.content || '';
+    if (entryIsIssue) return '';
+    // Prefer structured field, fall back to content
+    const c = entry?.experience || entry?.description || entry?.content || '';
     return c.length > 120 ? c.slice(0, 120) + '...' : c;
   });
 </script>
@@ -41,9 +57,12 @@
     {#if partyLabel}
       <span class="party-badge" style="background-color: {partyColor}">{partyLabel}</span>
     {/if}
+    {#if sourceLabel}
+      <span class="source-badge">{sourceLabel}</span>
+    {/if}
   </div>
   <h3 class="card-title">{entry?.title || ''}</h3>
-  {#if isTopic}
+  {#if entryIsIssue}
     <div class="stance-dots">
       <span class="dot" style="background-color: #1B9431"></span>
       <span class="dot" style="background-color: #0047AB"></span>
@@ -99,6 +118,13 @@
   .party-badge {
     font: var(--md-sys-typescale-label-small-font);
     color: #fff;
+    padding: 2px 8px;
+    border-radius: var(--md-sys-shape-corner-small, 8px);
+  }
+  .source-badge {
+    font: var(--md-sys-typescale-label-small-font);
+    color: var(--md-sys-color-on-tertiary-container);
+    background: var(--md-sys-color-tertiary-container);
     padding: 2px 8px;
     border-radius: var(--md-sys-shape-corner-small, 8px);
   }

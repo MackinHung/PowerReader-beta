@@ -592,10 +592,13 @@ const messages: Record<string, string> = {
   'knowledge.filter_type': '依類型篩選',
   'knowledge.filter_party': '依政黨篩選',
   'knowledge.type.politician': '政治人物',
+  'knowledge.type.figure': '政治人物',
   'knowledge.type.media': '媒體',
   'knowledge.type.topic': '議題',
+  'knowledge.type.issue': '國家議題',
   'knowledge.type.term': '名詞',
   'knowledge.type.event': '事件',
+  'knowledge.type.incident': '社會事件',
   'knowledge.party.KMT': '國民黨',
   'knowledge.party.DPP': '民進黨',
   'knowledge.party.TPP': '民眾黨',
@@ -615,6 +618,44 @@ const messages: Record<string, string> = {
   'knowledge.stances.tpp': '台灣民眾黨',
   'knowledge.stances.missing': '尚無此黨立場資料',
   'knowledge.stances.compare': '立場比較',
+
+  // Knowledge Source Types
+  'knowledge.source.ai': 'AI 生成',
+  'knowledge.source.human': '人工撰寫',
+  'knowledge.source.community': '社群編輯',
+
+  // Knowledge Structured Fields
+  'knowledge.field.period': '任期/活躍時期',
+  'knowledge.field.background': '學歷/出身',
+  'knowledge.field.experience': '經歷/政績',
+  'knowledge.field.description': '描述',
+  'knowledge.field.date': '日期',
+  'knowledge.field.keywords': '關鍵字',
+  'knowledge.field.char_count': '{current}/{limit}',
+  'knowledge.field.char_exceeded': '超過字數上限',
+
+  // Knowledge Report
+  'knowledge.report.button': '回報錯誤',
+  'knowledge.report.count': '{count} 人回報',
+  'knowledge.report.reason_placeholder': '請描述錯誤內容（≤200字）...',
+  'knowledge.report.success': '回報已送出，感謝您',
+  'knowledge.report.error': '回報失敗，請稍後再試',
+
+  // Knowledge Edit Guidelines
+  'knowledge.edit.guidelines_title': '編輯規範',
+  'knowledge.edit.guideline_objective': '不可包含主觀判斷或個人意見',
+  'knowledge.edit.guideline_verifiable': '需為可查證的客觀事實',
+  'knowledge.edit.guideline_no_slur': '不可包含侮辱性或歧視性語言',
+  'knowledge.edit.guideline_date_format': '日期格式需統一（YYYY-MM-DD）',
+  'knowledge.edit.guideline_char_limit': '每個欄位不超過 120 字',
+
+  // Knowledge Review Checklist
+  'knowledge.review.checklist_title': '審核 Checklist',
+  'knowledge.review.check_objective': '內容客觀、無主觀判斷',
+  'knowledge.review.check_verifiable': '資訊可查證',
+  'knowledge.review.check_char_limit': '每個欄位 ≤120 字',
+  'knowledge.review.check_no_slur': '無侮辱/歧視語言',
+  'knowledge.review.check_format': '格式正確（日期、關鍵字）',
 
   // Knowledge Edit
   'knowledge.edit.suggest': '建議編輯',

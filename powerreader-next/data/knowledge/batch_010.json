@@ -2,353 +2,453 @@
   "entries": [
     {
       "id": "pol_6c69bbf5d24c",
-      "type": "politician",
+      "type": "figure",
       "title": "莊翠雲",
       "content": "財政部長（截至2026/03）。2025年推動所得稅法優化減稅方案以減輕受薪階級負擔。2026年負責監控選前國家財政穩健度，落實囤房稅2.0成效，作為居住正義論述基礎。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_3a7afade9548",
-      "type": "politician",
+      "type": "figure",
       "title": "吳誠文",
       "content": "國科會主委（截至2026/03）。2025年主導台灣AI基本法草案擬定與科技倫理建構。2026年推動南科、竹科擴建計畫動工，以科技發展紅利協助地方政府營造產業榮景。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_8af6a0c80666",
-      "type": "politician",
+      "type": "figure",
       "title": "林明昕",
       "content": "政務委員（截至2026/03）。2025年負責協調反詐四法及後續修法執行細節。2026年作為政府法律顧問核心，處理選前各項法規爭議與憲法法庭相關法案之法理調處。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_400f9cdb318a",
-      "type": "politician",
+      "type": "figure",
       "title": "季連成",
       "content": "政務委員（截至2026/03）。2025年主導全社會防衛韌性委員會具體執行方案。2026年配合國防部與內政部，強化地方民防體系，確保大選期間社會秩序與應變韌性。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_f28a3ba722a6",
-      "type": "politician",
+      "type": "figure",
       "title": "楊珍妮",
       "content": "政務委員（截至2026/03）。2025年帶領談判團隊爭取加入 CPTPP 之關鍵進度。2026年負責選前國際經貿協定之成果宣傳，向產業代表及選民展示政府拓銷國際市場之實力。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_f3c19ce05ea9",
-      "type": "politician",
+      "type": "figure",
       "title": "史哲",
       "content": "政務委員（截至2026/03）。2025年負責協調文化與教育資源整合應用。2026年協助推廣文化幣擴大適用與數位文創產業發展，藉此吸引年輕族群對民進黨施政之關注。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_9dd8a5aeab52",
-      "type": "politician",
+      "type": "figure",
       "title": "吳沛憶",
       "content": "立委（截至2026/03）。2025年深耕中正萬華基層並推動文化創生法規。2026年作為台北市長候選人之關鍵輔選戰將，主導青年組織與藝文界選票動員，確保首都核心選票。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_b00204072dd9",
-      "type": "politician",
+      "type": "figure",
       "title": "陳培瑜",
       "content": "立委（截至2026/03）。2025年推動校園心理健康與圖書產業支持計畫。2026年配合政府教育政策，在基層校園及家長團體中建立民進黨對教育永續發展之信任感。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_9680c12ad080",
-      "type": "politician",
+      "type": "figure",
       "title": "張雅琳",
       "content": "立委（截至2026/03）。2025年落實兒童遊戲權法制化。2026年透過特色公園與友善兒少政見之落實，協助全台民進黨縣市長候選人爭取中間選民與年輕家庭選票。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_98c6d521d41f",
-      "type": "politician",
+      "type": "figure",
       "title": "郭昱晴",
       "content": "立委（截至2026/03）。2025年專注影視與兒少權益保護法案。2026年發揮公眾人物影響力，於九合一選戰中擔任全台宣講團重要成員，負責強化黨內清新專業之形象。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_1d5ed435c6d7",
-      "type": "politician",
+      "type": "figure",
       "title": "江鵬堅",
       "content": "1940-2000年。律師出身，美麗島事件辯護律師之一。1986年民進黨創黨後首任黨主席。一生堅持「美麗島精神」，也是台灣人權促進會的重要推手，奠定民進黨早期發展的法治與人權基礎。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_9896bdb185ce",
-      "type": "politician",
+      "type": "figure",
       "title": "黃信介",
       "content": "1928-1999年。黨外運動與民進黨早期精神領袖。曾任美麗島雜誌發行人，因美麗島事件入獄。1988-1992年擔任民進黨主席，推動「總統直選」運動，被尊稱為「信介仙」。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_e978f847d212",
-      "type": "politician",
+      "type": "figure",
       "title": "施明德",
       "content": "1941-2024年。台灣民主運動核心人物，因政治案件三度入獄累計近26年。曾任民進黨主席（1993-1996），主導推動大和解咖啡。2006年發起「百萬人民倒扁運動」，晚年與民進黨漸行漸遠。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_fdf768c5b8c5",
-      "type": "politician",
+      "type": "figure",
       "title": "林義雄",
       "content": "1941年生。美麗島事件受刑人，期間發生震驚社會的「林宅血案」。1998-2000年任民進黨主席，帶領陳水扁贏得2000年總統大選，實現首次政黨輪替。長期推動停建核四與反核運動。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_8b4e31966323",
-      "type": "politician",
+      "type": "figure",
       "title": "陳水扁",
       "content": "1950年生。律師出身。曾任台北市議員、立法委員、台北市長（1994-1998）。2000-2008年擔任中華民國第10、11任總統，實現首次政黨輪替。卸任後因貪污案件入獄，後保外就醫。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_40dfedb87cb8",
-      "type": "politician",
+      "type": "figure",
       "title": "呂秀蓮",
       "content": "1944年生。美麗島事件受刑人。曾任立法委員、桃園縣長（1997-2000）。2000-2008年與陳水扁搭檔，擔任中華民國第10、11任副總統。為台灣民主化及女性參政的先驅。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_c83016825b15",
-      "type": "politician",
+      "type": "figure",
       "title": "陳定南",
       "content": "1943-2006年。1981-1989年任宜蘭縣長，以清廉嚴明著稱，開創「宜蘭經驗」。1994年代表民進黨參選台灣省長。2000-2004年任法務部長，嚴打黑金，被譽為「陳青天」。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_0dffdcf483bf",
-      "type": "politician",
+      "type": "figure",
       "title": "姚嘉文",
       "content": "美麗島受難者，曾任第二任黨主席（1987-1988）及考試院長（2002-2008），長期致力於法治研究與台灣本土史著述。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_706e8e607599",
-      "type": "politician",
+      "type": "figure",
       "title": "張俊宏",
       "content": "1938年生。黨外運動重要理論家，美麗島事件受刑人。參與創辦《大學雜誌》、《台灣政論》。曾任多屆立法委員、民進黨代理主席。晚年因涉及掏空公司等經濟犯罪案件多次入獄。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_9b11f69f45e8",
-      "type": "politician",
+      "type": "figure",
       "title": "蔡同榮",
       "content": "1935-2014年。台灣獨立建國聯盟首任主席。長期在海外推動台獨，解除黑名單後返台。曾任多屆立法委員與民進黨中常委。創立民間全民電視公司（民視），推動公投立法，被稱為「蔡公投」。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_ff31b2740b30",
-      "type": "politician",
+      "type": "figure",
       "title": "林濁水",
       "content": "1947年生。民進黨建黨元老與理論家，起草民進黨《台獨黨綱》，被稱為「台獨理論大師」。曾任多屆立法委員（1993-2006）。常在媒體發表時事評論，對黨內發展多有直言批評。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_4d2e445d9127",
-      "type": "politician",
+      "type": "figure",
       "title": "陳唐山",
       "content": "首位民進黨籍外交部長（2004-2006），曾任台南縣長（1993-2001），是早期在海外推動台灣人運動的重要領袖。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_9a4e0755f2c2",
-      "type": "politician",
+      "type": "figure",
       "title": "洪奇昌",
       "content": "1951年生。精神科醫師，黨外時代活躍人物，為1980年代新潮流系創辦人之一（黨外編聯會）。曾任多屆立法委員（1990-2008）、海基會董事長（2007-2008）。活躍於兩岸產經交流。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_410d4960b493",
-      "type": "politician",
+      "type": "figure",
       "title": "邱連輝",
       "content": "民進黨首任屏東縣長（1981-1985），曾任立法委員（1987-1996），為早期黨內在南台灣開拓民主政治的重要功臣。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_ad477d0addc3",
-      "type": "politician",
+      "type": "figure",
       "title": "周清玉",
       "content": "1944年生。姚嘉文之妻。在美麗島事件後代夫出征，1980年當選國大代表。1989-1993年擔任彰化縣長，是彰化首位民進黨籍縣長與首位女縣長。後曾任多屆立法委員。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_727ed5380441",
-      "type": "politician",
+      "type": "figure",
       "title": "傅正",
       "content": "1927-1991年。早年曾隨國民政府來台，後轉向推動民主。參與籌組中國民主黨及民進黨，是兩次組黨運動的關鍵樞紐。起草民進黨創黨建黨宣言，致力打破黨禁、推動國界民主化。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_b3971497c72b",
-      "type": "politician",
+      "type": "figure",
       "title": "費希平",
       "content": "1917-2003年。原為國民黨籍第一屆立法委員，後支持黨外運動，成為民進黨創黨元老之一，為早期黨內少數的外省籍背景領袖。1988年因路線理念不合（反對台獨）退出民進黨。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_0c80eb2092ed",
-      "type": "politician",
+      "type": "figure",
       "title": "康寧祥",
       "content": "早期黨外運動領導人，創辦《八十年代》雜誌（1979），曾任監察委員（1993-2002）及國安會秘書長（2002-2003）。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_81f7923a8fbe",
-      "type": "politician",
+      "type": "figure",
       "title": "尤清",
       "content": "律師出身，曾任兩任台北縣長（1989-1997）及監察委員（1980-1989），在地方執政與法律制度建設上有重大貢獻。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_94fe685e7a78",
-      "type": "politician",
+      "type": "figure",
       "title": "鄭南榕",
       "content": "1947-1989年。《自由時代》周刊創辦人。長期倡議「百分之百的言論自由」與台灣獨立。1989年為抗拒叛亂罪逮捕，於雜誌社內自焚身亡，促成後續刑法100條修正與言論自由解禁。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_f1d8afeae91b",
-      "type": "politician",
+      "type": "figure",
       "title": "朱高正",
       "content": "1954-2021年。民進黨創黨元老。1987年當選立委後，以激烈肢體衝突對抗老國民大會與立法院體制，被稱為「民主戰艦」。後因理念不合退黨，創立中華社會民主黨，晚年支持兩岸統一。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_c1ed30e3fc93",
-      "type": "politician",
+      "type": "figure",
       "title": "沈富雄",
       "content": "1939年生。醫師出身，1992-2004年擔任立法委員，以犀利問政與理性分析著稱。曾屬正義連線系。2007年退出民進黨，後轉型為政治評論員，常在政論節目發表超出藍綠框架的評論。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_31b320c2224a",
-      "type": "politician",
+      "type": "figure",
       "title": "魏廷朝",
       "content": "1935-1999年。人權工作者與民主前輩。因參與起草《台灣自救運動宣言》、花旗銀行爆炸案及美麗島事件，三度入獄，總刑期逾17年。被尊稱為「人格者」，為台灣民主奉獻一生。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_79baa9cf4fda",
-      "type": "politician",
+      "type": "figure",
       "title": "蘇煥智",
       "content": "1956年生。律師出身。曾任多屆立法委員（1993-2001）及台南縣長（2001-2010），任內推動南部科學園區及地方建設。2018年退出民進黨，2019年創立台灣維新黨，持續活躍於政壇。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_7134f76d63a2",
-      "type": "politician",
+      "type": "figure",
       "title": "曹啟鴻",
       "content": "1948年生。教師出身。曾任屏東縣議員、立法委員（2001-2005）及屏東縣長（2005-2014），施政主打環保與農業。2016-2017年短暫擔任蔡英文政府首任農業委員會主委。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_9ce35bcbc9ed",
-      "type": "politician",
+      "type": "figure",
       "title": "張俊雄",
       "content": "美麗島事件辯護律師，曾兩度擔任行政院長（2000-2002、2007-2008），是陳水扁政府時期重要的政務協調與決策者。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_395325e795bd",
-      "type": "politician",
+      "type": "figure",
       "title": "李應元",
       "content": "1953-2021年。台獨聯盟重要成員，早年名列黑名單。曾任多屆立法委員、駐美副代表、行政院秘書長、勞委會主委及環保署署長（2016-2018），為民進黨內溫和圓融的溝通長才。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_a524c901289d",
-      "type": "politician",
+      "type": "figure",
       "title": "王拓",
       "content": "本土文學作家，曾任文建會主委（2007-2008）及黨秘書長（2008），長期推動文化外交與勞工運動，於2016年逝世。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_b7d8d80a9776",
-      "type": "politician",
+      "type": "figure",
       "title": "陳博志",
       "content": "1949年生。台灣大學經濟系名譽教授。曾任經建會主委（2000-2002），為陳水扁政府重要的經濟財經智囊，提出「知識經濟」藍圖。後長期擔任總統府國策顧問及台灣經濟研究院顧問。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_2f4bf6199716",
-      "type": "politician",
+      "type": "figure",
       "title": "郭雨新",
       "content": "1908-1985年。宜蘭人，台灣省議會黨外「五虎將」之一。長期在省議會推動民主與問政。1977年流亡美國。被尊稱為「黨外祖師爺」，陳定南、張俊宏等多位民主前輩皆受其啟發。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_6573c23680c5",
-      "type": "politician",
+      "type": "figure",
       "title": "余陳月瑛",
       "content": "1926-2014年。高雄黑派大老余登發之媳。曾任台灣省議員、立法委員，1985-1993年擔任高雄縣長，是台灣首位女性民選縣長，奠定余家班在高雄縣長達三十年的執政基礎。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_1daaa624be48",
-      "type": "politician",
+      "type": "figure",
       "title": "王幸男",
       "content": "1941年生。曾於1976年策劃國慶日郵包炸彈案（王幸男郵包炸彈事件）被捕入獄。解嚴後重返政壇，1999-2012年擔任多屆立法委員。長期主張推動台灣獨立及清除威權象徵。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_bffdc57d9c9d",
-      "type": "politician",
+      "type": "figure",
       "title": "蔡煌瑯",
       "content": "1960年生。南投縣出身。曾任多屆立法委員（1996-2016）、民進黨副秘書長及民進黨立院黨團幹事長。擅長政黨協商與國會運作。卸任立委後曾任台灣車輛公司董事長。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_6602dd634d5a",
-      "type": "politician",
+      "type": "figure",
       "title": "許榮淑",
       "content": "創黨元老之一（1986），曾任多屆立法委員（1981-2008），早期以美麗島家屬身份投身民主運動，被稱為民進黨阿嬤。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_516e78065c16",
-      "type": "politician",
+      "type": "figure",
       "title": "江蓋世",
       "content": "1958年生。1980年代積極參與黨外運動，倡議非暴力抗爭。1988年發起「愛與非暴力」台獨行軍。曾任台北市議員（1998-2002）。逐步淡出政壇後，轉向書法藝術與文化創作。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_03e50b88143c",
-      "type": "politician",
+      "type": "figure",
       "title": "藍美津",
       "content": "創黨成員，曾任立法委員（2002-2005）及多屆台北市議員（1981-2002），長期代表黨內草根民主力量深耕地方。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_79a0c9243f7d",
-      "type": "politician",
+      "type": "figure",
       "title": "楊秋興",
       "content": "1956年生。曾任立法委員及高雄縣長（2001-2010），施政獲極高滿意度，被稱為「南方小巨人」。2010年脫黨參選大高雄市長落敗，後加入國民黨並曾任行政院政務委員。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_629d993fce98",
-      "type": "politician",
+      "type": "figure",
       "title": "顏錦福",
       "content": "1938年生。黨外運動時期重要支持者，創辦政論雜誌。曾任台北市議員（1990-1996）及多屆立法委員（1996-2005）。長期在黨外與民進黨籍身分推動社會運動及民主發展。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_ce7ba122d339",
-      "type": "politician",
+      "type": "figure",
       "title": "李進勇",
       "content": "中選會主委（2019-）（截至2026/03），曾任雲林縣長（2014-2018）、基隆市長（1997-2001）及法務部次長，政務資歷橫跨中央與地方。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     },
     {
       "id": "pol_d7961bca0dce",
-      "type": "politician",
+      "type": "figure",
       "title": "莊碩漢",
       "content": "曾任行政院發言人（2002-2003）、駐泰國代表（2022-2023）及立法委員（2005-2008），具備深厚的外交與行政資歷。",
-      "party": "DPP"
+      "party": "DPP",
+      "source_type": "ai",
+      "report_count": 0
     }
   ]
 }

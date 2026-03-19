@@ -1,7 +1,7 @@
 <script>
   import { t } from '$lib/i18n/zh-TW.js';
 
-  let { stances } = $props();
+  let { stances, description = '' } = $props();
 
   const PARTIES = [
     { key: 'DPP', color: '#1B9431', label: () => t('knowledge.stances.dpp') },
@@ -12,6 +12,9 @@
 
 <section class="stances-section" aria-label={t('knowledge.stances.title')}>
   <h2 class="stances-heading">{t('knowledge.stances.title')}</h2>
+  {#if description}
+    <p class="stances-description">{description}</p>
+  {/if}
   <div class="stances-grid">
     {#each PARTIES as party (party.key)}
       {@const stance = stances?.[party.key]}
@@ -42,6 +45,15 @@
     margin: 0;
     font: var(--pr-heading-font, var(--md-sys-typescale-title-medium-font));
     color: var(--md-sys-color-on-surface);
+  }
+  .stances-description {
+    margin: 0;
+    font: var(--md-sys-typescale-body-medium-font);
+    color: var(--md-sys-color-on-surface-variant);
+    line-height: 1.6;
+    padding: 8px 12px;
+    background: var(--md-sys-color-surface-container);
+    border-radius: var(--md-sys-shape-corner-small, 8px);
   }
 
   .stances-grid {

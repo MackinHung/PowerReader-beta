@@ -161,7 +161,7 @@ describe('formatKnowledgeAsL2', () => {
   });
 
   it('formats topic type as [議題]', () => {
-    const entries = [{ type: 'topic', content: '兩岸關係' }];
+    const entries = [{ type: 'topic', title: '兩岸關係', description: '兩岸關係摘要' }];
     const result = formatKnowledgeAsL2(entries);
     expect(result).toContain('[議題]');
     expect(result).toContain('兩岸關係');
@@ -208,10 +208,10 @@ describe('formatKnowledgeAsL2', () => {
     expect(result).toContain('[其他]');
   });
 
-  it('falls back to snippet when content is missing', () => {
-    const entries = [{ type: 'politician', snippet: '摘要內容' }];
+  it('falls back to title when content is missing for figure type', () => {
+    const entries = [{ type: 'politician', title: '摘要人物' }];
     const result = formatKnowledgeAsL2(entries);
-    expect(result).toContain('摘要內容');
+    expect(result).toContain('摘要人物');
   });
 
   it('falls back to title when content and snippet are missing', () => {
@@ -229,8 +229,8 @@ describe('formatKnowledgeAsL2', () => {
   it('formats multiple entries with line breaks', () => {
     const entries = [
       { type: 'politician', content: '賴清德' },
-      { type: 'topic', content: '能源政策' },
-      { type: 'event', content: '立法院衝突' }
+      { type: 'topic', title: '能源政策' },
+      { type: 'event', title: '立法院衝突', content: '立法院衝突' }
     ];
     const result = formatKnowledgeAsL2(entries);
     expect(result).toContain('- [人物] 賴清德');
@@ -294,9 +294,9 @@ describe('formatKnowledgeAsL2', () => {
   it('keeps entries with score > 0 and filters score = 0 in mixed list', () => {
     const entries = [
       { type: 'politician', content: 'A', score: 0.7 },
-      { type: 'topic', content: 'B' },           // no score → keep
-      { type: 'term', content: 'C', score: 0 },  // zero → filter
-      { type: 'event', content: 'D', score: 0.01 }
+      { type: 'topic', title: 'B' },              // no score → keep
+      { type: 'term', content: 'C', score: 0 },   // zero → filter
+      { type: 'event', title: 'D', content: 'D', score: 0.01 }
     ];
     const result = formatKnowledgeAsL2(entries);
     expect(result).toContain('A');

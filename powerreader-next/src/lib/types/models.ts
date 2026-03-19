@@ -55,14 +55,48 @@ export interface NarrativeOutput {
   key_phrases: string[];
 }
 
-export interface KnowledgeEntry {
+/** Shared base fields for all knowledge entries */
+export interface KnowledgeBase {
   id: string;
   type: string;
   title: string;
-  content: string;
-  party?: string;
+  content?: string;                // backward compat (legacy flat content)
+  source_type?: 'ai' | 'human' | 'community';
+  report_count?: number;
   score?: number;
+  _batch?: string;
 }
+
+/** 政治人物 (figure) — was "politician" */
+export interface FigureEntry extends KnowledgeBase {
+  type: 'figure' | 'politician';
+  party?: 'KMT' | 'DPP' | 'TPP' | 'NPP' | 'TSP';
+  period?: string;       // 任期/活躍時期 ≤120字
+  background?: string;   // 學歷/出身 ≤120字
+  experience?: string;   // 經歷/政績 ≤120字
+}
+
+/** 國家議題 (issue) — was "topic" */
+export interface IssueEntry extends KnowledgeBase {
+  type: 'issue' | 'topic';
+  description?: string;  // 中立客觀描述 ≤120字
+  stances?: {
+    DPP: string;
+    KMT: string;
+    TPP: string;
+  };
+}
+
+/** 社會事件 (incident) — was "event" */
+export interface IncidentEntry extends KnowledgeBase {
+  type: 'incident' | 'event';
+  date?: string;         // ISO 日期 "2025-01-15"
+  description?: string;  // 事件描述 ≤120字
+  keywords?: string[];   // 關鍵字陣列
+}
+
+/** Union type for all knowledge entries */
+export type KnowledgeEntry = FigureEntry | IssueEntry | IncidentEntry | KnowledgeBase;
 
 export interface UserProfile {
   user_hash: string;

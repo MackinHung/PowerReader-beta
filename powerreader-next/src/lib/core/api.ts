@@ -763,6 +763,21 @@ export async function deleteUserAccount(token: string): Promise<ApiResponse<unkn
 }
 
 // =============================================
+// Knowledge Report API (error reporting)
+// =============================================
+
+/**
+ * POST /api/v1/knowledge/:id/report — report a knowledge entry error.
+ */
+export async function reportKnowledgeEntry(id: string, reason: string, token: string): Promise<ApiResponse<{ report_count: number }>> {
+  return apiFetch<{ report_count: number }>(`/knowledge/${encodeURIComponent(id)}/report`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({ reason })
+  });
+}
+
+// =============================================
 // Knowledge GitHub API (edit/review workflow)
 // =============================================
 

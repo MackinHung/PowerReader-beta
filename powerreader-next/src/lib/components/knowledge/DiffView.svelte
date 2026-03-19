@@ -1,11 +1,14 @@
 <script>
   import { t } from '$lib/i18n/zh-TW.js';
+  import { isIssueType } from '$lib/utils/knowledge-constants.js';
 
   let { oldEntry, newEntry } = $props();
 
   const STANCE_KEYS = ['DPP', 'KMT', 'TPP'];
 
-  let isTopic = $derived(oldEntry?.type === 'topic' || newEntry?.type === 'topic');
+  let isIssueEntry = $derived(
+    isIssueType(oldEntry?.type) || isIssueType(newEntry?.type)
+  );
 
   let fields = $derived(getComparedFields());
 
@@ -17,7 +20,10 @@
     ]);
 
     // Skip internal/non-display fields
-    const skipFields = new Set(['id', 'score', 'batch_file', 'stances']);
+    const skipFields = new Set([
+      'id', 'score', 'batch_file', '_batch',
+      'stances', 'source_type', 'report_count', 'keywords'
+    ]);
 
     for (const key of keys) {
       if (skipFields.has(key)) continue;
@@ -33,10 +39,19 @@
     return result;
   }
 
+  // Keywords diff (for incident type)
+  let keywordsDiff = $derived(getKeywordsDiff());
+  function getKeywordsDiff() {
+    const oldKw = Array.isArray(oldEntry?.keywords) ? oldEntry.keywords.join(', ') : '';
+    const newKw = Array.isArray(newEntry?.keywords) ? newEntry.keywords.join(', ') : '';
+    if (!oldKw && !newKw) return null;
+    return { oldVal: oldKw, newVal: newKw, changed: oldKw !== newKw };
+  }
+
   let stancesDiff = $derived(getStancesDiff());
 
   function getStancesDiff() {
-    if (!isTopic) return [];
+    if (!isIssueEntry) return [];
     const oldStances = oldEntry?.stances || {};
     const newStances = newEntry?.stances || {};
     return STANCE_KEYS.map(key => ({
@@ -79,7 +94,7 @@
     </div>
   {/each}
 
-  {#if isTopic}
+  {#if isIssueEntry}
     <h4 class="diff-stances-heading">{t('knowledge.stances.title')}</h4>
     {#each stancesDiff as stance (stance.key)}
       <div class="diff-field">
@@ -101,6 +116,27 @@
         </div>
       </div>
     {/each}
+  {/if}
+
+  {#if keywordsDiff}
+    <div class="diff-field">
+      <div class="diff-field-label">
+        <span>keywords</span>
+        {#if keywordsDiff.changed}
+          <span class="diff-badge diff-badge--changed">{t('knowledge.diff.changed')}</span>
+        {:else}
+          <span class="diff-badge diff-badge--unchanged">{t('knowledge.diff.unchanged')}</span>
+        {/if}
+      </div>
+      <div class="diff-grid">
+        <div class="diff-cell" class:diff-cell--removed={keywordsDiff.changed}>
+          <span class="diff-text">{keywordsDiff.oldVal || '-'}</span>
+        </div>
+        <div class="diff-cell" class:diff-cell--added={keywordsDiff.changed}>
+          <span class="diff-text">{keywordsDiff.newVal || '-'}</span>
+        </div>
+      </div>
+    </div>
   {/if}
 </div>
 
