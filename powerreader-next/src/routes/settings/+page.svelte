@@ -6,7 +6,9 @@
   import List from '$lib/components/ui/List.svelte';
   import ListItem from '$lib/components/ui/ListItem.svelte';
   import ProgressIndicator from '$lib/components/ui/ProgressIndicator.svelte';
+  import { goto } from '$app/navigation';
   import { getAuthStore } from '$lib/stores/auth.svelte.js';
+  import * as api from '$lib/core/api.js';
   import { getWebLLMEngine, clearAllModelCaches, hasWebGPU, detectBestMode, INFERENCE_MODES } from '$lib/core/inference.js';
   import { scanGPU, getCachedBenchmark, runBenchmark, clearBenchmark, saveUserGPUSelection, getUserGPUSelection, getTimeoutForTier } from '$lib/core/benchmark.js';
   import { isModelDownloaded } from '$lib/core/manager.js';
@@ -56,6 +58,12 @@
 
   // ── Cache ──
   let cacheSize = $state('計算中...');
+
+  // ── Account management ──
+  let showDeleteDialog = $state(false);
+  let deleteConfirmText = $state('');
+  let deleteLoading = $state(false);
+  let exportLoading = $state(false);
 
   // ── Common GPU list for manual selection ──
   const GPU_OPTIONS = [
@@ -178,11 +186,6 @@
       cacheSize = `${((est.usage || 0) / (1024 * 1024)).toFixed(1)} MB`;
     } else {
       cacheSize = '無法計算';
-    }
-
-    // Fetch daily quota if authenticated
-    if (authStore.isAuthenticated) {
-      await authStore.fetchPoints().catch(() => {});
     }
 
     queueMicrotask(() => { initialized = true; });
@@ -343,6 +346,54 @@
     cacheSize = '0 MB';
   }
 
+  // ── Account management ──
+  async function handleExportData() {
+    exportLoading = true;
+    try {
+      const result = await api.exportUserData(authStore.token);
+      if (result.success && result.data) {
+        const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `powerreader-data-${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (e) {
+      console.error('Export failed:', e);
+    } finally {
+      exportLoading = false;
+    }
+  }
+
+  function openDeleteDialog() {
+    showDeleteDialog = true;
+    deleteConfirmText = '';
+  }
+
+  function closeDeleteDialog() {
+    showDeleteDialog = false;
+    deleteConfirmText = '';
+  }
+
+  async function handleDeleteAccount() {
+    if (deleteConfirmText !== '刪除') return;
+    deleteLoading = true;
+    try {
+      const result = await api.deleteUserAccount(authStore.token);
+      if (result.success) {
+        authStore.logout();
+        goto('/');
+      }
+    } catch (e) {
+      console.error('Delete failed:', e);
+    } finally {
+      deleteLoading = false;
+      showDeleteDialog = false;
+    }
+  }
+
   // ── Derived helpers (reactive) ──
   let gpuDisplayName = $derived.by(() => {
     if (userOverride) return `${userOverride.device} (${userOverride.vramMB} MB)`;
@@ -404,35 +455,6 @@
       </List>
     </Card>
   </section>
-
-  <!-- ═══ Daily Quota ═══ -->
-  {#if authStore.isAuthenticated}
-    <section class="section">
-      <h3 class="section-title">每日可得點數上限</h3>
-      <Card variant="filled">
-        <div class="quota-section">
-          <div class="quota-header">
-            <span class="quota-text">
-              {authStore.dailyQuota.used} / {authStore.dailyQuota.limit} 次
-            </span>
-            <span class="quota-hint">每次分析可獲得 0.1~0.5 點</span>
-          </div>
-          <div class="quota-bar-track">
-            <div
-              class="quota-bar-fill"
-              style:width="{Math.min(100, (authStore.dailyQuota.used / authStore.dailyQuota.limit) * 100)}%"
-              class:quota-bar-full={authStore.dailyQuota.remaining === 0}
-            ></div>
-          </div>
-          {#if authStore.dailyQuota.remaining === 0}
-            <span class="quota-reset-hint">今日點數已達上限，分析仍可繼續但不獲得點數</span>
-          {:else}
-            <span class="quota-reset-hint">每日 24:00 (台灣時間) 重置</span>
-          {/if}
-        </div>
-      </Card>
-    </section>
-  {/if}
 
   <!-- ═══ Model Management ═══ -->
   <section class="section">
@@ -635,6 +657,25 @@
     </Card>
   </section>
 
+  <!-- ═══ Account Management ═══ -->
+  {#if authStore.isAuthenticated}
+    <section class="section">
+      <h3 class="section-title">帳號管理</h3>
+      <Card variant="filled">
+        <div class="account-section">
+          <Button variant="outlined" onclick={handleExportData} disabled={exportLoading}>
+            <span class="material-symbols-outlined">download</span>
+            {exportLoading ? '匯出中...' : '匯出我的資料'}
+          </Button>
+          <Button variant="text" onclick={openDeleteDialog}>
+            <span class="material-symbols-outlined" style="color: var(--md-sys-color-error)">delete_forever</span>
+            <span style="color: var(--md-sys-color-error)">刪除帳號</span>
+          </Button>
+        </div>
+      </Card>
+    </section>
+  {/if}
+
   <!-- ═══ About ═══ -->
   <section class="section">
     <h3 class="section-title">關於</h3>
@@ -651,6 +692,33 @@
     </Card>
   </section>
 </div>
+
+{#if showDeleteDialog}
+  <div class="dialog-backdrop" onclick={closeDeleteDialog}>
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <div class="dialog-card" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+      <h3 class="dialog-title">確認刪除帳號</h3>
+      <p class="dialog-text">此操作不可逆。您的所有資料將被永久刪除。</p>
+      <p class="dialog-text">請輸入「刪除」確認：</p>
+      <input
+        type="text"
+        class="dialog-input"
+        bind:value={deleteConfirmText}
+        placeholder="刪除"
+      />
+      <div class="dialog-actions">
+        <Button variant="text" onclick={closeDeleteDialog}>取消</Button>
+        <Button
+          variant="filled"
+          onclick={handleDeleteAccount}
+          disabled={deleteConfirmText !== '刪除' || deleteLoading}
+        >
+          {deleteLoading ? '處理中...' : '確認刪除'}
+        </Button>
+      </div>
+    </div>
+  </div>
+{/if}
 
 <style>
   .settings-page {
@@ -674,47 +742,50 @@
     padding-left: 4px;
   }
 
-  /* ── Quota Section ── */
-  .quota-section {
+  /* ── Account Section ── */
+  .account-section {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    align-items: flex-start;
     padding: 4px 0;
   }
-  .quota-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 8px;
+
+  /* ── Dialog ── */
+  .dialog-backdrop {
+    position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
   }
-  .quota-text {
-    font: var(--md-sys-typescale-title-medium-font);
+  .dialog-card {
+    background: var(--md-sys-color-surface-container-high);
+    border-radius: var(--md-sys-shape-corner-large);
+    padding: 24px;
+    max-width: 400px;
+    width: 90%;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .dialog-title {
+    margin: 0;
+    font: var(--md-sys-typescale-headline-small-font);
     color: var(--md-sys-color-on-surface);
-    font-weight: 500;
   }
-  .quota-hint {
-    font: var(--md-sys-typescale-label-small-font);
+  .dialog-text {
+    margin: 0;
+    font: var(--md-sys-typescale-body-medium-font);
     color: var(--md-sys-color-on-surface-variant);
   }
-  .quota-bar-track {
-    height: 8px;
-    border-radius: 4px;
-    background: var(--md-sys-color-surface-container-highest);
-    overflow: hidden;
+  .dialog-input {
+    padding: 10px 12px;
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: var(--md-sys-shape-corner-small);
+    background: var(--md-sys-color-surface);
+    color: var(--md-sys-color-on-surface);
+    font: var(--md-sys-typescale-body-large-font);
+    outline: none;
   }
-  .quota-bar-fill {
-    height: 100%;
-    border-radius: 4px;
-    background: var(--md-sys-color-primary);
-    transition: width 0.3s ease;
-  }
-  .quota-bar-full {
-    background: var(--md-sys-color-error);
-  }
-  .quota-reset-hint {
-    font: var(--md-sys-typescale-body-small-font);
-    color: var(--md-sys-color-on-surface-variant);
-  }
+  .dialog-input:focus { border-color: var(--md-sys-color-primary); }
+  .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
 
   /* ── Model Section ── */
   .model-section {

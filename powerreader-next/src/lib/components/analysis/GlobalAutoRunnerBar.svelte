@@ -12,6 +12,20 @@
   let stats = $derived(analysis.autoStats);
   let currentArticle = $derived(analysis.autoCurrentArticle);
 
+  // Initialize store subscriptions (ensures reactive state updates)
+  $effect(() => {
+    const cleanup = analysis.init();
+    return cleanup;
+  });
+
+  // Listen for expand requests from the auto-analysis nav button
+  $effect(() => {
+    if (typeof window === 'undefined') return;
+    function handleExpand() { minimized = false; }
+    window.addEventListener('pr:expand-auto-bar', handleExpand);
+    return () => window.removeEventListener('pr:expand-auto-bar', handleExpand);
+  });
+
   function toggleMinimize() {
     minimized = !minimized;
   }

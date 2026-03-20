@@ -18,7 +18,7 @@
     { icon: 'newspaper', label: '報導熱點', href: '/' },
     { icon: 'visibility', label: '觀察偏見', href: '/observe' },
     { icon: 'database', label: '資料庫', href: '/knowledge' },
-    { icon: 'smart_toy', label: '自動分析', href: '/analyze' },
+    { icon: 'smart_toy', label: '自動分析', action: true },
     { icon: 'volunteer_activism', label: '個人貢獻', href: '/profile' }
   ];
 
@@ -33,7 +33,6 @@
     '/observe/blindspot': '觀察偏見',
     '/observe/compare': '觀察偏見',
     '/knowledge': '資料庫',
-    '/analyze': '自動分析',
     '/profile': '個人貢獻',
     '/power-pool': '動力池',
     '/settings': '設定'
@@ -51,7 +50,7 @@
   let currentPath = $derived(page.url.pathname);
   let title = $derived(dynamicTitle() || titles[currentPath] || 'PowerReader');
   let showBack = $derived(
-    !['/', '/observe', '/observe/blindspot', '/observe/compare', '/knowledge', '/analyze', '/profile'].includes(currentPath)
+    !['/', '/observe', '/observe/blindspot', '/observe/compare', '/knowledge', '/profile'].includes(currentPath)
   );
   let showNav = $derived(
     !currentPath.startsWith('/onboarding') && !currentPath.startsWith('/auth')
@@ -157,6 +156,17 @@
     };
   });
 
+  // Auto-analysis button handler (lazy-loaded to avoid pulling heavy inference chain)
+  async function handleAutoAnalysis() {
+    const { getAnalysisStore } = await import('$lib/stores/analysis.svelte.js');
+    const store = getAnalysisStore();
+    if (store.isAutoRunning || store.isAutoPaused) {
+      window.dispatchEvent(new CustomEvent('pr:expand-auto-bar'));
+    } else {
+      await store.startAuto();
+    }
+  }
+
   // Keyboard shortcuts
   function handleKeydown(e) {
     // Ctrl+B: toggle sidebar
@@ -195,7 +205,7 @@
   </main>
 
   {#if showNav}
-    <NavigationBar items={navItems} {currentPath} />
+    <NavigationBar items={navItems} {currentPath} onaction={handleAutoAnalysis} />
   {/if}
 {:else}
   <!-- Desktop layout: Sidebar + TopAppBar + content -->
@@ -205,6 +215,7 @@
       extraItems={sidebarExtraItems}
       expanded={media.sidebarExpanded}
       ontoggle={media.toggleSidebar}
+      onaction={handleAutoAnalysis}
     />
   {/if}
 

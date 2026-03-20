@@ -1,27 +1,40 @@
 <script>
-  let { items = [], currentPath = '' } = $props();
+  let { items = [], currentPath = '', onaction } = $props();
 
   let activeIndex = $derived(
-    items.findIndex(item => item.href === currentPath)
+    items.findIndex(item => item.href && item.href === currentPath)
   );
 </script>
 
 <nav class="md-navigation-bar" aria-label="Main navigation">
   {#each items as item, i}
-    <a
-      href={item.href}
-      class="nav-item"
-      class:active={i === activeIndex}
-      aria-current={i === activeIndex ? 'page' : undefined}
-    >
-      <div class="nav-icon-container">
-        {#if i === activeIndex}
-          <div class="nav-indicator"></div>
-        {/if}
-        <span class="material-symbols-outlined nav-icon">{item.icon}</span>
-      </div>
-      <span class="nav-label">{item.label}</span>
-    </a>
+    {#if item.action}
+      <button
+        class="nav-item"
+        onclick={onaction}
+        aria-label={item.label}
+      >
+        <div class="nav-icon-container">
+          <span class="material-symbols-outlined nav-icon">{item.icon}</span>
+        </div>
+        <span class="nav-label">{item.label}</span>
+      </button>
+    {:else}
+      <a
+        href={item.href}
+        class="nav-item"
+        class:active={i === activeIndex}
+        aria-current={i === activeIndex ? 'page' : undefined}
+      >
+        <div class="nav-icon-container">
+          {#if i === activeIndex}
+            <div class="nav-indicator"></div>
+          {/if}
+          <span class="material-symbols-outlined nav-icon">{item.icon}</span>
+        </div>
+        <span class="nav-label">{item.label}</span>
+      </a>
+    {/if}
   {/each}
 </nav>
 
@@ -50,6 +63,11 @@
     color: var(--md-sys-color-on-surface-variant);
     min-width: 48px;
     position: relative;
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
   }
   .nav-item.active {
     color: var(--md-sys-color-on-surface);

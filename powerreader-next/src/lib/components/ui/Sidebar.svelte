@@ -1,7 +1,7 @@
 <script>
   import { page } from '$app/state';
 
-  let { items = [], extraItems = [], expanded = true, ontoggle } = $props();
+  let { items = [], extraItems = [], expanded = true, ontoggle, onaction } = $props();
 
   let currentPath = $derived(page.url.pathname);
 
@@ -25,18 +25,31 @@
 
   <div class="nav-items">
     {#each items as item}
-      <a
-        href={item.href}
-        class="nav-item"
-        class:active={isActive(item.href)}
-        aria-current={isActive(item.href) ? 'page' : undefined}
-        title={expanded ? undefined : item.label}
-      >
-        <span class="material-symbols-outlined nav-icon">{item.icon}</span>
-        {#if expanded}
-          <span class="nav-label">{item.label}</span>
-        {/if}
-      </a>
+      {#if item.action}
+        <button
+          class="nav-item action-btn"
+          onclick={onaction}
+          title={expanded ? undefined : item.label}
+        >
+          <span class="material-symbols-outlined nav-icon">{item.icon}</span>
+          {#if expanded}
+            <span class="nav-label">{item.label}</span>
+          {/if}
+        </button>
+      {:else}
+        <a
+          href={item.href}
+          class="nav-item"
+          class:active={isActive(item.href)}
+          aria-current={isActive(item.href) ? 'page' : undefined}
+          title={expanded ? undefined : item.label}
+        >
+          <span class="material-symbols-outlined nav-icon">{item.icon}</span>
+          {#if expanded}
+            <span class="nav-label">{item.label}</span>
+          {/if}
+        </a>
+      {/if}
     {/each}
 
     {#if extraItems.length > 0}
@@ -165,6 +178,14 @@
     color: rgba(255, 255, 255, 0.7);
     white-space: nowrap;
     transition: background var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+  }
+  .nav-item.action-btn {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: inherit;
+    width: 100%;
+    text-align: left;
   }
   .nav-item.disabled {
     opacity: 0.4;
