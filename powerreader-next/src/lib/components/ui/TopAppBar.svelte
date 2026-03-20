@@ -39,8 +39,8 @@
   {#if title}
     <h1 class="bar-title">{title}</h1>
   {/if}
-  <span class="bar-date">{dateDisplay}</span>
-  <div class="bar-actions">
+  <div class="bar-trailing">
+    <span class="bar-date">{dateDisplay}</span>
     {@render children?.()}
   </div>
 </header>
@@ -55,7 +55,7 @@
     background: var(--md-sys-color-surface-bright);
     display: flex;
     align-items: center;
-    padding: 0 4px;
+    padding: 0 8px;
     z-index: 100;
     transition:
       height var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
@@ -66,6 +66,7 @@
   .bar-leading {
     display: flex;
     align-items: center;
+    flex-shrink: 0;
   }
   .bar-icon-btn {
     display: inline-flex;
@@ -91,30 +92,30 @@
     }
   }
   .bar-title {
+    flex: 1;
+    min-width: 0;
     font-family: var(--pr-font-sans);
-    font-size: 26px;
-    line-height: 28px;
+    font-size: 24px;
+    line-height: 32px;
     font-weight: 900;
     font-style: italic;
     color: var(--pr-ink);
-    padding: 0 16px;
-    letter-spacing: 1px;
+    padding: 0 12px;
+    letter-spacing: 0.5px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .bar-date {
-    font: var(--md-sys-typescale-label-large-font);
-    color: var(--md-sys-color-on-surface-variant);
-    font-weight: 700;
-    white-space: nowrap;
-    margin-left: 4px;
-  }
-  .bar-actions {
+  .bar-trailing {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
+    flex-shrink: 0;
     padding-right: 8px;
-    margin-left: auto;
+  }
+  .bar-date {
+    font: 700 13px/1 var(--pr-font-sans);
+    color: var(--md-sys-color-on-surface-variant);
+    white-space: nowrap;
   }
 </style>

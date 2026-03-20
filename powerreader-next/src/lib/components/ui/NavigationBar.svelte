@@ -78,7 +78,7 @@
     align-items: center;
     justify-content: center;
     width: 64px;
-    height: 32px;
+    height: 36px;
   }
   .nav-indicator {
     position: absolute;

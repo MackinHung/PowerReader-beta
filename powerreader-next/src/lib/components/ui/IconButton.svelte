@@ -22,7 +22,6 @@
     border-radius: var(--md-sys-shape-corner-full);
     cursor: pointer;
     position: relative;
-    overflow: hidden;
     font-size: 24px;
     padding: 0;
   }
