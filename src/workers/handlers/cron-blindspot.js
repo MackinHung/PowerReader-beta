@@ -381,6 +381,9 @@ function hashCluster(title) {
 // ========================================
 
 const SUB_CLUSTER_MIN_ARTICLES = 3;
+const SUB_CLUSTER_SMALL_MAX = 5;          // ≤5 articles: skip sub-clustering (Layer 1 already confirmed relevance)
+const SUB_CLUSTER_RAW_JACCARD_MAX_N = 10; // 6-10 articles: allow raw Jaccard fallback
+const SUB_CLUSTER_RAW_JACCARD_FALLBACK = 0.25;
 const SUB_CLUSTER_STOP_BIGRAM_PCT = 0.5;
 const SUB_CLUSTER_FILTERED_JACCARD = 0.18;
 
@@ -423,14 +426,23 @@ function titleBigrams(title) {
  * Returns array of { representative_title, article_ids, article_count }.
  *
  * Algorithm:
+ *   0. Skip sub-clustering for small clusters (≤5): Layer 1 already confirmed relevance
  *   1. Extract entities from each article's title+summary
  *   2. Build title bigrams, then compute dynamic stop-bigrams (>50% frequency in cluster)
- *   3. Union-Find: merge if entity overlap ≥ 2 OR (filtered title Jaccard ≥ 0.18 + entity repulsion check)
+ *   3. Union-Find: merge if entity overlap ≥ 2 OR (filtered title Jaccard ≥ 0.18 + entity repulsion)
+ *      For medium clusters (6-10): raw Jaccard ≥ 0.25 fallback when filtered signal is zero
  *   4. Group by root, output sub-clusters
  */
 function buildSubClusters(articles) {
   const n = articles.length;
   if (n < SUB_CLUSTER_MIN_ARTICLES) {
+    return [{ representative_title: articles[0]?.title || '', article_ids: articles.map(a => a.article_id), article_count: n }];
+  }
+
+  // Small clusters (≤5 articles): don't sub-split.
+  // In small clusters, stop-bigram filtering removes the very bigrams that prove
+  // articles are about the same event, causing filtered Jaccard → 0 and false splits.
+  if (n <= SUB_CLUSTER_SMALL_MAX) {
     return [{ representative_title: articles[0]?.title || '', article_ids: articles.map(a => a.article_id), article_count: n }];
   }
 
@@ -503,6 +515,17 @@ function buildSubClusters(articles) {
       // Filtered title Jaccard ≥ 0.18
       if (jaccardSimilarity(filteredBigrams[i], filteredBigrams[j]) >= SUB_CLUSTER_FILTERED_JACCARD) {
         union(i, j);
+        continue;
+      }
+
+      // Raw Jaccard fallback for medium clusters (6-10 articles):
+      // Stop-bigram filtering can kill all signal in smaller clusters where
+      // common bigrams ARE the evidence of same-event coverage.
+      // Fall back to unfiltered title Jaccard when filtered signal is zero.
+      if (n <= SUB_CLUSTER_RAW_JACCARD_MAX_N) {
+        if (jaccardSimilarity(titleBigramsArr[i], titleBigramsArr[j]) >= SUB_CLUSTER_RAW_JACCARD_FALLBACK) {
+          union(i, j);
+        }
       }
     }
   }

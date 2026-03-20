@@ -108,15 +108,18 @@ describe('buildSubClusters via buildAllClusters', () => {
   });
 
   it('splits crime articles into sub-clusters by entity anchor', async () => {
-    // 5 articles sharing judicial terms (起訴/判決/法院), but about different cases
+    // 7 articles sharing judicial terms (起訴/判決/法院), but about different cases
     // Group A: 「台灣里」案 with 70億元 → shared entity anchors (quoted 台灣里 + number 70億元) → overlap ≥ 2
     // Group B: 「柬埔寨」+「電信」案 → shared entity anchors (quoted 柬埔寨 + quoted 電信) → overlap ≥ 2
+    // (need ≥6 articles to trigger sub-clustering; ≤5 returns single sub-cluster)
     const articles = [
       { article_id: 'a1', title: '「台灣里」詐騙集團盜刷70億元遭起訴判決', summary: '法院審理「台灣里」案', source: '自由時報', bias_score: null, published_at: '2026-03-10T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
       { article_id: 'a2', title: '「台灣里」盜刷案70億元法院判決出爐結果', summary: '「台灣里」判決確定', source: '聯合報', bias_score: null, published_at: '2026-03-10T11:30:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
       { article_id: 'a3', title: '「台灣里」70億元詐騙案起訴後續追蹤報導', summary: '「台灣里」檢方追訴', source: '中央社', bias_score: null, published_at: '2026-03-10T11:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
+      { article_id: 'a4', title: '「台灣里」詐騙70億元案最新判決法院定讞', summary: '「台灣里」案定讞', source: '三立新聞', bias_score: null, published_at: '2026-03-10T10:30:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
       { article_id: 'b1', title: '「柬埔寨」「電信」詐騙起訴10人法院審理', summary: '「柬埔寨」電信詐騙', source: 'ETtoday新聞雲', bias_score: null, published_at: '2026-03-10T10:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
       { article_id: 'b2', title: '「柬埔寨」「電信」詐騙法院判決3人有罪', summary: '「柬埔寨」詐騙集團', source: '東森新聞', bias_score: null, published_at: '2026-03-10T09:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
+      { article_id: 'b3', title: '「柬埔寨」「電信」詐騙案最新偵辦進展公布', summary: '「柬埔寨」偵辦', source: '風傳媒', bias_score: null, published_at: '2026-03-10T08:30:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
     ];
 
     const mockDB = createMockDB({
@@ -148,10 +151,12 @@ describe('buildSubClusters via buildAllClusters', () => {
   it('dynamic stop-bigram filters common judicial terms', async () => {
     // All articles share 起訴/法院/判決 (>50% frequency) → these bigrams should be filtered
     // Entity anchor (quoted terms) separates the cases with overlap ≥ 2
+    // (need ≥6 articles to trigger sub-clustering)
     const articles = [
       { article_id: '1', title: '「TSMC」「內線交易」案起訴3人法院判決', summary: '', source: '自由時報', bias_score: null, published_at: '2026-03-10T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
       { article_id: '2', title: '「TSMC」「內線交易」起訴法院判決確定', summary: '', source: '聯合報', bias_score: null, published_at: '2026-03-10T11:30:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
       { article_id: '3', title: '「TSMC」「內線交易」案法院起訴審理', summary: '', source: '中央社', bias_score: null, published_at: '2026-03-10T11:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '3b', title: '「TSMC」「內線交易」起訴法院最新審理進展', summary: '', source: '三立新聞', bias_score: null, published_at: '2026-03-10T10:30:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
       { article_id: '4', title: '「鴻海」「竊密」案起訴法院判決出爐', summary: '', source: 'ETtoday新聞雲', bias_score: null, published_at: '2026-03-10T10:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
       { article_id: '5', title: '「鴻海」員工「竊密」起訴法院宣判刑期', summary: '', source: '東森新聞', bias_score: null, published_at: '2026-03-10T09:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
     ];
@@ -326,13 +331,108 @@ describe('buildSubClusters via buildAllClusters', () => {
     expect(coreGroup.article_ids).toContain('3');
   });
 
+  it('small clusters (≤5 articles) skip sub-clustering entirely', async () => {
+    // In small clusters, stop-bigram filtering removes the common bigrams that prove
+    // articles are about the same event, causing false splits. So ≤5 → single sub-cluster.
+    // Simulates the 川普/哈格島 case: same event, different transliterations
+    const articles = [
+      { article_id: '1', title: '川普沒耐心了？考慮占領哈格島逼伊朗開放荷莫茲海峽', summary: '', source: '聯合報', bias_score: null, published_at: '2026-03-10T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '國際' },
+      { article_id: '2', title: '互掐死穴？外媒稱川普考慮奪哈格島 迫伊朗開放荷莫茲海峽', summary: '', source: '自由時報', bias_score: null, published_at: '2026-03-10T11:30:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '國際' },
+      { article_id: '3', title: '砍斷命脈？傳川普考慮佔領哈爾克島  迫使伊朗開放荷姆茲', summary: '', source: '三立新聞', bias_score: null, published_at: '2026-03-10T11:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '國際' },
+    ];
+
+    const mockDB = createMockDB({
+      all: (sql) => {
+        if (sql.includes('FROM articles')) return { results: articles };
+        return { results: [] };
+      }
+    });
+
+    const { buildAllClusters } = await import('../handlers/cron-blindspot.js');
+    await buildAllClusters({ DB: mockDB });
+
+    const subClusters = getSubClustersFromBind(mockDB);
+    expect(subClusters).not.toBeNull();
+    // ≤5 articles → returns exactly 1 sub-cluster containing all articles
+    expect(subClusters.length).toBe(1);
+    expect(subClusters[0].article_count).toBe(3);
+    expect(subClusters[0].article_ids).toEqual(['1', '2', '3']);
+  });
+
+  it('small clusters (5 articles) also skip sub-clustering', async () => {
+    // Simulates the 蔣萬安 case: 5 articles about same event, different wording
+    // Summary provides shared context so Layer 1 clusters them together
+    const sharedSummary = '蔣萬安遭恐嚇活不過2028年 宜蘭男子遭逮捕送辦';
+    const articles = [
+      { article_id: '1', title: 'YT留言嗆讓蔣萬安「活不過2028年」！宜蘭無業男栽了', summary: sharedSummary, source: '聯合報', bias_score: null, published_at: '2026-03-10T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
+      { article_id: '2', title: '恐嚇蔣萬安「活不過2028」 北市警赴宜蘭逮人', summary: sharedSummary, source: '自由時報', bias_score: null, published_at: '2026-03-10T11:30:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
+      { article_id: '3', title: '嗆「讓蔣萬安活不過2028」 北市警宜蘭逮捕PO網男', summary: sharedSummary, source: '三立新聞', bias_score: null, published_at: '2026-03-10T11:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
+      { article_id: '4', title: '「蔣萬安活不過2028」宜蘭男留言遭逮送辦恐嚇罪', summary: sharedSummary, source: 'ETtoday新聞雲', bias_score: null, published_at: '2026-03-10T10:30:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
+      { article_id: '5', title: '嗆蔣萬安「活不過2028年」 宜蘭無業男PO留言遭逮', summary: sharedSummary, source: '東森新聞', bias_score: null, published_at: '2026-03-10T10:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
+    ];
+
+    const mockDB = createMockDB({
+      all: (sql) => {
+        if (sql.includes('FROM articles')) return { results: articles };
+        return { results: [] };
+      }
+    });
+
+    const { buildAllClusters } = await import('../handlers/cron-blindspot.js');
+    await buildAllClusters({ DB: mockDB });
+
+    const subClusters = getSubClustersFromBind(mockDB);
+    expect(subClusters).not.toBeNull();
+    // 5 articles ≤ 5 → single sub-cluster, no false splitting
+    expect(subClusters.length).toBe(1);
+    expect(subClusters[0].article_count).toBe(5);
+  });
+
+  it('medium clusters (6-10) use raw Jaccard fallback for same-event articles', async () => {
+    // 8 articles about the same event with different wording but no entity overlap.
+    // Stop-bigram filtering kills all common bigrams → filtered Jaccard = 0.
+    // Raw Jaccard fallback (≥0.25) should merge same-event articles.
+    const articles = [
+      { article_id: '1', title: '台鐵太魯閣號列車出軌事故造成嚴重傷亡', summary: '', source: '聯合報', bias_score: null, published_at: '2026-03-10T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
+      { article_id: '2', title: '台鐵太魯閣號出軌事故最新救援進展報導', summary: '', source: '自由時報', bias_score: null, published_at: '2026-03-10T11:30:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
+      { article_id: '3', title: '台鐵太魯閣號列車出軌意外傷亡持續增加', summary: '', source: '中央社', bias_score: null, published_at: '2026-03-10T11:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
+      { article_id: '4', title: '台鐵太魯閣號出軌事故調查原因初步結果', summary: '', source: 'ETtoday新聞雲', bias_score: null, published_at: '2026-03-10T10:30:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
+      { article_id: '5', title: '太魯閣號列車出軌事故台鐵局長道歉說明', summary: '', source: '三立新聞', bias_score: null, published_at: '2026-03-10T10:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
+      { article_id: '6', title: '台鐵太魯閣號出軌造成重大傷亡事故最新', summary: '', source: '東森新聞', bias_score: null, published_at: '2026-03-10T09:30:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
+      { article_id: '7', title: '太魯閣號出軌事故台鐵列車安全檢討報導', summary: '', source: '風傳媒', bias_score: null, published_at: '2026-03-10T09:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
+      { article_id: '8', title: '台鐵太魯閣號列車出軌意外最新搜救進度', summary: '', source: '公視新聞', bias_score: null, published_at: '2026-03-10T08:30:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
+    ];
+
+    const mockDB = createMockDB({
+      all: (sql) => {
+        if (sql.includes('FROM articles')) return { results: articles };
+        return { results: [] };
+      }
+    });
+
+    const { buildAllClusters } = await import('../handlers/cron-blindspot.js');
+    await buildAllClusters({ DB: mockDB });
+
+    const subClusters = getSubClustersFromBind(mockDB);
+    expect(subClusters).not.toBeNull();
+    // All 8 articles are about the same event → raw Jaccard fallback should merge most/all
+    // At most 2-3 sub-clusters (not 8 singletons)
+    expect(subClusters.length).toBeLessThanOrEqual(3);
+    // The largest sub-cluster should contain majority of articles
+    const maxSize = Math.max(...subClusters.map(s => s.article_count));
+    expect(maxSize).toBeGreaterThanOrEqual(4);
+  });
+
   it('English proper nouns serve as entity anchors', async () => {
     // TSMC vs NVIDIA articles — English names + quoted terms as entity anchors (overlap ≥ 2)
+    // (need ≥6 articles to trigger sub-clustering)
     const articles = [
       { article_id: '1', title: 'TSMC「法說會」最新財報公布分析報導', summary: 'TSMC第四季', source: '自由時報', bias_score: null, published_at: '2026-03-10T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
       { article_id: '2', title: 'TSMC「法說會」最新營收財報創新高紀錄', summary: 'TSMC公布', source: '聯合報', bias_score: null, published_at: '2026-03-10T11:30:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '2b', title: 'TSMC「法說會」最新季度營收財報成長分析', summary: 'TSMC季報', source: '三立新聞', bias_score: null, published_at: '2026-03-10T11:15:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
       { article_id: '3', title: 'NVIDIA「業績」最新法說會財報分析報導', summary: 'NVIDIA AI', source: '中央社', bias_score: null, published_at: '2026-03-10T11:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
       { article_id: '4', title: 'NVIDIA「業績」法說會最新營收財報公布', summary: 'NVIDIA成長', source: 'ETtoday新聞雲', bias_score: null, published_at: '2026-03-10T10:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '4b', title: 'NVIDIA「業績」最新法說會營收預測報導', summary: 'NVIDIA財測', source: '東森新聞', bias_score: null, published_at: '2026-03-10T09:30:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
     ];
 
     const mockDB = createMockDB({
