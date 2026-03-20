@@ -90,4 +90,26 @@ describe('ClusterCardV2', () => {
 		await fireEvent.keyDown(container.querySelector('.cluster-v2-wrapper'), { key: 'Enter' });
 		expect(handler).toHaveBeenCalledTimes(1);
 	});
+
+	it('shows sub-cluster badge when sub_cluster_count > 1', () => {
+		const { container } = render(ClusterCardV2, {
+			props: { cluster: makeCluster({ sub_cluster_count: 3 }) }
+		});
+		expect(container.querySelector('.sub-badge')).toBeTruthy();
+		expect(container.querySelector('.sub-badge').textContent).toContain('3');
+	});
+
+	it('does NOT show sub-cluster badge when sub_cluster_count is 1', () => {
+		const { container } = render(ClusterCardV2, {
+			props: { cluster: makeCluster({ sub_cluster_count: 1 }) }
+		});
+		expect(container.querySelector('.sub-badge')).toBeNull();
+	});
+
+	it('does NOT show sub-cluster badge when sub_cluster_count is undefined', () => {
+		const { container } = render(ClusterCardV2, {
+			props: { cluster: makeCluster() }
+		});
+		expect(container.querySelector('.sub-badge')).toBeNull();
+	});
 });

@@ -66,29 +66,34 @@ export async function getClusters(request, env, ctx, { url }) {
            camp_distribution, sources_json, article_ids,
            avg_controversy_score, max_controversy_level, category,
            is_blindspot, blindspot_type, missing_camp,
-           earliest_published_at, latest_published_at
+           earliest_published_at, latest_published_at, sub_clusters
     FROM event_clusters ${whereClause}
     ORDER BY latest_published_at DESC
     LIMIT ? OFFSET ?
   `).bind(...params, limit, offset).all();
 
-  const clusters = (rows.results || []).map(row => ({
-    cluster_id: row.cluster_id,
-    representative_title: row.representative_title ? escapeHtml(row.representative_title) : '',
-    article_count: row.article_count,
-    source_count: row.source_count,
-    camp_distribution: safeJsonParse(row.camp_distribution, { green: 0, white: 0, blue: 0 }),
-    sources_json: safeJsonParse(row.sources_json, []),
-    article_ids: safeJsonParse(row.article_ids, []),
-    avg_controversy_score: row.avg_controversy_score,
-    max_controversy_level: row.max_controversy_level,
-    category: row.category,
-    is_blindspot: row.is_blindspot === 1,
-    blindspot_type: row.blindspot_type,
-    missing_camp: row.missing_camp,
-    earliest_published_at: row.earliest_published_at,
-    latest_published_at: row.latest_published_at,
-  }));
+  const clusters = (rows.results || []).map(row => {
+    const subClusters = safeJsonParse(row.sub_clusters, []);
+    return {
+      cluster_id: row.cluster_id,
+      representative_title: row.representative_title ? escapeHtml(row.representative_title) : '',
+      article_count: row.article_count,
+      source_count: row.source_count,
+      camp_distribution: safeJsonParse(row.camp_distribution, { green: 0, white: 0, blue: 0 }),
+      sources_json: safeJsonParse(row.sources_json, []),
+      article_ids: safeJsonParse(row.article_ids, []),
+      avg_controversy_score: row.avg_controversy_score,
+      max_controversy_level: row.max_controversy_level,
+      category: row.category,
+      is_blindspot: row.is_blindspot === 1,
+      blindspot_type: row.blindspot_type,
+      missing_camp: row.missing_camp,
+      earliest_published_at: row.earliest_published_at,
+      latest_published_at: row.latest_published_at,
+      sub_clusters: subClusters,
+      sub_cluster_count: subClusters.length,
+    };
+  });
 
   // Collect all clustered article IDs for the "unclustered" query
   const allClusteredIds = new Set();
@@ -153,7 +158,7 @@ export async function getClusterDetail(request, env, ctx, { params }) {
            camp_distribution, sources_json, article_ids,
            avg_controversy_score, max_controversy_level, category,
            is_blindspot, blindspot_type, missing_camp,
-           earliest_published_at, latest_published_at
+           earliest_published_at, latest_published_at, sub_clusters
     FROM event_clusters WHERE cluster_id = ?
   `).bind(cluster_id).first();
 
@@ -194,6 +199,8 @@ export async function getClusterDetail(request, env, ctx, { params }) {
     }));
   }
 
+  const subClusters = safeJsonParse(row.sub_clusters, []);
+
   return jsonResponse(200, {
     success: true,
     data: {
@@ -212,6 +219,8 @@ export async function getClusterDetail(request, env, ctx, { params }) {
         missing_camp: row.missing_camp,
         earliest_published_at: row.earliest_published_at,
         latest_published_at: row.latest_published_at,
+        sub_clusters: subClusters,
+        sub_cluster_count: subClusters.length,
       },
       articles,
     },

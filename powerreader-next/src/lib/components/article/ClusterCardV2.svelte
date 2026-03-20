@@ -59,6 +59,9 @@
             <span class="category-chip">{cluster.category}</span>
           {/if}
           <span class="meta">{cluster.article_count ?? 0} 篇 · {cluster.source_count ?? 0} 家媒體</span>
+          {#if (cluster.sub_cluster_count ?? 0) > 1}
+            <span class="sub-badge">{cluster.sub_cluster_count} 個子事件</span>
+          {/if}
         </div>
       </div>
 
@@ -152,6 +155,14 @@
   .meta {
     font: var(--md-sys-typescale-label-small-font);
     color: var(--md-sys-color-on-surface-variant);
+    white-space: nowrap;
+  }
+  .sub-badge {
+    font: var(--md-sys-typescale-label-small-font);
+    color: var(--md-sys-color-on-tertiary-container);
+    background: var(--md-sys-color-tertiary-container);
+    padding: 2px 8px;
+    border-radius: var(--md-sys-shape-corner-extra-small);
     white-space: nowrap;
   }
 

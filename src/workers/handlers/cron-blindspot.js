@@ -276,6 +276,129 @@ function hashCluster(title) {
 }
 
 // ========================================
+// Sub-Clustering (Layer 2): Entity Anchor
+// ========================================
+
+const SUB_CLUSTER_MIN_ARTICLES = 3;
+const SUB_CLUSTER_STOP_BIGRAM_PCT = 0.5;
+const SUB_CLUSTER_FILTERED_JACCARD = 0.18;
+
+/**
+ * Extract entity-like tokens from title + summary for sub-clustering.
+ * - Numbers with units (金額/人數/日期): e.g. "70億", "5人"
+ * - Quoted terms (「...」/『...』): e.g. 「詐騙」
+ * - English proper nouns: e.g. "TSMC", "COVID"
+ */
+function extractEntities(title, summary) {
+  const text = (title || '') + ' ' + (summary || '');
+  const entities = new Set();
+
+  // Numbers + units
+  const numUnit = text.matchAll(/\d+[\.\d]*\s*[億萬千百十]?\s*[元人年月日件案筆起份張棟戶]/g);
+  for (const m of numUnit) entities.add(m[0].replace(/\s/g, ''));
+
+  // Quoted terms (2-10 chars)
+  const quoted = text.matchAll(/[「『]([^」』]{2,10})[」』]/g);
+  for (const m of quoted) entities.add(m[1]);
+
+  // English proper nouns (capitalized words)
+  const english = text.matchAll(/[A-Z][a-zA-Z]+/g);
+  for (const m of english) entities.add(m[0]);
+
+  return entities;
+}
+
+/**
+ * Build title-only bigrams (used for filtered Jaccard in sub-clustering).
+ */
+function titleBigrams(title) {
+  return textBigrams(title || '');
+}
+
+/**
+ * Build sub-clusters within a broad cluster using Entity Anchor + filtered title Jaccard.
+ * Returns array of { representative_title, article_ids, article_count }.
+ *
+ * Algorithm:
+ *   1. Extract entities from each article's title+summary
+ *   2. Build title bigrams, then compute dynamic stop-bigrams (>50% frequency in cluster)
+ *   3. Union-Find: merge if entity overlap ≥ 1 OR filtered title Jaccard ≥ 0.18
+ *   4. Group by root, output sub-clusters
+ */
+function buildSubClusters(articles) {
+  const n = articles.length;
+  if (n < SUB_CLUSTER_MIN_ARTICLES) {
+    return [{ representative_title: articles[0]?.title || '', article_ids: articles.map(a => a.article_id), article_count: n }];
+  }
+
+  // 1. Extract entities and title bigrams for each article
+  const entitiesArr = articles.map(a => extractEntities(a.title, a.summary));
+  const titleBigramsArr = articles.map(a => titleBigrams(a.title));
+
+  // 2. Dynamic stop-bigram filtering: remove bigrams appearing in >50% of articles
+  const bigramCount = {};
+  for (const bigs of titleBigramsArr) {
+    for (const b of bigs) {
+      bigramCount[b] = (bigramCount[b] || 0) + 1;
+    }
+  }
+  const stopThreshold = Math.ceil(n * SUB_CLUSTER_STOP_BIGRAM_PCT);
+  const stopBigrams = new Set();
+  for (const [b, count] of Object.entries(bigramCount)) {
+    if (count >= stopThreshold) stopBigrams.add(b);
+  }
+
+  // Build filtered bigram sets (title bigrams minus stop-bigrams)
+  const filteredBigrams = titleBigramsArr.map(bigs => {
+    const filtered = new Set();
+    for (const b of bigs) {
+      if (!stopBigrams.has(b)) filtered.add(b);
+    }
+    return filtered;
+  });
+
+  // 3. Union-Find
+  const parent = Array.from({ length: n }, (_, i) => i);
+  const rank = new Array(n).fill(0);
+  function find(x) { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; }
+  function union(x, y) { let rx = find(x), ry = find(y); if (rx === ry) return; if (rank[rx] < rank[ry]) [rx, ry] = [ry, rx]; parent[ry] = rx; if (rank[rx] === rank[ry]) rank[rx]++; }
+
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      // Entity overlap ≥ 1
+      let entityOverlap = 0;
+      for (const e of entitiesArr[i]) {
+        if (entitiesArr[j].has(e)) { entityOverlap++; break; }
+      }
+
+      if (entityOverlap >= 1) {
+        union(i, j);
+        continue;
+      }
+
+      // Filtered title Jaccard ≥ 0.18
+      if (jaccardSimilarity(filteredBigrams[i], filteredBigrams[j]) >= SUB_CLUSTER_FILTERED_JACCARD) {
+        union(i, j);
+      }
+    }
+  }
+
+  // 4. Group by root
+  const groups = {};
+  for (let i = 0; i < n; i++) {
+    const root = find(i);
+    if (!groups[root]) groups[root] = [];
+    groups[root].push(articles[i]);
+  }
+
+  return Object.values(groups).map(arts => ({
+    representative_title: arts[0].title,
+    article_ids: arts.map(a => a.article_id),
+    article_count: arts.length,
+  }));
+}
+
+// ========================================
 // Event Cluster Pre-computation
 // ========================================
 
@@ -382,14 +505,18 @@ export async function buildAllClusters(env) {
     const clusterId = `ec_${hashCluster(cluster.articles[0].title)}`;
     const articleIds = cluster.articles.map(a => a.article_id);
 
+    // Layer 2: Sub-clustering within broad cluster
+    const subClusters = buildSubClusters(cluster.articles);
+    const subClustersJson = JSON.stringify(subClusters);
+
     await env.DB.prepare(`
       INSERT INTO event_clusters
         (cluster_id, representative_title, article_count, source_count,
          camp_distribution, sources_json, article_ids,
          avg_controversy_score, max_controversy_level, category,
          is_blindspot, blindspot_type, missing_camp,
-         earliest_published_at, latest_published_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+         earliest_published_at, latest_published_at, sub_clusters, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       ON CONFLICT(cluster_id) DO UPDATE SET
         representative_title = excluded.representative_title,
         article_count = excluded.article_count,
@@ -405,6 +532,7 @@ export async function buildAllClusters(env) {
         missing_camp = excluded.missing_camp,
         earliest_published_at = excluded.earliest_published_at,
         latest_published_at = excluded.latest_published_at,
+        sub_clusters = excluded.sub_clusters,
         updated_at = excluded.updated_at
     `).bind(
       clusterId,
@@ -421,7 +549,8 @@ export async function buildAllClusters(env) {
       blindspotType,
       missingCamp,
       earliestPub,
-      latestPub
+      latestPub,
+      subClustersJson
     ).run();
   }
 

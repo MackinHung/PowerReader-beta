@@ -703,6 +703,13 @@ const messages: Record<string, string> = {
   'knowledge.admin.error': '操作失敗',
 
   // ==============================================
+  // Sub-Clusters (Two-Tier Clustering)
+  // ==============================================
+  'cluster.sub_events': '個子事件',
+  'cluster.sub_event_prefix': '子事件',
+  'cluster.contains_sub': '包含 {count} 個子事件',
+
+  // ==============================================
   // Analysis v4 — Emotion & Political
   // ==============================================
   'analysis.emotion_intensity': '情緒煽動程度',

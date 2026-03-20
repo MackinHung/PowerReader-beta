@@ -289,6 +289,17 @@
           <h2 class="hero-title">{hero.representative_title ?? ''}</h2>
           <span class="hero-meta">{hero.article_count ?? 0} 篇報導 · {hero.source_count ?? 0} 家媒體</span>
 
+          {#if hero.sub_clusters?.length > 1}
+            <div class="hero-sub-events">
+              {#each hero.sub_clusters.slice(0, 3) as sub}
+                <span class="sub-event-chip">{sub.representative_title}</span>
+              {/each}
+              {#if hero.sub_clusters.length > 3}
+                <span class="sub-event-more">+{hero.sub_clusters.length - 3}</span>
+              {/if}
+            </div>
+          {/if}
+
           <div class="hero-viz">
             {#if CampBar}
               {@const campRatio = getHeroCampRatio(hero)}
@@ -474,6 +485,27 @@
   .hero-meta {
     font: var(--md-sys-typescale-label-medium-font);
     color: var(--pr-analysis-on-surface-variant);
+  }
+  .hero-sub-events {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .sub-event-chip {
+    font: var(--md-sys-typescale-label-small-font);
+    color: var(--pr-analysis-on-surface);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 3px 10px;
+    border-radius: var(--md-sys-shape-corner-extra-small);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+  }
+  .sub-event-more {
+    font: var(--md-sys-typescale-label-small-font);
+    color: var(--pr-analysis-on-surface-variant);
+    padding: 3px 6px;
   }
   .hero-viz {
     display: flex;

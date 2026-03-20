@@ -134,6 +134,12 @@ export interface BlindspotEvent {
   created_at: string;
 }
 
+export interface SubCluster {
+  representative_title: string;
+  article_ids: string[];
+  article_count: number;
+}
+
 export interface EventCluster {
   cluster_id: string;
   title: string;
@@ -142,6 +148,8 @@ export interface EventCluster {
   article_count: number;
   category?: string;
   created_at: string;
+  sub_clusters?: SubCluster[];
+  sub_cluster_count?: number;
 }
 
 export interface SourceProfile {

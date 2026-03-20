@@ -347,21 +347,63 @@
       </div>
     {/if}
 
-    <!-- Related Articles (Light) -->
+    <!-- Related Articles (Light) — grouped by sub-cluster when available -->
     <div class="articles-section">
       <h2 class="section-heading">
         <span class="material-symbols-outlined">article</span>
         相關報導 ({articles.length})
       </h2>
-      <div class="articles-list">
-        {#each articles as article, i (article.article_id ?? i)}
-          <ArticleCard
-            {article}
-            onclick={() => handleArticleClick(article)}
-            onanalyze={() => handleArticleAnalyze(article)}
-          />
+
+      {#if cluster.sub_clusters?.length > 1}
+        <!-- Grouped by sub-clusters -->
+        {#each cluster.sub_clusters as sub, subIdx}
+          {@const subArticleIds = new Set(sub.article_ids || [])}
+          {@const subArticles = articles.filter(a => subArticleIds.has(a.article_id))}
+          {#if subArticles.length > 0}
+            <details class="sub-cluster-group" open>
+              <summary class="sub-cluster-header">
+                <span class="sub-cluster-label">{t('cluster.sub_event_prefix')}: {sub.representative_title}</span>
+                <span class="sub-cluster-count">{subArticles.length} 篇</span>
+              </summary>
+              <div class="articles-list">
+                {#each subArticles as article, i (article.article_id ?? i)}
+                  <ArticleCard
+                    {article}
+                    onclick={() => handleArticleClick(article)}
+                    onanalyze={() => handleArticleAnalyze(article)}
+                  />
+                {/each}
+              </div>
+            </details>
+          {/if}
         {/each}
-      </div>
+
+        <!-- Articles not in any sub-cluster (fallback) -->
+        {@const allSubIds = new Set(cluster.sub_clusters.flatMap(s => s.article_ids || []))}
+        {@const orphanArticles = articles.filter(a => !allSubIds.has(a.article_id))}
+        {#if orphanArticles.length > 0}
+          <div class="articles-list">
+            {#each orphanArticles as article, i (article.article_id ?? i)}
+              <ArticleCard
+                {article}
+                onclick={() => handleArticleClick(article)}
+                onanalyze={() => handleArticleAnalyze(article)}
+              />
+            {/each}
+          </div>
+        {/if}
+      {:else}
+        <!-- Flat list (no sub-clusters or single sub-cluster) -->
+        <div class="articles-list">
+          {#each articles as article, i (article.article_id ?? i)}
+            <ArticleCard
+              {article}
+              onclick={() => handleArticleClick(article)}
+              onanalyze={() => handleArticleAnalyze(article)}
+            />
+          {/each}
+        </div>
+      {/if}
     </div>
   {/if}
 </div>
@@ -670,6 +712,57 @@
     margin: 0;
     font: var(--md-sys-typescale-body-medium-font);
     color: var(--md-sys-color-on-surface-variant);
+  }
+
+  /* === Sub-cluster Groups === */
+  .sub-cluster-group {
+    border: 1px solid var(--md-sys-color-outline-variant);
+    border-radius: var(--md-sys-shape-corner-medium);
+    overflow: hidden;
+  }
+  .sub-cluster-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--md-sys-color-surface-container-low);
+    cursor: pointer;
+    list-style: none;
+  }
+  .sub-cluster-header::-webkit-details-marker {
+    display: none;
+  }
+  .sub-cluster-header::before {
+    content: '';
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border-left: 5px solid var(--md-sys-color-on-surface-variant);
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    margin-right: 8px;
+    transition: transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+  }
+  .sub-cluster-group[open] > .sub-cluster-header::before {
+    transform: rotate(90deg);
+  }
+  .sub-cluster-label {
+    font: 500 14px/20px var(--pr-font-serif);
+    color: var(--md-sys-color-on-surface);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .sub-cluster-count {
+    font: var(--md-sys-typescale-label-small-font);
+    color: var(--md-sys-color-on-surface-variant);
+    white-space: nowrap;
+  }
+  .sub-cluster-group > .articles-list {
+    padding: 8px;
   }
 
   /* === Articles List === */
