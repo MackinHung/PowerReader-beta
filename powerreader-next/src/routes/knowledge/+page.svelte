@@ -76,7 +76,6 @@
   <!-- Type Chips -->
   <div class="chip-row" role="tablist" aria-label={t('knowledge.filter_type')}>
     {#each TYPE_TABS as tab (tab.key)}
-      {@const count = getTypeCount(tab.key)}
       <button
         class="chip"
         class:active={store.activeType === tab.key}
@@ -85,7 +84,6 @@
         aria-selected={store.activeType === tab.key}
       >
         {tab.label()}
-        <span class="chip-count">{count}</span>
       </button>
     {/each}
   </div>

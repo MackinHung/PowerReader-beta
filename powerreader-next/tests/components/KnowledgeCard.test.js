@@ -73,7 +73,7 @@ describe('KnowledgeCard', () => {
     expect(container.querySelector('.type-icon').textContent).toBe('person');
   });
 
-  it('renders party badge for KMT', () => {
+  it('renders party info for KMT politician (figure-header)', () => {
     mount(KnowledgeCard, {
       target: container,
       props: {
@@ -82,13 +82,14 @@ describe('KnowledgeCard', () => {
       }
     });
 
-    const badge = container.querySelector('.party-badge');
-    expect(badge).toBeTruthy();
-    expect(badge.textContent).toBe('國民黨');
-    expect(badge.style.backgroundColor).toBe('rgb(0, 71, 171)');
+    const header = container.querySelector('.figure-header');
+    expect(header).toBeTruthy();
+    expect(container.querySelector('.figure-party').textContent).toBe('國民黨');
+    expect(container.querySelector('.figure-name').textContent).toBe('Test');
+    expect(container.querySelector('.party-logo')).toBeTruthy();
   });
 
-  it('renders party badge for DPP', () => {
+  it('renders party info for DPP politician (figure-header)', () => {
     mount(KnowledgeCard, {
       target: container,
       props: {
@@ -97,12 +98,12 @@ describe('KnowledgeCard', () => {
       }
     });
 
-    const badge = container.querySelector('.party-badge');
-    expect(badge.textContent).toBe('民進黨');
-    expect(badge.style.backgroundColor).toBe('rgb(27, 148, 49)');
+    const header = container.querySelector('.figure-header');
+    expect(header).toBeTruthy();
+    expect(container.querySelector('.figure-party').textContent).toBe('民進黨');
   });
 
-  it('does not render party badge when null', () => {
+  it('does not render figure-header when party is null', () => {
     mount(KnowledgeCard, {
       target: container,
       props: {
@@ -111,7 +112,7 @@ describe('KnowledgeCard', () => {
       }
     });
 
-    expect(container.querySelector('.party-badge')).toBeNull();
+    expect(container.querySelector('.figure-header')).toBeNull();
   });
 
   it('truncates content to 120 chars', () => {
@@ -187,7 +188,7 @@ describe('KnowledgeCard', () => {
     expect(container.querySelector('.stance-label').textContent).toBe('立場比較');
   });
 
-  it('does not show party badge for topic entry', () => {
+  it('does not show figure-header for topic entry', () => {
     mount(KnowledgeCard, {
       target: container,
       props: {
@@ -199,7 +200,7 @@ describe('KnowledgeCard', () => {
       }
     });
 
-    expect(container.querySelector('.party-badge')).toBeNull();
+    expect(container.querySelector('.figure-header')).toBeNull();
   });
 
   it('does not show content snippet for topic entry', () => {

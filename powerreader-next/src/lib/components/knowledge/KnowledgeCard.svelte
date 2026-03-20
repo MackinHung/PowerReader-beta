@@ -21,18 +21,27 @@
     TSP: '#C7002E'
   };
 
+  const PARTY_LOGOS = {
+    KMT: '/icons/parties/kmt.svg',
+    DPP: '/icons/parties/dpp.svg',
+    TPP: '/icons/parties/tpp.svg'
+  };
+
+  let entryIsFigure = $derived(isFigureType(entry?.type));
   let entryIsIssue = $derived(isIssueType(entry?.type));
   let icon = $derived(TYPE_ICONS[entry?.type] || 'article');
   let typeLabel = $derived(t(`knowledge.type.${entry?.type}`) || entry?.type || '');
   let partyLabel = $derived(
-    !entryIsIssue && entry?.party ? t(`knowledge.party.${entry.party}`) || entry.party : null
+    entry?.party ? t(`knowledge.party.${entry.party}`) || entry.party : null
   );
   let partyColor = $derived(
-    !entryIsIssue && entry?.party ? (PARTY_COLORS[entry.party] || '#888') : null
+    entry?.party ? (PARTY_COLORS[entry.party] || '#888') : null
+  );
+  let partyLogo = $derived(
+    entry?.party ? (PARTY_LOGOS[entry.party] || null) : null
   );
   let snippet = $derived(() => {
     if (entryIsIssue) return '';
-    // Prefer structured field, fall back to content
     const c = entry?.background || entry?.description || entry?.content || '';
     return c.length > 120 ? c.slice(0, 120) + '...' : c;
   });
@@ -44,23 +53,35 @@
   type="button"
   style={partyColor ? `border-left: 8px solid ${partyColor}` : ''}
 >
-  <div class="card-header">
-    <span class="material-symbols-outlined type-icon">{icon}</span>
-    <span class="type-badge">{typeLabel}</span>
-    {#if partyLabel}
-      <span class="party-badge" style="background-color: {partyColor}">{partyLabel}</span>
-    {/if}
-  </div>
-  <h3 class="card-title">{entry?.title || ''}</h3>
-  {#if entryIsIssue}
-    <div class="stance-dots">
-      <span class="dot" style="background-color: #1B9431"></span>
-      <span class="dot" style="background-color: #0047AB"></span>
-      <span class="dot" style="background-color: #28C8C8"></span>
-      <span class="stance-label">{t('knowledge.stances.compare')}</span>
+  {#if entryIsFigure && partyLabel}
+    <!-- Figure/Politician: party logo + name + party name in one row -->
+    <div class="figure-header">
+      {#if partyLogo}
+        <img class="party-logo" src={partyLogo} alt={partyLabel} width="28" height="28" />
+      {:else}
+        <span class="party-dot" style="background: {partyColor}"></span>
+      {/if}
+      <h3 class="figure-name">{entry?.title || ''}</h3>
+      <span class="figure-party" style="color: {partyColor}">{partyLabel}</span>
     </div>
-  {:else}
     <p class="card-snippet">{snippet()}</p>
+  {:else}
+    <!-- Non-figure types: keep original layout -->
+    <div class="card-header">
+      <span class="material-symbols-outlined type-icon">{icon}</span>
+      <span class="type-badge">{typeLabel}</span>
+    </div>
+    <h3 class="card-title">{entry?.title || ''}</h3>
+    {#if entryIsIssue}
+      <div class="stance-dots">
+        <span class="dot" style="background-color: #1B9431"></span>
+        <span class="dot" style="background-color: #0047AB"></span>
+        <span class="dot" style="background-color: #28C8C8"></span>
+        <span class="stance-label">{t('knowledge.stances.compare')}</span>
+      </div>
+    {:else}
+      <p class="card-snippet">{snippet()}</p>
+    {/if}
   {/if}
 </button>
 
@@ -68,8 +89,8 @@
   .knowledge-card {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 24px;
+    gap: 10px;
+    padding: 20px;
     background: #FFFFFF;
     border: 4px solid var(--pr-ink);
     border-radius: 0;
@@ -89,6 +110,42 @@
     outline-offset: 4px;
   }
 
+  /* Figure/Politician header: logo + name + party in one row */
+  .figure-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .party-logo {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border: 2px solid var(--pr-ink);
+    border-radius: 0;
+  }
+  .party-dot {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border: 2px solid var(--pr-ink);
+    border-radius: 0;
+  }
+  .figure-name {
+    margin: 0;
+    font: 900 18px var(--pr-font-sans);
+    color: var(--pr-ink);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .figure-party {
+    font: 900 13px var(--pr-font-sans);
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  /* Non-figure header */
   .card-header {
     display: flex;
     align-items: center;
@@ -104,13 +161,6 @@
     font: 900 12px var(--pr-font-sans);
     color: var(--pr-ink);
     background: var(--md-sys-color-primary-container);
-    padding: 2px 10px;
-    border-radius: 0;
-    border: 2px solid var(--pr-ink);
-  }
-  .party-badge {
-    font: 900 12px var(--pr-font-sans);
-    color: #fff;
     padding: 2px 10px;
     border-radius: 0;
     border: 2px solid var(--pr-ink);
