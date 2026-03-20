@@ -20,44 +20,42 @@
     gap: 8px;
     height: 40px;
     padding: 0 24px;
-    border: none;
+    border: var(--pr-border-width) solid var(--pr-border-color);
     border-radius: var(--md-sys-shape-corner-small);
     font: var(--md-sys-typescale-label-large-font);
     cursor: pointer;
     text-decoration: none;
-    transition: box-shadow var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+    transition: transform 100ms ease, box-shadow 100ms ease;
     position: relative;
     overflow: hidden;
   }
-  .md-button::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: currentColor;
-    opacity: 0;
-    transition: opacity var(--md-sys-motion-duration-short4);
-    pointer-events: none;
+  /* Neo-Brutalism Action - removal of ripple, physical press effect */
+  .md-button:active:not(.disabled) {
+    transform: translate(4px, 4px);
+    box-shadow: none !important;
   }
-  .md-button:hover::after { opacity: var(--md-sys-state-hover-opacity); }
-  .md-button:active::after { opacity: var(--md-sys-state-pressed-opacity); }
   .filled {
     background: var(--md-sys-color-primary);
     color: var(--md-sys-color-on-primary);
+    box-shadow: var(--md-sys-elevation-1);
   }
-  .filled:hover { box-shadow: var(--md-sys-elevation-1); }
   .outlined {
-    background: transparent;
-    color: var(--md-sys-color-primary);
-    border: 1px solid var(--md-sys-color-outline);
+    background: var(--md-sys-color-surface-bright);
+    color: var(--pr-ink);
+    border: var(--pr-border-width) solid var(--pr-border-color);
+    box-shadow: var(--md-sys-elevation-1);
   }
   .text {
     background: transparent;
-    color: var(--md-sys-color-primary);
+    color: var(--pr-ink);
     padding: 0 12px;
+    border-color: transparent;
   }
+  .text:hover { background: rgba(0,0,0,0.05); }
   .tonal {
     background: var(--md-sys-color-secondary-container);
     color: var(--md-sys-color-on-secondary-container);
+    box-shadow: var(--md-sys-elevation-1);
   }
   .md-button:disabled, .disabled {
     opacity: 0.38;

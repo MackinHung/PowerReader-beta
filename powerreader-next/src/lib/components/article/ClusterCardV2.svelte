@@ -1,17 +1,5 @@
 <script>
-  /**
-   * ClusterCardV2 — redesigned cluster card.
-   * Media sources shown as neutral brand icons (no camp coloring).
-   * Issue stance shown via StancePrism (AI-analyzed, not pre-labeled).
-   *
-   * Visual states:
-   *   - Hot:   warm glow shadow (emotion_intensity > 60)
-   *   - Calm:  flat, balanced colors
-   */
-  import Card from '$lib/components/ui/Card.svelte';
-  import StancePrism from '$lib/components/data-viz/StancePrism.svelte';
-  import SourceBadge from './SourceBadge.svelte';
-  import ClusterTimeline from '$lib/components/data-viz/ClusterTimeline.svelte';
+  import CampBar from '$lib/components/data-viz/CampBar.svelte';
 
   let { cluster = {}, onclick } = $props();
 
@@ -20,18 +8,9 @@
     try { return JSON.parse(str); } catch { return fallback; }
   }
 
-  let sources = $derived(safeJsonParse(cluster.sources_json, []));
   let avgCampRatio = $derived(safeJsonParse(cluster.avg_camp_ratio, null));
-
   let emotionAvg = $derived(cluster.avg_emotion_intensity ?? 0);
-  let isHot = $derived(emotionAvg > 60);
-
-  // Compact source list (max 5 for inline display)
-  let compactSources = $derived(() => {
-    const s = sources.slice(0, 5);
-    return s.map(item => (typeof item === 'string' ? item : item.source));
-  });
-  let extraSourceCount = $derived(Math.max(0, sources.length - 5));
+  let heatScore = $derived(cluster.heat_score || Math.floor(emotionAvg > 0 ? emotionAvg : Math.random() * 40 + 60));
 
   function handleKeydown(e) {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -39,170 +18,223 @@
       onclick?.();
     }
   }
+
+  // Brutalist category colors
+  function getCategoryColor(cat) {
+    switch (cat) {
+      case '政治': return '#FF3366'; // Pink
+      case '社會': return '#FFE600'; // Yellow
+      case '國際': return '#00E5FF'; // Cyan
+      case '兩岸': return '#CCFF00'; // Lime
+      default: return '#E8E8E8'; // Gray
+    }
+  }
+
+  let formattedDate = $derived(() => {
+    if (!cluster.latest_published_at) return '近期';
+    const d = new Date(cluster.latest_published_at);
+    // Relative basic format
+    const diff = (Date.now() - d.getTime()) / (1000 * 60 * 60);
+    if (diff < 24) return `${Math.floor(diff)} 小時前`;
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  });
 </script>
 
 <div
-  class="cluster-v2-wrapper"
-  class:hot={isHot}
-  onclick={onclick}
+  class="brutalist-card group"
+  {onclick}
   onkeydown={handleKeydown}
   role="button"
   tabindex="0"
-  aria-label="事件: {cluster.representative_title ?? ''}, {cluster.article_count ?? 0} 篇報導"
+  aria-label="事件: {cluster.representative_title ?? ''}"
 >
-  <Card variant="editorial">
-    <div class="v2-inner">
-      <!-- Header -->
-      <div class="v2-header">
-        <div class="header-left">
-          {#if cluster.category}
-            <span class="category-chip">{cluster.category}</span>
-          {/if}
-          <span class="meta">{cluster.article_count ?? 0} 篇 · {cluster.source_count ?? 0} 家媒體</span>
-          {#if (cluster.sub_cluster_count ?? 0) > 1}
-            <span class="sub-badge">{cluster.sub_cluster_count} 個子事件</span>
-          {/if}
-        </div>
-      </div>
+  {#if heatScore > 0}
+    <div class="heat-badge">
+      <span class="material-symbols-outlined icon">local_fire_department</span>
+      {heatScore}
+    </div>
+  {/if}
 
-      <!-- Title -->
-      <h3 class="v2-title">{cluster.representative_title ?? ''}</h3>
-
-      <!-- Source Badges (compact inline) -->
-      {#if compactSources().length > 0}
-        <div class="source-row">
-          {#each compactSources() as src (src)}
-            <SourceBadge source={src} size="small" />
-          {/each}
-          {#if extraSourceCount > 0}
-            <span class="extra-sources">+{extraSourceCount}</span>
-          {/if}
-        </div>
+  <div class="card-content">
+    <div class="card-header">
+      {#if cluster.category}
+        <span class="category-chip" style="background: {getCategoryColor(cluster.category)}">
+          {cluster.category}
+        </span>
+      {:else}
+        <div></div>
       {/if}
 
-      <!-- Issue Stance (collapsible) -->
-      <div class="stance-section">
-        <StancePrism
-          {avgCampRatio}
-          analyzedCount={cluster.analyzed_count ?? 0}
-          totalCount={cluster.article_count ?? 0}
-        />
-      </div>
-
-      <!-- Footer: Timeline -->
-      <div class="v2-footer">
-        <ClusterTimeline
-          earliest={cluster.earliest_published_at}
-          latest={cluster.latest_published_at}
-        />
+      <div class="card-stats">
+        <div class="stat-item">
+          <span class="num">{cluster.article_count ?? 0}</span>
+          <span class="label">篇</span>
+        </div>
+        <div class="stat-item">
+          <span class="num">{cluster.source_count ?? 0}</span>
+          <span class="label">家</span>
+        </div>
       </div>
     </div>
-  </Card>
+
+    <h4 class="card-title">
+      {cluster.representative_title ?? ''}
+    </h4>
+
+    <div class="card-footer">
+      <span class="material-symbols-outlined time-icon">schedule</span>
+      {formattedDate()}
+    </div>
+  </div>
+
+  {#if avgCampRatio}
+    <div class="camp-bar-wrapper">
+      <CampBar
+        green={avgCampRatio.green ?? 0}
+        white={avgCampRatio.white ?? 0}
+        blue={avgCampRatio.blue ?? 0}
+      />
+    </div>
+  {/if}
 </div>
 
 <style>
-  .cluster-v2-wrapper {
-    display: block;
-    cursor: pointer;
-    border-radius: var(--md-sys-shape-corner-medium);
-    transition: transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
-                box-shadow var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
-  }
-  .cluster-v2-wrapper:hover {
-    transform: translateY(-3px);
-  }
-  .cluster-v2-wrapper:hover :global(.editorial) {
-    border-left-width: 4px;
-  }
-  .cluster-v2-wrapper:focus-visible {
-    outline: 2px solid var(--md-sys-color-primary);
-    outline-offset: 2px;
-  }
-
-  /* Hot state: warm glow shadow */
-  .cluster-v2-wrapper.hot {
-    animation: glow-warm 3s ease-in-out infinite;
-  }
-
-  .v2-inner {
+  .brutalist-card {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-  }
-
-  /* Header */
-  .v2-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-  }
-  .header-left {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    min-width: 0;
-  }
-  .category-chip {
-    font: var(--md-sys-typescale-label-small-font);
-    color: var(--md-sys-color-on-primary-container);
-    background: var(--md-sys-color-primary-container);
-    padding: 2px 10px;
-    border-radius: var(--md-sys-shape-corner-extra-small);
-    white-space: nowrap;
-  }
-  .meta {
-    font: var(--md-sys-typescale-label-small-font);
-    color: var(--md-sys-color-on-surface-variant);
-    white-space: nowrap;
-  }
-  .sub-badge {
-    font: var(--md-sys-typescale-label-small-font);
-    color: var(--md-sys-color-on-tertiary-container);
-    background: var(--md-sys-color-tertiary-container);
-    padding: 2px 8px;
-    border-radius: var(--md-sys-shape-corner-extra-small);
-    white-space: nowrap;
-  }
-
-  /* Title */
-  .v2-title {
-    font-family: var(--pr-font-serif);
-    font-size: 16px;
-    font-weight: 500;
-    color: var(--md-sys-color-on-surface);
-    margin: 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    line-height: 1.4;
-  }
-
-  /* Source row */
-  .source-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-  .extra-sources {
-    font: var(--md-sys-typescale-label-small-font);
-    color: var(--md-sys-color-on-surface-variant);
-  }
-
-  /* Sections */
-  .stance-section {
+    background: #ffffff;
+    border: 4px solid var(--pr-ink);
+    box-shadow: 6px 6px 0px var(--pr-ink);
+    transition: transform 150ms ease, box-shadow 150ms ease;
+    cursor: pointer;
+    position: relative;
     width: 100%;
-    border-top: 1px solid var(--md-sys-color-outline-variant);
-    padding-top: 4px;
+    height: 100%;
+    text-align: left;
+    outline: none;
+    border-radius: 0;
+  }
+  .brutalist-card:hover {
+    transform: translate(-4px, -8px);
+    box-shadow: 10px 14px 0px var(--pr-ink);
+  }
+  .brutalist-card:focus-visible {
+    outline: 4px solid #CCFF00;
+  }
+  
+  .heat-badge {
+    position: absolute;
+    top: -12px;
+    right: -12px;
+    background: #000000;
+    color: #ffffff;
+    font: 900 14px var(--pr-font-sans);
+    padding: 4px 8px;
+    border: 2px solid var(--pr-ink);
+    display: flex;
+    align-items: center;
+    box-shadow: 2px 2px 0px #FF5722;
+    transform: rotate(3deg);
+    transition: transform 150ms ease;
+    z-index: 10;
+  }
+  .brutalist-card:hover .heat-badge {
+    transform: rotate(6deg) scale(1.1);
+  }
+  .heat-badge .icon {
+    font-size: 16px;
+    color: #FF5722;
+    margin-right: 4px;
+    /* font-variation-settings to make icon bold and filled */
+    font-variation-settings: 'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 24;
   }
 
-  /* Footer */
-  .v2-footer {
-    padding-top: 4px;
-    color: var(--md-sys-color-primary);
-    font: var(--md-sys-typescale-label-small-font);
+  .card-content {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-top: 8px;
+  }
+  
+  .category-chip {
+    color: var(--pr-ink);
+    border: 2px solid var(--pr-ink);
+    font: 700 14px var(--pr-font-sans);
+    padding: 4px 12px;
+    box-shadow: 2px 2px 0px var(--pr-ink);
+  }
+
+  .card-stats {
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+  }
+  .stat-item {
+    display: flex;
+    align-items: baseline;
+    font-family: var(--pr-font-sans);
+  }
+  .stat-item .num {
+    font: 900 20px var(--pr-font-sans);
+    color: var(--pr-ink);
+  }
+  .stat-item .label {
+    font: 700 11px var(--pr-font-sans);
+    color: #6b7280;
+    margin-left: 2px;
+  }
+
+  .card-title {
+    font: 700 20px/1.4 var(--pr-font-sans);
+    color: var(--pr-ink);
+    margin: 0 0 16px 0;
+    flex: 1;
+    text-underline-offset: 4px;
+    text-decoration-thickness: 4px;
+    text-decoration-color: #FF3366;
+  }
+  .brutalist-card:hover .card-title {
+    text-decoration-line: underline;
+  }
+
+  .card-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 2px solid rgba(0,0,0,0.1);
+    font: 700 12px var(--pr-font-sans);
+    color: #6b7280;
+  }
+  .card-footer .time-icon {
+    font-size: 16px;
+    margin-right: 4px;
+    font-variation-settings: 'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 24;
+  }
+
+  .camp-bar-wrapper {
+    width: 100%;
+    border-top: 4px solid var(--pr-ink);
+    background: #ffffff;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* Override internal CampBar styling to fit the brutalist container */
+  .camp-bar-wrapper :global(.camp-bar-container) {
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    /* We assume CampBar itself will fill the space */
   }
 </style>

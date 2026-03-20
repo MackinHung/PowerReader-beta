@@ -277,69 +277,60 @@
     <!-- Hero Card -->
     {#if heroCluster()}
       {@const hero = heroCluster()}
-      <button
-        class="hero-card"
-        onclick={() => handleClusterClick(hero)}
-        aria-label="精選事件: {hero.representative_title}"
-      >
-        <div class="hero-content">
-          {#if hero.category}
-            <span class="hero-category">{hero.category}</span>
-          {/if}
+      <div class="hero-wrapper" onclick={() => handleClusterClick(hero)}>
+        <div class="hero-offset-bg"></div>
+        <button
+          class="hero-card"
+          aria-label="精選事件: {hero.representative_title}"
+        >
+          <div class="hero-badges">
+            {#if hero.category}
+              <span class="hero-category">{hero.category}</span>
+            {/if}
+            <div class="hero-heat">
+              <span class="material-symbols-outlined icon">local_fire_department</span>
+              熱度
+            </div>
+          </div>
+          
           <h2 class="hero-title">{hero.representative_title ?? ''}</h2>
-          <span class="hero-meta">{hero.article_count ?? 0} 篇報導 · {hero.source_count ?? 0} 家媒體</span>
+          
+          <div class="hero-bottom-info">
+            <div class="hero-stats">
+              <div class="stat-block">
+                <span class="stat-number">{hero.article_count ?? 0}</span>
+                <span class="stat-label">相關報導</span>
+              </div>
+              <div class="stat-block">
+                <span class="stat-number">{hero.source_count ?? 0}</span>
+                <span class="stat-label">家媒體</span>
+              </div>
+            </div>
 
-          {#if hero.sub_clusters?.length > 1}
-            <div class="hero-sub-events">
-              {#each hero.sub_clusters.slice(0, 3) as sub}
-                <span class="sub-event-chip">{sub.representative_title}</span>
-              {/each}
-              {#if hero.sub_clusters.length > 3}
-                <span class="sub-event-more">+{hero.sub_clusters.length - 3}</span>
+            <div class="hero-viz">
+              {#if CampBar}
+                {@const campRatio = getHeroCampRatio(hero)}
+                {#if campRatio}
+                  <div class="hero-camp-wrapper">
+                    <svelte:component this={CampBar}
+                      green={campRatio.green ?? 0}
+                      white={campRatio.white ?? 0}
+                      blue={campRatio.blue ?? 0}
+                      dark={true}
+                    />
+                  </div>
+                {/if}
               {/if}
             </div>
-          {/if}
-
-          <div class="hero-viz">
-            {#if CampBar}
-              {@const campRatio = getHeroCampRatio(hero)}
-              {#if campRatio}
-                <div class="hero-camp">
-                  <svelte:component this={CampBar}
-                    green={campRatio.green ?? 0}
-                    white={campRatio.white ?? 0}
-                    blue={campRatio.blue ?? 0}
-                    dark={true}
-                  />
-                </div>
-              {/if}
-            {/if}
           </div>
-
-          <!-- Source badges -->
-          {#if SourceBadge}
-            {@const heroSources = getHeroSources(hero)}
-            {#if heroSources.length > 0}
-              <div class="hero-sources">
-                {#each heroSources as src (src)}
-                  <svelte:component this={SourceBadge} source={src} size="small" />
-                {/each}
-                {#if (safeJsonParse(hero.sources_json, []).length) > 6}
-                  <span class="hero-extra">+{safeJsonParse(hero.sources_json, []).length - 6}</span>
-                {/if}
-              </div>
-            {/if}
-          {/if}
-        </div>
-
-        <div class="hero-bottom-line"></div>
-      </button>
+        </button>
+      </div>
     {/if}
 
     <!-- Section: Remaining Clusters -->
     {#if remainingClusters().length > 0}
       <h2 class="section-heading">
-        <span class="material-symbols-outlined section-icon">radar</span>
+        <span class="material-symbols-outlined section-icon">bolt</span>
         即時新聞雷達
       </h2>
       <ResponsiveGrid minColumnWidth="340px">
@@ -370,7 +361,7 @@
     {:else if hasClusters}
       <!-- Only hero cluster exists, show section heading anyway for context -->
       <h2 class="section-heading">
-        <span class="material-symbols-outlined section-icon">radar</span>
+        <span class="material-symbols-outlined section-icon">bolt</span>
         即時新聞雷達
       </h2>
       {#if eventsStore.clustersLoading}
@@ -437,119 +428,127 @@
   .category-chips::-webkit-scrollbar { display: none; }
 
   /* === Hero Card === */
+  .hero-wrapper {
+    position: relative;
+    margin-bottom: 56px;
+    cursor: pointer;
+  }
+  .hero-wrapper:hover .hero-card {
+    transform: translate(-4px, -4px);
+  }
+  .hero-offset-bg {
+    position: absolute;
+    inset: 0;
+    background: #00E5FF;
+    border: 4px solid var(--pr-ink);
+    border-radius: 16px;
+    transform: translate(12px, 12px);
+    pointer-events: none;
+  }
   .hero-card {
     display: flex;
     flex-direction: column;
-    background: var(--pr-analysis-surface);
-    border-radius: var(--md-sys-shape-corner-medium);
-    overflow: hidden;
-    cursor: pointer;
-    border: none;
-    text-align: left;
-    font: inherit;
-    color: var(--pr-analysis-on-surface);
+    justify-content: flex-end;
+    background: #000000;
+    color: #ffffff;
+    border-radius: 16px;
+    border: 4px solid var(--pr-ink);
+    padding: 40px;
+    min-height: 320px;
     width: 100%;
     position: relative;
-    transition: transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+    transition: transform 200ms ease;
+    text-align: left;
+    outline: none;
+    z-index: 10;
   }
-  .hero-card:hover {
-    transform: translateY(-2px);
-  }
-  .hero-card:focus-visible {
-    outline: 2px solid var(--pr-gold);
-    outline-offset: 2px;
-  }
-  .hero-content {
-    padding: 24px;
+  .hero-badges {
+    position: absolute;
+    top: 24px;
+    left: 24px;
     display: flex;
-    flex-direction: column;
     gap: 12px;
+    align-items: center;
   }
   .hero-category {
-    font: var(--md-sys-typescale-label-small-font);
-    color: var(--pr-analysis-gold);
-    background: rgba(201, 169, 110, 0.15);
-    padding: 2px 12px;
-    border-radius: var(--md-sys-shape-corner-extra-small);
-    align-self: flex-start;
+    background: #FFE600;
+    color: #000000;
+    border: 2px solid var(--pr-ink);
+    font: 900 18px var(--pr-font-sans);
+    padding: 4px 16px;
+    box-shadow: 2px 2px 0px var(--pr-ink);
   }
-  .hero-title {
-    font: 700 24px/32px var(--pr-font-serif);
-    color: var(--pr-analysis-on-surface);
-    margin: 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-  .hero-meta {
-    font: var(--md-sys-typescale-label-medium-font);
-    color: var(--pr-analysis-on-surface-variant);
-  }
-  .hero-sub-events {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .sub-event-chip {
-    font: var(--md-sys-typescale-label-small-font);
-    color: var(--pr-analysis-on-surface);
-    background: rgba(255, 255, 255, 0.1);
-    padding: 3px 10px;
-    border-radius: var(--md-sys-shape-corner-extra-small);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 200px;
-  }
-  .sub-event-more {
-    font: var(--md-sys-typescale-label-small-font);
-    color: var(--pr-analysis-on-surface-variant);
-    padding: 3px 6px;
-  }
-  .hero-viz {
-    display: flex;
-    align-items: flex-start;
-    gap: 20px;
-    flex-wrap: wrap;
-  }
-  .hero-viz-label {
-    font: var(--md-sys-typescale-label-small-font);
-    color: var(--pr-analysis-on-surface-variant);
-  }
-  .hero-camp {
-    flex: 1;
-    min-width: 160px;
-  }
-  .hero-sources {
+  .hero-heat {
     display: flex;
     align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
+    background: #FF5722;
+    color: #ffffff;
+    border: 2px solid var(--pr-ink);
+    font: 900 18px var(--pr-font-sans);
+    padding: 4px 12px;
+    box-shadow: 2px 2px 0px #ffffff;
   }
-  .hero-extra {
-    font: var(--md-sys-typescale-label-small-font);
-    color: var(--pr-analysis-on-surface-variant);
+  .hero-heat .icon {
+    font-size: 20px;
+    margin-right: 4px;
   }
-  .hero-bottom-line {
-    height: 3px;
-    background: linear-gradient(to right, var(--pr-gold), var(--pr-gold-muted), transparent);
+  .hero-title {
+    font: 900 36px/1.2 var(--pr-font-sans);
+    color: #ffffff;
+    margin: 64px 0 24px 0;
+    width: 75%;
+    transition: color 200ms ease;
+  }
+  .hero-card:hover .hero-title {
+    color: #CCFF00;
+  }
+  .hero-bottom-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    width: 100%;
+  }
+  .hero-stats {
+    display: flex;
+    gap: 24px;
+  }
+  .stat-block {
+    display: flex;
+    flex-direction: column;
+  }
+  .stat-number {
+    font: 900 36px/1 var(--pr-font-sans);
+    color: #ffffff;
+  }
+  .stat-label {
+    font: 700 12px var(--pr-font-sans);
+    color: #9ca3af;
+    letter-spacing: 2px;
+    margin-top: 4px;
+  }
+  .hero-viz {
+    width: 41%; /* 5/12 approx */
+    display: flex;
+    justify-content: flex-end;
+  }
+  .hero-camp-wrapper {
+    width: 100%;
   }
 
   /* === Section Heading === */
   .section-heading {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin: 8px 0 0;
-    padding-left: 12px;
-    border-left: 4px solid var(--pr-gold);
-    font: 500 16px/24px var(--pr-font-serif);
-    color: var(--md-sys-color-on-surface);
+    gap: 12px;
+    margin: 24px 0 32px 0;
+    padding-left: 0;
+    border-left: none;
+    font: 900 30px/36px var(--pr-font-sans);
+    color: var(--pr-ink);
   }
   .section-icon {
-    font-size: 20px;
-    color: var(--pr-gold);
+    font-size: 32px;
+    color: #FF5722;
   }
 
   /* === Misc === */

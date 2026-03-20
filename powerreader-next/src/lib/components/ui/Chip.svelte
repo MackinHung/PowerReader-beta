@@ -37,13 +37,15 @@
     height: 32px;
     padding: 0 16px;
     border-radius: var(--md-sys-shape-corner-small);
-    border: 1px solid var(--md-sys-color-outline);
-    background: transparent;
+    border: var(--pr-border-width) solid var(--pr-border-color);
+    box-shadow: 2px 2px 0px var(--pr-border-color);
+    background: var(--md-sys-color-surface-bright);
     color: var(--md-sys-color-on-surface);
     font: var(--md-sys-typescale-label-large-font);
     cursor: pointer;
     position: relative;
     overflow: hidden;
+    transition: transform 100ms ease, box-shadow 100ms ease;
   }
   .md-chip::after {
     content: '';
@@ -55,10 +57,15 @@
     pointer-events: none;
   }
   .md-chip:hover::after { opacity: var(--md-sys-state-hover-opacity); }
+  .md-chip:active {
+    transform: translate(2px, 2px);
+    box-shadow: none !important;
+  }
   .md-chip.selected {
-    background: var(--md-sys-color-secondary-container);
-    color: var(--md-sys-color-on-secondary-container);
-    border-color: transparent;
+    background: var(--md-sys-color-primary);
+    color: var(--pr-ink);
+    border-color: var(--pr-border-color);
+    font-weight: bold;
   }
   .chip-icon {
     font-size: 18px;
@@ -92,14 +99,14 @@
     color: var(--md-sys-color-on-surface-variant);
     font: var(--md-sys-typescale-label-large-font);
     cursor: pointer;
-    border-bottom: 2px solid transparent;
+    border-bottom: var(--pr-border-width) solid transparent;
     transition: color var(--md-sys-motion-duration-short4),
                 border-color var(--md-sys-motion-duration-short4);
   }
   .md-tab.selected {
     color: var(--pr-ink);
-    font-weight: bold;
-    border-bottom: 2px solid var(--pr-gold);
+    font-weight: 900;
+    border-bottom: var(--pr-border-width) solid var(--pr-gold);
   }
   .md-tab:hover:not(.selected) {
     color: var(--md-sys-color-on-surface);

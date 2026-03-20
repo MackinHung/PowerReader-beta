@@ -14,13 +14,13 @@
 
 <style>
   .md-card {
-    border-radius: var(--md-sys-shape-corner-medium);
+    border-radius: var(--md-sys-shape-corner-small);
     padding: 12px;
     position: relative;
     overflow: hidden;
     text-align: left;
     width: 100%;
-    border: none;
+    border: var(--pr-border-width) solid var(--pr-border-color);
     font: inherit;
     color: inherit;
   }
@@ -43,13 +43,13 @@
   }
   .editorial {
     background: #ffffff;
-    border-left: 3px solid var(--pr-gold);
+    border-left: 6px solid var(--pr-gold); /* Thicker left border for Neo-Brutalism */
     box-shadow: none;
   }
   .dark {
     background: var(--pr-analysis-surface);
     color: var(--pr-analysis-on-surface);
-    border: 1px solid var(--pr-analysis-border);
+    border: var(--pr-border-width) solid var(--pr-border-color);
   }
   .clickable {
     cursor: pointer;

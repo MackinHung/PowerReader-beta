@@ -50,19 +50,18 @@
     left: 0;
     right: 0;
     height: 64px;
-    background: var(--md-sys-color-surface);
+    background: var(--md-sys-color-surface-bright);
     display: flex;
     align-items: center;
     padding: 0 4px;
     z-index: 100;
-    border-bottom: 1px solid transparent;
+    border-bottom: 4px solid var(--pr-ink);
+    box-shadow: 0px 4px 0px var(--pr-ink);
     transition:
-      height var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
-      border-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+      height var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
   }
   .scrolled {
     height: 48px;
-    border-bottom: 1px solid var(--pr-gold);
   }
   .bar-leading {
     display: flex;
@@ -94,12 +93,14 @@
   }
   .bar-title {
     flex: 1;
-    font-family: var(--pr-font-serif);
-    font-size: 22px;
+    font-family: var(--pr-font-sans);
+    font-size: 26px;
     line-height: 28px;
-    font-weight: 400;
-    color: var(--pr-gold);
+    font-weight: 900;
+    font-style: italic;
+    color: var(--pr-ink);
     padding: 0 16px;
+    letter-spacing: 1px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -111,9 +112,14 @@
     padding-right: 8px;
   }
   .bar-date {
-    font: var(--md-sys-typescale-label-medium-font);
-    color: var(--md-sys-color-on-surface-variant);
+    font: var(--md-sys-typescale-label-large-font);
+    color: var(--pr-ink);
+    font-weight: 900;
     white-space: nowrap;
-    padding: 0 8px;
+    padding: 4px 16px;
+    background: #E8E8E8;
+    border: 2px solid var(--pr-ink);
+    box-shadow: 2px 2px 0px var(--pr-ink);
+    margin-right: 8px;
   }
 </style>
