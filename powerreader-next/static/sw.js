@@ -1,8 +1,8 @@
 // PowerReader Next - Service Worker
-const CACHE_NAME = 'pr-next-v7';
+const CACHE_NAME = 'pr-next-v8';
 const APP_SHELL = [
   '/',
-  '/200.html',
+  '/index.html',
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
@@ -63,11 +63,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Navigation: network-first, fallback to 200.html (SPA)
+  // Navigation: network-first, fallback to index.html (SPA)
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
-        .catch(() => caches.match('/200.html'))
+        .catch(() => caches.match('/index.html'))
     );
     return;
   }
