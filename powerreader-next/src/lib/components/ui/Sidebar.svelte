@@ -12,12 +12,15 @@
 </script>
 
 <nav class="sidebar" class:expanded class:rail={!expanded} aria-label="Main navigation">
-  <div class="sidebar-top">
+  <div class="sidebar-top" class:expanded>
     <button class="toggle-btn" onclick={ontoggle} aria-label={expanded ? 'Collapse sidebar' : 'Expand sidebar'}>
       <span class="material-symbols-outlined">
-        {expanded ? 'menu_open' : 'menu'}
+        {expanded ? 'keyboard_double_arrow_left' : 'keyboard_double_arrow_right'}
       </span>
     </button>
+    {#if expanded}
+      <span class="sidebar-brand">PowerReader</span>
+    {/if}
   </div>
 
   <div class="nav-items">
@@ -123,13 +126,18 @@
   .sidebar-top {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 12px;
-    height: 64px;
+    gap: 8px;
+    height: 80px;
     padding: 0 16px;
     flex-shrink: 0;
     background: #FF5722;
     border-bottom: 2px solid var(--pr-ink);
+  }
+  .sidebar-top.expanded {
+    justify-content: flex-start;
+  }
+  .sidebar-top:not(.expanded) {
+    justify-content: center;
   }
   .toggle-btn {
     display: inline-flex;
@@ -182,10 +190,12 @@
     padding: 16px 24px;
     border-radius: 0;
     text-decoration: none;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.95);
     white-space: nowrap;
     font-weight: 900;
-    font-size: 24px;
+    font-size: 22px;
+    font-style: italic;
+    letter-spacing: 1px;
     border-left: 8px solid transparent;
     transition: all 150ms ease;
   }

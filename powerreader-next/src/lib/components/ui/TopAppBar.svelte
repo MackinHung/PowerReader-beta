@@ -31,12 +31,14 @@
         <span class="material-symbols-outlined">arrow_back</span>
       </button>
     {:else if showMenuToggle}
-      <button class="bar-icon-btn desktop-menu-toggle" onclick={ontoggle} aria-label="Toggle sidebar">
+      <button class="bar-icon-btn mobile-menu-toggle" onclick={ontoggle} aria-label="Toggle menu">
         <span class="material-symbols-outlined">menu</span>
       </button>
     {/if}
   </div>
-  <h1 class="bar-title">{title}</h1>
+  {#if title && title !== 'PowerReader'}
+    <h1 class="bar-title">{title}</h1>
+  {/if}
   <div class="bar-actions">
     {@render children?.()}
     <span class="bar-date">{dateDisplay}</span>
@@ -47,8 +49,8 @@
   .md-top-app-bar {
     position: fixed;
     top: 0;
-    left: 0;
-    right: 0;
+    left: var(--sidebar-offset, 0px);
+    width: calc(100% - var(--sidebar-offset, 0px));
     height: 64px;
     background: var(--md-sys-color-surface-bright);
     display: flex;
@@ -81,13 +83,12 @@
   .bar-icon-btn:hover {
     background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
   }
-  /* Hide menu toggle on mobile (sidebar is hidden there) */
-  .desktop-menu-toggle {
-    display: none;
+  .mobile-menu-toggle {
+    display: inline-flex;
   }
   @media (min-width: 768px) {
-    .desktop-menu-toggle {
-      display: inline-flex;
+    .mobile-menu-toggle {
+      display: none;
     }
   }
   .bar-title {

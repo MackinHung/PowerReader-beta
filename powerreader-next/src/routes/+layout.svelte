@@ -262,8 +262,13 @@
     />
   {/if}
 
-  <div class="desktop-main" class:has-sidebar={showNav} class:sidebar-expanded={showNav && media.sidebarExpanded} class:sidebar-rail={showNav && !media.sidebarExpanded}>
-    <TopAppBar {title} {showBack} onback={() => history.back()} showMenuToggle={showNav} ontoggle={media.toggleSidebar} />
+  <div class="desktop-main"
+       class:has-sidebar={showNav}
+       class:sidebar-expanded={showNav && media.sidebarExpanded}
+       class:sidebar-rail={showNav && !media.sidebarExpanded}
+       style="--sidebar-offset: {showNav ? (media.sidebarExpanded ? '280px' : '72px') : '0px'}">
+       
+    <TopAppBar {title} {showBack} onback={() => history.back()} showMenuToggle={false} />
 
     <main class="page-content desktop-page">
       <div class="content-wrapper">
@@ -353,16 +358,6 @@
   }
   .desktop-main.sidebar-rail {
     margin-left: 72px;
-  }
-  @media (min-width: 768px) {
-    :global(.desktop-main .md-top-app-bar) {
-      left: 72px !important;
-      width: calc(100% - 72px) !important;
-    }
-    :global(.desktop-main.sidebar-expanded .md-top-app-bar) {
-      left: 280px !important;
-      width: calc(100% - 280px) !important;
-    }
   }
   .content-wrapper {
     max-width: var(--content-max-width);
