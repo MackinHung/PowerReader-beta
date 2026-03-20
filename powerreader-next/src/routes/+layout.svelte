@@ -5,11 +5,15 @@
   import TopAppBar from '$lib/components/ui/TopAppBar.svelte';
   import Sidebar from '$lib/components/ui/Sidebar.svelte';
   import Snackbar from '$lib/components/ui/Snackbar.svelte';
+  import { goto } from '$app/navigation';
   import { getMediaQueryStore } from '$lib/stores/mediaQuery.svelte.js';
+  import { getAuthStore } from '$lib/stores/auth.svelte.js';
+  import { showSnackbar } from '$lib/components/ui/Snackbar.svelte';
   import '../app.css';
 
   let { children } = $props();
   const media = getMediaQueryStore();
+  const authStore = getAuthStore();
 
   // Lazy-load GlobalAutoRunnerBar to avoid pulling in heavy inference chain
   let AutoRunnerBar = $state(null);
@@ -58,6 +62,7 @@
   let isOnline = $state(true);
   let pendingSyncCount = $state(0);
   let snackbarMessage = $state('');
+  let showLoginDialog = $state(false);
 
   // Online/offline detection (no reactive deps — runs once)
   $effect(() => {
@@ -156,15 +161,53 @@
     };
   });
 
-  // Auto-analysis button handler (lazy-loaded to avoid pulling heavy inference chain)
+  // Auto-analysis button handler with precondition checks
   async function handleAutoAnalysis() {
     const { getAnalysisStore } = await import('$lib/stores/analysis.svelte.js');
     const store = getAnalysisStore();
+
+    // Already running — just expand the status bar
     if (store.isAutoRunning || store.isAutoPaused) {
       window.dispatchEvent(new CustomEvent('pr:expand-auto-bar'));
-    } else {
-      await store.startAuto();
+      return;
     }
+
+    // Check: mobile device
+    const { isMobileDevice } = await import('$lib/utils/device-detect.js');
+    if (isMobileDevice()) {
+      showSnackbar('行動裝置不支援自動分析，請使用電腦');
+      return;
+    }
+
+    // Check: WebGPU
+    const { hasWebGPU } = await import('$lib/core/inference.js');
+    if (!await hasWebGPU()) {
+      showSnackbar('您的瀏覽器不支援 WebGPU，無法執行本地分析');
+      return;
+    }
+
+    // Check: auth
+    if (!authStore.isAuthenticated) {
+      showLoginDialog = true;
+      return;
+    }
+
+    // Check: model downloaded
+    if (localStorage.getItem('powerreader_webllm_cached') !== '1') {
+      showSnackbar('請先下載 AI 模型', {
+        action: { label: '前往設定', onclick: () => goto('/settings') }
+      });
+      return;
+    }
+
+    // All checks passed — start
+    await store.startAuto();
+  }
+
+  function handleLoginRedirect() {
+    const apiOrigin = 'https://powerreader-api.watermelom5404.workers.dev';
+    const callbackUrl = `${window.location.origin}/auth/callback`;
+    window.location.href = `${apiOrigin}/api/v1/auth/google?redirect=${encodeURIComponent(callbackUrl)}`;
   }
 
   // Keyboard shortcuts
@@ -240,6 +283,27 @@
 {#if AutoRunnerBar}
   <svelte:component this={AutoRunnerBar} />
 {/if}
+
+{#if showLoginDialog}
+  <div class="login-dialog-backdrop" onclick={() => showLoginDialog = false}>
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <div class="login-dialog" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+      <span class="material-symbols-outlined login-dialog-icon">login</span>
+      <h3 class="login-dialog-title">請先登入</h3>
+      <p class="login-dialog-text">登入後才能使用自動分析功能</p>
+      <div class="login-dialog-actions">
+        <button class="login-dialog-btn primary" onclick={handleLoginRedirect}>
+          <span class="material-symbols-outlined">account_circle</span>
+          使用 Google 登入
+        </button>
+        <button class="login-dialog-btn text" onclick={() => showLoginDialog = false}>
+          稍後再說
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
 <Snackbar />
 
 <style>
@@ -314,5 +378,74 @@
   @keyframes snackbar-in {
     from { transform: translateX(-50%) translateY(100%); opacity: 0; }
     to { transform: translateX(-50%) translateY(0); opacity: 1; }
+  }
+  /* Login dialog */
+  .login-dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .login-dialog {
+    background: var(--md-sys-color-surface-container-high);
+    border-radius: var(--md-sys-shape-corner-large);
+    padding: 24px;
+    max-width: 360px;
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    text-align: center;
+  }
+  .login-dialog-icon {
+    font-size: 40px;
+    color: var(--md-sys-color-primary);
+  }
+  .login-dialog-title {
+    margin: 0;
+    font: var(--md-sys-typescale-title-large-font);
+    color: var(--md-sys-color-on-surface);
+  }
+  .login-dialog-text {
+    margin: 0;
+    font: var(--md-sys-typescale-body-medium-font);
+    color: var(--md-sys-color-on-surface-variant);
+  }
+  .login-dialog-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    margin-top: 8px;
+  }
+  .login-dialog-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    border-radius: var(--md-sys-shape-corner-full);
+    cursor: pointer;
+    font: var(--md-sys-typescale-label-large-font);
+    padding: 12px 24px;
+  }
+  .login-dialog-btn.primary {
+    background: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
+  }
+  .login-dialog-btn.primary:hover {
+    box-shadow: var(--md-sys-elevation-1);
+  }
+  .login-dialog-btn.text {
+    background: transparent;
+    color: var(--md-sys-color-primary);
+  }
+  .login-dialog-btn.text:hover {
+    background: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
   }
 </style>
