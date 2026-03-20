@@ -1,6 +1,7 @@
 <script>
   import { goto } from '$app/navigation';
   import { untrack } from 'svelte';
+  import Chip from '$lib/components/ui/Chip.svelte';
   import { KnowledgeCard } from '$lib/components/knowledge/index.js';
   import { getKnowledgeStore } from '$lib/stores/knowledge.svelte.js';
   import { isFigureType, isIssueType } from '$lib/utils/knowledge-constants.js';
@@ -30,6 +31,38 @@
   let searchInput = $state('');
   let searchTimeout = null;
 
+  // Infinite scroll: show N entries at a time
+  const PAGE_SIZE = 20;
+  let visibleCount = $state(PAGE_SIZE);
+  let sentinelEl = $state(null);
+
+  // Reset visible count when filters change
+  $effect(() => {
+    // Read reactive deps
+    store.activeType;
+    store.activeParty;
+    store.searchQuery;
+    visibleCount = PAGE_SIZE;
+  });
+
+  // IntersectionObserver for load-more
+  $effect(() => {
+    if (!sentinelEl) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          visibleCount += PAGE_SIZE;
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(sentinelEl);
+    return () => observer.disconnect();
+  });
+
+  let visibleEntries = $derived(store.entries.slice(0, visibleCount));
+  let hasMore = $derived(visibleCount < store.entries.length);
+
   function handleSearchInput(e) {
     searchInput = e.target.value;
     clearTimeout(searchTimeout);
@@ -41,11 +74,6 @@
   function clearSearch() {
     searchInput = '';
     store.setSearch('');
-  }
-
-  function getTypeCount(type) {
-    if (type === 'all') return store.allEntries.length;
-    return store.typeCounts[type] || 0;
   }
 
   // Load knowledge data on mount
@@ -73,34 +101,28 @@
     {/if}
   </div>
 
-  <!-- Type Chips -->
-  <div class="chip-row" role="tablist" aria-label={t('knowledge.filter_type')}>
+  <!-- Type Chips (matching home page style) -->
+  <div class="filter-chips">
     {#each TYPE_TABS as tab (tab.key)}
-      <button
-        class="chip"
-        class:active={store.activeType === tab.key}
+      <Chip
+        label={tab.label()}
+        selected={store.activeType === tab.key}
         onclick={() => store.setType(tab.key)}
-        role="tab"
-        aria-selected={store.activeType === tab.key}
-      >
-        {tab.label()}
-      </button>
+        mode="tab"
+      />
     {/each}
   </div>
 
   <!-- Party Chips (conditional) -->
   {#if showPartyFilter}
-    <div class="chip-row party-chips" role="tablist" aria-label={t('knowledge.filter_party')}>
+    <div class="filter-chips party-chips">
       {#each PARTY_TABS as tab (tab.key)}
-        <button
-          class="chip chip-party"
-          class:active={store.activeParty === tab.key}
+        <Chip
+          label={tab.label()}
+          selected={store.activeParty === tab.key}
           onclick={() => store.setParty(tab.key)}
-          role="tab"
-          aria-selected={store.activeParty === tab.key}
-        >
-          {tab.label()}
-        </button>
+          mode="tab"
+        />
       {/each}
     </div>
   {/if}
@@ -134,13 +156,16 @@
       {t('knowledge.results_count', { count: store.entries.length })}
     </div>
     <div class="knowledge-grid">
-      {#each store.entries as entry (entry.id)}
+      {#each visibleEntries as entry (entry.id)}
         <KnowledgeCard
           {entry}
           onclick={() => goto(`/knowledge/${entry.id}`)}
         />
       {/each}
     </div>
+    {#if hasMore}
+      <div bind:this={sentinelEl} class="scroll-sentinel"></div>
+    {/if}
   {/if}
 </div>
 
@@ -198,50 +223,15 @@
     background: var(--md-sys-color-surface-container-high);
   }
 
-  /* Chips */
-  .chip-row {
+  /* Filter chips — matches home page .category-chips */
+  .filter-chips {
     display: flex;
     gap: 8px;
     overflow-x: auto;
     scrollbar-width: none;
-    -ms-overflow-style: none;
-    padding: 2px 0;
+    padding: 4px 0;
   }
-  .chip-row::-webkit-scrollbar { display: none; }
-
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    height: 32px;
-    padding: 0 16px;
-    border-radius: 0;
-    border: 3px solid var(--pr-ink);
-    box-shadow: 2px 2px 0px var(--pr-ink);
-    background: #FFFFFF;
-    color: #000000;
-    font: 900 14px var(--pr-font-sans);
-    cursor: pointer;
-    white-space: nowrap;
-    flex-shrink: 0;
-    transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
-  }
-  .chip:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 4px 4px 0px var(--pr-ink);
-  }
-  .chip:active {
-    transform: translate(2px, 2px);
-    box-shadow: 0px 0px 0px var(--pr-ink);
-  }
-  .chip.active {
-    background: #000000;
-    color: #FFFFFF;
-  }
-  .chip-count {
-    font: var(--md-sys-typescale-label-small-font);
-    opacity: 0.8;
-  }
-
+  .filter-chips::-webkit-scrollbar { display: none; }
   .party-chips {
     margin-top: -4px;
   }
@@ -299,5 +289,8 @@
   .retry-btn:hover {
     transform: translate(-2px, -2px);
     box-shadow: 4px 4px 0px var(--pr-ink);
+  }
+  .scroll-sentinel {
+    height: 1px;
   }
 </style>

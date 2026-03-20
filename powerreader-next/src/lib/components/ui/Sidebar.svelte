@@ -111,7 +111,6 @@
     display: flex;
     flex-direction: column;
     background: #000000;
-    border-right: 4px solid var(--pr-ink);
     z-index: 200;
     transition: width var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized);
     overflow: hidden;

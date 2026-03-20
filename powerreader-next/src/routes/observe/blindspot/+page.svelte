@@ -60,6 +60,7 @@
         label={src.label}
         selected={selectedSource === src.value}
         onclick={() => selectedSource = src.value}
+        mode="tab"
       />
     {/each}
   </div>
