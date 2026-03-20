@@ -11,7 +11,6 @@ import {
   parseSourcesJson,
   getArticleAnalysisStatus,
   buildShareData,
-  getControversyTier,
 } from '../../src/lib/pages/event-detail.js';
 
 // ── Test Data Factory ──
@@ -27,7 +26,6 @@ const makeCluster = (overrides = {}) => ({
     { source: 'liberty_times', count: 4 },
     { source: 'china_times', count: 3 },
   ]),
-  avg_controversy_score: 65,
   earliest_published_at: '2026-03-18T06:00:00Z',
   latest_published_at: '2026-03-18T14:00:00Z',
   is_blindspot: false,
@@ -294,57 +292,3 @@ describe('buildShareData', () => {
   });
 });
 
-// ══════════════════════════════════════════════
-// 7. getControversyTier
-// ══════════════════════════════════════════════
-
-describe('getControversyTier', () => {
-  it('returns null for null score', () => {
-    expect(getControversyTier(null)).toBeNull();
-  });
-
-  it('returns null for undefined score', () => {
-    expect(getControversyTier(undefined)).toBeNull();
-  });
-
-  it('returns "低" for score 15', () => {
-    const tier = getControversyTier(15);
-    expect(tier.label).toBe('低');
-    expect(tier.color).toBe('#4CAF50');
-    expect(tier.score).toBe(15);
-  });
-
-  it('returns "中低" for score 30', () => {
-    expect(getControversyTier(30).label).toBe('中低');
-  });
-
-  it('returns "中" for score 50', () => {
-    expect(getControversyTier(50).label).toBe('中');
-  });
-
-  it('returns "中高" for score 75', () => {
-    expect(getControversyTier(75).label).toBe('中高');
-  });
-
-  it('returns "高" for score 95', () => {
-    const tier = getControversyTier(95);
-    expect(tier.label).toBe('高');
-    expect(tier.color).toBe('#F44336');
-  });
-
-  it('returns "低" for score 0', () => {
-    expect(getControversyTier(0).label).toBe('低');
-  });
-
-  it('returns "高" for score 100', () => {
-    expect(getControversyTier(100).label).toBe('高');
-  });
-
-  it('handles boundary: score exactly 20 → "低"', () => {
-    expect(getControversyTier(20).label).toBe('低');
-  });
-
-  it('handles boundary: score 21 → "中低"', () => {
-    expect(getControversyTier(21).label).toBe('中低');
-  });
-});

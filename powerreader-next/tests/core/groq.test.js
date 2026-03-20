@@ -9,19 +9,19 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // ── Mock prompt.js and output-parser.js ──
 vi.mock('$lib/core/prompt.js', () => ({
   assembleScoreSystemPrompt: vi.fn(() => 'score system prompt'),
-  assembleNarrativeSystemPrompt: vi.fn((b, c) => `narrative prompt bs=${b} cs=${c}`),
+  assembleNarrativeSystemPrompt: vi.fn(() => 'narrative prompt'),
   assembleUserMessage: vi.fn(() => 'user message content')
 }));
 
 vi.mock('$lib/core/output-parser.js', () => ({
   parseScoreOutput: vi.fn((raw) => ({
     bias_score: 35,
-    controversy_score: 65,
     camp_ratio: { green: 40, white: 20, blue: 30, gray: 10 }
   })),
   parseNarrativeOutput: vi.fn((raw) => ({
     points: ['重點1', '重點2', '重點3'],
-    key_phrases: ['關鍵詞1', '關鍵詞2']
+    key_phrases: ['關鍵詞1', '關鍵詞2'],
+    stances: {}
   }))
 }));
 
@@ -131,12 +131,12 @@ describe('runGroqAnalysis', () => {
     const result = await runGroqAnalysis(article, [], 'gsk_testkey123');
 
     expect(result.bias_score).toBe(35);
-    expect(result.controversy_score).toBe(65);
     expect(result.points).toEqual(['重點1', '重點2', '重點3']);
     expect(result.key_phrases).toEqual(['關鍵詞1', '關鍵詞2']);
+    expect(result.stances).toEqual({});
     expect(result.mode).toBe('groq');
     expect(typeof result.latency_ms).toBe('number');
-    expect(result.prompt_version).toBe('v4.1.0');
+    expect(result.prompt_version).toBe('v4.2.0');
   });
 
   it('uses provided apiKey and model', async () => {
@@ -184,9 +184,9 @@ describe('runGroqAnalysis', () => {
     const pass1Body = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(pass1Body.messages[0].content).toBe('score system prompt');
 
-    // Pass 2 should use narrative prompt with scores from pass 1
+    // Pass 2 should use narrative prompt (no score parameters)
     const pass2Body = JSON.parse(mockFetch.mock.calls[1][1].body);
-    expect(pass2Body.messages[0].content).toBe('narrative prompt bs=35 cs=65');
+    expect(pass2Body.messages[0].content).toBe('narrative prompt');
   });
 
   it('has _debug field with raw responses', async () => {

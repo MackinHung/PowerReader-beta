@@ -82,13 +82,6 @@
   --camp-blue: #1565C0;
   --camp-blue-light: #90CAF9;
 
-  /* Controversy Colors */
-  --controversy-low: #28A745;
-  --controversy-moderate: #FFC107;
-  --controversy-high: #FD7E14;
-  --controversy-very-high: #DC3545;
-  --controversy-extreme: #6F42C1;
-
   /* Stance Colors (Issue Position — party gradients) */
   --stance-dpp-deep: #1B5E20;
   --stance-dpp-light: #A5D6A7;
@@ -246,12 +239,6 @@ body {
 @keyframes slide-in-top {
   from { transform: translateY(-100%); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
-}
-
-/* Deep analysis glow for ControversyPulse */
-@keyframes analysis-glow {
-  0%, 100% { box-shadow: 0 0 6px rgba(212, 184, 122, 0.3); }
-  50% { box-shadow: 0 0 16px rgba(212, 184, 122, 0.6); }
 }
 
 /* Reduced motion */

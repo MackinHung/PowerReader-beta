@@ -16,7 +16,6 @@ const makeCluster = (overrides = {}) => ({
 		{ source: 'cna', count: 2 },
 		{ source: 'udn', count: 1 },
 	]),
-	avg_controversy_score: 45,
 	earliest_published_at: '2026-03-18T06:00:00Z',
 	latest_published_at: '2026-03-18T10:00:00Z',
 	is_blindspot: false,
@@ -47,21 +46,16 @@ describe('ClusterCardV2', () => {
 		expect(screen.queryByText('媒體陣營')).toBeNull();
 	});
 
-	it('renders ControversyPulse with score', () => {
-		render(ClusterCardV2, { props: { cluster: makeCluster({ avg_controversy_score: 72 }) } });
-		expect(screen.getByText('72')).toBeTruthy();
-	});
-
-	it('has hot class when controversy > 60', () => {
+	it('has hot class when avg_emotion_intensity > 60', () => {
 		const { container } = render(ClusterCardV2, {
-			props: { cluster: makeCluster({ avg_controversy_score: 75 }) }
+			props: { cluster: makeCluster({ avg_emotion_intensity: 80 }) }
 		});
 		expect(container.querySelector('.hot')).toBeTruthy();
 	});
 
-	it('no hot class when controversy <= 60', () => {
+	it('no hot class when avg_emotion_intensity <= 60', () => {
 		const { container } = render(ClusterCardV2, {
-			props: { cluster: makeCluster({ avg_controversy_score: 40 }) }
+			props: { cluster: makeCluster({ avg_emotion_intensity: 40 }) }
 		});
 		expect(container.querySelector('.hot')).toBeNull();
 	});

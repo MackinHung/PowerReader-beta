@@ -3,7 +3,6 @@
   import Chip from '$lib/components/ui/Chip.svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import BiasSpectrum from '$lib/components/data-viz/BiasSpectrum.svelte';
-  import ControversyMeter from '$lib/components/data-viz/ControversyMeter.svelte';
   import CampBar from '$lib/components/data-viz/CampBar.svelte';
   import EmotionMeter from '$lib/components/data-viz/EmotionMeter.svelte';
   import { t } from '$lib/i18n/zh-TW.js';
@@ -26,12 +25,6 @@
       <div class="viz-item">
         <span class="viz-label">立場偏向</span>
         <BiasSpectrum score={result.bias_score} />
-      </div>
-    {/if}
-    {#if result.controversy_score != null}
-      <div class="viz-item">
-        <span class="viz-label">爭議程度</span>
-        <ControversyMeter level={result.controversy_score} />
       </div>
     {/if}
   </div>
@@ -58,6 +51,18 @@
       <span class="section-label">論述重點</span>
       {#each result.points as point}
         <p class="point-item">{point}</p>
+      {/each}
+    </div>
+  {/if}
+
+  {#if result.stances && Object.keys(result.stances).length > 0}
+    <div class="stances-section">
+      <span class="section-label">各方立場</span>
+      {#each Object.entries(result.stances) as [party, stance]}
+        <div class="stance-item">
+          <span class="stance-party">{party}</span>
+          <span class="stance-desc">{stance}</span>
+        </div>
       {/each}
     </div>
   {/if}
@@ -149,6 +154,32 @@
   }
   .source-attribution .material-symbols-outlined {
     font-size: 16px;
+  }
+  .stances-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .stance-item {
+    display: flex;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  }
+  .stance-item:last-child {
+    border-bottom: none;
+  }
+  .stance-party {
+    font: var(--md-sys-typescale-label-medium-font);
+    font-weight: 600;
+    color: var(--md-sys-color-on-surface);
+    min-width: 60px;
+    flex-shrink: 0;
+  }
+  .stance-desc {
+    font: var(--md-sys-typescale-body-medium-font);
+    color: var(--md-sys-color-on-surface-variant);
+    line-height: 1.5;
   }
   .actions {
     display: flex;

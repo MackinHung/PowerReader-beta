@@ -27,7 +27,6 @@ function makeArticle(id, source) {
 function makeAnalysis(overrides = {}) {
   return {
     bias_score: 50,
-    controversy_score: 30,
     camp_ratio: { green: 20, white: 20, blue: 20, gray: 40 },
     is_political: true,
     emotion_intensity: 50,
@@ -208,9 +207,9 @@ describe('computeCampStatistics', () => {
     // All articles in "green" camp
     const greenRatio = { green: 60, white: 10, blue: 10, gray: 20 };
     const analyses = new Map([
-      ['a1', makeAnalysis({ bias_score: 10, controversy_score: 20, emotion_intensity: 30, camp_ratio: greenRatio })],
-      ['a2', makeAnalysis({ bias_score: 20, controversy_score: 40, emotion_intensity: 60, camp_ratio: greenRatio })],
-      ['a3', makeAnalysis({ bias_score: 30, controversy_score: 60, emotion_intensity: 90, camp_ratio: greenRatio })],
+      ['a1', makeAnalysis({ bias_score: 10, emotion_intensity: 30, camp_ratio: greenRatio })],
+      ['a2', makeAnalysis({ bias_score: 20, emotion_intensity: 60, camp_ratio: greenRatio })],
+      ['a3', makeAnalysis({ bias_score: 30, emotion_intensity: 90, camp_ratio: greenRatio })],
     ]);
 
     const result = computeCampStatistics(articles, analyses);
@@ -218,7 +217,6 @@ describe('computeCampStatistics', () => {
     expect(result[0].camp).toBe('green');
     expect(result[0].article_count).toBe(3);
     expect(result[0].avg_bias_score).toBe(20); // (10+20+30)/3 = 20
-    expect(result[0].avg_controversy_score).toBe(40); // (20+40+60)/3 = 40
     expect(result[0].avg_emotion_intensity).toBe(60); // (30+60+90)/3 = 60
     expect(result[0].sources).toContain('src1');
     expect(result[0].sources).toContain('src2');

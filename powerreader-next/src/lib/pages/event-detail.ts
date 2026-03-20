@@ -26,13 +26,6 @@ interface SourceEntry {
   count: number;
 }
 
-interface ControversyTierResult {
-  max: number;
-  color: string;
-  label: string;
-  score: number;
-}
-
 interface ShareData {
   title: string;
   text: string;
@@ -109,19 +102,3 @@ export function buildShareData(cluster: ClusterInfo | null, clusterId: string): 
   return { title, text, url };
 }
 
-// ── Controversy ──
-
-const CONTROVERSY_TIERS = [
-  { max: 20, color: '#4CAF50', label: '低' },
-  { max: 40, color: '#8BC34A', label: '中低' },
-  { max: 60, color: '#FFC107', label: '中' },
-  { max: 80, color: '#FF9800', label: '中高' },
-  { max: 100, color: '#F44336', label: '高' },
-];
-
-export function getControversyTier(score: number | null | undefined): ControversyTierResult | null {
-  if (score == null) return null;
-  const tier = CONTROVERSY_TIERS.find(t => score <= t.max);
-  if (!tier) return { ...CONTROVERSY_TIERS[4], score };
-  return { ...tier, score };
-}

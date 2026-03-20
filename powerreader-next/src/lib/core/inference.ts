@@ -4,8 +4,8 @@
  * Fallback chain: WebGPU (WebLLM) -> Server (Cloudflare Workers AI)
  *
  * Dual-Pass Architecture:
- *   Pass 1: Score extraction (bias_score + controversy_score)
- *   Pass 2: Narrative analysis (3-5 key points, informed by Pass 1)
+ *   Pass 1: Score extraction (bias_score, camp_ratio, emotion_intensity)
+ *   Pass 2: Narrative analysis (3-5 key points + stances)
  *
  * Config:
  *   - Model: Qwen3-4B-q4f16_1-MLC (3.4GB, WebGPU)
@@ -315,11 +315,11 @@ async function runWebLLMInference(article: Article, knowledgeEntries: KnowledgeE
     throw new Error('inference_cancelled');
   }
 
-  // Phase 2: Narrative analysis (informed by Pass 1 scores, 2x timeout)
+  // Phase 2: Narrative analysis (2x timeout)
   updateStatus('pass2_running', 0);
   const pass2Start = Date.now();
   const pass2Timeout = getTimeoutForTier(tier) * 2;
-  const pass2SystemPrompt = assembleNarrativeSystemPrompt(scores.bias_score, scores.controversy_score) + QWEN3_NO_THINK;
+  const pass2SystemPrompt = assembleNarrativeSystemPrompt() + QWEN3_NO_THINK;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let pass2Response: any;
@@ -347,7 +347,8 @@ async function runWebLLMInference(article: Article, knowledgeEntries: KnowledgeE
       reasoning: '',
       key_phrases: [],
       source_attribution: `資料來源：${article.source || '未知'}`,
-      prompt_version: 'v4.1.0',
+      stances: {},
+      prompt_version: 'v4.2.0',
       mode: 'webgpu',
       latency_ms: 0,
       fingerprint: buildFingerprint({
@@ -375,9 +376,8 @@ async function runWebLLMInference(article: Article, knowledgeEntries: KnowledgeE
     ? narrative.key_phrases
     : narrative.points.slice(0, 5).map(p => p.slice(0, 20).replace(/[，。！？,\.!?\s]+$/, ''));
 
-  // Fallback: derive source_attribution from article.source if model didn't provide it
-  const source_attribution = narrative.source_attribution
-    || `資料來源：${article.source || '未知'}`;
+  // source_attribution derived from article.source (no longer in prompt)
+  const source_attribution = `資料來源：${article.source || '未知'}`;
 
   const promptHash = await hashPrompts(pass1SystemPrompt, pass2SystemPrompt, userMessage);
 
@@ -387,7 +387,8 @@ async function runWebLLMInference(article: Article, knowledgeEntries: KnowledgeE
     reasoning: narrative.points.join('\n'),
     key_phrases,
     source_attribution,
-    prompt_version: 'v4.1.0',
+    stances: narrative.stances,
+    prompt_version: 'v4.2.0',
     mode: 'webgpu',
     latency_ms: 0,
     fingerprint: buildFingerprint({
@@ -441,7 +442,6 @@ async function runServerInference(article: Article, knowledgeEntries: KnowledgeE
 
   return {
     bias_score: data.bias_score ?? 50,
-    controversy_score: data.controversy_score ?? 0,
     camp_ratio: data.camp_ratio ?? null,
     is_political: data.is_political ?? true,
     emotion_intensity: data.emotion_intensity ?? 50,
@@ -449,6 +449,7 @@ async function runServerInference(article: Article, knowledgeEntries: KnowledgeE
     reasoning: data.reasoning || '',
     key_phrases: data.key_phrases || [],
     source_attribution: data.source_attribution || `資料來源：${article.source || '未知'}`,
+    stances: data.stances || {},
     prompt_version: data.prompt_version || 'server',
     mode: 'server',
     latency_ms: 0,

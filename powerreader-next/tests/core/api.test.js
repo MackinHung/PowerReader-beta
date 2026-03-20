@@ -513,7 +513,7 @@ describe('submitAnalysisResult', () => {
       json: vi.fn().mockResolvedValue({ success: true, data: { id: 'analysis1' } }),
     });
 
-    const payload = { bias_score: 65, controversy_score: 40 };
+    const payload = { bias_score: 65 };
     await apiModule.submitAnalysisResult('art1', payload, 'my-token');
 
     const [url, opts] = globalThis.fetch.mock.calls[0];

@@ -7,7 +7,6 @@
   import SourceBadge from '$lib/components/article/SourceBadge.svelte';
   import BiasSpectrum from '$lib/components/data-viz/BiasSpectrum.svelte';
   import CampBar from '$lib/components/data-viz/CampBar.svelte';
-  import ControversyMeter from '$lib/components/data-viz/ControversyMeter.svelte';
   import KnowledgePanel from '$lib/components/article/KnowledgePanel.svelte';
   import ArticleCluster from '$lib/components/article/ArticleCluster.svelte';
   import ProgressIndicator from '$lib/components/ui/ProgressIndicator.svelte';
@@ -223,10 +222,6 @@
             />
           </div>
         </Card>
-      {/if}
-
-      {#if article.controversy_score != null}
-        <ControversyMeter level={article.controversy_score} />
       {/if}
 
       <!-- Knowledge Panel -->

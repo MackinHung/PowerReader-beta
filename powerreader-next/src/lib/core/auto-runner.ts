@@ -388,24 +388,23 @@ async function _processArticle(article: Article): Promise<ProcessStatus> {
     // Build submission payload
     const payload = {
       bias_score: analysisResult.bias_score,
-      controversy_score: analysisResult.controversy_score,
       is_political: analysisResult.is_political ?? true,
       emotion_intensity: analysisResult.emotion_intensity ?? 50,
       reasoning: analysisResult.reasoning || '',
       key_phrases: analysisResult.key_phrases || [],
       narrative_points: analysisResult.points || [],
-      prompt_version: analysisResult.prompt_version || 'v4.0.0',
+      prompt_version: analysisResult.prompt_version || 'v4.2.0',
       analysis_duration_ms: analysisResult.latency_ms || 0,
       inference_mode: analysisResult.mode || 'unknown',
       user_hash: getUserHash() || ''
     };
 
     // Validate basic format
-    if (payload.bias_score == null || payload.controversy_score == null) {
+    if (payload.bias_score == null) {
       return { type: 'failed_format', error: 'Missing scores' };
     }
 
-    if (typeof payload.bias_score !== 'number' || typeof payload.controversy_score !== 'number') {
+    if (typeof payload.bias_score !== 'number') {
       return { type: 'failed_format', error: 'Invalid score types' };
     }
 

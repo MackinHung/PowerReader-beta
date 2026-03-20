@@ -7,7 +7,6 @@
   import Card from '$lib/components/ui/Card.svelte';
   import CampBar from '$lib/components/data-viz/CampBar.svelte';
   import SourceDots from '$lib/components/data-viz/SourceDots.svelte';
-  import ControversyHeat from '$lib/components/data-viz/ControversyHeat.svelte';
   import ClusterTimeline from '$lib/components/data-viz/ClusterTimeline.svelte';
 
   let { cluster = {}, onclick } = $props();
@@ -69,13 +68,8 @@
         </div>
       {/if}
 
-      <!-- Footer: controversy + timeline -->
+      <!-- Footer: timeline -->
       <div class="cluster-footer">
-        {#if cluster.avg_controversy_score != null}
-          <div class="heat-section">
-            <ControversyHeat score={cluster.avg_controversy_score} />
-          </div>
-        {/if}
         <ClusterTimeline
           earliest={cluster.earliest_published_at}
           latest={cluster.latest_published_at}

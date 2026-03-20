@@ -5,11 +5,10 @@
    * Issue stance shown via StancePrism (AI-analyzed, not pre-labeled).
    *
    * Visual states:
-   *   - Hot:   warm glow shadow + ControversyPulse animation
+   *   - Hot:   warm glow shadow (emotion_intensity > 60)
    *   - Calm:  flat, balanced colors
    */
   import Card from '$lib/components/ui/Card.svelte';
-  import ControversyPulse from '$lib/components/data-viz/ControversyPulse.svelte';
   import StancePrism from '$lib/components/data-viz/StancePrism.svelte';
   import SourceBadge from './SourceBadge.svelte';
   import ClusterTimeline from '$lib/components/data-viz/ClusterTimeline.svelte';
@@ -24,8 +23,8 @@
   let sources = $derived(safeJsonParse(cluster.sources_json, []));
   let avgCampRatio = $derived(safeJsonParse(cluster.avg_camp_ratio, null));
 
-  let controversy = $derived(cluster.avg_controversy_score ?? 0);
-  let isHot = $derived(controversy > 60);
+  let emotionAvg = $derived(cluster.avg_emotion_intensity ?? 0);
+  let isHot = $derived(emotionAvg > 60);
 
   // Compact source list (max 5 for inline display)
   let compactSources = $derived(() => {
@@ -61,9 +60,6 @@
           {/if}
           <span class="meta">{cluster.article_count ?? 0} 篇 · {cluster.source_count ?? 0} 家媒體</span>
         </div>
-        {#if controversy > 0}
-          <ControversyPulse score={controversy} />
-        {/if}
       </div>
 
       <!-- Title -->

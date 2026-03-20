@@ -220,7 +220,7 @@
             const elapsed = ((Date.now() - startMs) / 1000).toFixed(1);
 
             addLog('success',
-              `✅ "${(article.title || '').slice(0, 30)}..." bs=${result.bias_score} cs=${result.controversy_score} (${elapsed}s)`
+              `✅ "${(article.title || '').slice(0, 30)}..." bs=${result.bias_score} ei=${result.emotion_intensity} (${elapsed}s)`
             );
 
             // Submit to backend
@@ -271,11 +271,10 @@
 
     const payload = {
       bias_score: result.bias_score,
-      controversy_score: result.controversy_score,
       reasoning: result.reasoning || '',
       key_phrases: result.key_phrases || [],
       narrative_points: result.points || [],
-      prompt_version: result.prompt_version || 'v3.0.0',
+      prompt_version: result.prompt_version || 'v4.2.0',
       analysis_duration_ms: result.latency_ms || 0,
       inference_mode: 'groq',
       user_hash: getUserHash() || ''
@@ -551,7 +550,6 @@
                 {/if}
                 {#if prog?.results?.length > 0}
                   {@const avgBias = Math.round(prog.results.reduce((s, r) => s + (r.bias_score || 50), 0) / prog.results.length)}
-                  {@const avgControversy = Math.round(prog.results.reduce((s, r) => s + (r.controversy_score || 0), 0) / prog.results.length)}
                   {@const campTotals = prog.results.reduce((acc, r) => {
                     if (r.camp_ratio) {
                       acc.green += r.camp_ratio.green || 0;
@@ -561,7 +559,7 @@
                     return acc;
                   }, { green: 0, white: 0, blue: 0 })}
                   <div class="cluster-stats">
-                    <span>平均 bias={avgBias} controversy={avgControversy}</span>
+                    <span>平均 bias={avgBias}</span>
                   </div>
                   {#if campTotals.green + campTotals.white + campTotals.blue > 0}
                     <div class="mini-camp">

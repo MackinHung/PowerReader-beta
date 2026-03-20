@@ -44,7 +44,7 @@ export function formatBenchmarkDate(isoString: string | null | undefined): strin
 
 export function formatBenchmarkMode(mode: string): { text: string; color: string } {
   if (mode === 'gpu') {
-    return { text: t('settings.hw.mode_gpu'), color: 'var(--color-controversy-low)' };
+    return { text: t('settings.hw.mode_gpu'), color: '#28A745' };
   }
   if (mode === 'cpu') {
     return { text: t('settings.hw.mode_cpu'), color: 'var(--color-text-secondary)' };

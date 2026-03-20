@@ -8,7 +8,7 @@
  * @license AGPL-3.0
  */
 
-import type { BiasCategory, ControversyLevel } from '$lib/types/models.js';
+import type { BiasCategory } from '$lib/types/models.js';
 
 // Bias boundaries: [5, 40, 48, 52, 60, 95]
 // Categories: extreme_left | left | center_left | center | center_right | right | extreme_right
@@ -21,19 +21,4 @@ export function getBiasCategoryFromScore(score: number): BiasCategory {
   if (score <= 60) return 'center_right';
   if (score <= 95) return 'right';
   return 'extreme_right';
-}
-
-// Controversy boundaries: [20, 40, 60, 80] — aligned with prompt 5-level scale
-// 0-20: non_political (非政治或日常社會)
-// 21-40: general_policy (一般政策)
-// 41-60: partisan_clash (政黨交鋒)
-// 61-80: core_conflict (核心對立議題)
-// 81-100: national_security (國安外交重大爭議)
-
-export function getControversyLevelFromScore(score: number): ControversyLevel {
-  if (score <= 20) return 'non_political';
-  if (score <= 40) return 'general_policy';
-  if (score <= 60) return 'partisan_clash';
-  if (score <= 80) return 'core_conflict';
-  return 'national_security';
 }

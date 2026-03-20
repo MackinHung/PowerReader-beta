@@ -1,8 +1,8 @@
 /**
  * PowerReader - Dual-Pass Output Parser
  *
- * Pass 1: parseScoreOutput()  → { bias_score, controversy_score }
- * Pass 2: parseNarrativeOutput() → { points: string[] }
+ * Pass 1: parseScoreOutput()  → { bias_score, camp_ratio, emotion_intensity }
+ * Pass 2: parseNarrativeOutput() → { points, key_phrases, stances }
  *
  * Handles partial/malformed JSON gracefully with defaults.
  * Attempts single-quote fix for 4B model quirks.
@@ -16,7 +16,6 @@ import type { CampRatio } from '$lib/types/api.js';
 
 const SCORE_DEFAULTS: ScoreOutput = {
   bias_score: 50,
-  controversy_score: 0,
   camp_ratio: null,
   is_political: true,
   emotion_intensity: 50
@@ -25,7 +24,7 @@ const SCORE_DEFAULTS: ScoreOutput = {
 const NARRATIVE_DEFAULTS: NarrativeOutput = {
   points: [],
   key_phrases: [],
-  source_attribution: ''
+  stances: {}
 };
 
 /**
@@ -113,9 +112,6 @@ export function parseScoreOutput(rawOutput: string): ScoreOutput {
   const biasRaw = typeof parsed.bias_score === 'number' ? parsed.bias_score : SCORE_DEFAULTS.bias_score;
   const bias_score = Math.round(Math.max(0, Math.min(100, biasRaw)));
 
-  const contRaw = typeof parsed.controversy_score === 'number' ? parsed.controversy_score : SCORE_DEFAULTS.controversy_score;
-  const controversy_score = Math.round(Math.max(0, Math.min(100, contRaw)));
-
   const camp_ratio = parseCampRatio(parsed.camp_ratio);
 
   // Parse is_political (boolean, default true for backward compat)
@@ -132,7 +128,7 @@ export function parseScoreOutput(rawOutput: string): ScoreOutput {
   // Non-political enforcement: force bias_score to 50
   const final_bias = is_political ? bias_score : 50;
 
-  return { bias_score: final_bias, controversy_score, camp_ratio, is_political, emotion_intensity };
+  return { bias_score: final_bias, camp_ratio, is_political, emotion_intensity };
 }
 
 /**
@@ -150,9 +146,16 @@ export function parseNarrativeOutput(rawOutput: string): NarrativeOutput {
     ? parsed.key_phrases.filter((p: unknown) => typeof p === 'string' && (p as string).trim().length > 0).slice(0, 10)
     : NARRATIVE_DEFAULTS.key_phrases;
 
-  const source_attribution = typeof parsed.source_attribution === 'string'
-    ? parsed.source_attribution.trim()
-    : NARRATIVE_DEFAULTS.source_attribution;
+  // Parse stances: Record<string, string>
+  const rawStances = parsed.stances;
+  const stances: Record<string, string> = {};
+  if (rawStances && typeof rawStances === 'object' && !Array.isArray(rawStances)) {
+    for (const [k, v] of Object.entries(rawStances as Record<string, unknown>)) {
+      if (typeof k === 'string' && typeof v === 'string') {
+        stances[k] = v;
+      }
+    }
+  }
 
-  return { points, key_phrases, source_attribution };
+  return { points, key_phrases, stances };
 }

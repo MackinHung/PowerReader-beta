@@ -358,7 +358,6 @@ describe('startAutoRunner', () => {
 
     mockEnqueueAnalysis.mockResolvedValue({
       bias_score: 0.5,
-      controversy_score: 0.3,
       reasoning: 'test',
       key_phrases: [],
       points: [],
@@ -478,7 +477,7 @@ describe('pauseAutoRunner', () => {
       .mockResolvedValueOnce({ success: true, data: { articles: [] } });
 
     mockEnqueueAnalysis.mockResolvedValue({
-      bias_score: 0.5, controversy_score: 0.3,
+      bias_score: 0.5,
       reasoning: 'test', key_phrases: [], points: [],
       prompt_version: 'v3.0.0', latency_ms: 100, mode: 'webgpu',
     });
@@ -575,7 +574,7 @@ describe('cluster-priority ordering', () => {
     mockFetchArticle.mockResolvedValue({ success: true, data: { analysis_count: 0 } });
 
     mockEnqueueAnalysis.mockResolvedValue({
-      bias_score: 50, controversy_score: 30,
+      bias_score: 50,
       reasoning: 'test', key_phrases: [], points: [],
       prompt_version: 'v3.0.0', latency_ms: 100, mode: 'webgpu',
     });
@@ -618,7 +617,7 @@ describe('cluster-priority ordering', () => {
 
     mockFetchArticle.mockResolvedValue({ success: true, data: { analysis_count: 0 } });
     mockEnqueueAnalysis.mockResolvedValue({
-      bias_score: 50, controversy_score: 30,
+      bias_score: 50,
       reasoning: 'test', key_phrases: [], points: [],
       prompt_version: 'v3.0.0', latency_ms: 100, mode: 'webgpu',
     });
@@ -654,7 +653,7 @@ describe('cluster-priority ordering', () => {
 
     mockFetchArticle.mockResolvedValue({ success: true, data: { analysis_count: 0 } });
     mockEnqueueAnalysis.mockResolvedValue({
-      bias_score: 50, controversy_score: 30,
+      bias_score: 50,
       reasoning: 'test', key_phrases: [], points: [],
       prompt_version: 'v3.0.0', latency_ms: 100, mode: 'webgpu',
     });
@@ -720,7 +719,7 @@ describe('pre-analysis duplicate check', () => {
     mockFetchArticle.mockRejectedValue(new Error('network error'));
 
     mockEnqueueAnalysis.mockResolvedValue({
-      bias_score: 50, controversy_score: 30,
+      bias_score: 50,
       reasoning: 'test', key_phrases: [], points: [],
       prompt_version: 'v3.0.0', latency_ms: 100, mode: 'webgpu',
     });

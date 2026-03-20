@@ -33,7 +33,6 @@ export interface Article {
 
 export interface AnalysisResult {
   bias_score: number;
-  controversy_score: number;
   camp_ratio: CampRatio | null;
   is_political: boolean;
   emotion_intensity: number;
@@ -41,6 +40,7 @@ export interface AnalysisResult {
   reasoning: string;
   key_phrases: string[];
   source_attribution: string;
+  stances: Record<string, string>;
   prompt_version: string;
   mode: string;
   latency_ms: number;
@@ -51,7 +51,6 @@ export interface AnalysisResult {
 
 export interface ScoreOutput {
   bias_score: number;
-  controversy_score: number;
   camp_ratio: CampRatio | null;
   is_political: boolean;
   emotion_intensity: number;
@@ -60,7 +59,7 @@ export interface ScoreOutput {
 export interface NarrativeOutput {
   points: string[];
   key_phrases: string[];
-  source_attribution: string;
+  stances: Record<string, string>;
 }
 
 /** Shared base fields for all knowledge entries */
@@ -160,13 +159,6 @@ export type BiasCategory =
   | 'right'
   | 'extreme_right';
 
-export type ControversyLevel =
-  | 'non_political'
-  | 'general_policy'
-  | 'partisan_clash'
-  | 'core_conflict'
-  | 'national_security';
-
 // ── Group Analysis Types ──
 
 export type CampType = 'green' | 'white' | 'blue' | 'gray';
@@ -182,7 +174,6 @@ export interface SourceBreakdown {
 export interface CampStatistics {
   camp: CampType;
   avg_bias_score: number;
-  avg_controversy_score: number;
   avg_emotion_intensity: number;
   article_count: number;
   sources: string[];

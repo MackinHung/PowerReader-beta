@@ -28,8 +28,7 @@ export type {
   BlindspotEvent,
   EventCluster,
   SourceProfile,
-  BiasCategory,
-  ControversyLevel
+  BiasCategory
 } from './models.js';
 
 export type {

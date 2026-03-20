@@ -82,7 +82,6 @@
                 </div>
                 <div class="camp-stat-metrics">
                   <span>偏向: {stat.avg_bias_score}</span>
-                  <span>爭議: {stat.avg_controversy_score}</span>
                 </div>
                 <EmotionMeter intensity={stat.avg_emotion_intensity} />
               </div>

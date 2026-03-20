@@ -5,7 +5,6 @@
   import Button from '$lib/components/ui/Button.svelte';
   import IconButton from '$lib/components/ui/IconButton.svelte';
   import CampBar from '$lib/components/data-viz/CampBar.svelte';
-  import ControversyPulse from '$lib/components/data-viz/ControversyPulse.svelte';
   import BlindspotAlert from '$lib/components/data-viz/BlindspotAlert.svelte';
   import ClusterTimeline from '$lib/components/data-viz/ClusterTimeline.svelte';
   import AnalysisZone from '$lib/components/data-viz/AnalysisZone.svelte';
@@ -20,7 +19,6 @@
     getAnalysisProgress,
     groupArticlesBySource,
     buildShareData,
-    getControversyTier,
   } from '$lib/pages/event-detail.js';
   import {
     checkGroupReadiness,
@@ -46,7 +44,6 @@
   let campDist = $derived(cluster?.camp_distribution || {});
   let analysisState = $derived(getAnalysisState(cluster));
   let analysisProgress = $derived(getAnalysisProgress(cluster, articles));
-  let controversyTier = $derived(getControversyTier(cluster?.avg_controversy_score));
   let articlesBySource = $derived(groupArticlesBySource(articles));
 
   // Build analyses map from articles that have bias_score (server-side analyzed)
@@ -56,13 +53,14 @@
       if (art.bias_score != null) {
         map.set(art.article_id, {
           bias_score: art.bias_score,
-          controversy_score: art.controversy_score ?? 0,
           camp_ratio: art.camp_ratio ?? null,
           is_political: art.is_political ?? true,
           emotion_intensity: art.emotion_intensity ?? 50,
           points: art.points ?? [],
           key_phrases: art.key_phrases ?? [],
           reasoning: '',
+          stances: {},
+          source_attribution: '',
           prompt_version: '',
           mode: '',
           latency_ms: 0,
@@ -232,19 +230,6 @@
         </div>
       {:else}
         <div class="zone-grid">
-          <!-- Controversy -->
-          {#if controversyTier}
-            <div class="zone-item">
-              <span class="zone-label">平均爭議程度</span>
-              <div class="controversy-row">
-                <ControversyPulse score={controversyTier.score} dark={true} />
-                <span class="controversy-label" style="color: {controversyTier.color}">
-                  {controversyTier.label}
-                </span>
-              </div>
-            </div>
-          {/if}
-
           <!-- Camp Distribution -->
           <div class="zone-item">
             <span class="zone-label">陣營比例</span>
@@ -509,16 +494,6 @@
     font: var(--md-sys-typescale-label-medium-font);
     color: var(--pr-analysis-on-surface-variant);
   }
-  .controversy-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .controversy-label {
-    font: var(--md-sys-typescale-label-medium-font);
-    white-space: nowrap;
-  }
-
   /* === Section Heading === */
   .section-heading {
     display: flex;

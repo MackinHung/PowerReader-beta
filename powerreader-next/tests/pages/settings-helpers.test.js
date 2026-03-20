@@ -92,7 +92,7 @@ describe('formatBenchmarkDate', () => {
 describe('formatBenchmarkMode', () => {
   it('returns green label for gpu mode', () => {
     const result = formatBenchmarkMode('gpu');
-    expect(result.color).toContain('controversy-low');
+    expect(result.color).toContain('#28A745');
     expect(result.text).toBeTruthy();
   });
 

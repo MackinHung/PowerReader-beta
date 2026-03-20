@@ -12,7 +12,6 @@
  */
 
 import { fetchArticle, fetchArticleFeedbackStats, submitArticleFeedback, reportArticle } from '../core/api.js';
-import { createControversyMeter } from '../components/controversy-badge.js';
 import { createCampBar } from '../components/camp-bar.js';
 import { enqueueAnalysis, cancelAnalysis, onQueueChange, getQueueStatus, AnalysisCancelledError } from '../core/queue.js';
 import { renderResultPreview } from './analyze-result.js';
@@ -33,8 +32,6 @@ import type { FeedbackType, GPUScanResult, QueueStatus } from '../types/index.js
 
 interface ArticleDetail extends Article {
   camp_ratio?: CampRatio | string | null;
-  controversy_score?: number | null;
-  controversy_level?: string;
   analysis_count?: number;
   url?: string;
   bias_score?: number | null;
@@ -67,14 +64,6 @@ const SOURCE_NAMES: Record<string, string> = {
   '三立新聞': '三立新聞', 'ETtoday新聞雲': 'ETtoday新聞雲',
   '東森新聞': '東森新聞', '新頭殼': '新頭殼', '公視新聞': '公視新聞',
   '關鍵評論網': '關鍵評論網', '科技新報': '科技新報', '風傳媒': '風傳媒'
-};
-
-const CONTROVERSY_LABELS: Record<string, string> = {
-  non_political: '非政治',
-  general_policy: '一般政策',
-  partisan_clash: '政黨交鋒',
-  core_conflict: '核心對立',
-  national_security: '國安外交'
 };
 
 // ── Module State ──
@@ -175,17 +164,6 @@ function renderArticleContent(container: HTMLElement, article: ArticleDetail): v
     campSection.className = 'article-detail__camp';
     campSection.appendChild(createCampBar(campData));
     container.appendChild(campSection);
-  }
-
-  if (article.controversy_score != null && article.controversy_level) {
-    const controversySection = document.createElement('section');
-    controversySection.className = 'article-detail__controversy';
-    const contHeading = document.createElement('h3');
-    contHeading.className = 'section-heading';
-    contHeading.textContent = CONTROVERSY_LABELS[article.controversy_level] || article.controversy_level;
-    controversySection.appendChild(contHeading);
-    controversySection.appendChild(createControversyMeter(article.controversy_score, article.controversy_level));
-    container.appendChild(controversySection);
   }
 
   if (article.summary) {
@@ -307,7 +285,7 @@ function renderManualAnalyzeButton(section: HTMLElement, article: ArticleDetail)
 
   const desc = document.createElement('p');
   desc.className = 'analyze-trigger__desc';
-  desc.textContent = '使用您的 GPU 在本機分析此文章的媒體立場與爭議程度';
+  desc.textContent = '使用您的 GPU 在本機分析此文章的媒體立場';
   wrapper.appendChild(desc);
 
   const btn = document.createElement('button');

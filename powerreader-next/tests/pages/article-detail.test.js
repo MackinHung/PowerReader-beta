@@ -35,9 +35,6 @@ beforeEach(async () => {
   vi.doMock('../../src/lib/i18n/zh-TW.js', () => ({
     t: vi.fn((key) => key),
   }));
-  vi.doMock('../../src/lib/components/controversy-badge.js', () => ({
-    createControversyMeter: vi.fn(() => document.createElement('div')),
-  }));
   vi.doMock('../../src/lib/components/camp-bar.js', () => ({
     createCampBar: vi.fn(() => document.createElement('div')),
   }));
@@ -179,9 +176,6 @@ describe('renderArticle — GPU consent gate', () => {
     }));
     vi.doMock('../../src/lib/i18n/zh-TW.js', () => ({
       t: vi.fn((key) => key),
-    }));
-    vi.doMock('../../src/lib/components/controversy-badge.js', () => ({
-      createControversyMeter: vi.fn(() => document.createElement('div')),
     }));
     vi.doMock('../../src/lib/components/camp-bar.js', () => ({
       createCampBar: vi.fn(() => document.createElement('div')),

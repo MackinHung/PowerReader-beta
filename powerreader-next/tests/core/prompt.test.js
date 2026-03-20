@@ -30,11 +30,6 @@ describe('assembleScoreSystemPrompt', () => {
     expect(result).toContain('bias_score');
   });
 
-  it('contains "controversy_score"', () => {
-    const result = assembleScoreSystemPrompt();
-    expect(result).toContain('controversy_score');
-  });
-
   it('contains "camp_ratio"', () => {
     const result = assembleScoreSystemPrompt();
     expect(result).toContain('camp_ratio');
@@ -112,79 +107,51 @@ describe('assembleScoreSystemPrompt', () => {
 // ---------------------------------------------------------------------------
 describe('assembleNarrativeSystemPrompt', () => {
   it('returns a string', () => {
-    const result = assembleNarrativeSystemPrompt(75, 60);
+    const result = assembleNarrativeSystemPrompt();
     expect(typeof result).toBe('string');
   });
 
-  it('embeds biasScore in the output', () => {
-    const result = assembleNarrativeSystemPrompt(75, 60);
-    expect(result).toContain('75');
-  });
-
-  it('embeds controversyScore in the output', () => {
-    const result = assembleNarrativeSystemPrompt(75, 60);
-    expect(result).toContain('60');
-  });
-
-  it('contains "bias_score=" with the provided value', () => {
-    const result = assembleNarrativeSystemPrompt(42, 88);
-    expect(result).toContain('bias_score=42');
-    expect(result).toContain('controversy_score=88');
+  it('takes no parameters', () => {
+    const result = assembleNarrativeSystemPrompt();
+    expect(typeof result).toBe('string');
   });
 
   it('contains "points" in the output schema', () => {
-    const result = assembleNarrativeSystemPrompt(50, 50);
+    const result = assembleNarrativeSystemPrompt();
     expect(result).toContain('points');
   });
 
   it('contains "key_phrases" in the output schema', () => {
-    const result = assembleNarrativeSystemPrompt(50, 50);
+    const result = assembleNarrativeSystemPrompt();
     expect(result).toContain('key_phrases');
   });
 
+  it('contains "stances" in the output schema', () => {
+    const result = assembleNarrativeSystemPrompt();
+    expect(result).toContain('stances');
+  });
+
   it('instructs JSON-only output', () => {
-    const result = assembleNarrativeSystemPrompt(50, 50);
+    const result = assembleNarrativeSystemPrompt();
     expect(result).toMatch(/只輸出JSON/);
   });
 
-  it('handles zero scores', () => {
-    const result = assembleNarrativeSystemPrompt(0, 0);
-    expect(result).toContain('bias_score=0');
-    expect(result).toContain('controversy_score=0');
-  });
-
-  it('handles boundary score 100', () => {
-    const result = assembleNarrativeSystemPrompt(100, 100);
-    expect(result).toContain('bias_score=100');
-    expect(result).toContain('controversy_score=100');
+  it('returns the same value on repeated calls (pure function)', () => {
+    const a = assembleNarrativeSystemPrompt();
+    const b = assembleNarrativeSystemPrompt();
+    expect(a).toBe(b);
   });
 
   // v4.1 copyright compliance
   it('contains copyright compliance rules', () => {
-    const result = assembleNarrativeSystemPrompt(50, 50);
-    expect(result).toContain('著作權合規準則');
+    const result = assembleNarrativeSystemPrompt();
+    expect(result).toContain('著作權合規');
   });
 
-  it('instructs to extract only facts, not commentary', () => {
-    const result = assembleNarrativeSystemPrompt(50, 50);
-    expect(result).toContain('只取事實');
-    expect(result).toContain('不取評論');
-  });
-
-  it('instructs to rewrite in own words', () => {
-    const result = assembleNarrativeSystemPrompt(50, 50);
-    expect(result).toContain('用自己的話重寫');
-  });
-
-  it('contains source_attribution in output schema', () => {
-    const result = assembleNarrativeSystemPrompt(50, 50);
-    expect(result).toContain('source_attribution');
-  });
-
-  it('instructs to indicate data source', () => {
-    const result = assembleNarrativeSystemPrompt(50, 50);
-    expect(result).toContain('標示出處');
-    expect(result).toContain('資料來源');
+  it('instructs to rewrite in own words, not copy original text', () => {
+    const result = assembleNarrativeSystemPrompt();
+    expect(result).toContain('用自己的話改寫');
+    expect(result).toContain('不照抄原文');
   });
 });
 

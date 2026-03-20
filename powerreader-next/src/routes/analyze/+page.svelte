@@ -214,15 +214,22 @@
                 {analysisResult.bias_score} ({biasLabel(analysisResult.bias_score)})
               </span>
             </div>
-            <div class="score-item">
-              <span class="score-label">爭議度</span>
-              <span class="score-value">{analysisResult.controversy_score ?? '—'}</span>
-            </div>
           </div>
           {#if analysisResult.points?.length > 0}
             <div class="result-points">
               {#each analysisResult.points as point}
                 <p class="point">• {point}</p>
+              {/each}
+            </div>
+          {/if}
+          {#if analysisResult.stances && Object.keys(analysisResult.stances).length > 0}
+            <div class="result-stances">
+              <span class="score-label">各方立場</span>
+              {#each Object.entries(analysisResult.stances) as [party, stance]}
+                <div class="stance-row">
+                  <span class="stance-party">{party}</span>
+                  <span class="stance-text">{stance}</span>
+                </div>
               {/each}
             </div>
           {/if}

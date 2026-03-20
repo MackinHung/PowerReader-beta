@@ -111,11 +111,11 @@ export function computeCampStatistics(
   analyses: Map<string, AnalysisResult>
 ): CampStatistics[] {
   // Build per-camp buckets
-  const buckets: Record<CampType, { bias: number[]; controversy: number[]; emotion: number[]; sources: Set<string> }> = {
-    green: { bias: [], controversy: [], emotion: [], sources: new Set() },
-    white: { bias: [], controversy: [], emotion: [], sources: new Set() },
-    blue: { bias: [], controversy: [], emotion: [], sources: new Set() },
-    gray: { bias: [], controversy: [], emotion: [], sources: new Set() },
+  const buckets: Record<CampType, { bias: number[]; emotion: number[]; sources: Set<string> }> = {
+    green: { bias: [], emotion: [], sources: new Set() },
+    white: { bias: [], emotion: [], sources: new Set() },
+    blue: { bias: [], emotion: [], sources: new Set() },
+    gray: { bias: [], emotion: [], sources: new Set() },
   };
 
   for (const article of articles) {
@@ -124,7 +124,6 @@ export function computeCampStatistics(
 
     const camp = getDominantCamp(analysis.camp_ratio);
     buckets[camp].bias.push(analysis.bias_score);
-    buckets[camp].controversy.push(analysis.controversy_score);
     buckets[camp].emotion.push(analysis.emotion_intensity ?? 50);
     buckets[camp].sources.add(article.source);
   }
@@ -138,7 +137,6 @@ export function computeCampStatistics(
     result.push({
       camp,
       avg_bias_score: Math.round(avg(bucket.bias)),
-      avg_controversy_score: Math.round(avg(bucket.controversy)),
       avg_emotion_intensity: Math.round(avg(bucket.emotion)),
       article_count: bucket.bias.length,
       sources: Array.from(bucket.sources),

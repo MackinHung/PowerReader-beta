@@ -116,7 +116,7 @@ export async function runGroqAnalysis(article: Article, knowledgeEntries: Knowle
   const scores = parseScoreOutput(pass1Raw);
 
   // Pass 2: Narrative analysis
-  const pass2System = assembleNarrativeSystemPrompt(scores.bias_score, scores.controversy_score);
+  const pass2System = assembleNarrativeSystemPrompt();
   const pass2Raw = await callGroq(key, selectedModel, [
     { role: 'system', content: pass2System },
     { role: 'user', content: userMessage }
@@ -128,8 +128,7 @@ export async function runGroqAnalysis(article: Article, knowledgeEntries: Knowle
     ? narrative.key_phrases
     : narrative.points.slice(0, 5).map(p => p.slice(0, 20).replace(/[，。！？,\.!?\s]+$/, ''));
 
-  const source_attribution = narrative.source_attribution
-    || `資料來源：${article.source || '未知'}`;
+  const source_attribution = `資料來源：${article.source || '未知'}`;
 
   return {
     ...scores,
@@ -137,7 +136,8 @@ export async function runGroqAnalysis(article: Article, knowledgeEntries: Knowle
     reasoning: narrative.points.join('\n'),
     key_phrases,
     source_attribution,
-    prompt_version: 'v4.1.0',
+    stances: narrative.stances,
+    prompt_version: 'v4.2.0',
     mode: 'groq',
     latency_ms: Date.now() - startTime,
     _debug: {

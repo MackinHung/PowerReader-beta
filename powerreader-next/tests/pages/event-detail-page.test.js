@@ -51,7 +51,7 @@ const makeCluster = (overrides = {}) => ({
     { source: 'liberty_times', count: 4 },
     { source: 'china_times', count: 3 },
   ]),
-  avg_controversy_score: 65,
+
   camp_distribution: { green: 40, white: 30, blue: 30 },
   earliest_published_at: '2026-03-18T06:00:00Z',
   latest_published_at: '2026-03-18T14:00:00Z',
@@ -147,7 +147,7 @@ describe('EventDetailPage — analysis state', () => {
     setupAPI(
       makeCluster({
         analyzed_count: 0,
-        avg_controversy_score: null,
+
         camp_distribution: {},
       }),
       [makeArticle({ bias_score: null, analysis_count: 0 })],

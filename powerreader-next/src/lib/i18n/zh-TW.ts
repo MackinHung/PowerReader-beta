@@ -23,20 +23,6 @@ const messages: Record<string, string> = {
   'bias.label.extreme_right': '極右',
 
   // ==============================================
-  // Controversy Labels (shared/enums.js CONTROVERSY_LEVELS)
-  // ==============================================
-  'controversy.label.low': '低',
-  'controversy.label.moderate': '中等',
-  'controversy.label.high': '高',
-  'controversy.label.very_high': '極高',
-
-  // Controversy Badges
-  'controversy.badge.low': '低度爭議',
-  'controversy.badge.moderate': '中等爭議',
-  'controversy.badge.high': '高度爭議',
-  'controversy.badge.very_high': '極高爭議',
-
-  // ==============================================
   // Camp Labels (三營陣 — shared/enums.js CAMP_TYPES)
   // ==============================================
   'camp.bar.title': '陣營比例',
@@ -533,7 +519,7 @@ const messages: Record<string, string> = {
   // LINE Bot Strings
   // ==============================================
   'line.header.daily': '今日熱門新聞',
-  'line.header.alert': '高度爭議新聞提醒',
+  'line.header.alert': '高情緒新聞提醒',
   'line.button.detail': '查看詳細分析',
   'line.button.compare': '跨媒體比較',
   'line.footer.source_count': '共 {count} 家媒體報導',
@@ -546,7 +532,7 @@ const messages: Record<string, string> = {
   'ext.badge.score': '{score}',
   'ext.popup.title': '立場分析結果',
   'ext.popup.bias_label': '立場: {category}',
-  'ext.popup.controversy': '爭議: {level}',
+  'ext.popup.emotion': '情緒: {level}',
   'ext.popup.compare': '查看其他媒體報導',
   'ext.popup.not_supported': '不支援此網站',
   'ext.popup.loading': '正在分析...',
@@ -793,15 +779,9 @@ const messages: Record<string, string> = {
   // Camp ratio
   'a11y.camp_bar': '陣營比例：民進黨(綠) {green}%、民眾黨(白) {white}%、國民黨(藍) {blue}%、無陣營(灰) {gray}%',
 
-  // Controversy
-  'a11y.controversy_bar': '爭議程度指標，分數 {score}，等級 {level}',
-  'a11y.controversy_badge': '爭議程度標籤: {level}',
-
   // Article cards
   'a11y.article_card': '新聞文章: {title}，來源: {source}，發布於 {date}',
   'a11y.article_card.bias': '立場分析: {category} (分數 {score})',
-  'a11y.article_card.controversy': '爭議程度: {level}',
-
   // Buttons
   'a11y.button.analyze': '開始分析此文章的立場',
   'a11y.button.share': '分享此分析結果',
@@ -815,8 +795,6 @@ const messages: Record<string, string> = {
   'a11y.search.clear': '清除搜尋條件',
   'a11y.filter.category': '依新聞分類篩選',
   'a11y.filter.source': '依新聞來源篩選',
-  'a11y.filter.controversy': '依爭議程度篩選',
-
   // Status
   'a11y.status.loading': '內容載入中，請稍候',
   'a11y.status.offline': '目前處於離線模式',
@@ -825,7 +803,7 @@ const messages: Record<string, string> = {
 
   // Charts
   'a11y.chart.bias_spectrum': '跨媒體立場光譜比較圖',
-  'a11y.chart.controversy_trend': '爭議程度趨勢圖',
+  'a11y.chart.emotion_trend': '情緒程度趨勢圖',
   'a11y.chart.points_trend': '點數趨勢折線圖，近 30 天',
   'a11y.chart.radar': '各面向差異雷達圖',
 

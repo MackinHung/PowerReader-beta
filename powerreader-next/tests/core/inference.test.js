@@ -19,8 +19,8 @@ vi.mock('../../src/lib/core/prompt.js', () => ({
 }));
 
 vi.mock('../../src/lib/core/output-parser.js', () => ({
-  parseScoreOutput: vi.fn(() => ({ bias_score: 50, controversy_score: 30, camp_ratio: null, is_political: true, emotion_intensity: 50 })),
-  parseNarrativeOutput: vi.fn(() => ({ points: ['p1'], key_phrases: ['k1'] })),
+  parseScoreOutput: vi.fn(() => ({ bias_score: 50, camp_ratio: null, is_political: true, emotion_intensity: 50 })),
+  parseNarrativeOutput: vi.fn(() => ({ points: ['p1'], key_phrases: ['k1'], stances: {} })),
 }));
 
 // ── Dynamic module import helper ──
@@ -51,9 +51,9 @@ beforeEach(async () => {
     assembleUserMessage: vi.fn(() => 'user-message'),
   }));
   vi.mock('../../src/lib/core/output-parser.js', () => ({
-    parseScoreOutput: vi.fn(() => ({ bias_score: 50, controversy_score: 30, camp_ratio: null, is_political: true, emotion_intensity: 50 })),
-    parseNarrativeOutput: vi.fn(() => ({ points: ['p1'], key_phrases: ['k1'] })),
-    parseAnalysisOutput: vi.fn(() => ({ bias_score: 50, controversy_score: 0 })),
+    parseScoreOutput: vi.fn(() => ({ bias_score: 50, camp_ratio: null, is_political: true, emotion_intensity: 50 })),
+    parseNarrativeOutput: vi.fn(() => ({ points: ['p1'], key_phrases: ['k1'], stances: {} })),
+    parseAnalysisOutput: vi.fn(() => ({ bias_score: 50 })),
   }));
   inferenceModule = await loadInferenceModule();
 });
@@ -174,11 +174,11 @@ describe('runAnalysis', () => {
   it('uses server mode and returns result from fetch when mode="server"', async () => {
     const serverResponse = {
       bias_score: 65,
-      controversy_score: 40,
       points: ['point1', 'point2'],
       reasoning: 'some reasoning',
       key_phrases: ['kp1'],
-      prompt_version: 'server-v1',
+      stances: {},
+      prompt_version: 'v4.2.0',
     };
 
     globalThis.fetch = vi.fn().mockResolvedValue({
@@ -196,8 +196,8 @@ describe('runAnalysis', () => {
 
     expect(result.mode).toBe('server');
     expect(result.bias_score).toBe(65);
-    expect(result.controversy_score).toBe(40);
     expect(result.points).toEqual(['point1', 'point2']);
+    expect(result.stances).toEqual({});
     expect(result.latency_ms).toBeGreaterThanOrEqual(0);
     expect(globalThis.fetch).toHaveBeenCalledOnce();
   });
@@ -208,11 +208,11 @@ describe('runAnalysis', () => {
 
     const serverResponse = {
       bias_score: 55,
-      controversy_score: 20,
       points: ['fallback point'],
       reasoning: 'fallback reasoning',
       key_phrases: ['fb1'],
-      prompt_version: 'server-v2',
+      stances: {},
+      prompt_version: 'v4.2.0',
     };
 
     globalThis.fetch = vi.fn().mockResolvedValue({
@@ -272,10 +272,10 @@ describe('runAnalysis', () => {
       ok: true,
       json: vi.fn().mockResolvedValue({
         bias_score: 50,
-        controversy_score: 0,
         points: [],
         reasoning: '',
         key_phrases: [],
+        stances: {},
       }),
     });
 

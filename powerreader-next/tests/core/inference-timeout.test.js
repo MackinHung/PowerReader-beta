@@ -19,8 +19,8 @@ vi.mock('../../src/lib/core/prompt.js', () => ({
 }));
 
 vi.mock('../../src/lib/core/output-parser.js', () => ({
-  parseScoreOutput: vi.fn(() => ({ bias_score: 50, controversy_score: 30 })),
-  parseNarrativeOutput: vi.fn(() => ({ points: ['p1'], key_phrases: ['k1'] })),
+  parseScoreOutput: vi.fn(() => ({ bias_score: 50 })),
+  parseNarrativeOutput: vi.fn(() => ({ points: ['p1'], key_phrases: ['k1'], stances: {} })),
 }));
 
 vi.mock('../../src/lib/utils/device-detect.js', () => ({
@@ -69,8 +69,8 @@ beforeEach(async () => {
     assembleUserMessage: vi.fn(() => 'user-message'),
   }));
   vi.mock('../../src/lib/core/output-parser.js', () => ({
-    parseScoreOutput: vi.fn(() => ({ bias_score: 50, controversy_score: 30 })),
-    parseNarrativeOutput: vi.fn(() => ({ points: ['p1'], key_phrases: ['k1'] })),
+    parseScoreOutput: vi.fn(() => ({ bias_score: 50 })),
+    parseNarrativeOutput: vi.fn(() => ({ points: ['p1'], key_phrases: ['k1'], stances: {} })),
   }));
   vi.mock('../../src/lib/utils/device-detect.js', () => ({
     isMobileDevice: vi.fn(() => false),
@@ -103,8 +103,8 @@ describe('runAnalysis ETA integration', () => {
     // Server mode delegates inference to the server in a single request,
     // so recordLatency (which tracks per-pass GPU/CPU latency) is not called.
     const serverResponse = {
-      bias_score: 65, controversy_score: 40,
-      points: ['point1'], reasoning: 'r', key_phrases: ['kp1'],
+      bias_score: 65,
+      points: ['point1'], reasoning: 'r', key_phrases: ['kp1'], stances: {},
     };
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -126,8 +126,8 @@ describe('runAnalysis ETA integration', () => {
     // When WebGPU fails and falls back to server, recordLatency is not
     // called because the server path doesn't track per-pass latency.
     const serverResponse = {
-      bias_score: 55, controversy_score: 20,
-      points: ['p1'], reasoning: 'r', key_phrases: ['k1'],
+      bias_score: 55,
+      points: ['p1'], reasoning: 'r', key_phrases: ['k1'], stances: {},
     };
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -149,8 +149,8 @@ describe('runAnalysis ETA integration', () => {
     etaMock.estimateRemaining.mockReturnValue({ remainingMs: 5000, confidence: 0.7 });
 
     const serverResponse = {
-      bias_score: 50, controversy_score: 0,
-      points: [], reasoning: '', key_phrases: [],
+      bias_score: 50,
+      points: [], reasoning: '', key_phrases: [], stances: {},
     };
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -172,8 +172,8 @@ describe('runAnalysis ETA integration', () => {
 
   it('onStatus callback includes progress field', async () => {
     const serverResponse = {
-      bias_score: 50, controversy_score: 0,
-      points: [], reasoning: '', key_phrases: [],
+      bias_score: 50,
+      points: [], reasoning: '', key_phrases: [], stances: {},
     };
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -226,8 +226,8 @@ describe('per-pass timeout', () => {
     // For now, we verify that server mode produces a result with scores.
     // The modified inference.js will handle partial results from WebGPU.
     const serverResponse = {
-      bias_score: 70, controversy_score: 45,
-      points: ['p1'], reasoning: 'r', key_phrases: ['k1'],
+      bias_score: 70,
+      points: ['p1'], reasoning: 'r', key_phrases: ['k1'], stances: {},
     };
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -242,7 +242,6 @@ describe('per-pass timeout', () => {
 
     // Partial result should preserve pass 1 scores
     expect(result.bias_score).toBe(70);
-    expect(result.controversy_score).toBe(45);
     // When modified: if partial, result.partial === true, result.points === []
   });
 
@@ -251,8 +250,8 @@ describe('per-pass timeout', () => {
     // Will FAIL until implementation adds partial result handling.
     // For now, a successful result should NOT have partial flag.
     const serverResponse = {
-      bias_score: 60, controversy_score: 30,
-      points: ['p1'], reasoning: 'r', key_phrases: ['k1'],
+      bias_score: 60,
+      points: ['p1'], reasoning: 'r', key_phrases: ['k1'], stances: {},
     };
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -274,8 +273,8 @@ describe('per-pass timeout', () => {
     // This will FAIL until implementation is added.
     // Verify normal result has non-empty points.
     const serverResponse = {
-      bias_score: 50, controversy_score: 20,
-      points: ['p1', 'p2'], reasoning: 'r', key_phrases: ['k1'],
+      bias_score: 50,
+      points: ['p1', 'p2'], reasoning: 'r', key_phrases: ['k1'], stances: {},
     };
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -302,8 +301,8 @@ describe('ETA helper calls', () => {
     benchmarkMock.getCachedBenchmark.mockReturnValue({ mode: 'gpu' });
 
     const serverResponse = {
-      bias_score: 50, controversy_score: 0,
-      points: [], reasoning: '', key_phrases: [],
+      bias_score: 50,
+      points: [], reasoning: '', key_phrases: [], stances: {},
     };
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -326,8 +325,8 @@ describe('ETA helper calls', () => {
 
   it('getDualPassProgress called during status updates', async () => {
     const serverResponse = {
-      bias_score: 50, controversy_score: 0,
-      points: [], reasoning: '', key_phrases: [],
+      bias_score: 50,
+      points: [], reasoning: '', key_phrases: [], stances: {},
     };
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -348,8 +347,8 @@ describe('ETA helper calls', () => {
 
   it('server fallback on WebGPU failure still works', async () => {
     const serverResponse = {
-      bias_score: 55, controversy_score: 20,
-      points: ['fallback'], reasoning: 'r', key_phrases: ['fb1'],
+      bias_score: 55,
+      points: ['fallback'], reasoning: 'r', key_phrases: ['fb1'], stances: {},
     };
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -376,8 +375,8 @@ describe('ETA helper calls', () => {
     etaMock.estimateRemaining.mockReturnValue(etaResult);
 
     const serverResponse = {
-      bias_score: 50, controversy_score: 0,
-      points: [], reasoning: '', key_phrases: [],
+      bias_score: 50,
+      points: [], reasoning: '', key_phrases: [], stances: {},
     };
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,

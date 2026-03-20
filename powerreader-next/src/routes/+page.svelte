@@ -13,7 +13,6 @@
 
   // Dynamic imports for heavy components
   let ClusterCard = $state(null);
-  let ControversyPulse = $state(null);
   let CampBar = $state(null);
   let SourceBadge = $state(null);
 
@@ -25,10 +24,6 @@
           .then(m => { ClusterCard = m.default; })
           .catch(() => {});
       });
-
-    import('$lib/components/data-viz/ControversyPulse.svelte')
-      .then(m => { ControversyPulse = m.default; })
-      .catch(() => {});
 
     import('$lib/components/data-viz/CampBar.svelte')
       .then(m => { CampBar = m.default; })
@@ -171,10 +166,10 @@
     return () => observer.disconnect();
   });
 
-  // Sort clusters by controversy score desc
+  // Sort clusters by article_count desc
   let sortedClusters = $derived(() => {
     return [...eventsStore.clusters].sort((a, b) => {
-      return (b.avg_controversy_score ?? 0) - (a.avg_controversy_score ?? 0);
+      return (b.article_count ?? 0) - (a.article_count ?? 0);
     });
   });
 
@@ -293,13 +288,6 @@
           <span class="hero-meta">{hero.article_count ?? 0} 篇報導 · {hero.source_count ?? 0} 家媒體</span>
 
           <div class="hero-viz">
-            {#if ControversyPulse && (hero.avg_controversy_score ?? 0) > 0}
-              <div class="hero-controversy">
-                <svelte:component this={ControversyPulse} score={hero.avg_controversy_score} dark={true} />
-                <span class="hero-viz-label">爭議度</span>
-              </div>
-            {/if}
-
             {#if CampBar}
               {@const campRatio = getHeroCampRatio(hero)}
               {#if campRatio}
@@ -490,12 +478,6 @@
     align-items: flex-start;
     gap: 20px;
     flex-wrap: wrap;
-  }
-  .hero-controversy {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
   }
   .hero-viz-label {
     font: var(--md-sys-typescale-label-small-font);
