@@ -320,7 +320,7 @@ export async function getArticleCluster(request, env, ctx, { params }) {
   const { article_id } = params;
 
   const article = await env.DB.prepare(
-    'SELECT content_hash, source, title, published_at FROM articles WHERE article_id = ?'
+    'SELECT content_hash, source, title, summary, published_at FROM articles WHERE article_id = ?'
   ).bind(article_id).first();
 
   if (!article) {
@@ -335,7 +335,7 @@ export async function getArticleCluster(request, env, ctx, { params }) {
   // Fetch candidates within ±48h from different sources.
   // datetime() normalizes ISO 8601 (+TZ) to 'YYYY-MM-DD HH:MM:SS' for correct comparison.
   const candidates = await env.DB.prepare(`
-    SELECT article_id, source, title, bias_score, bias_category, published_at
+    SELECT article_id, source, title, summary, bias_score, bias_category, published_at
     FROM articles
     WHERE article_id != ?
       AND source != ?
@@ -344,10 +344,10 @@ export async function getArticleCluster(request, env, ctx, { params }) {
     LIMIT 500
   `).bind(article_id, article.source, pubDate, pubDate).all();
 
-  // Compute title bigram Jaccard similarity and filter
-  const sourceBigrams = titleBigrams(article.title);
+  // Compute title+summary bigram Jaccard similarity and filter
+  const sourceBigrams = textBigrams(article.title + ' ' + (article.summary || ''));
   const similar = (candidates.results || [])
-    .map(row => ({ ...row, _sim: jaccardSimilarity(sourceBigrams, titleBigrams(row.title)) }))
+    .map(row => ({ ...row, _sim: jaccardSimilarity(sourceBigrams, textBigrams(row.title + ' ' + (row.summary || ''))) }))
     .filter(row => row._sim >= TITLE_SIMILARITY_THRESHOLD)
     .sort((a, b) => b._sim - a._sim)
     .slice(0, 10);
@@ -367,18 +367,18 @@ export async function getArticleCluster(request, env, ctx, { params }) {
 }
 
 // =============================================
-// Title similarity helpers (CJK bigram Jaccard)
+// Text similarity helpers (CJK bigram Jaccard)
 // =============================================
 
 const TITLE_SIMILARITY_THRESHOLD = 0.10;
 
 /**
- * Extract character bigrams from title.
+ * Extract character bigrams from text.
  * Strips whitespace and punctuation for cleaner comparison.
  */
-function titleBigrams(title) {
-  if (!title) return new Set();
-  const clean = title.replace(/[\s\p{P}\p{S}]/gu, '');
+function textBigrams(text) {
+  if (!text) return new Set();
+  const clean = text.replace(/[\s\p{P}\p{S}]/gu, '');
   const bigrams = new Set();
   for (let i = 0; i < clean.length - 1; i++) {
     bigrams.add(clean.slice(i, i + 2));

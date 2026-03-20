@@ -101,18 +101,23 @@ function getMissingCamp(type) {
 }
 
 // ========================================
-// Title bigram Jaccard (CJK, same as articles.js)
+// Text bigram Jaccard (CJK, title + summary)
 // ========================================
-const CLUSTER_JACCARD_THRESHOLD = 0.25;
+const CLUSTER_JACCARD_THRESHOLD = 0.13;
 
-function titleBigrams(title) {
-  if (!title) return new Set();
-  const clean = title.replace(/[\s\p{P}\p{S}]/gu, '');
+function textBigrams(text) {
+  if (!text) return new Set();
+  const clean = text.replace(/[\s\p{P}\p{S}]/gu, '');
   const bigrams = new Set();
   for (let i = 0; i < clean.length - 1; i++) {
     bigrams.add(clean.slice(i, i + 2));
   }
   return bigrams;
+}
+
+function articleBigrams(article) {
+  const combined = article.title + ' ' + (article.summary || '');
+  return textBigrams(combined);
 }
 
 function jaccardSimilarity(setA, setB) {
@@ -127,7 +132,7 @@ function jaccardSimilarity(setA, setB) {
 
 /**
  * Scan recent articles and detect blindspot events.
- * Strategy: cluster articles by title similarity (Jaccard >=0.45, ±48h),
+ * Strategy: cluster articles by title+summary bigram Jaccard (Union-Find, ±48h),
  * then check camp distribution per cluster.
  *
  * Camp determination priority:
@@ -137,7 +142,7 @@ function jaccardSimilarity(setA, setB) {
 export async function scanBlindspots(env) {
   // Fetch articles from last 48h (all articles, not just analyzed ones)
   const rows = await env.DB.prepare(`
-    SELECT article_id, title, source, bias_score, published_at
+    SELECT article_id, title, summary, source, bias_score, published_at
     FROM articles
     WHERE datetime(published_at) >= datetime('now', '-2 days')
     ORDER BY published_at DESC
@@ -205,33 +210,37 @@ export async function scanBlindspots(env) {
 }
 
 /**
- * Build clusters from articles using greedy title bigram Jaccard.
+ * Build clusters from articles using Union-Find with title+summary bigram Jaccard.
+ * Union-Find captures transitive similarity (A≈B, B≈C → A,B,C in same cluster).
  */
 function buildClusters(articles) {
-  const assigned = new Set();
-  const clusters = [];
+  const n = articles.length;
+  // 1. Pre-compute bigram sets for each article
+  const bigrams = articles.map(a => articleBigrams(a));
 
-  for (let i = 0; i < articles.length; i++) {
-    if (assigned.has(i)) continue;
+  // 2. Union-Find with path compression and union by rank
+  const parent = Array.from({ length: n }, (_, i) => i);
+  const rank = new Array(n).fill(0);
+  function find(x) { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; }
+  function union(x, y) { let rx = find(x), ry = find(y); if (rx === ry) return; if (rank[rx] < rank[ry]) [rx, ry] = [ry, rx]; parent[ry] = rx; if (rank[rx] === rank[ry]) rank[rx]++; }
 
-    const cluster = { articles: [articles[i]] };
-    assigned.add(i);
-    const seedBigrams = titleBigrams(articles[i].title);
-
-    for (let j = i + 1; j < articles.length; j++) {
-      if (assigned.has(j)) continue;
-
-      const sim = jaccardSimilarity(seedBigrams, titleBigrams(articles[j].title));
-      if (sim >= CLUSTER_JACCARD_THRESHOLD) {
-        cluster.articles.push(articles[j]);
-        assigned.add(j);
+  // 3. O(n²) pairwise comparison → union if Jaccard ≥ threshold
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      if (jaccardSimilarity(bigrams[i], bigrams[j]) >= CLUSTER_JACCARD_THRESHOLD) {
+        union(i, j);
       }
     }
-
-    clusters.push(cluster);
   }
 
-  return clusters;
+  // 4. Group by root
+  const groups = {};
+  for (let i = 0; i < n; i++) {
+    const root = find(i);
+    if (!groups[root]) groups[root] = [];
+    groups[root].push(articles[i]);
+  }
+  return Object.values(groups).map(arts => ({ articles: arts }));
 }
 
 /**
@@ -268,7 +277,7 @@ const CONTROVERSY_ORDER = { low: 1, moderate: 2, high: 3, very_high: 4 };
  */
 export async function buildAllClusters(env) {
   const rows = await env.DB.prepare(`
-    SELECT article_id, title, source, bias_score, published_at,
+    SELECT article_id, title, summary, source, bias_score, published_at,
            controversy_score, controversy_level, matched_topic
     FROM articles
     WHERE datetime(published_at) >= datetime('now', '-2 days')

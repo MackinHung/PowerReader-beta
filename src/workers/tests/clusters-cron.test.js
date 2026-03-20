@@ -414,4 +414,82 @@ describe('buildAllClusters', () => {
     expect(campDist.blue).toBe(0);
     expect(campDist.white).toBe(0);
   });
+
+  it('Union-Find merges transitively: A≈B, B≈C, A≉C → same cluster', async () => {
+    // Designed so A↔B share bigrams, B↔C share bigrams, but A↔C do NOT meet threshold.
+    // A bigrams: 甲甲,甲乙,乙乙,乙丙,丙丙,丙丁,丁丁 (7)
+    // B bigrams: 乙乙,乙丙,丙丙,丙丁,丁丁,丁戊,戊戊 (7)  → A∩B=5, J=5/9≈0.56
+    // C bigrams: 丁丁,丁戊,戊戊,戊己,己己,己庚,庚庚 (7)  → B∩C=3, J=3/11≈0.27; A∩C=1, J=1/13≈0.08
+    const articles = [
+      { article_id: '1', title: '甲甲乙乙丙丙丁丁', summary: null, source: '自由時報', bias_score: null, published_at: '2026-03-10T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '2', title: '乙乙丙丙丁丁戊戊', summary: null, source: '聯合報', bias_score: null, published_at: '2026-03-10T11:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '3', title: '丁丁戊戊己己庚庚', summary: null, source: '中央社', bias_score: null, published_at: '2026-03-10T10:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+    ];
+
+    const mockDB = createMockDB({
+      all: (sql) => {
+        if (sql.includes('FROM articles')) return { results: articles };
+        return { results: [] };
+      }
+    });
+
+    const { buildAllClusters } = await import('../handlers/cron-blindspot.js');
+    await buildAllClusters({ DB: mockDB });
+
+    // All 3 should be in ONE cluster → exactly 1 INSERT with article_count=3
+    const insertCalls = mockDB.prepare.mock.calls.filter(c =>
+      c[0].includes('INSERT INTO event_clusters')
+    );
+    expect(insertCalls.length).toBe(1);
+    const bindArgs = getInsertBindArgs(mockDB);
+    // article_count is at index 2
+    expect(bindArgs[2]).toBe(3);
+  });
+
+  it('summary boosts clustering when titles differ', async () => {
+    // Titles are very different, but summaries share enough content to merge
+    const articles = [
+      { article_id: '1', title: '甲甲甲甲甲甲甲甲', summary: '政府宣布新能源轉型計畫推動減碳', source: '自由時報', bias_score: null, published_at: '2026-03-10T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '2', title: '乙乙乙乙乙乙乙乙', summary: '政府宣布新能源轉型計畫加速實施', source: '聯合報', bias_score: null, published_at: '2026-03-10T11:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+    ];
+
+    const mockDB = createMockDB({
+      all: (sql) => {
+        if (sql.includes('FROM articles')) return { results: articles };
+        return { results: [] };
+      }
+    });
+
+    const { buildAllClusters } = await import('../handlers/cron-blindspot.js');
+    await buildAllClusters({ DB: mockDB });
+
+    // Titles alone would NOT cluster (zero overlap). Summary overlap should merge them.
+    const insertCalls = mockDB.prepare.mock.calls.filter(c =>
+      c[0].includes('INSERT INTO event_clusters')
+    );
+    expect(insertCalls.length).toBe(1);
+  });
+
+  it('falls back to title-only when summary is null', async () => {
+    // Similar titles, null summary → should still cluster
+    const articles = [
+      { article_id: '1', title: '台灣經濟發展最新重要政策分析', summary: null, source: '自由時報', bias_score: null, published_at: '2026-03-10T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '2', title: '台灣經濟發展最新重要政策報導', summary: null, source: '聯合報', bias_score: null, published_at: '2026-03-10T11:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+    ];
+
+    const mockDB = createMockDB({
+      all: (sql) => {
+        if (sql.includes('FROM articles')) return { results: articles };
+        return { results: [] };
+      }
+    });
+
+    const { buildAllClusters } = await import('../handlers/cron-blindspot.js');
+    await buildAllClusters({ DB: mockDB });
+
+    const insertCalls = mockDB.prepare.mock.calls.filter(c =>
+      c[0].includes('INSERT INTO event_clusters')
+    );
+    expect(insertCalls.length).toBe(1);
+  });
 });
