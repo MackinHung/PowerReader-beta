@@ -551,11 +551,6 @@ export async function buildAllClusters(env) {
   const articles = rows.results || [];
   if (articles.length < CLUSTER_MIN_ARTICLES) return;
 
-  // Clear stale clusters before rebuilding (ensures old mega-clusters are removed)
-  await env.DB.prepare(
-    "DELETE FROM event_clusters WHERE datetime(latest_published_at) >= datetime('now', '-4 days')"
-  ).run().catch(() => {});
-
   const clusters = buildClusters(articles);
 
   for (const cluster of clusters) {
@@ -679,6 +674,12 @@ export async function buildAllClusters(env) {
       subClustersJson
     ).run();
   }
+
+  // Clean up stale clusters: remove recent-window clusters not rebuilt this cycle
+  // (updated_at older than 1 hour means they weren't part of this rebuild)
+  await env.DB.prepare(
+    "DELETE FROM event_clusters WHERE datetime(latest_published_at) >= datetime('now', '-4 days') AND datetime(updated_at) < datetime('now', '-1 hour')"
+  ).run().catch(() => {});
 
   // Clean up old clusters (>7 days)
   await env.DB.prepare(
