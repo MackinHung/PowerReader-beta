@@ -566,8 +566,9 @@
     color: var(--pr-ink);
   }
   .section-heading .material-symbols-outlined {
-    font-size: 32px;
+    font-size: 40px;
     color: #FF5722;
+    flex-shrink: 0;
   }
 
   /* === Comparison Table (Light, with zebra stripes) === */

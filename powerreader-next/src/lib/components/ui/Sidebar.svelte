@@ -112,7 +112,6 @@
     flex-direction: column;
     background: #111115;
     border-right: 4px solid var(--pr-ink);
-    box-shadow: 4px 0px 0px var(--pr-ink);
     z-index: 100;
     transition: width var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized);
     overflow: hidden;
@@ -143,17 +142,18 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
-    border: none;
-    border-radius: var(--md-sys-shape-corner-full);
-    background: transparent;
-    color: rgba(255, 255, 255, 0.7);
+    width: 36px;
+    height: 36px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 0;
+    background: rgba(0, 0, 0, 0.2);
+    color: #FFFFFF;
     cursor: pointer;
     flex-shrink: 0;
   }
   .toggle-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.4);
+    border-color: #FFFFFF;
   }
   .sidebar-brand {
     font-family: var(--pr-font-sans);

@@ -190,8 +190,9 @@
     gap: 8px;
   }
   .section-icon {
-    font-size: 22px;
-    color: var(--md-sys-color-primary);
+    font-size: 28px;
+    color: #FF5722;
+    flex-shrink: 0;
   }
   .section-desc {
     margin: 0;

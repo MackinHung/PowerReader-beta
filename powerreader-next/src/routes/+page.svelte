@@ -549,8 +549,9 @@
     color: var(--pr-ink);
   }
   .section-icon {
-    font-size: 32px;
+    font-size: 40px;
     color: #FF5722;
+    flex-shrink: 0;
   }
 
   /* === Misc === */

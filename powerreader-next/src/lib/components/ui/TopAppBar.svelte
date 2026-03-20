@@ -113,13 +113,10 @@
   }
   .bar-date {
     font: var(--md-sys-typescale-label-large-font);
-    color: var(--pr-ink);
-    font-weight: 900;
+    color: var(--md-sys-color-on-surface-variant);
+    font-weight: 700;
     white-space: nowrap;
-    padding: 4px 16px;
-    background: #E8E8E8;
-    border: 2px solid var(--pr-ink);
-    box-shadow: 2px 2px 0px var(--pr-ink);
-    margin-right: 8px;
+    margin-left: auto;
+    margin-right: 16px;
   }
 </style>
