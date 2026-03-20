@@ -565,6 +565,29 @@ describe('buildAllClusters', () => {
     expect(insertCalls.length).toBe(0);
   });
 
+  it('time decay: 15-day hard cutoff — identical titles never cluster', async () => {
+    // Identical titles (rawJaccard=1.0) but 16 days apart → decay=0 → never cluster
+    const articles = [
+      { article_id: '1', title: '完全相同的新聞標題用來測試十五天硬切', summary: '完全相同的摘要內容', source: '自由時報', bias_score: null, published_at: '2026-03-20T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '2', title: '完全相同的新聞標題用來測試十五天硬切', summary: '完全相同的摘要內容', source: '聯合報', bias_score: null, published_at: '2026-03-04T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+    ];
+
+    const mockDB = createMockDB({
+      all: (sql) => {
+        if (sql.includes('FROM articles')) return { results: articles };
+        return { results: [] };
+      }
+    });
+
+    const { buildAllClusters } = await import('../handlers/cron-blindspot.js');
+    await buildAllClusters({ DB: mockDB });
+
+    const insertCalls = mockDB.prepare.mock.calls.filter(c =>
+      c[0].includes('INSERT INTO event_clusters')
+    );
+    expect(insertCalls.length).toBe(0);
+  });
+
   it('queries 4-day window (not 2-day)', async () => {
     const mockDB = createMockDB({
       all: () => ({ results: [] })

@@ -379,9 +379,11 @@ const TITLE_SIMILARITY_THRESHOLD = 0.10;
 
 /**
  * Time decay multiplier for clustering.
+ * >15 days (360h): 0 (hard cutoff, never cluster).
  * Same day (≤24h): no decay. Linearly decays to 0.6 floor at 96h (4 days).
  */
 function timeDecay(hoursApart) {
+  if (hoursApart >= 360) return 0;
   if (hoursApart <= 24) return 1.0;
   if (hoursApart >= 96) return 0.6;
   return 1.0 - 0.4 * (hoursApart - 24) / 72;
