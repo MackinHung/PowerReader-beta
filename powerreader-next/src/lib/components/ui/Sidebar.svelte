@@ -210,7 +210,7 @@
     color: #ffffff;
   }
   .nav-item.active {
-    background: #CCFF00;
+    background: #FFFFFF;
     color: #000000;
     border: 4px solid var(--pr-ink);
     box-shadow: 6px 6px 0px var(--pr-ink);

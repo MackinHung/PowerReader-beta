@@ -44,18 +44,22 @@
   .field-container {
     position: relative;
     height: 56px;
-    border-radius: var(--md-sys-shape-corner-extra-small);
-    border: 1px solid var(--md-sys-color-outline);
-    transition: border-color var(--md-sys-motion-duration-short4);
+    border-radius: 0;
+    border: 3px solid var(--pr-ink);
+    box-shadow: 4px 4px 0px var(--pr-ink);
+    background: #FFFFFF;
+    transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
   }
   .focused .field-container {
-    border: 2px solid var(--md-sys-color-primary);
+    border: 3px solid #FF5722;
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px var(--pr-ink);
   }
   .error .field-container {
     border-color: var(--md-sys-color-error);
   }
   .error.focused .field-container {
-    border: 2px solid var(--md-sys-color-error);
+    border: 3px solid var(--md-sys-color-error);
   }
   .field-input {
     position: absolute;
@@ -78,14 +82,16 @@
     color: var(--md-sys-color-on-surface-variant);
     pointer-events: none;
     transition: all var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
-    background: var(--md-sys-color-surface);
+    background: transparent;
     padding: 0 4px;
   }
   .focused .field-label,
   .has-value .field-label {
-    top: 0;
-    font: var(--md-sys-typescale-body-small-font);
-    color: var(--md-sys-color-primary);
+    top: -10px;
+    background: #FFFFFF;
+    border: 1px solid var(--pr-ink);
+    font: 900 12px var(--pr-font-sans);
+    color: var(--pr-ink);
   }
   .error .field-label {
     color: var(--md-sys-color-error);

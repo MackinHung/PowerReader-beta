@@ -14,37 +14,26 @@
 
 <style>
   .md-card {
-    border-radius: var(--md-sys-shape-corner-small);
-    padding: 12px;
+    border-radius: 0;
+    padding: 24px;
     position: relative;
-    overflow: hidden;
     text-align: left;
     width: 100%;
-    border: var(--pr-border-width) solid var(--pr-border-color);
+    border: 4px solid var(--pr-ink);
     font: inherit;
     color: inherit;
-  }
-  .md-card::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: currentColor;
-    opacity: 0;
-    transition: opacity var(--md-sys-motion-duration-short4);
-    pointer-events: none;
+    box-shadow: 6px 6px 0px var(--pr-ink);
+    transition: transform 150ms ease, box-shadow 150ms ease;
   }
   .filled {
-    background: var(--md-sys-color-surface-container-lowest);
-    box-shadow: none;
+    background: #FFFFFF;
   }
   .elevated {
-    background: var(--md-sys-color-surface);
-    box-shadow: var(--md-sys-elevation-1);
+    background: #FFFFFF;
+    box-shadow: 8px 8px 0px var(--pr-ink);
   }
   .editorial {
     background: #ffffff;
-    border-left: 6px solid var(--pr-gold); /* Thicker left border for Neo-Brutalism */
-    box-shadow: none;
   }
   .dark {
     background: var(--pr-analysis-surface);
@@ -54,6 +43,12 @@
   .clickable {
     cursor: pointer;
   }
-  .clickable:hover::after { opacity: var(--md-sys-state-hover-opacity); }
-  .clickable:active::after { opacity: var(--md-sys-state-pressed-opacity); }
+  .clickable:hover {
+    transform: translate(-4px, -4px);
+    box-shadow: 10px 10px 0px var(--pr-ink);
+  }
+  .clickable:active {
+    transform: translate(2px, 2px);
+    box-shadow: 4px 4px 0px var(--pr-ink);
+  }
 </style>

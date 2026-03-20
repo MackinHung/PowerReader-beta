@@ -15,11 +15,11 @@
   --sidebar-width-rail: 72px;
   --content-max-width: 1200px;
 
-  /* Primary (Neo-Brutalism Lime) */
-  --md-sys-color-primary: #CCFF00;
+  /* Primary (Minimalist Black/White) */
+  --md-sys-color-primary: #FFFFFF;
   --md-sys-color-on-primary: #000000;
-  --md-sys-color-primary-container: #E6FF80;
-  --md-sys-color-on-primary-container: #1A1A00;
+  --md-sys-color-primary-container: #F0F0F0;
+  --md-sys-color-on-primary-container: #000000;
 
   /* Secondary (Graphite) */
   --md-sys-color-secondary: #000000;
@@ -44,8 +44,7 @@
   --md-sys-color-surface-container-highest: #D6D4CC;
   --md-sys-color-on-surface: #000000;
   --md-sys-color-on-surface-variant: #49454F;
-  --md-sys-color-inverse-surface: #000000;
-  --md-sys-color-inverse-on-surface: #CCFF00;
+  --md-sys-color-inverse-on-surface: #FFFFFF;
 
   /* Outline (Warm Gray) */
   --md-sys-color-outline: #B0A898;

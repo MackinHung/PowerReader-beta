@@ -21,41 +21,43 @@
     height: 40px;
     padding: 0 24px;
     border: var(--pr-border-width) solid var(--pr-border-color);
-    border-radius: var(--md-sys-shape-corner-small);
-    font: var(--md-sys-typescale-label-large-font);
+    border-radius: 0;
+    font: 900 16px var(--pr-font-sans);
     cursor: pointer;
     text-decoration: none;
     transition: transform 100ms ease, box-shadow 100ms ease;
-    position: relative;
-    overflow: hidden;
+    box-shadow: 4px 4px 0px var(--pr-ink);
   }
-  /* Neo-Brutalism Action - removal of ripple, physical press effect */
+  .md-button:hover:not(.disabled) {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px var(--pr-ink);
+  }
   .md-button:active:not(.disabled) {
     transform: translate(4px, 4px);
-    box-shadow: none !important;
+    box-shadow: 0px 0px 0px var(--pr-ink) !important;
   }
   .filled {
-    background: var(--md-sys-color-primary);
-    color: var(--md-sys-color-on-primary);
-    box-shadow: var(--md-sys-elevation-1);
+    background: #000000;
+    color: #FFFFFF;
   }
   .outlined {
-    background: var(--md-sys-color-surface-bright);
-    color: var(--pr-ink);
-    border: var(--pr-border-width) solid var(--pr-border-color);
-    box-shadow: var(--md-sys-elevation-1);
+    background: #FFFFFF;
+    color: #000000;
   }
   .text {
     background: transparent;
-    color: var(--pr-ink);
-    padding: 0 12px;
+    color: #000000;
+    box-shadow: none;
     border-color: transparent;
   }
-  .text:hover { background: rgba(0,0,0,0.05); }
+  .text:hover:not(.disabled) {
+    background: #F0F0F0;
+    box-shadow: none;
+    transform: none;
+  }
   .tonal {
-    background: var(--md-sys-color-secondary-container);
-    color: var(--md-sys-color-on-secondary-container);
-    box-shadow: var(--md-sys-elevation-1);
+    background: #F3F3F3;
+    color: #000000;
   }
   .md-button:disabled, .disabled {
     opacity: 0.38;

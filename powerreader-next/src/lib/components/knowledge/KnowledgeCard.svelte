@@ -77,24 +77,25 @@
   .knowledge-card {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 16px;
-    background: var(--md-sys-color-surface-container-low);
-    border: 1px solid var(--md-sys-color-outline-variant);
-    border-radius: var(--md-sys-shape-corner-medium, 12px);
+    gap: 12px;
+    padding: 24px;
+    background: #FFFFFF;
+    border: 4px solid var(--pr-ink);
+    border-radius: 0;
+    box-shadow: 6px 6px 0px var(--pr-ink);
     cursor: pointer;
     text-align: left;
     width: 100%;
-    transition: background 0.2s, box-shadow 0.2s;
-    font-family: inherit;
+    transition: transform 150ms ease, box-shadow 150ms ease;
+    font-family: var(--pr-font-sans);
   }
   .knowledge-card:hover {
-    background: var(--md-sys-color-surface-container);
-    box-shadow: var(--md-sys-elevation-1);
+    transform: translate(-4px, -4px);
+    box-shadow: 10px 10px 0px var(--pr-ink);
   }
   .knowledge-card:focus-visible {
-    outline: 2px solid var(--md-sys-color-primary);
-    outline-offset: 2px;
+    outline: 4px solid #FF5722;
+    outline-offset: 4px;
   }
 
   .card-header {

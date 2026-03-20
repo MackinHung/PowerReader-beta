@@ -161,11 +161,16 @@
     gap: 8px;
     padding: 8px 12px;
     background: var(--md-sys-color-surface-container);
-    border-radius: var(--md-sys-shape-corner-full, 28px);
-    border: 1px solid var(--md-sys-color-outline-variant);
+    height: 64px;
+    border: 4px solid var(--pr-ink);
+    border-radius: 0;
+    box-shadow: 6px 6px 0px var(--pr-ink);
+    transition: transform 150ms ease, box-shadow 150ms ease;
   }
   .search-bar:focus-within {
-    border-color: var(--md-sys-color-primary);
+    transform: translate(4px, 4px);
+    box-shadow: 2px 2px 0px var(--pr-ink);
+    outline: none;
   }
   .search-icon {
     color: var(--md-sys-color-on-surface-variant);
@@ -208,27 +213,28 @@
   .chip-row::-webkit-scrollbar { display: none; }
 
   .chip {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 6px 14px;
-    border-radius: var(--md-sys-shape-corner-small, 8px);
-    border: 1px solid var(--md-sys-color-outline-variant);
-    background: var(--md-sys-color-surface);
-    color: var(--md-sys-color-on-surface-variant);
-    font: var(--md-sys-typescale-label-large-font);
+    padding: 6px 16px;
+    border-radius: 0;
+    border: 3px solid var(--pr-ink);
+    box-shadow: 4px 4px 0px var(--pr-ink);
+    background: var(--md-sys-color-surface-bright);
+    color: var(--pr-ink);
+    font: 900 14px var(--pr-font-sans);
     cursor: pointer;
     white-space: nowrap;
     flex-shrink: 0;
-    transition: background 0.15s, color 0.15s;
+    transition: transform 150ms ease, box-shadow 150ms ease;
   }
   .chip:hover {
-    background: var(--md-sys-color-surface-container);
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px var(--pr-ink);
   }
   .chip.active {
-    background: var(--md-sys-color-primary);
-    color: var(--md-sys-color-on-primary);
-    border-color: var(--md-sys-color-primary);
+    background: #000000;
+    color: #FFFFFF;
+    border-color: var(--pr-ink);
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px var(--pr-ink);
   }
   .chip-count {
     font: var(--md-sys-typescale-label-small-font);

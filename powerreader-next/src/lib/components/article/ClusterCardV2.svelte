@@ -25,7 +25,7 @@
       case '政治': return '#FF3366'; // Pink
       case '社會': return '#FFE600'; // Yellow
       case '國際': return '#00E5FF'; // Cyan
-      case '兩岸': return '#CCFF00'; // Lime
+      case '兩岸': return '#B026FF'; // Violet
       default: return '#E8E8E8'; // Gray
     }
   }
@@ -119,7 +119,7 @@
     box-shadow: 10px 14px 0px var(--pr-ink);
   }
   .brutalist-card:focus-visible {
-    outline: 4px solid #CCFF00;
+    outline: 4px solid #FF5722;
   }
   
   .heat-badge {

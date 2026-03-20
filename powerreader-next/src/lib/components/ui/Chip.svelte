@@ -36,36 +36,26 @@
     gap: 8px;
     height: 32px;
     padding: 0 16px;
-    border-radius: var(--md-sys-shape-corner-small);
-    border: var(--pr-border-width) solid var(--pr-border-color);
-    box-shadow: 2px 2px 0px var(--pr-border-color);
-    background: var(--md-sys-color-surface-bright);
-    color: var(--md-sys-color-on-surface);
-    font: var(--md-sys-typescale-label-large-font);
+    border-radius: 0;
+    border: 3px solid var(--pr-ink);
+    box-shadow: 2px 2px 0px var(--pr-ink);
+    background: #FFFFFF;
+    color: #000000;
+    font: 900 14px var(--pr-font-sans);
     cursor: pointer;
-    position: relative;
-    overflow: hidden;
-    transition: transform 100ms ease, box-shadow 100ms ease;
+    transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
   }
-  .md-chip::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: currentColor;
-    opacity: 0;
-    transition: opacity var(--md-sys-motion-duration-short4);
-    pointer-events: none;
+  .md-chip:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 4px 4px 0px var(--pr-ink);
   }
-  .md-chip:hover::after { opacity: var(--md-sys-state-hover-opacity); }
   .md-chip:active {
     transform: translate(2px, 2px);
-    box-shadow: none !important;
+    box-shadow: 0px 0px 0px var(--pr-ink);
   }
   .md-chip.selected {
-    background: var(--md-sys-color-primary);
-    color: var(--pr-ink);
-    border-color: var(--pr-border-color);
-    font-weight: bold;
+    background: #000000;
+    color: #FFFFFF;
   }
   .chip-icon {
     font-size: 18px;
@@ -95,21 +85,19 @@
     padding: 8px 16px;
     padding-bottom: 8px;
     border: none;
-    background: transparent;
-    color: var(--md-sys-color-on-surface-variant);
-    font: var(--md-sys-typescale-label-large-font);
+    background: #FFFFFF;
+    color: #000000;
+    font: 900 16px var(--pr-font-sans);
     cursor: pointer;
-    border-bottom: var(--pr-border-width) solid transparent;
-    transition: color var(--md-sys-motion-duration-short4),
-                border-color var(--md-sys-motion-duration-short4);
+    border-bottom: 4px solid var(--pr-ink);
+    transition: transform 150ms ease, background 150ms ease;
   }
   .md-tab.selected {
-    color: var(--pr-ink);
-    font-weight: 900;
-    border-bottom: var(--pr-border-width) solid var(--pr-gold);
+    background: #000000;
+    color: #FFFFFF;
   }
   .md-tab:hover:not(.selected) {
-    color: var(--md-sys-color-on-surface);
+    background: #F0F0F0;
   }
   .tab-label {
     position: relative;

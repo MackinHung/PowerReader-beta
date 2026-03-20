@@ -45,8 +45,8 @@
     left: 0;
     right: 0;
     height: 80px;
-    background: var(--md-sys-color-surface);
-    border-top: 1px solid var(--pr-gold);
+    background: #FFFFFF;
+    border-top: 4px solid var(--pr-ink);
     display: flex;
     align-items: flex-start;
     justify-content: space-around;
@@ -70,7 +70,7 @@
     font-family: inherit;
   }
   .nav-item.active {
-    color: var(--md-sys-color-on-surface);
+    color: #FFFFFF;
   }
   .nav-icon-container {
     position: relative;
@@ -83,20 +83,23 @@
   .nav-indicator {
     position: absolute;
     width: 64px;
-    height: 32px;
-    border-radius: var(--md-sys-shape-corner-full);
-    background: var(--pr-gold);
+    height: 40px;
+    border-radius: 0;
+    background: var(--pr-ink);
+    box-shadow: 4px 4px 0px #FF5722;
   }
   .nav-icon {
     position: relative;
     font-size: 24px;
+    z-index: 2;
   }
   .active .nav-icon {
-    color: var(--pr-ink);
+    color: #FFFFFF;
     font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   }
   .nav-label {
-    font: var(--md-sys-typescale-label-medium-font);
+    font: 900 12px var(--pr-font-sans);
+    margin-top: 4px;
   }
 
   /* Desktop: hide bottom navigation (sidebar takes over) */

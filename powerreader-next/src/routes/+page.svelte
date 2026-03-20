@@ -500,7 +500,9 @@
     transition: color 200ms ease;
   }
   .hero-card:hover .hero-title {
-    color: #CCFF00;
+    text-decoration: underline;
+    text-decoration-thickness: 4px;
+    text-underline-offset: 8px;
   }
   .hero-bottom-info {
     display: flex;
