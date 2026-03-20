@@ -33,10 +33,11 @@ bucket_name = "powerreader-articles"
 [ai]
 binding = "AI"
 
-# ===== Cron Triggers (T07 monitoring) =====
-# Hourly: aggregate metrics_raw → metrics_hourly + evaluate alerts
+# ===== Cron Triggers (split to stay within 10ms CPU limit per invocation) =====
+# :00 = clustering + blindspot + session cleanup (CPU-heavy O(n²))
+# :30 = metrics aggregation + alert evaluation (CPU-light)
 [triggers]
-crons = ["0 * * * *"]
+crons = ["0 * * * *", "30 * * * *"]
 
 # ===== Limits =====
 # cpu_ms removed — not supported on Free plan

@@ -65,14 +65,26 @@ export default {
     });
   },
 
-  // Cron trigger: hourly metrics aggregation + alert evaluation (T07) + session cleanup
+  // Cron trigger: split into two invocations to stay within 10ms CPU limit (free plan)
+  // :00 = clustering + blindspot + session cleanup (CPU-heavy O(n²) clustering)
+  // :30 = metrics aggregation + alert evaluation (CPU-light DB aggregation)
   async scheduled(event, env, ctx) {
-    // Metrics aggregation (non-blocking — must not block cluster/blindspot jobs)
-    try {
-      await aggregateHourly(env);
-      const metrics = await getFullMetrics(env);
-      ctx.waitUntil(evaluateAlerts(env, metrics));
-    } catch { /* metrics_raw table may not exist yet */ }
+    const minute = new Date(event.scheduledTime).getMinutes();
+    const hour = new Date(event.scheduledTime).getUTCHours();
+
+    if (minute === 30) {
+      // ── :30 — Metrics aggregation + alerts (T07) ──
+      ctx.waitUntil((async () => {
+        try {
+          await aggregateHourly(env);
+          const metrics = await getFullMetrics(env);
+          await evaluateAlerts(env, metrics);
+        } catch { /* metrics_raw table may not exist yet */ }
+      })());
+      return;
+    }
+
+    // ── :00 — Clustering + blindspot + cleanup ──
 
     // Cleanup expired sessions (non-blocking)
     ctx.waitUntil(
@@ -93,7 +105,6 @@ export default {
     })().catch(() => {}));
 
     // Reset daily analysis counts at midnight Taiwan time (UTC+8 = UTC 16:00)
-    const hour = new Date(event.scheduledTime).getUTCHours();
     if (hour === 16) {
       ctx.waitUntil(
         env.DB.prepare(
