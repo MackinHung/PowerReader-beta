@@ -30,7 +30,8 @@
     padding: 8px 12px;
     background: var(--md-sys-color-error-container);
     color: var(--md-sys-color-on-error-container);
-    border-radius: var(--md-sys-shape-corner-small) var(--md-sys-shape-corner-small) 0 0;
+    border-radius: 0;
+    border: 3px solid var(--pr-ink);
     font: var(--md-sys-typescale-label-medium-font);
     animation: slide-in-top var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate);
   }

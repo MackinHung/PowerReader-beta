@@ -47,8 +47,9 @@
   .camp-bar-wrap { width: 100%; }
   .camp-bar {
     display: flex;
-    height: 18px;
-    border-radius: var(--md-sys-shape-corner-full);
+    height: 20px;
+    border-radius: 0;
+    border: 2px solid var(--pr-ink);
     overflow: hidden;
   }
   .segment {
@@ -79,6 +80,6 @@
   .dot {
     width: 12px;
     height: 6px;
-    border-radius: 2px;
+    border-radius: 0;
   }
 </style>

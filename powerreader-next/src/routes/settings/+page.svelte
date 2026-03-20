@@ -759,7 +759,9 @@
   }
   .dialog-card {
     background: var(--md-sys-color-surface-container-high);
-    border-radius: var(--md-sys-shape-corner-large);
+    border-radius: 0;
+    border: 4px solid var(--pr-ink);
+    box-shadow: 8px 8px 0px var(--pr-ink);
     padding: 24px;
     max-width: 400px;
     width: 90%;
@@ -777,14 +779,14 @@
   }
   .dialog-input {
     padding: 10px 12px;
-    border: 1px solid var(--md-sys-color-outline);
-    border-radius: var(--md-sys-shape-corner-small);
+    border: 2px solid var(--pr-ink);
+    border-radius: 0;
     background: var(--md-sys-color-surface);
     color: var(--md-sys-color-on-surface);
     font: var(--md-sys-typescale-body-large-font);
     outline: none;
   }
-  .dialog-input:focus { border-color: var(--md-sys-color-primary); }
+  .dialog-input:focus { border-color: #FF5722; }
   .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
 
   /* ── Model Section ── */

@@ -15,9 +15,9 @@
   --sidebar-width-rail: 72px;
   --content-max-width: 1200px;
 
-  /* Primary (Minimalist Black/White) */
-  --md-sys-color-primary: #FFFFFF;
-  --md-sys-color-on-primary: #000000;
+  /* Primary (Neo-Brutalism Black) */
+  --md-sys-color-primary: #000000;
+  --md-sys-color-on-primary: #FFFFFF;
   --md-sys-color-primary-container: #F0F0F0;
   --md-sys-color-on-primary-container: #000000;
 
@@ -177,7 +177,7 @@ body {
 
 /* Focus visible */
 :focus-visible {
-  outline: var(--pr-border-width) solid var(--md-sys-color-primary);
+  outline: var(--pr-border-width) solid #FF5722;
   outline-offset: 2px;
   border-radius: 0;
 }

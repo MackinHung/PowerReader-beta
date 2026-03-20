@@ -396,7 +396,9 @@
   }
   .login-dialog {
     background: var(--md-sys-color-surface-container-high);
-    border-radius: var(--md-sys-shape-corner-large);
+    border-radius: 0;
+    border: 4px solid var(--pr-ink);
+    box-shadow: 8px 8px 0px var(--pr-ink);
     padding: 24px;
     max-width: 360px;
     width: 90%;
@@ -434,14 +436,14 @@
     justify-content: center;
     gap: 8px;
     border: none;
-    border-radius: var(--md-sys-shape-corner-full);
+    border-radius: 0;
     cursor: pointer;
     font: var(--md-sys-typescale-label-large-font);
     padding: 12px 24px;
   }
   .login-dialog-btn.primary {
-    background: var(--md-sys-color-primary);
-    color: var(--md-sys-color-on-primary);
+    background: #000000;
+    color: #FFFFFF;
   }
   .login-dialog-btn.primary:hover {
     box-shadow: var(--md-sys-elevation-1);

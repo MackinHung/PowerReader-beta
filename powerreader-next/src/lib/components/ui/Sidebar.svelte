@@ -162,7 +162,6 @@
     font-weight: 900;
     font-style: italic;
     color: var(--pr-ink);
-    text-transform: uppercase;
     letter-spacing: -1px;
     white-space: nowrap;
     overflow: hidden;

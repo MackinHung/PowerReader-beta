@@ -42,7 +42,8 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    border-radius: var(--md-sys-shape-corner-extra-small);
+    border-radius: 0;
+    border: 2px solid var(--pr-ink);
     background: var(--md-sys-color-surface-container);
     white-space: nowrap;
   }
@@ -60,7 +61,7 @@
     justify-content: center;
     width: 16px;
     height: 16px;
-    border-radius: 50%;
+    border-radius: 0;
     background: var(--md-sys-color-primary-container);
     color: var(--md-sys-color-on-primary-container);
     font-size: 10px;

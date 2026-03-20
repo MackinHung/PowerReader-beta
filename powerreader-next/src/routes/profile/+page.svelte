@@ -371,7 +371,7 @@
   .contrib-badge {
     font: var(--md-sys-typescale-label-small-font);
     padding: 2px 8px;
-    border-radius: var(--md-sys-shape-corner-extra-small);
+    border-radius: 0;
     background: var(--md-sys-color-surface-container);
     color: var(--md-sys-color-on-surface-variant);
   }
@@ -424,7 +424,9 @@
     align-items: center;
     gap: 12px;
     padding: 14px 16px;
-    border-radius: var(--md-sys-shape-corner-medium);
+    border-radius: 0;
+    border: 3px solid var(--pr-ink);
+    box-shadow: 4px 4px 0px var(--pr-ink);
     background: var(--md-sys-color-surface-container);
     text-decoration: none;
     color: inherit;
@@ -440,7 +442,7 @@
   .entry-card-icon {
     width: 40px;
     height: 40px;
-    border-radius: var(--md-sys-shape-corner-full);
+    border-radius: 0;
     background: var(--md-sys-color-primary-container);
     color: var(--md-sys-color-on-primary-container);
     display: flex;
@@ -476,7 +478,7 @@
     background: var(--md-sys-color-surface-container-highest);
     color: var(--md-sys-color-on-surface-variant);
     padding: 2px 8px;
-    border-radius: var(--md-sys-shape-corner-full);
+    border-radius: 0;
     flex-shrink: 0;
   }
   .logout-section {

@@ -43,8 +43,8 @@
     position: relative;
     width: 52px;
     height: 32px;
-    border-radius: var(--md-sys-shape-corner-full);
-    border: 2px solid var(--md-sys-color-outline);
+    border-radius: 0;
+    border: 2px solid var(--pr-ink);
     background: var(--md-sys-color-surface-container-highest);
     cursor: pointer;
     padding: 0;
@@ -62,7 +62,7 @@
     transform: translateY(-50%);
     width: 16px;
     height: 16px;
-    border-radius: var(--md-sys-shape-corner-full);
+    border-radius: 0;
     background: var(--md-sys-color-outline);
     transition: left var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
                 width var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),

@@ -126,16 +126,17 @@
   .dot {
     width: 8px;
     height: 8px;
-    border-radius: var(--md-sys-shape-corner-full);
+    border-radius: 0;
     background: var(--md-sys-color-outline-variant);
     transition: all var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
   }
   .dot.active {
     width: 24px;
-    background: var(--md-sys-color-primary);
+    height: 4px;
+    background: var(--pr-ink);
   }
   .dot.done {
-    background: var(--md-sys-color-primary);
+    background: var(--pr-ink);
     opacity: 0.6;
   }
   .step-content {
@@ -180,7 +181,7 @@
   .camp-label {
     font: var(--md-sys-typescale-label-medium-font);
     padding: 4px 10px;
-    border-radius: var(--md-sys-shape-corner-extra-small);
+    border-radius: 0;
   }
   .camp-label.green {
     color: var(--camp-green);

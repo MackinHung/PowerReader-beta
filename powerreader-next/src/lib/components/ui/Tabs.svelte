@@ -28,7 +28,7 @@
     display: flex;
     overflow-x: auto;
     scrollbar-width: none;
-    border-bottom: 1px solid var(--md-sys-color-surface-container-highest);
+    border-bottom: 4px solid var(--pr-ink);
   }
   .md-tabs::-webkit-scrollbar { display: none; }
   .md-tab {
@@ -42,7 +42,7 @@
     border: none;
     background: transparent;
     color: var(--md-sys-color-on-surface-variant);
-    font: var(--md-sys-typescale-label-large-font);
+    font: 900 16px var(--pr-font-sans);
     cursor: pointer;
     padding: 0 16px;
     white-space: nowrap;
@@ -58,7 +58,8 @@
   }
   .md-tab:hover::after { opacity: var(--md-sys-state-hover-opacity); }
   .md-tab.active {
-    color: var(--md-sys-color-primary);
+    background: #000000;
+    color: #FFFFFF;
   }
   .tab-label {
     position: relative;
@@ -66,12 +67,10 @@
   .tab-indicator {
     position: absolute;
     bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
     width: 100%;
-    max-width: 48px;
-    height: 3px;
-    border-radius: 3px 3px 0 0;
-    background: var(--md-sys-color-primary);
+    height: 4px;
+    border-radius: 0;
+    background: var(--pr-ink);
   }
 </style>

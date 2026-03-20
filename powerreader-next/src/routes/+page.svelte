@@ -419,7 +419,7 @@
   }
   .category-chips {
     display: flex;
-    gap: 4px;
+    gap: 8px;
     overflow-x: auto;
     scrollbar-width: none;
     padding: 4px 0;
@@ -493,7 +493,7 @@
     margin-right: 4px;
   }
   .hero-title {
-    font: 900 36px/1.2 var(--pr-font-sans);
+    font: 900 28px/1.2 var(--pr-font-sans);
     color: #ffffff;
     margin: 64px 0 24px 0;
     width: 75%;
@@ -614,8 +614,8 @@
 
   @media (min-width: 768px) {
     .hero-title {
-      font-size: 28px;
-      line-height: 36px;
+      font-size: 36px;
+      line-height: 44px;
     }
     .hero-content {
       padding: 32px;

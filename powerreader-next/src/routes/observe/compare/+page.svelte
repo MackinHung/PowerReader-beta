@@ -158,7 +158,9 @@
     flex-direction: column;
     gap: 6px;
     padding: 12px;
-    border-radius: var(--md-sys-shape-corner-medium);
+    border-radius: 0;
+    border: 2px solid var(--pr-ink);
+    box-shadow: 4px 4px 0px var(--pr-ink);
     background: var(--md-sys-color-surface-container-lowest);
   }
   .compare-source {

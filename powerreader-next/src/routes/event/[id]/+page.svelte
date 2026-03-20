@@ -479,7 +479,6 @@
     margin: 16px 0;
     font: 900 40px/1.2 var(--pr-font-sans);
     color: var(--pr-ink);
-    text-transform: uppercase;
   }
 
   /* === Analysis Progress === */
@@ -643,8 +642,9 @@
     gap: 8px;
     background: none;
     border: none;
-    padding: 4px;
-    border-radius: var(--md-sys-shape-corner-extra-small);
+    padding: 8px 12px;
+    min-height: 44px;
+    border-radius: 0;
     cursor: pointer;
     text-align: left;
     width: 100%;
@@ -704,7 +704,8 @@
     padding: 20px 16px;
     text-align: center;
     background: var(--md-sys-color-surface-container-low);
-    border-radius: var(--md-sys-shape-corner-medium);
+    border-radius: 0;
+    border: 3px solid var(--pr-ink);
   }
   .not-ready-icon {
     font-size: 32px;
@@ -719,8 +720,8 @@
 
   /* === Sub-cluster Groups === */
   .sub-cluster-group {
-    border: 1px solid var(--md-sys-color-outline-variant);
-    border-radius: var(--md-sys-shape-corner-medium);
+    border: 3px solid var(--pr-ink);
+    border-radius: 0;
     overflow: hidden;
   }
   .sub-cluster-header {
