@@ -423,7 +423,6 @@
     overflow-x: auto;
     scrollbar-width: none;
     padding: 4px 0;
-    border-bottom: 1px solid var(--md-sys-color-outline-variant);
   }
   .category-chips::-webkit-scrollbar { display: none; }
 

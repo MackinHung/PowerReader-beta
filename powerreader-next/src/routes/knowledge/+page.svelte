@@ -159,14 +159,13 @@
     gap: 8px;
     padding: 8px 12px;
     background: var(--md-sys-color-surface-container);
-    height: 64px;
-    border: 4px solid var(--pr-ink);
+    height: 52px;
+    border: 3px solid var(--pr-ink);
     border-radius: 0;
-    box-shadow: 6px 6px 0px var(--pr-ink);
-    transition: transform 150ms ease, box-shadow 150ms ease;
+    box-shadow: none;
+    transition: box-shadow 150ms ease;
   }
   .search-bar:focus-within {
-    transform: translate(4px, 4px);
     box-shadow: 2px 2px 0px var(--pr-ink);
     outline: none;
   }
@@ -211,28 +210,32 @@
   .chip-row::-webkit-scrollbar { display: none; }
 
   .chip {
-    padding: 6px 16px;
+    display: inline-flex;
+    align-items: center;
+    height: 32px;
+    padding: 0 16px;
     border-radius: 0;
     border: 3px solid var(--pr-ink);
-    box-shadow: 4px 4px 0px var(--pr-ink);
-    background: var(--md-sys-color-surface-bright);
-    color: var(--pr-ink);
+    box-shadow: 2px 2px 0px var(--pr-ink);
+    background: #FFFFFF;
+    color: #000000;
     font: 900 14px var(--pr-font-sans);
     cursor: pointer;
     white-space: nowrap;
     flex-shrink: 0;
-    transition: transform 150ms ease, box-shadow 150ms ease;
+    transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
   }
   .chip:hover {
     transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0px var(--pr-ink);
+    box-shadow: 4px 4px 0px var(--pr-ink);
+  }
+  .chip:active {
+    transform: translate(2px, 2px);
+    box-shadow: 0px 0px 0px var(--pr-ink);
   }
   .chip.active {
     background: #000000;
     color: #FFFFFF;
-    border-color: var(--pr-ink);
-    transform: translate(2px, 2px);
-    box-shadow: 2px 2px 0px var(--pr-ink);
   }
   .chip-count {
     font: var(--md-sys-typescale-label-small-font);
@@ -282,18 +285,19 @@
     to { transform: rotate(360deg); }
   }
   .retry-btn {
-    padding: 8px 16px;
+    padding: 0 16px;
+    height: 32px;
     border-radius: 0;
     border: 3px solid var(--pr-ink);
-    box-shadow: 4px 4px 0px var(--pr-ink);
+    box-shadow: 2px 2px 0px var(--pr-ink);
     background: #FFFFFF;
-    color: var(--pr-ink);
+    color: #000000;
     font: 900 14px var(--pr-font-sans);
     cursor: pointer;
     transition: transform 150ms ease, box-shadow 150ms ease;
   }
   .retry-btn:hover {
     transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0px var(--pr-ink);
+    box-shadow: 4px 4px 0px var(--pr-ink);
   }
 </style>

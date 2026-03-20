@@ -94,16 +94,16 @@
     background: #FFFFFF;
     border: 4px solid var(--pr-ink);
     border-radius: 0;
-    box-shadow: 6px 6px 0px var(--pr-ink);
+    box-shadow: none;
     cursor: pointer;
     text-align: left;
     width: 100%;
-    transition: transform 150ms ease, box-shadow 150ms ease;
+    transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
     font-family: var(--pr-font-sans);
   }
   .knowledge-card:hover {
-    transform: translate(-4px, -4px);
-    box-shadow: 10px 10px 0px var(--pr-ink);
+    transform: translate(-2px, -4px);
+    box-shadow: 6px 8px 0px var(--pr-ink);
   }
   .knowledge-card:focus-visible {
     outline: 4px solid #FF5722;
@@ -120,15 +120,13 @@
     width: 28px;
     height: 28px;
     flex-shrink: 0;
-    border: 2px solid var(--pr-ink);
-    border-radius: 0;
+    border-radius: 50%;
   }
   .party-dot {
     width: 28px;
     height: 28px;
     flex-shrink: 0;
-    border: 2px solid var(--pr-ink);
-    border-radius: 0;
+    border-radius: 50%;
   }
   .figure-name {
     margin: 0;
@@ -159,11 +157,9 @@
   }
   .type-badge {
     font: 900 12px var(--pr-font-sans);
-    color: var(--pr-ink);
-    background: var(--md-sys-color-primary-container);
-    padding: 2px 10px;
-    border-radius: 0;
-    border: 2px solid var(--pr-ink);
+    color: var(--md-sys-color-on-surface-variant);
+    background: transparent;
+    padding: 0;
   }
 
   .card-title {

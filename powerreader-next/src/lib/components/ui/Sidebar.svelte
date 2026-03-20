@@ -110,7 +110,7 @@
     bottom: 0;
     display: flex;
     flex-direction: column;
-    background: #111115;
+    background: #000000;
     border-right: 4px solid var(--pr-ink);
     z-index: 200;
     transition: width var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized);
@@ -131,8 +131,6 @@
     flex-shrink: 0;
     background: #FF5722;
     border-bottom: 2px solid var(--pr-ink);
-    margin-right: -4px;
-    border-right: 4px solid var(--pr-ink);
   }
   .sidebar-top.expanded {
     justify-content: flex-start;
@@ -158,8 +156,8 @@
   }
   .sidebar-brand {
     font-family: var(--pr-font-sans);
-    font-size: 24px;
-    line-height: 28px;
+    font-size: 28px;
+    line-height: 32px;
     font-weight: 900;
     font-style: italic;
     color: var(--pr-ink);
@@ -260,7 +258,7 @@
     flex-direction: column;
     padding: 0;
     border-top: 2px solid rgba(255, 255, 255, 0.1);
-    background: #111115;
+    background: #000000;
     flex-shrink: 0;
   }
   .sidebar-bottom .nav-item {
