@@ -360,8 +360,10 @@ describe('buildAllClusters', () => {
     const deleteCalls = mockDB.prepare.mock.calls.filter(c =>
       c[0].includes('DELETE FROM event_clusters')
     );
-    expect(deleteCalls.length).toBe(1);
-    expect(deleteCalls[0][0]).toContain('-7 days');
+    // 2 DELETE calls: stale cluster cleanup (-4 days) + old cluster cleanup (-7 days)
+    expect(deleteCalls.length).toBe(2);
+    expect(deleteCalls.some(c => c[0].includes('-4 days'))).toBe(true);
+    expect(deleteCalls.some(c => c[0].includes('-7 days'))).toBe(true);
   });
 
   it('UPSERTs into event_clusters (INSERT ON CONFLICT)', async () => {

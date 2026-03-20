@@ -530,6 +530,11 @@ export async function buildAllClusters(env) {
   const articles = rows.results || [];
   if (articles.length < CLUSTER_MIN_ARTICLES) return;
 
+  // Clear stale clusters before rebuilding (ensures old mega-clusters are removed)
+  await env.DB.prepare(
+    "DELETE FROM event_clusters WHERE datetime(latest_published_at) >= datetime('now', '-4 days')"
+  ).run().catch(() => {});
+
   const clusters = buildClusters(articles);
 
   for (const cluster of clusters) {
