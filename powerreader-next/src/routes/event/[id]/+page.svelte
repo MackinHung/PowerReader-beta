@@ -4,6 +4,7 @@
   import { untrack } from 'svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import IconButton from '$lib/components/ui/IconButton.svelte';
+  import ShareCardButton from '$lib/components/share/ShareCardButton.svelte';
   import CampBar from '$lib/components/data-viz/CampBar.svelte';
   import BlindspotAlert from '$lib/components/data-viz/BlindspotAlert.svelte';
   import ClusterTimeline from '$lib/components/data-viz/ClusterTimeline.svelte';
@@ -71,6 +72,18 @@
   });
 
   let groupReadiness = $derived(checkGroupReadiness(articles, analysesMap()));
+
+  let eventShareData = $derived(cluster ? {
+    title: cluster.representative_title ?? '',
+    articleCount: cluster.article_count ?? 0,
+    sourceCount: cluster.source_count ?? 0,
+    campDistribution: cluster.camp_distribution ?? null,
+    blindspotType: cluster.is_blindspot ? (cluster.blindspot_type ?? null) : null,
+    analysisProgress: {
+      analyzed: analysisProgress.analyzed,
+      total: analysisProgress.total,
+    },
+  } : null);
 
   $effect(() => {
     const id = clusterId;
@@ -204,7 +217,11 @@
           {#if shareMsg}
             <span class="share-msg">{shareMsg}</span>
           {/if}
-          <IconButton icon="share" label="分享" onclick={handleShare} />
+          {#if eventShareData}
+            <ShareCardButton eventData={eventShareData} variant="icon" />
+          {:else}
+            <IconButton icon="share" label="分享" onclick={handleShare} />
+          {/if}
         </div>
       </div>
       <h1 class="detail-title">{cluster.representative_title}</h1>

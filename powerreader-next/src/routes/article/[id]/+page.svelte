@@ -10,6 +10,7 @@
   import KnowledgePanel from '$lib/components/article/KnowledgePanel.svelte';
   import ArticleCluster from '$lib/components/article/ArticleCluster.svelte';
   import ProgressIndicator from '$lib/components/ui/ProgressIndicator.svelte';
+  import ShareCardButton from '$lib/components/share/ShareCardButton.svelte';
   import { getArticlesStore } from '$lib/stores/articles.svelte.js';
   import { getMediaQueryStore } from '$lib/stores/mediaQuery.svelte.js';
   import * as api from '$lib/core/api.js';
@@ -115,16 +116,15 @@
     return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   }
 
-  function handleShare() {
-    if (navigator.share) {
-      navigator.share({
-        title: article?.title,
-        url: window.location.href
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-    }
-  }
+  let articleShareData = $derived(article ? {
+    title: article.title ?? '',
+    source: article.source ?? '',
+    biasScore: article.bias_score ?? null,
+    isPolitical: article.is_political !== false,
+    campRatio: article.camp_ratio ?? null,
+    emotionIntensity: article.emotion_intensity ?? null,
+    points: article.points ?? [],
+  } : null);
 
   function handleOpenOriginal() {
     if (article?.primary_url) {
@@ -188,9 +188,9 @@
       {/if}
 
       <div class="action-row">
-        <button class="icon-action" onclick={handleShare} aria-label="分享">
-          <span class="material-symbols-outlined">share</span>
-        </button>
+        {#if articleShareData}
+          <ShareCardButton articleData={articleShareData} variant="icon" />
+        {/if}
       </div>
 
       {#if article.analysis_status !== 'done'}

@@ -5,10 +5,21 @@
   import CampBar from '$lib/components/data-viz/CampBar.svelte';
   import EmotionMeter from '$lib/components/data-viz/EmotionMeter.svelte';
   import KnowledgePanel from '$lib/components/article/KnowledgePanel.svelte';
+  import ShareCardButton from '$lib/components/share/ShareCardButton.svelte';
   import { t } from '$lib/i18n/zh-TW.js';
   import { getMediaQueryStore } from '$lib/stores/mediaQuery.svelte.js';
 
   let { article = null, open = false, onclose } = $props();
+
+  let shareData = $derived(article ? {
+    title: article.title ?? '',
+    source: article.source ?? '',
+    biasScore: article.bias_score ?? null,
+    isPolitical: article.is_political !== false,
+    campRatio: article.camp_ratio ?? null,
+    emotionIntensity: article.emotion_intensity ?? null,
+    points: article.points ?? [],
+  } : null);
 
   let isPolitical = $derived(article?.is_political !== false);
   const media = getMediaQueryStore();
@@ -38,6 +49,9 @@
           <span class="material-symbols-outlined">close</span>
         </button>
         <h2 class="panel-title">分析詳情</h2>
+        {#if shareData}
+          <ShareCardButton articleData={shareData} variant="icon" />
+        {/if}
         <button class="open-btn" onclick={handleOpenOriginal} aria-label="查看原文">
           <span class="material-symbols-outlined">open_in_new</span>
         </button>
@@ -53,6 +67,9 @@
       <div class="panel-header">
         <h2 class="panel-title">分析詳情</h2>
         <div class="panel-header-actions">
+          {#if shareData}
+            <ShareCardButton articleData={shareData} variant="icon" />
+          {/if}
           <button class="open-btn" onclick={handleOpenOriginal} aria-label="查看原文" title="查看原文">
             <span class="material-symbols-outlined">open_in_new</span>
           </button>

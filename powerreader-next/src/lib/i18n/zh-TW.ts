@@ -762,6 +762,20 @@ const messages: Record<string, string> = {
   'point_shop.desc': '使用貢獻點數兌換進階分析報告、功能與獎品。',
 
   // ==============================================
+  // Share Card
+  // ==============================================
+  'share.card.button': '分享分析卡片',
+  'share.card.title': '分享分析卡片',
+  'share.card.generating': '生成中...',
+  'share.card.download': '下載圖片',
+  'share.card.share': '分享',
+  'share.card.sharing': '分享中...',
+  'share.card.downloaded': '已下載圖片',
+  'share.card.shared': '分享成功',
+  'share.card.error': '生成失敗，請重試',
+  'share.card.preview_alt': '分析卡片預覽',
+
+  // ==============================================
   // Accessibility (a11y)
   // ==============================================
   // Navigation

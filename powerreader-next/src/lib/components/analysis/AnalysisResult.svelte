@@ -5,9 +5,20 @@
   import BiasSpectrum from '$lib/components/data-viz/BiasSpectrum.svelte';
   import CampBar from '$lib/components/data-viz/CampBar.svelte';
   import EmotionMeter from '$lib/components/data-viz/EmotionMeter.svelte';
+  import ShareCardButton from '$lib/components/share/ShareCardButton.svelte';
   import { t } from '$lib/i18n/zh-TW.js';
 
-  let { result = {}, onsubmit, ondiscard } = $props();
+  let { result = {}, articleTitle = '', articleSource = '', onsubmit, ondiscard } = $props();
+
+  let shareData = $derived({
+    title: articleTitle,
+    source: articleSource,
+    biasScore: result.bias_score ?? null,
+    isPolitical: result.is_political !== false,
+    campRatio: result.camp_ratio ?? null,
+    emotionIntensity: result.emotion_intensity ?? null,
+    points: result.points ?? [],
+  });
 
   let isPolitical = $derived(result.is_political !== false);
 </script>
@@ -75,8 +86,11 @@
   {/if}
 
   <div class="actions">
-    <Button onclick={onsubmit}>提交分析</Button>
-    <Button variant="text" onclick={ondiscard}>放棄</Button>
+    <ShareCardButton articleData={shareData} variant="icon" />
+    <div class="actions-right">
+      <Button onclick={onsubmit}>提交分析</Button>
+      <Button variant="text" onclick={ondiscard}>放棄</Button>
+    </div>
   </div>
 </div>
 
@@ -183,8 +197,12 @@
   }
   .actions {
     display: flex;
-    gap: 8px;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: space-between;
     padding-top: 8px;
+  }
+  .actions-right {
+    display: flex;
+    gap: 8px;
   }
 </style>

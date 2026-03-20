@@ -184,7 +184,7 @@
     {/if}
 
     {#if result}
-      <AnalysisResult {result} onsubmit={handleSubmit} ondiscard={handleDiscard} />
+      <AnalysisResult {result} articleTitle={article?.title ?? ''} articleSource={article?.source ?? ''} onsubmit={handleSubmit} ondiscard={handleDiscard} />
       <TransparencyPanel details={result.transparency || {}} />
     {/if}
   {:else}
