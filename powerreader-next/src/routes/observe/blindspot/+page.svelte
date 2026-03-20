@@ -154,20 +154,24 @@
   }
   .spot-topic {
     margin: 0;
-    font: var(--md-sys-typescale-title-small-font);
-    color: var(--md-sys-color-on-surface);
+    font: 900 18px var(--pr-font-sans);
+    color: var(--pr-ink);
+    letter-spacing: 0.5px;
   }
   .source-group {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
   }
   .group-label {
-    font: var(--md-sys-typescale-label-small-font);
-    color: var(--camp-green, #4CAF50);
+    font: 900 13px var(--pr-font-sans);
+    color: #4CAF50;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
   .group-label.missing {
-    color: var(--md-sys-color-error);
+    color: #E53935;
   }
   .badge-row {
     display: flex;

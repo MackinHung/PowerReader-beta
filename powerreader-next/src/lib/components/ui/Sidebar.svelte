@@ -112,7 +112,7 @@
     flex-direction: column;
     background: #111115;
     border-right: 4px solid var(--pr-ink);
-    z-index: 100;
+    z-index: 200;
     transition: width var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized);
     overflow: hidden;
   }
@@ -126,7 +126,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    height: 80px;
+    height: 64px;
     padding: 0 16px;
     flex-shrink: 0;
     background: #FF5722;

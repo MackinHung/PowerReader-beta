@@ -8,9 +8,7 @@
   </button>
 {:else}
   <button class="md-chip" class:selected {onclick}>
-    {#if selected}
-      <span class="material-symbols-outlined chip-icon">check</span>
-    {:else if icon}
+    {#if icon}
       <span class="material-symbols-outlined chip-icon">{icon}</span>
     {/if}
     <span class="chip-label">{label}</span>

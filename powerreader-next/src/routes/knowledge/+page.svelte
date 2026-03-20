@@ -285,14 +285,17 @@
   }
   .retry-btn {
     padding: 8px 16px;
-    border-radius: var(--md-sys-shape-corner-small, 8px);
-    border: 1px solid var(--md-sys-color-outline);
-    background: var(--md-sys-color-surface);
-    color: var(--md-sys-color-primary);
-    font: var(--md-sys-typescale-label-large-font);
+    border-radius: 0;
+    border: 3px solid var(--pr-ink);
+    box-shadow: 4px 4px 0px var(--pr-ink);
+    background: #FFFFFF;
+    color: var(--pr-ink);
+    font: 900 14px var(--pr-font-sans);
     cursor: pointer;
+    transition: transform 150ms ease, box-shadow 150ms ease;
   }
   .retry-btn:hover {
-    background: var(--md-sys-color-surface-container);
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px var(--pr-ink);
   }
 </style>

@@ -21,12 +21,6 @@
     TSP: '#C7002E'
   };
 
-  const SOURCE_LABELS = {
-    ai: () => t('knowledge.source.ai'),
-    human: () => t('knowledge.source.human'),
-    community: () => t('knowledge.source.community')
-  };
-
   let entryIsIssue = $derived(isIssueType(entry?.type));
   let icon = $derived(TYPE_ICONS[entry?.type] || 'article');
   let typeLabel = $derived(t(`knowledge.type.${entry?.type}`) || entry?.type || '');
@@ -36,11 +30,6 @@
   let partyColor = $derived(
     !entryIsIssue && entry?.party ? (PARTY_COLORS[entry.party] || '#888') : null
   );
-  let sourceLabel = $derived(
-    entry?.source_type && SOURCE_LABELS[entry.source_type]
-      ? SOURCE_LABELS[entry.source_type]()
-      : null
-  );
   let snippet = $derived(() => {
     if (entryIsIssue) return '';
     // Prefer structured field, fall back to content
@@ -49,15 +38,17 @@
   });
 </script>
 
-<button class="knowledge-card" onclick={onclick} type="button">
+<button
+  class="knowledge-card"
+  onclick={onclick}
+  type="button"
+  style={partyColor ? `border-left: 8px solid ${partyColor}` : ''}
+>
   <div class="card-header">
     <span class="material-symbols-outlined type-icon">{icon}</span>
     <span class="type-badge">{typeLabel}</span>
     {#if partyLabel}
       <span class="party-badge" style="background-color: {partyColor}">{partyLabel}</span>
-    {/if}
-    {#if sourceLabel}
-      <span class="source-badge">{sourceLabel}</span>
     {/if}
   </div>
   <h3 class="card-title">{entry?.title || ''}</h3>
@@ -105,28 +96,24 @@
     flex-wrap: wrap;
   }
   .type-icon {
-    font-size: 18px;
-    color: var(--md-sys-color-primary);
+    font-size: 22px;
+    color: var(--pr-ink);
+    font-variation-settings: 'FILL' 1, 'wght' 700;
   }
   .type-badge {
-    font: var(--md-sys-typescale-label-small-font);
-    color: var(--md-sys-color-on-primary-container);
+    font: 900 12px var(--pr-font-sans);
+    color: var(--pr-ink);
     background: var(--md-sys-color-primary-container);
-    padding: 2px 8px;
-    border-radius: var(--md-sys-shape-corner-small, 8px);
+    padding: 2px 10px;
+    border-radius: 0;
+    border: 2px solid var(--pr-ink);
   }
   .party-badge {
-    font: var(--md-sys-typescale-label-small-font);
+    font: 900 12px var(--pr-font-sans);
     color: #fff;
-    padding: 2px 8px;
-    border-radius: var(--md-sys-shape-corner-small, 8px);
-  }
-  .source-badge {
-    font: var(--md-sys-typescale-label-small-font);
-    color: var(--md-sys-color-on-tertiary-container);
-    background: var(--md-sys-color-tertiary-container);
-    padding: 2px 8px;
-    border-radius: var(--md-sys-shape-corner-small, 8px);
+    padding: 2px 10px;
+    border-radius: 0;
+    border: 2px solid var(--pr-ink);
   }
 
   .card-title {

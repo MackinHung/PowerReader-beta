@@ -168,21 +168,26 @@
     align-items: center;
   }
   .source-name {
-    font: var(--md-sys-typescale-label-small-font);
-    color: var(--md-sys-color-on-surface-variant);
+    font: 900 14px var(--pr-font-sans);
+    color: var(--pr-ink);
+    letter-spacing: 0.5px;
   }
   .compare-title {
     margin: 0;
-    font: var(--md-sys-typescale-body-medium-font);
+    font: 700 15px var(--pr-font-sans);
     color: var(--md-sys-color-on-surface);
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    line-height: 1.4;
+    line-height: 1.5;
   }
   .compare-bias {
-    font: var(--md-sys-typescale-label-small-font);
+    font: 900 13px var(--pr-font-sans);
     color: var(--md-sys-color-on-surface-variant);
+    border: 2px solid var(--pr-ink);
+    padding: 2px 8px;
+    display: inline-block;
+    width: fit-content;
   }
 </style>
