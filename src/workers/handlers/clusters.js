@@ -30,7 +30,8 @@ function parsePagination(url, maxLimit = 50) {
  * Safe JSON parse with fallback.
  */
 function safeJsonParse(str, fallback) {
-  try { return JSON.parse(str); } catch { return fallback; }
+  if (str == null) return fallback;
+  try { return JSON.parse(str) ?? fallback; } catch { return fallback; }
 }
 
 /**

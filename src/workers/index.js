@@ -36,34 +36,33 @@ export default {
     // Generate request ID if not provided
     const requestId = request.headers.get('X-Request-ID') || crypto.randomUUID();
 
+    const origin = request.headers.get('Origin') || '';
+
     // T07 metrics collector (per-request instrumentation)
     const collector = createMetricsCollector();
     collector.recordRequest();
 
     // Main handler with global error catching
     const handler = withErrorHandling(async (req, env, ctx) => {
-      const response = await handleRequest(req, env, ctx);
-
-      // Add CORS + request ID headers
-      const origin = req.headers.get('Origin') || '';
-      const headers = new Headers(response.headers);
-      for (const [key, value] of Object.entries(corsHeaders(origin))) {
-        headers.set(key, value);
-      }
-      headers.set('X-Request-ID', requestId);
-
-      return new Response(response.body, {
-        status: response.status,
-        headers
-      });
+      return await handleRequest(req, env, ctx);
     });
 
     const response = await handler(request, env, ctx);
 
+    // Always add CORS + request ID headers (including on error responses)
+    const headers = new Headers(response.headers);
+    for (const [key, value] of Object.entries(corsHeaders(origin))) {
+      headers.set(key, value);
+    }
+    headers.set('X-Request-ID', requestId);
+
     // Flush metrics after response (non-blocking)
     ctx.waitUntil(collector.flush(env));
 
-    return response;
+    return new Response(response.body, {
+      status: response.status,
+      headers
+    });
   },
 
   // Cron trigger: hourly metrics aggregation + alert evaluation (T07) + session cleanup
