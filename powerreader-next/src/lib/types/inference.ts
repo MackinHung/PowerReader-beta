@@ -113,3 +113,17 @@ export interface BrowserInfo {
   isCompatible: boolean;
   message: string;
 }
+
+/** Cryptographic fingerprint proving an analysis was produced by the inference pipeline */
+export interface InferenceFingerprint {
+  model_id: string;
+  prompt_hash: string;           // SHA-256 of concatenated system+user prompts
+  pass1_tokens: number;          // completion tokens from Pass 1
+  pass2_tokens: number;          // completion tokens from Pass 2
+  pass1_time_ms: number;         // Pass 1 wall-clock duration
+  pass2_time_ms: number;         // Pass 2 wall-clock duration
+  tokens_per_second: number;     // total completion tokens / total inference seconds
+  gpu_tier: GPUTier;             // gpu | cpu | none
+  gpu_device: string;            // device name from benchmark
+  timestamp: string;             // ISO 8601
+}

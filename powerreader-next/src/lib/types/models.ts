@@ -5,6 +5,7 @@
  */
 
 import type { CampRatio } from './api.js';
+import type { InferenceFingerprint } from './inference.js';
 
 export interface Article {
   article_id: string;
@@ -44,6 +45,7 @@ export interface AnalysisResult {
   mode: string;
   latency_ms: number;
   knowledgeEntries?: KnowledgeEntry[];
+  fingerprint?: InferenceFingerprint;
   _debug?: Record<string, unknown>;
 }
 

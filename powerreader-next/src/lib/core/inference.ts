@@ -28,6 +28,7 @@ import { recordLatency, estimateRemaining, getDualPassProgress } from './eta.js'
 import { getCachedBenchmark, getTimeoutForTier } from './benchmark.js';
 import type { Article, AnalysisResult, KnowledgeEntry, ScoreOutput } from '$lib/types/models.js';
 import type { InferenceMode, AnalysisRunOptions, StatusCallback } from '$lib/types/inference.js';
+import { hashPrompts, buildFingerprint } from './fingerprint.js';
 
 // =============================================
 // Configuration
@@ -298,11 +299,13 @@ async function runWebLLMInference(article: Article, knowledgeEntries: KnowledgeE
     pass1Timeout
   );
 
-  recordLatency(tier, 'pass1', Date.now() - pass1Start);
+  const pass1TimeMs = Date.now() - pass1Start;
+  recordLatency(tier, 'pass1', pass1TimeMs);
 
   const pass1Raw: string = pass1Response.choices[0]?.message?.content || '';
+  const pass1Tokens: number = pass1Response.usage?.completion_tokens ?? 0;
   const scores: ScoreOutput = parseScoreOutput(pass1Raw);
-  updateStatus('pass1_done', Date.now() - pass1Start);
+  updateStatus('pass1_done', pass1TimeMs);
 
   // Free KV cache between passes — critical for 6GB VRAM
   try { await engine.resetChat(); } catch {}
@@ -334,8 +337,10 @@ async function runWebLLMInference(article: Article, knowledgeEntries: KnowledgeE
     );
   } catch (err) {
     // Pass 2 timeout — return partial result (pass 1 scores preserved)
-    recordLatency(tier, 'pass2', Date.now() - pass2Start);
-    updateStatus('pass2_done', Date.now() - pass2Start);
+    const pass2TimeMs = Date.now() - pass2Start;
+    recordLatency(tier, 'pass2', pass2TimeMs);
+    updateStatus('pass2_done', pass2TimeMs);
+    const promptHash = await hashPrompts(pass1SystemPrompt, pass2SystemPrompt, userMessage);
     return {
       ...scores,
       points: [],
@@ -345,15 +350,25 @@ async function runWebLLMInference(article: Article, knowledgeEntries: KnowledgeE
       prompt_version: 'v4.1.0',
       mode: 'webgpu',
       latency_ms: 0,
+      fingerprint: buildFingerprint({
+        modelId: MODEL_ID,
+        promptHash,
+        pass1Tokens,
+        pass2Tokens: 0,
+        pass1TimeMs,
+        pass2TimeMs,
+      }),
       _debug: { pass1_system: pass1SystemPrompt, pass1_raw: pass1Raw, pass2_error: (err as Error).message }
     };
   }
 
-  recordLatency(tier, 'pass2', Date.now() - pass2Start);
+  const pass2TimeMs = Date.now() - pass2Start;
+  recordLatency(tier, 'pass2', pass2TimeMs);
 
   const pass2Raw: string = pass2Response.choices[0]?.message?.content || '';
+  const pass2Tokens: number = pass2Response.usage?.completion_tokens ?? 0;
   const narrative = parseNarrativeOutput(pass2Raw);
-  updateStatus('pass2_done', Date.now() - pass2Start);
+  updateStatus('pass2_done', pass2TimeMs);
 
   // Fallback: derive key_phrases from points if model didn't provide them
   const key_phrases = narrative.key_phrases.length > 0
@@ -364,6 +379,8 @@ async function runWebLLMInference(article: Article, knowledgeEntries: KnowledgeE
   const source_attribution = narrative.source_attribution
     || `資料來源：${article.source || '未知'}`;
 
+  const promptHash = await hashPrompts(pass1SystemPrompt, pass2SystemPrompt, userMessage);
+
   return {
     ...scores,
     points: narrative.points,
@@ -373,6 +390,14 @@ async function runWebLLMInference(article: Article, knowledgeEntries: KnowledgeE
     prompt_version: 'v4.1.0',
     mode: 'webgpu',
     latency_ms: 0,
+    fingerprint: buildFingerprint({
+      modelId: MODEL_ID,
+      promptHash,
+      pass1Tokens,
+      pass2Tokens,
+      pass1TimeMs,
+      pass2TimeMs,
+    }),
     _debug: {
       pass1_system: pass1SystemPrompt,
       pass1_user: userMessage.substring(0, 500),
@@ -390,6 +415,7 @@ async function runWebLLMInference(article: Article, knowledgeEntries: KnowledgeE
 async function runServerInference(article: Article, knowledgeEntries: KnowledgeEntry[], updateStatus: StatusCallback): Promise<AnalysisResult> {
   updateStatus('running', 0);
 
+  const serverStart = Date.now();
   const response = await fetch('/api/v1/inference', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -406,7 +432,12 @@ async function runServerInference(article: Article, knowledgeEntries: KnowledgeE
   }
 
   const data = await response.json();
+  const serverTimeMs = Date.now() - serverStart;
   updateStatus('generating', 0);
+
+  const promptHash = await hashPrompts(
+    article.content_markdown || article.summary || ''
+  );
 
   return {
     bias_score: data.bias_score ?? 50,
@@ -420,6 +451,14 @@ async function runServerInference(article: Article, knowledgeEntries: KnowledgeE
     source_attribution: data.source_attribution || `資料來源：${article.source || '未知'}`,
     prompt_version: data.prompt_version || 'server',
     mode: 'server',
-    latency_ms: 0
+    latency_ms: 0,
+    fingerprint: buildFingerprint({
+      modelId: 'server',
+      promptHash,
+      pass1Tokens: data.usage?.completion_tokens ?? 0,
+      pass2Tokens: 0,
+      pass1TimeMs: serverTimeMs,
+      pass2TimeMs: 0,
+    }),
   };
 }
