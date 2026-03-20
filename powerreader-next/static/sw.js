@@ -1,5 +1,5 @@
 // PowerReader Next - Service Worker
-const CACHE_NAME = 'pr-next-v8';
+const CACHE_NAME = 'pr-next-v9';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -67,7 +67,10 @@ self.addEventListener('fetch', (event) => {
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
-        .catch(() => caches.match('/index.html'))
+        .catch(async () => {
+          const cached = await caches.match('/index.html');
+          return cached || new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+        })
     );
     return;
   }
@@ -114,7 +117,7 @@ async function staleWhileRevalidate(request) {
   const fetchPromise = fetch(request).then(response => {
     if (response.ok) cache.put(request, response.clone());
     return response;
-  }).catch(() => cached);
+  }).catch(() => cached || new Response('Offline', { status: 503 }));
   return cached || fetchPromise;
 }
 
