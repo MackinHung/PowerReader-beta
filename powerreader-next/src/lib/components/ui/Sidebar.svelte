@@ -18,9 +18,6 @@
         {expanded ? 'menu_open' : 'menu'}
       </span>
     </button>
-    {#if expanded}
-      <span class="sidebar-brand">PowerReader</span>
-    {/if}
   </div>
 
   <div class="nav-items">
@@ -126,12 +123,13 @@
   .sidebar-top {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 12px;
-    height: 96px; /* 24 in Tailwind = 96px */
-    padding: 0 24px;
+    height: 64px;
+    padding: 0 16px;
     flex-shrink: 0;
     background: #FF5722;
-    border-bottom: 4px solid var(--pr-ink);
+    border-bottom: 2px solid var(--pr-ink);
   }
   .toggle-btn {
     display: inline-flex;
@@ -167,6 +165,10 @@
     flex-direction: column;
     padding: 24px 0;
     overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .nav-items::-webkit-scrollbar {
+    display: none;
   }
   .nav-divider {
     height: 1px;
@@ -182,8 +184,8 @@
     text-decoration: none;
     color: rgba(255, 255, 255, 0.7);
     white-space: nowrap;
-    font-weight: 700;
-    font-size: 20px;
+    font-weight: 900;
+    font-size: 24px;
     border-left: 8px solid transparent;
     transition: all 150ms ease;
   }

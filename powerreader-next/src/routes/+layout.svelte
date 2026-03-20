@@ -354,6 +354,16 @@
   .desktop-main.sidebar-rail {
     margin-left: 72px;
   }
+  @media (min-width: 768px) {
+    :global(.desktop-main .md-top-app-bar) {
+      left: 72px !important;
+      width: calc(100% - 72px) !important;
+    }
+    :global(.desktop-main.sidebar-expanded .md-top-app-bar) {
+      left: 280px !important;
+      width: calc(100% - 280px) !important;
+    }
+  }
   .content-wrapper {
     max-width: var(--content-max-width);
     margin: 0 auto;
