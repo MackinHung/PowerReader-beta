@@ -162,6 +162,46 @@ describe('Knowledge Store', () => {
     });
   });
 
+  describe('setType party reset', () => {
+    beforeEach(async () => {
+      await store.loadKnowledge();
+    });
+
+    it('resets activeParty when switching to incident/event type', () => {
+      store.setParty('KMT');
+      expect(store.activeParty).toBe('KMT');
+
+      store.setType('event');
+      expect(store.activeParty).toBe('all');
+    });
+
+    it('keeps activeParty when switching to figure/politician type', () => {
+      store.setParty('KMT');
+      store.setType('politician');
+      expect(store.activeParty).toBe('KMT');
+    });
+
+    it('keeps activeParty when switching to topic/issue type', () => {
+      store.setParty('DPP');
+      store.setType('topic');
+      expect(store.activeParty).toBe('DPP');
+    });
+
+    it('keeps activeParty when switching to all', () => {
+      store.setParty('KMT');
+      store.setType('all');
+      expect(store.activeParty).toBe('KMT');
+    });
+
+    it('shows all incident entries after party reset', () => {
+      store.setParty('KMT');
+      store.setType('event');
+      // Party was reset to 'all', so all events should show
+      expect(store.entries).toHaveLength(1);
+      expect(store.entries[0].id).toBe('e1');
+    });
+  });
+
   describe('clearFilters', () => {
     it('resets all filters', async () => {
       await store.loadKnowledge();

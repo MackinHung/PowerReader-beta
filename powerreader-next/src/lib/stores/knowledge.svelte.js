@@ -99,6 +99,10 @@ export function getKnowledgeStore() {
      */
     setType(type) {
       activeType = type;
+      // Reset party filter when switching to a type without party data
+      if (type !== 'all' && !isFigureType(type) && !isIssueType(type)) {
+        activeParty = 'all';
+      }
     },
 
     /**

@@ -63,6 +63,8 @@
 
   function handleCategoryClick(value) {
     selectedCategory = value;
+    isSearching = false;
+    searchValue = '';
     eventsStore.refreshClusters(value === 'all' ? undefined : value);
     store.fetchArticles(value, 1);
   }
