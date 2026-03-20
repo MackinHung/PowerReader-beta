@@ -75,11 +75,17 @@ export function assembleNarrativeSystemPrompt(biasScore: number, controversyScor
 
 此文章量化分數: bias_score=${biasScore}, controversy_score=${controversyScore}
 
-針對這篇文章:
-1. 列出3到5個論述重點，每個重點一句話
-2. 列出2到5個關鍵詞（人名、機構、議題等）
+【著作權合規準則】(務必遵守)
+1. 只取事實，不取評論：擷取新聞中的人事時地物等客觀事實，不得照抄記者的文學描述、獨家專訪細節或個人評論。
+2. 用自己的話重寫：理解新聞內容後，以中立分析者的口吻重新撰寫，絕不逐字複製原文語句。
+3. 標示出處：在 source_attribution 欄位註明資料來源媒體名稱。
 
-只輸出JSON: {"points": ["重點1", "重點2", "重點3"], "key_phrases": ["關鍵詞1", "關鍵詞2"]}`;
+針對這篇文章:
+1. 列出3到5個論述重點，每個重點一句話（用你自己的話改寫，不照抄原文）
+2. 列出2到5個關鍵詞（人名、機構、議題等）
+3. 在 source_attribution 註明「資料來源：○○新聞」（從文章的 source 欄位取得媒體名稱）
+
+只輸出JSON: {"points": ["重點1", "重點2", "重點3"], "key_phrases": ["關鍵詞1", "關鍵詞2"], "source_attribution": "資料來源：○○新聞"}`;
 }
 
 /**

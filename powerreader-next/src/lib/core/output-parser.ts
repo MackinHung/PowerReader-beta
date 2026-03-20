@@ -24,7 +24,8 @@ const SCORE_DEFAULTS: ScoreOutput = {
 
 const NARRATIVE_DEFAULTS: NarrativeOutput = {
   points: [],
-  key_phrases: []
+  key_phrases: [],
+  source_attribution: ''
 };
 
 /**
@@ -149,5 +150,9 @@ export function parseNarrativeOutput(rawOutput: string): NarrativeOutput {
     ? parsed.key_phrases.filter((p: unknown) => typeof p === 'string' && (p as string).trim().length > 0).slice(0, 10)
     : NARRATIVE_DEFAULTS.key_phrases;
 
-  return { points, key_phrases };
+  const source_attribution = typeof parsed.source_attribution === 'string'
+    ? parsed.source_attribution.trim()
+    : NARRATIVE_DEFAULTS.source_attribution;
+
+  return { points, key_phrases, source_attribution };
 }

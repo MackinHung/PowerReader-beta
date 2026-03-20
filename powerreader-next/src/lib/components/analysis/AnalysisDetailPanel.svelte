@@ -113,6 +113,13 @@
     <KnowledgePanel items={article.knowledge_items} />
   {/if}
 
+  {#if article.source}
+    <div class="source-attribution">
+      <span class="material-symbols-outlined">article</span>
+      <span>資料來源：{article.source}</span>
+    </div>
+  {/if}
+
   <Button onclick={handleOpenOriginal} fullWidth>
     <span class="material-symbols-outlined">open_in_new</span>
     查看原文
@@ -232,6 +239,19 @@
   .section-label {
     font: var(--md-sys-typescale-label-medium-font);
     color: var(--md-sys-color-on-surface-variant);
+  }
+  .source-attribution {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: var(--md-sys-shape-corner-small);
+    background: var(--md-sys-color-surface-container);
+    font: var(--md-sys-typescale-label-medium-font);
+    color: var(--md-sys-color-on-surface-variant);
+  }
+  .source-attribution .material-symbols-outlined {
+    font-size: 16px;
   }
   .summary-text {
     margin: 0;

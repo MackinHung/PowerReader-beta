@@ -136,7 +136,7 @@ describe('runGroqAnalysis', () => {
     expect(result.key_phrases).toEqual(['關鍵詞1', '關鍵詞2']);
     expect(result.mode).toBe('groq');
     expect(typeof result.latency_ms).toBe('number');
-    expect(result.prompt_version).toBe('v3.0.0');
+    expect(result.prompt_version).toBe('v4.1.0');
   });
 
   it('uses provided apiKey and model', async () => {

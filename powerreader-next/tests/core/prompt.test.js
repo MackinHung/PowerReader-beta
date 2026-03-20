@@ -158,6 +158,34 @@ describe('assembleNarrativeSystemPrompt', () => {
     expect(result).toContain('bias_score=100');
     expect(result).toContain('controversy_score=100');
   });
+
+  // v4.1 copyright compliance
+  it('contains copyright compliance rules', () => {
+    const result = assembleNarrativeSystemPrompt(50, 50);
+    expect(result).toContain('著作權合規準則');
+  });
+
+  it('instructs to extract only facts, not commentary', () => {
+    const result = assembleNarrativeSystemPrompt(50, 50);
+    expect(result).toContain('只取事實');
+    expect(result).toContain('不取評論');
+  });
+
+  it('instructs to rewrite in own words', () => {
+    const result = assembleNarrativeSystemPrompt(50, 50);
+    expect(result).toContain('用自己的話重寫');
+  });
+
+  it('contains source_attribution in output schema', () => {
+    const result = assembleNarrativeSystemPrompt(50, 50);
+    expect(result).toContain('source_attribution');
+  });
+
+  it('instructs to indicate data source', () => {
+    const result = assembleNarrativeSystemPrompt(50, 50);
+    expect(result).toContain('標示出處');
+    expect(result).toContain('資料來源');
+  });
 });
 
 // ---------------------------------------------------------------------------

@@ -368,7 +368,8 @@ describe('parseNarrativeOutput', () => {
     const result = parseNarrativeOutput(raw);
     expect(result).toEqual({
       points: ['p1', 'p2', 'p3'],
-      key_phrases: ['k1', 'k2']
+      key_phrases: ['k1', 'k2'],
+      source_attribution: ''
     });
   });
 
@@ -440,34 +441,58 @@ describe('parseNarrativeOutput', () => {
 
   it('returns defaults for null input', () => {
     const result = parseNarrativeOutput(null);
-    expect(result).toEqual({ points: [], key_phrases: [] });
+    expect(result).toEqual({ points: [], key_phrases: [], source_attribution: '' });
   });
 
   it('returns defaults for empty string input', () => {
     const result = parseNarrativeOutput('');
-    expect(result).toEqual({ points: [], key_phrases: [] });
+    expect(result).toEqual({ points: [], key_phrases: [], source_attribution: '' });
   });
 
   it('returns defaults for undefined input', () => {
     const result = parseNarrativeOutput(undefined);
-    expect(result).toEqual({ points: [], key_phrases: [] });
+    expect(result).toEqual({ points: [], key_phrases: [], source_attribution: '' });
   });
 
   it('returns defaults for completely invalid string', () => {
     const result = parseNarrativeOutput('garbage text no json here');
-    expect(result).toEqual({ points: [], key_phrases: [] });
+    expect(result).toEqual({ points: [], key_phrases: [], source_attribution: '' });
   });
 
   it('handles <think> blocks before narrative JSON', () => {
     const raw = '<think>thinking hard</think>{"points": ["p1"], "key_phrases": ["k1"]}';
     const result = parseNarrativeOutput(raw);
-    expect(result).toEqual({ points: ['p1'], key_phrases: ['k1'] });
+    expect(result).toEqual({ points: ['p1'], key_phrases: ['k1'], source_attribution: '' });
   });
 
   it('handles markdown code fences around narrative JSON', () => {
     const raw = '```json\n{"points": ["a", "b"], "key_phrases": ["x"]}\n```';
     const result = parseNarrativeOutput(raw);
-    expect(result).toEqual({ points: ['a', 'b'], key_phrases: ['x'] });
+    expect(result).toEqual({ points: ['a', 'b'], key_phrases: ['x'], source_attribution: '' });
+  });
+
+  it('parses source_attribution from JSON output', () => {
+    const raw = '{"points": ["p1"], "key_phrases": ["k1"], "source_attribution": "資料來源：自由時報"}';
+    const result = parseNarrativeOutput(raw);
+    expect(result.source_attribution).toBe('資料來源：自由時報');
+  });
+
+  it('defaults source_attribution to empty string when missing', () => {
+    const raw = '{"points": ["p1"], "key_phrases": ["k1"]}';
+    const result = parseNarrativeOutput(raw);
+    expect(result.source_attribution).toBe('');
+  });
+
+  it('defaults source_attribution to empty string when non-string', () => {
+    const raw = '{"points": ["p1"], "key_phrases": ["k1"], "source_attribution": 123}';
+    const result = parseNarrativeOutput(raw);
+    expect(result.source_attribution).toBe('');
+  });
+
+  it('trims whitespace from source_attribution', () => {
+    const raw = '{"points": ["p1"], "key_phrases": ["k1"], "source_attribution": "  資料來源：聯合報  "}';
+    const result = parseNarrativeOutput(raw);
+    expect(result.source_attribution).toBe('資料來源：聯合報');
   });
 
   it('filtering + slicing: filters first, then slices', () => {

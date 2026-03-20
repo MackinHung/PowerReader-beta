@@ -39,6 +39,7 @@ export interface AnalysisResult {
   points: string[];
   reasoning: string;
   key_phrases: string[];
+  source_attribution: string;
   prompt_version: string;
   mode: string;
   latency_ms: number;
@@ -57,6 +58,7 @@ export interface ScoreOutput {
 export interface NarrativeOutput {
   points: string[];
   key_phrases: string[];
+  source_attribution: string;
 }
 
 /** Shared base fields for all knowledge entries */

@@ -53,6 +53,22 @@
     </div>
   {/if}
 
+  {#if result.points?.length > 0}
+    <div class="points-section">
+      <span class="section-label">論述重點</span>
+      {#each result.points as point}
+        <p class="point-item">{point}</p>
+      {/each}
+    </div>
+  {/if}
+
+  {#if result.source_attribution}
+    <div class="source-attribution">
+      <span class="material-symbols-outlined">article</span>
+      <span>{result.source_attribution}</span>
+    </div>
+  {/if}
+
   <div class="actions">
     <Button onclick={onsubmit}>提交分析</Button>
     <Button variant="text" onclick={ondiscard}>放棄</Button>
@@ -98,6 +114,41 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+  }
+  .points-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .section-label {
+    font: var(--md-sys-typescale-label-medium-font);
+    color: var(--md-sys-color-on-surface-variant);
+  }
+  .point-item {
+    margin: 0;
+    padding-left: 12px;
+    font: var(--md-sys-typescale-body-medium-font);
+    color: var(--md-sys-color-on-surface);
+    line-height: 1.5;
+    position: relative;
+  }
+  .point-item::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+  }
+  .source-attribution {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: var(--md-sys-shape-corner-small);
+    background: var(--md-sys-color-surface-container);
+    font: var(--md-sys-typescale-label-medium-font);
+    color: var(--md-sys-color-on-surface-variant);
+  }
+  .source-attribution .material-symbols-outlined {
+    font-size: 16px;
   }
   .actions {
     display: flex;

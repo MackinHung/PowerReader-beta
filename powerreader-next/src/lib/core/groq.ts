@@ -128,12 +128,16 @@ export async function runGroqAnalysis(article: Article, knowledgeEntries: Knowle
     ? narrative.key_phrases
     : narrative.points.slice(0, 5).map(p => p.slice(0, 20).replace(/[，。！？,\.!?\s]+$/, ''));
 
+  const source_attribution = narrative.source_attribution
+    || `資料來源：${article.source || '未知'}`;
+
   return {
     ...scores,
     points: narrative.points,
     reasoning: narrative.points.join('\n'),
     key_phrases,
-    prompt_version: 'v3.0.0',
+    source_attribution,
+    prompt_version: 'v4.1.0',
     mode: 'groq',
     latency_ms: Date.now() - startTime,
     _debug: {

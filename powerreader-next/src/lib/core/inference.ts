@@ -341,7 +341,8 @@ async function runWebLLMInference(article: Article, knowledgeEntries: KnowledgeE
       points: [],
       reasoning: '',
       key_phrases: [],
-      prompt_version: 'v4.0.0',
+      source_attribution: `資料來源：${article.source || '未知'}`,
+      prompt_version: 'v4.1.0',
       mode: 'webgpu',
       latency_ms: 0,
       _debug: { pass1_system: pass1SystemPrompt, pass1_raw: pass1Raw, pass2_error: (err as Error).message }
@@ -359,12 +360,17 @@ async function runWebLLMInference(article: Article, knowledgeEntries: KnowledgeE
     ? narrative.key_phrases
     : narrative.points.slice(0, 5).map(p => p.slice(0, 20).replace(/[，。！？,\.!?\s]+$/, ''));
 
+  // Fallback: derive source_attribution from article.source if model didn't provide it
+  const source_attribution = narrative.source_attribution
+    || `資料來源：${article.source || '未知'}`;
+
   return {
     ...scores,
     points: narrative.points,
     reasoning: narrative.points.join('\n'),
     key_phrases,
-    prompt_version: 'v3.0.0',
+    source_attribution,
+    prompt_version: 'v4.1.0',
     mode: 'webgpu',
     latency_ms: 0,
     _debug: {
@@ -406,9 +412,12 @@ async function runServerInference(article: Article, knowledgeEntries: KnowledgeE
     bias_score: data.bias_score ?? 50,
     controversy_score: data.controversy_score ?? 0,
     camp_ratio: data.camp_ratio ?? null,
+    is_political: data.is_political ?? true,
+    emotion_intensity: data.emotion_intensity ?? 50,
     points: data.points || [],
     reasoning: data.reasoning || '',
     key_phrases: data.key_phrases || [],
+    source_attribution: data.source_attribution || `資料來源：${article.source || '未知'}`,
     prompt_version: data.prompt_version || 'server',
     mode: 'server',
     latency_ms: 0

@@ -226,6 +226,12 @@
               {/each}
             </div>
           {/if}
+          {#if analysisResult.source_attribution || analysisResult.source}
+            <div class="source-attribution">
+              <span class="material-symbols-outlined">article</span>
+              <span>{analysisResult.source_attribution || `資料來源：${analysisResult.source}`}</span>
+            </div>
+          {/if}
           <Button variant="text" onclick={() => goto(`/article/${analysisResult.article_id}`)}>
             查看文章詳情
           </Button>
@@ -546,6 +552,20 @@
     font: var(--md-sys-typescale-body-small-font);
     color: var(--md-sys-color-on-surface);
     line-height: 1.5;
+  }
+
+  .source-attribution {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: var(--md-sys-shape-corner-small);
+    background: var(--md-sys-color-surface-container);
+    font: var(--md-sys-typescale-label-small-font);
+    color: var(--md-sys-color-on-surface-variant);
+  }
+  .source-attribution .material-symbols-outlined {
+    font-size: 14px;
   }
 
   /* ── Analysis Error ── */
