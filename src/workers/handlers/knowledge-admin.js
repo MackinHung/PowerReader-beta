@@ -90,8 +90,8 @@ export async function batchUpsertKnowledge(request, env, ctx, { params }) {
     });
   }
 
-  // Batch embed all content texts in one Workers AI call
-  const texts = body.entries.map(e => e.content);
+  // Batch embed "title + content" — entity name anchors the vector
+  const texts = body.entries.map(e => buildEmbeddingText(e));
   let vectors;
   try {
     const embResult = await env.AI.run(MODELS.EMBEDDING, { text: texts });
@@ -347,10 +347,14 @@ export async function deleteKnowledge(request, env, ctx, { params }) {
  * Embed a single knowledge entry and store in Vectorize + D1.
  */
 async function embedAndStore(env, entry) {
-  // Embed content via Workers AI bge-m3
+  // Embed "title + content" so the entity name anchors the vector.
+  // Without title, similar descriptions (e.g. two KMT politicians with
+  // "2024年選舉落敗") would occupy near-identical vector positions,
+  // making article-title queries match the wrong person.
   let vector;
   try {
-    const embResult = await env.AI.run(MODELS.EMBEDDING, { text: [entry.content] });
+    const embText = buildEmbeddingText(entry);
+    const embResult = await env.AI.run(MODELS.EMBEDDING, { text: [embText] });
     if (!embResult?.data?.[0]) {
       return { success: false };
     }
@@ -393,4 +397,14 @@ async function embedAndStore(env, entry) {
       dimensions: vector.length
     }
   };
+}
+
+/**
+ * Build the text to embed for a knowledge entry.
+ * Prepends title (entity name) so it anchors the vector space position.
+ * Without this, article-title queries would match on description similarity
+ * rather than entity identity (e.g. "朱立倫" matching 侯友宜's similar bio).
+ */
+function buildEmbeddingText(entry) {
+  return `${entry.title} ${entry.content}`;
 }
