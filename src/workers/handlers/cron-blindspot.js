@@ -158,21 +158,24 @@ function timeDecay(hoursApart) {
  *   1. bias_score from user analysis (if available)
  *   2. SOURCE_CAMP static mapping (fallback for unanalyzed articles)
  */
-export async function scanBlindspots(env) {
-  // Fetch articles from last 4 days (extended window for time-decay clustering)
-  const rows = await env.DB.prepare(`
-    SELECT article_id, title, summary, source, bias_score, published_at
-    FROM articles
-    WHERE datetime(published_at) >= datetime('now', '-4 days')
-    ORDER BY published_at DESC
-    LIMIT 500
-  `).all();
+export async function scanBlindspots(env, precomputedClusters) {
+  let clusters;
 
-  const articles = rows.results || [];
-  if (articles.length < BLINDSPOT_MIN_ARTICLES) return;
+  if (precomputedClusters) {
+    clusters = precomputedClusters;
+  } else {
+    const rows = await env.DB.prepare(`
+      SELECT article_id, title, summary, source, bias_score, published_at
+      FROM articles
+      WHERE datetime(published_at) >= datetime('now', '-4 days')
+      ORDER BY published_at DESC
+      LIMIT 200
+    `).all();
 
-  // Build clusters using greedy title similarity
-  const clusters = buildClusters(articles);
+    const articles = rows.results || [];
+    if (articles.length < BLINDSPOT_MIN_ARTICLES) return;
+    clusters = buildClusters(articles);
+  }
 
   // Evaluate each cluster for blindspot
   for (const cluster of clusters) {
@@ -520,6 +523,31 @@ function buildSubClusters(articles) {
 }
 
 // ========================================
+// Shared Cluster Computation
+// ========================================
+
+/**
+ * Compute clusters once from recent articles. Result can be shared between
+ * scanBlindspots() and buildAllClusters() to avoid O(n²) clustering twice.
+ * Returns null if insufficient articles.
+ */
+export async function computeClusters(env) {
+  const rows = await env.DB.prepare(`
+    SELECT article_id, title, summary, source, bias_score, published_at,
+           controversy_score, controversy_level, matched_topic
+    FROM articles
+    WHERE datetime(published_at) >= datetime('now', '-4 days')
+    ORDER BY published_at DESC
+    LIMIT 200
+  `).all();
+
+  const articles = rows.results || [];
+  if (articles.length < 2) return null;
+
+  return buildClusters(articles);
+}
+
+// ========================================
 // Event Cluster Pre-computation
 // ========================================
 
@@ -538,20 +566,28 @@ const CONTROVERSY_ORDER = { low: 1, moderate: 2, high: 3, very_high: 4 };
  * but with lower threshold (≥2 articles). Computes camp distribution,
  * source breakdown, controversy scores, and category for frontend cards.
  */
-export async function buildAllClusters(env) {
-  const rows = await env.DB.prepare(`
-    SELECT article_id, title, summary, source, bias_score, published_at,
-           controversy_score, controversy_level, matched_topic
-    FROM articles
-    WHERE datetime(published_at) >= datetime('now', '-4 days')
-    ORDER BY published_at DESC
-    LIMIT 500
-  `).all();
+export async function buildAllClusters(env, precomputedClusters) {
+  let clusters;
+  let articles;
 
-  const articles = rows.results || [];
-  if (articles.length < CLUSTER_MIN_ARTICLES) return;
+  if (precomputedClusters) {
+    clusters = precomputedClusters;
+    // Flatten articles from clusters to get full article data
+    articles = clusters.flatMap(c => c.articles);
+  } else {
+    const rows = await env.DB.prepare(`
+      SELECT article_id, title, summary, source, bias_score, published_at,
+             controversy_score, controversy_level, matched_topic
+      FROM articles
+      WHERE datetime(published_at) >= datetime('now', '-4 days')
+      ORDER BY published_at DESC
+      LIMIT 200
+    `).all();
 
-  const clusters = buildClusters(articles);
+    articles = rows.results || [];
+    if (articles.length < CLUSTER_MIN_ARTICLES) return;
+    clusters = buildClusters(articles);
+  }
 
   for (const cluster of clusters) {
     if (cluster.articles.length < CLUSTER_MIN_ARTICLES) continue;
