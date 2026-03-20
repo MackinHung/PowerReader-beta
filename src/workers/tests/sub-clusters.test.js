@@ -109,14 +109,14 @@ describe('buildSubClusters via buildAllClusters', () => {
 
   it('splits crime articles into sub-clusters by entity anchor', async () => {
     // 5 articles sharing judicial terms (起訴/判決/法院), but about different cases
-    // Group A: 「台灣里」案 with 70億 → shared entity anchor (quoted 台灣里 + 70億)
-    // Group B: 「柬埔寨」案 → shared entity anchor (quoted 柬埔寨)
+    // Group A: 「台灣里」案 with 70億元 → shared entity anchors (quoted 台灣里 + number 70億元) → overlap ≥ 2
+    // Group B: 「柬埔寨」+「電信」案 → shared entity anchors (quoted 柬埔寨 + quoted 電信) → overlap ≥ 2
     const articles = [
-      { article_id: 'a1', title: '「台灣里」詐騙集團盜刷70億遭起訴判決', summary: '法院審理「台灣里」案', source: '自由時報', bias_score: null, published_at: '2026-03-10T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
-      { article_id: 'a2', title: '「台灣里」盜刷案70億法院判決出爐結果', summary: '「台灣里」判決確定', source: '聯合報', bias_score: null, published_at: '2026-03-10T11:30:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
-      { article_id: 'a3', title: '「台灣里」70億詐騙案起訴後續追蹤報導', summary: '「台灣里」檢方追訴', source: '中央社', bias_score: null, published_at: '2026-03-10T11:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
-      { article_id: 'b1', title: '「柬埔寨」詐騙起訴10人法院開庭審理中', summary: '「柬埔寨」電信詐騙', source: 'ETtoday新聞雲', bias_score: null, published_at: '2026-03-10T10:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
-      { article_id: 'b2', title: '「柬埔寨」電信詐騙法院判決3人有罪起訴', summary: '「柬埔寨」詐騙集團', source: '東森新聞', bias_score: null, published_at: '2026-03-10T09:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
+      { article_id: 'a1', title: '「台灣里」詐騙集團盜刷70億元遭起訴判決', summary: '法院審理「台灣里」案', source: '自由時報', bias_score: null, published_at: '2026-03-10T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
+      { article_id: 'a2', title: '「台灣里」盜刷案70億元法院判決出爐結果', summary: '「台灣里」判決確定', source: '聯合報', bias_score: null, published_at: '2026-03-10T11:30:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
+      { article_id: 'a3', title: '「台灣里」70億元詐騙案起訴後續追蹤報導', summary: '「台灣里」檢方追訴', source: '中央社', bias_score: null, published_at: '2026-03-10T11:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
+      { article_id: 'b1', title: '「柬埔寨」「電信」詐騙起訴10人法院審理', summary: '「柬埔寨」電信詐騙', source: 'ETtoday新聞雲', bias_score: null, published_at: '2026-03-10T10:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
+      { article_id: 'b2', title: '「柬埔寨」「電信」詐騙法院判決3人有罪', summary: '「柬埔寨」詐騙集團', source: '東森新聞', bias_score: null, published_at: '2026-03-10T09:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: '社會新聞' },
     ];
 
     const mockDB = createMockDB({
@@ -147,13 +147,13 @@ describe('buildSubClusters via buildAllClusters', () => {
 
   it('dynamic stop-bigram filters common judicial terms', async () => {
     // All articles share 起訴/法院/判決 (>50% frequency) → these bigrams should be filtered
-    // Entity anchor (quoted terms + numbers) separates the cases
+    // Entity anchor (quoted terms) separates the cases with overlap ≥ 2
     const articles = [
-      { article_id: '1', title: '「TSMC」內線交易案起訴3人法院判決', summary: '', source: '自由時報', bias_score: null, published_at: '2026-03-10T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
-      { article_id: '2', title: '「TSMC」交易起訴法院判決確定結果', summary: '', source: '聯合報', bias_score: null, published_at: '2026-03-10T11:30:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
-      { article_id: '3', title: '「TSMC」內線交易案法院起訴審理', summary: '', source: '中央社', bias_score: null, published_at: '2026-03-10T11:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
-      { article_id: '4', title: '「鴻海」竊密案起訴法院判決出爐', summary: '', source: 'ETtoday新聞雲', bias_score: null, published_at: '2026-03-10T10:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
-      { article_id: '5', title: '「鴻海」員工竊密起訴法院宣判刑期', summary: '', source: '東森新聞', bias_score: null, published_at: '2026-03-10T09:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '1', title: '「TSMC」「內線交易」案起訴3人法院判決', summary: '', source: '自由時報', bias_score: null, published_at: '2026-03-10T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '2', title: '「TSMC」「內線交易」起訴法院判決確定', summary: '', source: '聯合報', bias_score: null, published_at: '2026-03-10T11:30:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '3', title: '「TSMC」「內線交易」案法院起訴審理', summary: '', source: '中央社', bias_score: null, published_at: '2026-03-10T11:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '4', title: '「鴻海」「竊密」案起訴法院判決出爐', summary: '', source: 'ETtoday新聞雲', bias_score: null, published_at: '2026-03-10T10:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '5', title: '「鴻海」員工「竊密」起訴法院宣判刑期', summary: '', source: '東森新聞', bias_score: null, published_at: '2026-03-10T09:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
     ];
 
     const mockDB = createMockDB({
@@ -257,12 +257,12 @@ describe('buildSubClusters via buildAllClusters', () => {
   });
 
   it('English proper nouns serve as entity anchors', async () => {
-    // TSMC vs NVIDIA articles — English names as entity anchors
+    // TSMC vs NVIDIA articles — English names + quoted terms as entity anchors (overlap ≥ 2)
     const articles = [
-      { article_id: '1', title: 'TSMC法說會最新財報公布分析報導', summary: 'TSMC第四季', source: '自由時報', bias_score: null, published_at: '2026-03-10T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
-      { article_id: '2', title: 'TSMC最新法說會營收財報創新高紀錄', summary: 'TSMC公布', source: '聯合報', bias_score: null, published_at: '2026-03-10T11:30:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
-      { article_id: '3', title: 'NVIDIA最新法說會財報分析報導結果', summary: 'NVIDIA AI', source: '中央社', bias_score: null, published_at: '2026-03-10T11:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
-      { article_id: '4', title: 'NVIDIA法說會最新營收財報公布分析', summary: 'NVIDIA成長', source: 'ETtoday新聞雲', bias_score: null, published_at: '2026-03-10T10:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '1', title: 'TSMC「法說會」最新財報公布分析報導', summary: 'TSMC第四季', source: '自由時報', bias_score: null, published_at: '2026-03-10T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '2', title: 'TSMC「法說會」最新營收財報創新高紀錄', summary: 'TSMC公布', source: '聯合報', bias_score: null, published_at: '2026-03-10T11:30:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '3', title: 'NVIDIA「業績」最新法說會財報分析報導', summary: 'NVIDIA AI', source: '中央社', bias_score: null, published_at: '2026-03-10T11:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '4', title: 'NVIDIA「業績」法說會最新營收財報公布', summary: 'NVIDIA成長', source: 'ETtoday新聞雲', bias_score: null, published_at: '2026-03-10T10:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
     ];
 
     const mockDB = createMockDB({

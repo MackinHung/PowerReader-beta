@@ -54,6 +54,12 @@ const SOURCE_CAMP = {
   '風傳媒': 'white'
 };
 
+// English tokens from source names (for entity filtering in sub-clustering)
+const SOURCE_NAME_TOKENS = new Set();
+for (const source of Object.keys(SOURCE_CAMP)) {
+  for (const m of source.matchAll(/[A-Z][a-zA-Z]+/g)) SOURCE_NAME_TOKENS.add(m[0]);
+}
+
 /**
  * Detect blindspot type from camp counts.
  * Mirror of shared/enums.js detectBlindspot().
@@ -104,6 +110,7 @@ function getMissingCamp(type) {
 // Text bigram Jaccard (CJK, title + summary)
 // ========================================
 const CLUSTER_JACCARD_THRESHOLD = 0.09;
+const MAX_CLUSTER_SIZE = 30;
 
 function textBigrams(text) {
   if (!text) return new Set();
@@ -235,6 +242,26 @@ function buildClusters(articles) {
     return Number.isFinite(t) ? t : 0;
   });
 
+  // 1b. Dynamic stop-bigram filtering: remove bigrams appearing in >25% of articles
+  const bigramDocFreq = {};
+  for (const bigs of bigrams) {
+    for (const b of bigs) {
+      bigramDocFreq[b] = (bigramDocFreq[b] || 0) + 1;
+    }
+  }
+  const globalStopThreshold = Math.max(Math.ceil(n * 0.25), 5);
+  const globalStopBigrams = new Set();
+  for (const [b, count] of Object.entries(bigramDocFreq)) {
+    if (count >= globalStopThreshold) globalStopBigrams.add(b);
+  }
+  const filteredBigrams = bigrams.map(bigs => {
+    const filtered = new Set();
+    for (const b of bigs) {
+      if (!globalStopBigrams.has(b)) filtered.add(b);
+    }
+    return filtered;
+  });
+
   // 2. Union-Find with path compression and union by rank
   const parent = Array.from({ length: n }, (_, i) => i);
   const rank = new Array(n).fill(0);
@@ -244,7 +271,7 @@ function buildClusters(articles) {
   // 3. O(n²) pairwise comparison → union if time-weighted Jaccard ≥ threshold
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
-      const rawJaccard = jaccardSimilarity(bigrams[i], bigrams[j]);
+      const rawJaccard = jaccardSimilarity(filteredBigrams[i], filteredBigrams[j]);
       const hoursApart = Math.abs(timestamps[i] - timestamps[j]) / 3600000;
       if (rawJaccard * timeDecay(hoursApart) >= CLUSTER_JACCARD_THRESHOLD) {
         union(i, j);
@@ -259,7 +286,78 @@ function buildClusters(articles) {
     if (!groups[root]) groups[root] = [];
     groups[root].push(articles[i]);
   }
-  return Object.values(groups).map(arts => ({ articles: arts }));
+  const result = Object.values(groups).map(arts => ({ articles: arts }));
+
+  // Cap: re-cluster oversized groups
+  return result.flatMap(cluster => {
+    if (cluster.articles.length <= MAX_CLUSTER_SIZE) return [cluster];
+    return reclusterStrict(cluster.articles);
+  });
+}
+
+/**
+ * Re-cluster oversized groups with stricter criteria.
+ * Uses title-only bigrams (no summary), higher Jaccard threshold (0.15),
+ * in-cluster stop-bigram filtering (30%), and no time decay.
+ * Residual oversized groups are split by publication time.
+ */
+function reclusterStrict(articles) {
+  const n = articles.length;
+  // Title-only bigrams (more precise than title+summary)
+  const titleBigs = articles.map(a => textBigrams(a.title || ''));
+
+  // In-cluster stop-bigram filtering (>30%)
+  const bigramCount = {};
+  for (const bigs of titleBigs) {
+    for (const b of bigs) {
+      bigramCount[b] = (bigramCount[b] || 0) + 1;
+    }
+  }
+  const stopThreshold = Math.ceil(n * 0.3);
+  const stopBigs = new Set();
+  for (const [b, count] of Object.entries(bigramCount)) {
+    if (count >= stopThreshold) stopBigs.add(b);
+  }
+  const filtered = titleBigs.map(bigs => {
+    const f = new Set();
+    for (const b of bigs) {
+      if (!stopBigs.has(b)) f.add(b);
+    }
+    return f;
+  });
+
+  // Union-Find with stricter threshold (0.15, no time decay)
+  const parent = Array.from({ length: n }, (_, i) => i);
+  const rank = new Array(n).fill(0);
+  function find(x) { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; }
+  function union(x, y) { let rx = find(x), ry = find(y); if (rx === ry) return; if (rank[rx] < rank[ry]) [rx, ry] = [ry, rx]; parent[ry] = rx; if (rank[rx] === rank[ry]) rank[rx]++; }
+
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      if (jaccardSimilarity(filtered[i], filtered[j]) >= 0.15) {
+        union(i, j);
+      }
+    }
+  }
+
+  // Group by root
+  const groups = {};
+  for (let i = 0; i < n; i++) {
+    const root = find(i);
+    if (!groups[root]) groups[root] = [];
+    groups[root].push(articles[i]);
+  }
+
+  // If any group still exceeds MAX_CLUSTER_SIZE, split by time
+  return Object.values(groups).flatMap(arts => {
+    if (arts.length <= MAX_CLUSTER_SIZE) return [{ articles: arts }];
+    arts.sort((a, b) => new Date(a.published_at) - new Date(b.published_at));
+    const chunks = [];
+    for (let i = 0; i < arts.length; i += MAX_CLUSTER_SIZE) {
+      chunks.push({ articles: arts.slice(i, i + MAX_CLUSTER_SIZE) });
+    }
+    return chunks;
+  });
 }
 
 /**
@@ -301,9 +399,11 @@ function extractEntities(title, summary) {
   const quoted = text.matchAll(/[「『]([^」』]{2,10})[」』]/g);
   for (const m of quoted) entities.add(m[1]);
 
-  // English proper nouns (capitalized words)
+  // English proper nouns (capitalized words), excluding source names
   const english = text.matchAll(/[A-Z][a-zA-Z]+/g);
-  for (const m of english) entities.add(m[0]);
+  for (const m of english) {
+    if (!SOURCE_NAME_TOKENS.has(m[0])) entities.add(m[0]);
+  }
 
   return entities;
 }
@@ -365,13 +465,13 @@ function buildSubClusters(articles) {
 
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
-      // Entity overlap ≥ 1
+      // Entity overlap ≥ 2 (stricter to avoid false merges from shared generic entities)
       let entityOverlap = 0;
       for (const e of entitiesArr[i]) {
-        if (entitiesArr[j].has(e)) { entityOverlap++; break; }
+        if (entitiesArr[j].has(e)) entityOverlap++;
       }
 
-      if (entityOverlap >= 1) {
+      if (entityOverlap >= 2) {
         union(i, j);
         continue;
       }
