@@ -39,5 +39,4 @@ binding = "AI"
 crons = ["0 * * * *"]
 
 # ===== Limits =====
-[limits]
-cpu_ms = 10
+# cpu_ms removed — not supported on Free plan

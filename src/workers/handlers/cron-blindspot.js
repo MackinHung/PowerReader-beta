@@ -422,7 +422,7 @@ function titleBigrams(title) {
  * Algorithm:
  *   1. Extract entities from each article's title+summary
  *   2. Build title bigrams, then compute dynamic stop-bigrams (>50% frequency in cluster)
- *   3. Union-Find: merge if entity overlap ≥ 1 OR filtered title Jaccard ≥ 0.18
+ *   3. Union-Find: merge if entity overlap ≥ 2 OR (filtered title Jaccard ≥ 0.18 + entity repulsion check)
  *   4. Group by root, output sub-clusters
  */
 function buildSubClusters(articles) {
@@ -434,6 +434,17 @@ function buildSubClusters(articles) {
   // 1. Extract entities and title bigrams for each article
   const entitiesArr = articles.map(a => extractEntities(a.title, a.summary));
   const titleBigramsArr = articles.map(a => titleBigrams(a.title));
+
+  // 1b. Extract quoted entities separately for repulsion check
+  // If both articles have quoted entities but zero overlap → don't merge via Jaccard
+  const quotedEntitiesArr = articles.map(a => {
+    const text = (a.title || '') + ' ' + (a.summary || '');
+    const quoted = new Set();
+    for (const m of text.matchAll(/[「『]([^」』]{2,10})[」』]/g)) {
+      quoted.add(m[1]);
+    }
+    return quoted;
+  });
 
   // 2. Dynamic stop-bigram filtering: remove bigrams appearing in >50% of articles
   const bigramCount = {};
@@ -474,6 +485,16 @@ function buildSubClusters(articles) {
       if (entityOverlap >= 2) {
         union(i, j);
         continue;
+      }
+
+      // Entity repulsion: if both articles have quoted entities (「」) but
+      // zero quoted-entity overlap, they're about different sub-events → skip Jaccard merge
+      if (quotedEntitiesArr[i].size > 0 && quotedEntitiesArr[j].size > 0) {
+        let quotedOverlap = 0;
+        for (const q of quotedEntitiesArr[i]) {
+          if (quotedEntitiesArr[j].has(q)) quotedOverlap++;
+        }
+        if (quotedOverlap === 0) continue;
       }
 
       // Filtered title Jaccard ≥ 0.18

@@ -256,6 +256,76 @@ describe('buildSubClusters via buildAllClusters', () => {
     expect(insertCalls[0][0]).toContain('sub_clusters');
   });
 
+  it('entity repulsion: different quoted entities prevent Jaccard merge', async () => {
+    // All articles share many CJK bigrams (行政院/通過/政策/最新/推動...)
+    // but have different quoted entities → should NOT merge via Jaccard
+    const articles = [
+      { article_id: '1', title: '行政院通過「育兒津貼」最新政策推動3000元方案', summary: '', source: '自由時報', bias_score: null, published_at: '2026-03-10T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '2', title: '行政院推動「育兒津貼」最新政策通過3000元計畫', summary: '', source: '聯合報', bias_score: null, published_at: '2026-03-10T11:30:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '3', title: '行政院推動「育兒津貼」政策最新方案3000元實施', summary: '', source: '中央社', bias_score: null, published_at: '2026-03-10T11:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '4', title: '行政院通過「國防預算」最新政策推動500億元規模', summary: '', source: 'ETtoday新聞雲', bias_score: null, published_at: '2026-03-10T10:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '5', title: '行政院推動「國防預算」最新政策通過500億元計畫', summary: '', source: '三立新聞', bias_score: null, published_at: '2026-03-10T09:30:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '6', title: '行政院通過「能源轉型」最新政策推動綠能方案規劃', summary: '', source: '東森新聞', bias_score: null, published_at: '2026-03-10T09:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+    ];
+
+    const mockDB = createMockDB({
+      all: (sql) => {
+        if (sql.includes('FROM articles')) return { results: articles };
+        return { results: [] };
+      }
+    });
+
+    const { buildAllClusters } = await import('../handlers/cron-blindspot.js');
+    await buildAllClusters({ DB: mockDB });
+
+    const subClusters = getSubClustersFromBind(mockDB);
+    expect(subClusters).not.toBeNull();
+    // Should have at least 2 sub-clusters (育兒津貼 vs 國防預算 vs 能源轉型)
+    expect(subClusters.length).toBeGreaterThanOrEqual(2);
+
+    // 育兒津貼 group should be separate from 國防預算 group
+    const childSub = subClusters.find(s => s.article_ids.includes('1'));
+    expect(childSub).toBeDefined();
+    expect(childSub.article_ids).toContain('2');
+    expect(childSub.article_ids).toContain('3');
+    expect(childSub.article_ids).not.toContain('4');
+    expect(childSub.article_ids).not.toContain('5');
+  });
+
+  it('one article has quoted entity, one does not: no repulsion', async () => {
+    // Repulsion only triggers when BOTH articles have quoted entities
+    // If only one has 「」, Jaccard path still applies
+    const articles = [
+      { article_id: '1', title: '「反核遊行」台北街頭3萬人上街抗議要求廢核', summary: '', source: '自由時報', bias_score: null, published_at: '2026-03-10T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '2', title: '「反核遊行」台北3萬人上街抗議市府回應安全', summary: '', source: '聯合報', bias_score: null, published_at: '2026-03-10T11:30:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '3', title: '「反核遊行」台北街頭3萬人抗議活動順利結束', summary: '', source: '中央社', bias_score: null, published_at: '2026-03-10T11:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '4', title: '台北街頭大型活動上街抗議人數眾多市府關注', summary: '', source: 'ETtoday新聞雲', bias_score: null, published_at: '2026-03-10T10:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+    ];
+
+    const mockDB = createMockDB({
+      all: (sql) => {
+        if (sql.includes('FROM articles')) return { results: articles };
+        return { results: [] };
+      }
+    });
+
+    const { buildAllClusters } = await import('../handlers/cron-blindspot.js');
+    await buildAllClusters({ DB: mockDB });
+
+    const subClusters = getSubClustersFromBind(mockDB);
+    expect(subClusters).not.toBeNull();
+    // Article 4 has no quoted entities → repulsion doesn't apply to pairs involving article 4
+    // All articles are valid and in sub-clusters
+    const allIds = subClusters.flatMap(s => s.article_ids).sort();
+    expect(allIds).toEqual(['1', '2', '3', '4']);
+
+    // Articles 1-3 share quoted entity 反核遊行 → entity overlap ≥ 1 (but need ≥2 for entity path)
+    // They also share 3萬人 number entity → overlap = 2 → merge via entity path
+    const coreGroup = subClusters.find(s => s.article_ids.includes('1'));
+    expect(coreGroup.article_ids).toContain('2');
+    expect(coreGroup.article_ids).toContain('3');
+  });
+
   it('English proper nouns serve as entity anchors', async () => {
     // TSMC vs NVIDIA articles — English names + quoted terms as entity anchors (overlap ≥ 2)
     const articles = [
