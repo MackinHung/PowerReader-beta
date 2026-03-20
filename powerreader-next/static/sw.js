@@ -1,5 +1,5 @@
 // PowerReader Next - Service Worker
-const CACHE_NAME = 'pr-next-v6';
+const CACHE_NAME = 'pr-next-v7';
 const APP_SHELL = [
   '/',
   '/200.html',
@@ -35,6 +35,9 @@ self.addEventListener('fetch', (event) => {
 
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
+
+  // Skip non-http(s) schemes (chrome-extension://, etc.)
+  if (!url.protocol.startsWith('http')) return;
 
   // API requests: network-first
   if (url.hostname === 'powerreader-api.watermelom5404.workers.dev') {
