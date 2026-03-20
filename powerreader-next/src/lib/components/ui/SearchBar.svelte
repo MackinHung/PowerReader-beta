@@ -36,13 +36,13 @@
     padding: 0 24px;
     gap: 16px;
     width: 100%;
-    border: 4px solid var(--pr-ink);
-    box-shadow: 8px 8px 0px var(--pr-ink);
+    border: 2px solid var(--pr-ink);
+    box-shadow: 4px 4px 0px var(--pr-ink);
     transition: transform 100ms ease, box-shadow 100ms ease;
   }
   .md-search-bar:focus-within {
-    transform: translate(4px, 4px);
-    box-shadow: 4px 4px 0px var(--pr-ink);
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px var(--pr-ink);
     outline: none;
   }
   .search-icon {

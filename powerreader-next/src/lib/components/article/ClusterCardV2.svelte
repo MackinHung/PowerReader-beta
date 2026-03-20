@@ -103,9 +103,9 @@
     display: flex;
     flex-direction: column;
     background: #ffffff;
-    border: 4px solid var(--pr-ink);
-    box-shadow: 6px 6px 0px var(--pr-ink);
-    transition: transform 150ms ease, box-shadow 150ms ease;
+    border: 2px solid var(--pr-ink);
+    box-shadow: none;
+    transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
     cursor: pointer;
     position: relative;
     width: 100%;
@@ -115,11 +115,12 @@
     border-radius: 0;
   }
   .brutalist-card:hover {
-    transform: translate(-4px, -8px);
-    box-shadow: 10px 14px 0px var(--pr-ink);
+    transform: translate(-2px, -4px);
+    box-shadow: 6px 8px 0px var(--pr-ink);
+    border: 2px solid var(--pr-ink);
   }
   .brutalist-card:focus-visible {
-    outline: 4px solid #FF5722;
+    outline: 2px solid #FF5722;
   }
   
   .heat-badge {
@@ -223,7 +224,7 @@
 
   .camp-bar-wrapper {
     width: 100%;
-    border-top: 4px solid var(--pr-ink);
+    border-top: 2px solid var(--pr-ink);
     background: #ffffff;
     display: flex;
     overflow: hidden;

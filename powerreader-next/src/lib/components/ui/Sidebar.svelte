@@ -165,36 +165,38 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    padding: 32px 24px;
+    padding: 24px 0;
     overflow-y: auto;
   }
   .nav-divider {
     height: 1px;
     background: rgba(255, 255, 255, 0.1);
-    margin: 8px 0;
+    margin: 8px 24px;
   }
   .nav-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 16px 20px;
-    border-radius: 12px;
+    gap: 16px;
+    padding: 16px 24px;
+    border-radius: 0;
     text-decoration: none;
     color: rgba(255, 255, 255, 0.7);
     white-space: nowrap;
     font-weight: 700;
     font-size: 20px;
-    border: 4px solid transparent;
-    transition: all 200ms ease;
+    border-left: 8px solid transparent;
+    transition: all 150ms ease;
   }
   .nav-item.action-btn {
-    border: none;
+    border-left: 8px solid transparent;
     background: none;
     cursor: pointer;
     font-family: inherit;
     width: 100%;
     text-align: left;
+    border-top: none;
+    border-right: none;
+    border-bottom: none;
   }
   .nav-item.disabled {
     opacity: 0.4;
@@ -203,25 +205,29 @@
   }
   .rail .nav-item {
     justify-content: center;
-    padding: 0;
+    padding: 16px 0;
+    gap: 0;
+    border-left: 4px solid transparent;
   }
-  .nav-item:hover:not(.disabled) {
-    background: rgba(255, 255, 255, 0.1);
+  .nav-item:hover:not(.disabled):not(.active) {
+    background: rgba(255, 255, 255, 0.05);
     color: #ffffff;
+    border-left-color: #FF5722;
   }
   .nav-item.active {
     background: #FFFFFF;
     color: #000000;
-    border: 4px solid var(--pr-ink);
-    box-shadow: 6px 6px 0px var(--pr-ink);
-    transform: translate(8px, -4px);
+    border-left: 8px solid #FF5722;
+  }
+  .rail .nav-item.active {
+    border-left: 4px solid #FF5722;
   }
   .nav-icon {
     font-size: 24px;
     flex-shrink: 0;
   }
   .active .nav-icon {
-    color: var(--pr-ink);
+    color: #000000;
     font-variation-settings: 'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 24;
   }
   .nav-label {
@@ -231,32 +237,30 @@
   }
   .nav-badge {
     font: var(--md-sys-typescale-label-small-font);
-    background: rgba(255, 255, 255, 0.15);
-    color: rgba(255, 255, 255, 0.6);
+    background: #000000;
+    color: #ffffff;
     padding: 2px 8px;
-    border-radius: var(--md-sys-shape-corner-full);
+    border-radius: 0;
     margin-left: auto;
     flex-shrink: 0;
   }
   .sidebar-bottom {
     display: flex;
     flex-direction: column;
-    padding: 24px;
-    border-top: 4px solid var(--pr-ink);
-    background: #1A1A20;
+    padding: 0;
+    border-top: 2px solid rgba(255, 255, 255, 0.1);
+    background: #111115;
     flex-shrink: 0;
   }
   .sidebar-bottom .nav-item {
     background: transparent;
-    color: #d1d5db;
-    border: 4px solid transparent;
+    color: rgba(255, 255, 255, 0.7);
+    border-left: 8px solid transparent;
   }
-  .sidebar-bottom .nav-item:hover {
-    background: white;
-    color: black;
-    border-color: black;
-    box-shadow: 4px 4px 0px black;
-    transform: translate(-4px, -4px);
+  .sidebar-bottom .nav-item:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+    border-left-color: #FF5722;
   }
 
   @media (max-width: 767px) {

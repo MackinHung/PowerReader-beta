@@ -55,8 +55,7 @@
     align-items: center;
     padding: 0 4px;
     z-index: 100;
-    border-bottom: 4px solid var(--pr-ink);
-    box-shadow: 0px 4px 0px var(--pr-ink);
+    border-bottom: 2px solid var(--pr-ink);
     transition:
       height var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
   }

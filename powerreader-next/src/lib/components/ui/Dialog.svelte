@@ -60,8 +60,10 @@
     padding: 16px;
   }
   .md-dialog-content {
-    background: var(--md-sys-color-surface-container-highest);
-    border-radius: var(--md-sys-shape-corner-extra-large);
+    background: #FFFFFF;
+    border: 4px solid var(--pr-ink);
+    box-shadow: 12px 12px 0px var(--pr-ink);
+    border-radius: 0;
     max-width: 560px;
     width: 100%;
     max-height: 80vh;
@@ -83,8 +85,8 @@
     padding: 24px 24px 0;
   }
   .dialog-title {
-    font: var(--md-sys-typescale-headline-small-font);
-    color: var(--md-sys-color-on-surface);
+    font: 900 24px/32px var(--pr-font-sans);
+    color: var(--pr-ink);
   }
   .dialog-close {
     display: inline-flex;
@@ -92,11 +94,21 @@
     justify-content: center;
     width: 40px;
     height: 40px;
-    border: none;
-    border-radius: var(--md-sys-shape-corner-full);
-    background: transparent;
-    color: var(--md-sys-color-on-surface-variant);
+    border: 3px solid var(--pr-ink);
+    border-radius: 0;
+    box-shadow: 2px 2px 0px var(--pr-ink);
+    background: #FFFFFF;
+    color: var(--pr-ink);
     cursor: pointer;
+    transition: transform 100ms ease, box-shadow 100ms ease;
+  }
+  .dialog-close:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 4px 4px 0px var(--pr-ink);
+  }
+  .dialog-close:active {
+    transform: translate(2px, 2px);
+    box-shadow: 0px 0px 0px var(--pr-ink);
   }
   .dialog-body {
     padding: 24px;
