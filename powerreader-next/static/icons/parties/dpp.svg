@@ -1,7 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <circle cx="50" cy="50" r="50" fill="#1B9431"/>
-  <g transform="translate(50,50)" fill="#FFF">
-    <rect x="-7" y="-36" width="14" height="72"/>
-    <rect x="-36" y="-7" width="72" height="14"/>
-  </g>
+  <circle cx="50" cy="50" r="46" fill="#1B9431"/>
+  <text x="50" y="50" text-anchor="middle" dominant-baseline="central"
+        font-family="Noto Sans TC, sans-serif" font-weight="900" font-size="52" fill="#FFF">民</text>
 </svg>

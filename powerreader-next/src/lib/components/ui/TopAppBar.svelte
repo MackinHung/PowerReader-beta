@@ -36,12 +36,12 @@
       </button>
     {/if}
   </div>
-  {#if title && title !== 'PowerReader'}
+  {#if title}
     <h1 class="bar-title">{title}</h1>
   {/if}
+  <span class="bar-date">{dateDisplay}</span>
   <div class="bar-actions">
     {@render children?.()}
-    <span class="bar-date">{dateDisplay}</span>
   </div>
 </header>
 
@@ -57,7 +57,6 @@
     align-items: center;
     padding: 0 4px;
     z-index: 100;
-    border-bottom: 2px solid var(--pr-ink);
     transition:
       height var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
   }
@@ -92,7 +91,6 @@
     }
   }
   .bar-title {
-    flex: 1;
     font-family: var(--pr-font-sans);
     font-size: 26px;
     line-height: 28px;
@@ -105,18 +103,18 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .bar-actions {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding-right: 8px;
-  }
   .bar-date {
     font: var(--md-sys-typescale-label-large-font);
     color: var(--md-sys-color-on-surface-variant);
     font-weight: 700;
     white-space: nowrap;
+    margin-left: 4px;
+  }
+  .bar-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding-right: 8px;
     margin-left: auto;
-    margin-right: 16px;
   }
 </style>

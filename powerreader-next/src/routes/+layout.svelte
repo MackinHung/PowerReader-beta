@@ -32,7 +32,7 @@
   ];
 
   const titles = {
-    '/': 'PowerReader',
+    '/': '報導熱點',
     '/observe': '觀察偏見',
     '/observe/blindspot': '觀察偏見',
     '/observe/compare': '觀察偏見',
