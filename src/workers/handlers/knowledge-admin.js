@@ -401,10 +401,12 @@ async function embedAndStore(env, entry) {
 
 /**
  * Build the text to embed for a knowledge entry.
- * Prepends title (entity name) so it anchors the vector space position.
- * Without this, article-title queries would match on description similarity
- * rather than entity identity (e.g. "朱立倫" matching 侯友宜's similar bio).
+ * Repeats title 3× so the entity name dominates the vector space position.
+ * Without this, entries whose bios mention another person's name more often
+ * than the person's own entry would rank higher for that name query
+ * (e.g. 李文宗's bio mentions "柯文哲" 3× vs 柯文哲's own entry 1×).
  */
 function buildEmbeddingText(entry) {
-  return `${entry.title} ${entry.content}`;
+  const t = entry.title;
+  return `${t} ${t} ${t} ${entry.content}`;
 }
