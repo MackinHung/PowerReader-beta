@@ -332,22 +332,27 @@ export async function getArticleCluster(request, env, ctx, { params }) {
 
   const pubDate = article.published_at || nowISO();
 
-  // Fetch candidates within ±48h from different sources.
+  // Fetch candidates within ±4 days from different sources.
   // datetime() normalizes ISO 8601 (+TZ) to 'YYYY-MM-DD HH:MM:SS' for correct comparison.
   const candidates = await env.DB.prepare(`
     SELECT article_id, source, title, summary, bias_score, bias_category, published_at
     FROM articles
     WHERE article_id != ?
       AND source != ?
-      AND datetime(published_at) >= datetime(?, '-2 days')
-      AND datetime(published_at) <= datetime(?, '+2 days')
+      AND datetime(published_at) >= datetime(?, '-4 days')
+      AND datetime(published_at) <= datetime(?, '+4 days')
     LIMIT 500
   `).bind(article_id, article.source, pubDate, pubDate).all();
 
-  // Compute title+summary bigram Jaccard similarity and filter
+  // Compute time-weighted title+summary bigram Jaccard similarity and filter
   const sourceBigrams = textBigrams(article.title + ' ' + (article.summary || ''));
+  const sourceTime = new Date(pubDate).getTime();
   const similar = (candidates.results || [])
-    .map(row => ({ ...row, _sim: jaccardSimilarity(sourceBigrams, textBigrams(row.title + ' ' + (row.summary || ''))) }))
+    .map(row => {
+      const rawSim = jaccardSimilarity(sourceBigrams, textBigrams(row.title + ' ' + (row.summary || '')));
+      const hoursApart = Math.abs(sourceTime - new Date(row.published_at).getTime()) / 3600000;
+      return { ...row, _sim: rawSim * timeDecay(hoursApart) };
+    })
     .filter(row => row._sim >= TITLE_SIMILARITY_THRESHOLD)
     .sort((a, b) => b._sim - a._sim)
     .slice(0, 10);
@@ -371,6 +376,16 @@ export async function getArticleCluster(request, env, ctx, { params }) {
 // =============================================
 
 const TITLE_SIMILARITY_THRESHOLD = 0.10;
+
+/**
+ * Time decay multiplier for clustering.
+ * Same day (≤24h): no decay. Linearly decays to 0.6 floor at 96h (4 days).
+ */
+function timeDecay(hoursApart) {
+  if (hoursApart <= 24) return 1.0;
+  if (hoursApart >= 96) return 0.6;
+  return 1.0 - 0.4 * (hoursApart - 24) / 72;
+}
 
 /**
  * Extract character bigrams from text.

@@ -131,20 +131,30 @@ function jaccardSimilarity(setA, setB) {
 }
 
 /**
+ * Time decay multiplier for clustering.
+ * Same day (≤24h): no decay. Linearly decays to 0.6 floor at 96h (4 days).
+ */
+function timeDecay(hoursApart) {
+  if (hoursApart <= 24) return 1.0;
+  if (hoursApart >= 96) return 0.6;
+  return 1.0 - 0.4 * (hoursApart - 24) / 72;
+}
+
+/**
  * Scan recent articles and detect blindspot events.
- * Strategy: cluster articles by title+summary bigram Jaccard (Union-Find, ±48h),
- * then check camp distribution per cluster.
+ * Strategy: cluster articles by title+summary bigram Jaccard with time decay
+ * (Union-Find, ±4 days), then check camp distribution per cluster.
  *
  * Camp determination priority:
  *   1. bias_score from user analysis (if available)
  *   2. SOURCE_CAMP static mapping (fallback for unanalyzed articles)
  */
 export async function scanBlindspots(env) {
-  // Fetch articles from last 48h (all articles, not just analyzed ones)
+  // Fetch articles from last 4 days (extended window for time-decay clustering)
   const rows = await env.DB.prepare(`
     SELECT article_id, title, summary, source, bias_score, published_at
     FROM articles
-    WHERE datetime(published_at) >= datetime('now', '-2 days')
+    WHERE datetime(published_at) >= datetime('now', '-4 days')
     ORDER BY published_at DESC
     LIMIT 500
   `).all();
@@ -210,13 +220,18 @@ export async function scanBlindspots(env) {
 }
 
 /**
- * Build clusters from articles using Union-Find with title+summary bigram Jaccard.
+ * Build clusters from articles using Union-Find with time-weighted bigram Jaccard.
  * Union-Find captures transitive similarity (A≈B, B≈C → A,B,C in same cluster).
+ * Time decay: same-day articles merge easily, older articles need stronger content overlap.
  */
 function buildClusters(articles) {
   const n = articles.length;
-  // 1. Pre-compute bigram sets for each article
+  // 1. Pre-compute bigram sets and timestamps
   const bigrams = articles.map(a => articleBigrams(a));
+  const timestamps = articles.map(a => {
+    const t = new Date(a.published_at).getTime();
+    return Number.isFinite(t) ? t : 0;
+  });
 
   // 2. Union-Find with path compression and union by rank
   const parent = Array.from({ length: n }, (_, i) => i);
@@ -224,10 +239,12 @@ function buildClusters(articles) {
   function find(x) { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; }
   function union(x, y) { let rx = find(x), ry = find(y); if (rx === ry) return; if (rank[rx] < rank[ry]) [rx, ry] = [ry, rx]; parent[ry] = rx; if (rank[rx] === rank[ry]) rank[rx]++; }
 
-  // 3. O(n²) pairwise comparison → union if Jaccard ≥ threshold
+  // 3. O(n²) pairwise comparison → union if time-weighted Jaccard ≥ threshold
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
-      if (jaccardSimilarity(bigrams[i], bigrams[j]) >= CLUSTER_JACCARD_THRESHOLD) {
+      const rawJaccard = jaccardSimilarity(bigrams[i], bigrams[j]);
+      const hoursApart = Math.abs(timestamps[i] - timestamps[j]) / 3600000;
+      if (rawJaccard * timeDecay(hoursApart) >= CLUSTER_JACCARD_THRESHOLD) {
         union(i, j);
       }
     }
@@ -280,7 +297,7 @@ export async function buildAllClusters(env) {
     SELECT article_id, title, summary, source, bias_score, published_at,
            controversy_score, controversy_level, matched_topic
     FROM articles
-    WHERE datetime(published_at) >= datetime('now', '-2 days')
+    WHERE datetime(published_at) >= datetime('now', '-4 days')
     ORDER BY published_at DESC
     LIMIT 500
   `).all();

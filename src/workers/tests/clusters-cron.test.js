@@ -492,4 +492,91 @@ describe('buildAllClusters', () => {
     );
     expect(insertCalls.length).toBe(1);
   });
+
+  it('time decay: same-day articles cluster normally', async () => {
+    // 1 hour apart → decay=1.0, should cluster
+    const articles = [
+      { article_id: '1', title: '某重要政策最新發展報導分析', summary: null, source: '自由時報', bias_score: null, published_at: '2026-03-10T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '2', title: '某重要政策最新發展報導內容', summary: null, source: '聯合報', bias_score: null, published_at: '2026-03-10T11:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+    ];
+
+    const mockDB = createMockDB({
+      all: (sql) => {
+        if (sql.includes('FROM articles')) return { results: articles };
+        return { results: [] };
+      }
+    });
+
+    const { buildAllClusters } = await import('../handlers/cron-blindspot.js');
+    await buildAllClusters({ DB: mockDB });
+
+    const insertCalls = mockDB.prepare.mock.calls.filter(c =>
+      c[0].includes('INSERT INTO event_clusters')
+    );
+    expect(insertCalls.length).toBe(1);
+  });
+
+  it('time decay: strong match still clusters after 3 days', async () => {
+    // 72h apart → decay≈0.733. rawJaccard needs to be high enough: raw*0.733 >= 0.09
+    // These long, similar titles produce rawJaccard well above 0.15
+    const articles = [
+      { article_id: '1', title: '國際經濟趨勢最新重要分析報導結果', summary: '全球經濟走勢分析報告最新結論', source: '自由時報', bias_score: null, published_at: '2026-03-10T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '2', title: '國際經濟趨勢最新重要分析報導內容', summary: '全球經濟走勢分析報告最新摘要', source: '聯合報', bias_score: null, published_at: '2026-03-07T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+    ];
+
+    const mockDB = createMockDB({
+      all: (sql) => {
+        if (sql.includes('FROM articles')) return { results: articles };
+        return { results: [] };
+      }
+    });
+
+    const { buildAllClusters } = await import('../handlers/cron-blindspot.js');
+    await buildAllClusters({ DB: mockDB });
+
+    const insertCalls = mockDB.prepare.mock.calls.filter(c =>
+      c[0].includes('INSERT INTO event_clusters')
+    );
+    expect(insertCalls.length).toBe(1);
+  });
+
+  it('time decay: weak match splits when days apart', async () => {
+    // Borderline pair (rawJaccard ≈ 0.10). Same day → passes (0.10 >= 0.09).
+    // 72h apart → 0.10 * 0.733 = 0.073 < 0.09 → should NOT cluster.
+    const articles = [
+      { article_id: '1', title: '甲甲乙乙丙丙丁丁戊戊己己庚庚', summary: null, source: '自由時報', bias_score: null, published_at: '2026-03-10T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+      { article_id: '2', title: '辛辛壬壬癸癸子子丑丑寅寅卯卯丁丁戊戊', summary: null, source: '聯合報', bias_score: null, published_at: '2026-03-07T12:00:00+08:00', controversy_score: null, controversy_level: null, matched_topic: null },
+    ];
+
+    const mockDB = createMockDB({
+      all: (sql) => {
+        if (sql.includes('FROM articles')) return { results: articles };
+        return { results: [] };
+      }
+    });
+
+    const { buildAllClusters } = await import('../handlers/cron-blindspot.js');
+    await buildAllClusters({ DB: mockDB });
+
+    const insertCalls = mockDB.prepare.mock.calls.filter(c =>
+      c[0].includes('INSERT INTO event_clusters')
+    );
+    // Weak match + time decay → should NOT form a cluster
+    expect(insertCalls.length).toBe(0);
+  });
+
+  it('queries 4-day window (not 2-day)', async () => {
+    const mockDB = createMockDB({
+      all: () => ({ results: [] })
+    });
+
+    const { buildAllClusters } = await import('../handlers/cron-blindspot.js');
+    await buildAllClusters({ DB: mockDB });
+
+    // Verify the SQL uses 4 days
+    const selectCall = mockDB.prepare.mock.calls.find(c =>
+      c[0].includes('FROM articles')
+    );
+    expect(selectCall[0]).toContain('-4 days');
+  });
 });
