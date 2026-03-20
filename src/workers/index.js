@@ -67,10 +67,12 @@ export default {
 
   // Cron trigger: hourly metrics aggregation + alert evaluation (T07) + session cleanup
   async scheduled(event, env, ctx) {
-    // Await aggregation before reading metrics so alerts evaluate fresh data
-    await aggregateHourly(env);
-    const metrics = await getFullMetrics(env);
-    ctx.waitUntil(evaluateAlerts(env, metrics));
+    // Metrics aggregation (non-blocking — must not block cluster/blindspot jobs)
+    try {
+      await aggregateHourly(env);
+      const metrics = await getFullMetrics(env);
+      ctx.waitUntil(evaluateAlerts(env, metrics));
+    } catch { /* metrics_raw table may not exist yet */ }
 
     // Cleanup expired sessions (non-blocking)
     ctx.waitUntil(
