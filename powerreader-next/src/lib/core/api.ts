@@ -22,7 +22,11 @@ import type {
   SearchKnowledgeParams,
   FeedbackType,
   SubmitAnalysisPayload,
-  PaginationMeta
+  PaginationMeta,
+  SponsorOrder,
+  SponsorFormResponse,
+  SponsorStats,
+  Sponsorship
 } from '$lib/types/api.js';
 import type {
   Article,
@@ -869,5 +873,55 @@ export async function closeKnowledgePR(token: string, prNumber: number, reason?:
     method: 'POST',
     headers: { 'Authorization': `Bearer ${token}` },
     body: JSON.stringify({ reason: reason || '' })
+  });
+}
+
+// =============================================
+// Sponsor API (ECPay — Power Pool)
+// =============================================
+
+/**
+ * POST /api/v1/sponsor/create — create a sponsorship order.
+ * Returns ECPay form params for client-side redirect.
+ */
+export async function createSponsorOrder(order: SponsorOrder, token?: string): Promise<ApiResponse<SponsorFormResponse>> {
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  return apiFetch<SponsorFormResponse>('/sponsor/create', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(order)
+  });
+}
+
+/**
+ * GET /api/v1/sponsor/stats — public sponsorship transparency stats.
+ */
+export async function fetchSponsorStats(): Promise<ApiResponse<SponsorStats>> {
+  const cacheKey = 'sponsor:stats';
+
+  if (!navigator.onLine) {
+    const cached = await getCachedResponse<SponsorStats>(cacheKey);
+    if (cached) return { success: true, data: cached, error: null };
+    return { success: false, data: null, error: { type: 'offline' } };
+  }
+
+  const fresh = await getFreshCachedResponse<SponsorStats>(cacheKey);
+  if (fresh) return { success: true, data: fresh, error: null };
+
+  const result = await apiFetch<SponsorStats>('/sponsor/stats');
+  if (result.success && result.data) {
+    cacheResponse(cacheKey, result.data).catch(() => {});
+  }
+  return result;
+}
+
+/**
+ * GET /api/v1/sponsor/me — user's sponsorship history.
+ */
+export async function fetchMySponsorships(token: string): Promise<ApiResponse<{ sponsorships: Sponsorship[] }>> {
+  return apiFetch<{ sponsorships: Sponsorship[] }>('/sponsor/me', {
+    headers: { 'Authorization': `Bearer ${token}` }
   });
 }

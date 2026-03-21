@@ -30,6 +30,7 @@ import { searchArticles } from './handlers/search.js';
 import { getEvents, getEventDetail } from './handlers/events.js';
 import { getClusters, getClusterDetail } from './handlers/clusters.js';
 import { proposeEdit, listPRs, getPRDetail, mergePR, closePR } from './handlers/knowledge-github.js';
+import { createSponsorOrder, handleEcpayCallback, getSponsorStats, getMySponsorships } from './handlers/sponsor.js';
 
 /**
  * Route table: [method, pattern, handler, options]
@@ -115,6 +116,12 @@ const ROUTES = [
   // Source Transparency API (v2.0 — dynamic media tendency)
   ['GET', '/api/v1/sources',          getSources, { auth: 'none', rateLimit: true, cache: `public, max-age=${CLOUDFLARE.CDN_NEWS_LIST_TTL}` }],
   ['GET', '/api/v1/sources/:source',  getSource,  { auth: 'none', rateLimit: true, cache: `public, max-age=${CLOUDFLARE.CDN_NEWS_LIST_TTL}` }],
+
+  // Sponsor API (ECPay integration — Power Pool)
+  ['POST', '/api/v1/sponsor/create',   createSponsorOrder,  { auth: 'jwt',  rateLimit: true,  cache: 'no-store' }],
+  ['POST', '/api/v1/sponsor/callback', handleEcpayCallback, { auth: 'none', rateLimit: false, cache: 'no-store' }],
+  ['GET',  '/api/v1/sponsor/stats',    getSponsorStats,     { auth: 'none', rateLimit: true,  cache: `public, max-age=60` }],
+  ['GET',  '/api/v1/sponsor/me',       getMySponsorships,   { auth: 'jwt',  rateLimit: true,  cache: 'private, no-cache' }],
 
   // Health & Monitoring API (T07 provides monitoring logic)
   ['GET', '/api/v1/health',           healthCheck,     { auth: 'none',    rateLimit: false, cache: 'no-store' }],

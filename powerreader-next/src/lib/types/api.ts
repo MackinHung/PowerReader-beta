@@ -95,3 +95,35 @@ export interface CampRatio {
   blue: number;
   gray: number;
 }
+
+// =============================================
+// Sponsor API (ECPay — Power Pool)
+// =============================================
+
+export type SponsorType = 'coffee' | 'civic' | 'compute' | 'proxy';
+
+export interface SponsorOrder {
+  amount: number;
+  type: SponsorType;
+}
+
+export interface SponsorFormResponse {
+  form_params: Record<string, string>;
+  action_url: string;
+}
+
+export interface SponsorStats {
+  total_amount: number;
+  total_count: number;
+  by_type: Record<SponsorType, { count: number; amount: number }>;
+  pools: { developer: number; platform: number; compute: number };
+}
+
+export interface Sponsorship {
+  merchant_trade_no: string;
+  amount: number;
+  sponsor_type: SponsorType;
+  status: 'pending' | 'paid' | 'failed';
+  created_at: string;
+  paid_at: string | null;
+}

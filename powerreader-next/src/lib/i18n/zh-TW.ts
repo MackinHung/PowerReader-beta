@@ -770,6 +770,33 @@ const messages: Record<string, string> = {
   'power_pool.report.mock_label': '範例預覽',
 
   // ==============================================
+  // Sponsor (ECPay — Power Pool)
+  // ==============================================
+  'sponsor.title': '贊助與訂閱',
+  'sponsor.step1_title': '選擇金額',
+  'sponsor.step2_title': '選擇贊助類型',
+  'sponsor.amount_custom': '自訂金額',
+  'sponsor.amount_min': '最低 $30',
+  'sponsor.type_coffee': '請杯咖啡',
+  'sponsor.type_coffee_desc': '100% 全額給開發者',
+  'sponsor.type_civic': '公民力量',
+  'sponsor.type_civic_desc': '80% 平台基金 · 20% 開發者',
+  'sponsor.type_compute': '算力推動',
+  'sponsor.type_compute_desc': '50% 代理運算 · 40% 平台基金 · 10% 開發者',
+  'sponsor.type_proxy': '代理媒體',
+  'sponsor.type_proxy_desc': '80% 代理運算 · 20% 開發者',
+  'sponsor.pay_button': '前往付款',
+  'sponsor.paying': '處理中...',
+  'sponsor.stats_title': '贊助透明統計',
+  'sponsor.pool_developer': '開發者',
+  'sponsor.pool_platform': '平台基金',
+  'sponsor.pool_compute': '代理運算',
+  'sponsor.total_amount': '總贊助金額',
+  'sponsor.total_count': '贊助筆數',
+  'sponsor.no_stats': '尚無贊助紀錄',
+  'sponsor.error': '建立訂單失敗，請稍後再試',
+
+  // ==============================================
   // Point Shop
   // ==============================================
   'point_shop.title': '點數商店',
