@@ -4,7 +4,7 @@
 - **Stack**: SvelteKit + Svelte 5 + TypeScript + Vite + Vitest
 - **Repo**: `MackinHung/PowerReader-beta` branch `master`
 - **Deploy**: Cloudflare Pages project `powerreader` (production branch = `master`)
-- **Tests**: `npm test` (vitest run) — 875 tests (867 pass, 8 known-failing in ClusterCardV2)
+- **Tests**: `npm test` (vitest run) — 1028 tests (1020 pass, 8 known-failing in ClusterCardV2)
 
 ## Directory Structure
 ```
@@ -74,3 +74,22 @@ npm run typecheck  # svelte-check
 **Remaining low-priority (type-only, no runtime impact):**
 - 6 unused type defs: AnalysisModeOption, ThemeOption, BiasCategory, ReportReason, QueueJob, BrowserInfo
 - `storeGroupAnalysis`, `SOURCE_MAP` — used internally, knip false positive
+
+## Test Coverage Supplementation Log
+
+### Round 1 (2026-03-21) — +153 tests (867 → 1020 passing)
+
+| Test File | Tests | Target Module | Coverage Change |
+|-----------|-------|---------------|-----------------|
+| `tests/core/auth.test.js` | 26 | `core/auth.ts` | 0% → ~100% |
+| `tests/pages/analyze-stubs.test.js` | 6 | 4 stub pages | 0% → 100% |
+| `tests/stores/analysis.test.js` | 27 | `stores/analysis.svelte.ts` | 0% → ~80%+ |
+| `tests/stores/mediaQuery.test.js` | 16 | `stores/mediaQuery.svelte.ts` | 0% → ~90%+ |
+| `tests/core/api-extended.test.js` | 36 | `core/api.ts` uncovered endpoints | 70% → ~90%+ |
+| `tests/pages/article-detail-extended.test.js` | 28 | `pages/article-detail.ts` branches | 51% → ~75%+ |
+| `tests/core/group-analysis-extended.test.js` | 14 | `core/group-analysis.ts` pipeline+IDB | 67% → ~85%+ |
+
+**Testing patterns:**
+- Svelte 5 rune stores (`.svelte.ts`): `vi.resetModules()` + dynamic import per test group for singleton reset
+- API tests: Mock `fetch` + IDB (`db.js`), test both online/offline paths + TTL freshness
+- Page logic tests: `vi.doMock()` for all dependencies, DOM assertions via `querySelector`
