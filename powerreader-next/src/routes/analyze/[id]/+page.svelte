@@ -185,7 +185,7 @@
 
     {#if result}
       <AnalysisResult {result} articleTitle={article?.title ?? ''} articleSource={article?.source ?? ''} onsubmit={handleSubmit} ondiscard={handleDiscard} />
-      <TransparencyPanel details={result.transparency || {}} />
+      <TransparencyPanel details={result.transparency || {}} fingerprint={result.fingerprint ?? null} />
     {/if}
   {:else}
     <div class="center-state">

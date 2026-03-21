@@ -4,6 +4,8 @@
  * Typed API response/request shapes used by core/api.ts and all consumers.
  */
 
+import type { InferenceFingerprint } from './inference.js';
+
 export interface ApiError {
   type: string;
   status?: number;
@@ -84,6 +86,7 @@ export interface SubmitAnalysisPayload {
   prompt_version: string;
   mode: string;
   latency_ms: number;
+  fingerprint?: InferenceFingerprint;
 }
 
 export interface CampRatio {

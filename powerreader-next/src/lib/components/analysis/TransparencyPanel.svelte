@@ -1,7 +1,8 @@
 <script>
   import Card from '$lib/components/ui/Card.svelte';
+  import { t } from '$lib/i18n/zh-TW.js';
 
-  let { details = {} } = $props();
+  let { details = {}, fingerprint = null } = $props();
 
   let expandedSection = $state('');
 
@@ -13,6 +14,14 @@
 
   function toggle(key) {
     expandedSection = expandedSection === key ? '' : key;
+  }
+
+  function formatTimestamp(iso) {
+    try {
+      return new Date(iso).toLocaleString('zh-TW');
+    } catch {
+      return iso;
+    }
   }
 </script>
 
@@ -58,6 +67,37 @@
         {/if}
       {/each}
     </div>
+
+    {#if fingerprint}
+      <div class="fingerprint-section">
+        <div class="fingerprint-header">
+          <span class="material-symbols-outlined fingerprint-icon">verified</span>
+          <span class="fingerprint-title">{t('analyze.transparency.fingerprint_title')}</span>
+        </div>
+        <div class="fingerprint-grid">
+          <span class="fp-label">{t('analyze.transparency.fp_model')}</span>
+          <span class="fp-value">{fingerprint.model_id}</span>
+
+          <span class="fp-label">{t('analyze.transparency.fp_prompt_hash')}</span>
+          <span class="fp-value fp-mono">{fingerprint.prompt_hash.slice(0, 16)}...</span>
+
+          <span class="fp-label">{t('analyze.transparency.fp_pass1')}</span>
+          <span class="fp-value">{fingerprint.pass1_tokens} tokens / {(fingerprint.pass1_time_ms / 1000).toFixed(1)}s</span>
+
+          <span class="fp-label">{t('analyze.transparency.fp_pass2')}</span>
+          <span class="fp-value">{fingerprint.pass2_tokens} tokens / {(fingerprint.pass2_time_ms / 1000).toFixed(1)}s</span>
+
+          <span class="fp-label">{t('analyze.transparency.fp_throughput')}</span>
+          <span class="fp-value">{fingerprint.tokens_per_second} tok/s</span>
+
+          <span class="fp-label">{t('analyze.transparency.fp_gpu')}</span>
+          <span class="fp-value">{fingerprint.gpu_tier} · {fingerprint.gpu_device || '—'}</span>
+
+          <span class="fp-label">{t('analyze.transparency.fp_timestamp')}</span>
+          <span class="fp-value">{formatTimestamp(fingerprint.timestamp)}</span>
+        </div>
+      </div>
+    {/if}
   </div>
 </Card>
 
@@ -151,5 +191,40 @@
     white-space: pre-wrap;
     word-break: break-word;
     line-height: 1.5;
+  }
+  .fingerprint-section {
+    border-top: 1px solid var(--md-sys-color-outline-variant);
+    padding-top: 10px;
+  }
+  .fingerprint-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .fingerprint-icon {
+    font-size: 18px;
+    color: var(--camp-green, #4CAF50);
+  }
+  .fingerprint-title {
+    font: var(--md-sys-typescale-title-small-font);
+    color: var(--md-sys-color-on-surface);
+  }
+  .fingerprint-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 12px;
+    font: var(--md-sys-typescale-body-small-font);
+  }
+  .fp-label {
+    color: var(--md-sys-color-on-surface-variant);
+    white-space: nowrap;
+  }
+  .fp-value {
+    color: var(--md-sys-color-on-surface);
+    word-break: break-all;
+  }
+  .fp-mono {
+    font-family: monospace;
   }
 </style>

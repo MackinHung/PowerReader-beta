@@ -406,7 +406,8 @@ async function _processArticle(article: Article): Promise<ProcessStatus> {
       prompt_version: analysisResult.prompt_version || 'v4.2.0',
       analysis_duration_ms: analysisResult.latency_ms || 0,
       inference_mode: analysisResult.mode || 'unknown',
-      user_hash: getUserHash() || ''
+      user_hash: getUserHash() || '',
+      ...(analysisResult.fingerprint ? { fingerprint: analysisResult.fingerprint } : {})
     };
 
     // Validate basic format

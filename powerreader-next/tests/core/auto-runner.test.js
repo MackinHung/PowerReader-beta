@@ -777,7 +777,98 @@ describe('pre-analysis duplicate check', () => {
 });
 
 // ══════════════════════════════════════════════
-// 9. Daily quota check before start
+// 9. Fingerprint forwarding
+// ══════════════════════════════════════════════
+
+describe('fingerprint forwarding', () => {
+  it('includes fingerprint in submission payload when present in analysis result', async () => {
+    mockIsAuthenticated.mockReturnValue(true);
+    localStorage.setItem('powerreader_webllm_cached', '1');
+    localStorage.setItem('pr_consent_analysis', '1');
+    localStorage.setItem('pr_confirm_model', '1');
+    localStorage.setItem('pr_confirm_gpu', '1');
+    setupMockDB();
+
+    const mockFingerprint = {
+      model_id: 'Qwen3-8B-q4f16',
+      prompt_hash: 'abc123',
+      pass1_tokens: 100,
+      pass2_tokens: 200,
+      pass1_time_ms: 3000,
+      pass2_time_ms: 5000,
+      tokens_per_second: 37.5,
+      gpu_tier: 'gpu',
+      gpu_device: 'RTX 4060',
+      timestamp: '2026-03-21T00:00:00Z',
+    };
+
+    const articles = [{ article_id: 'fp-1', title: 'FP Test' }];
+
+    mockFetchEvents.mockResolvedValue({ success: false });
+    mockFetchArticles
+      .mockResolvedValueOnce({ success: true, data: { articles } })
+      .mockResolvedValueOnce({ success: true, data: { articles: [] } });
+
+    mockEnqueueAnalysis.mockResolvedValue({
+      bias_score: 50,
+      reasoning: 'test',
+      key_phrases: [],
+      points: [],
+      prompt_version: 'v4.2.0',
+      latency_ms: 8000,
+      mode: 'webgpu',
+      fingerprint: mockFingerprint,
+    });
+    mockSubmitAnalysisResult.mockResolvedValue({ success: true });
+
+    const promise = mod.startAutoRunner();
+    await vi.advanceTimersByTimeAsync(30000);
+    await promise;
+
+    expect(mockSubmitAnalysisResult).toHaveBeenCalledTimes(1);
+    const [, payload] = mockSubmitAnalysisResult.mock.calls[0];
+    expect(payload.fingerprint).toEqual(mockFingerprint);
+  });
+
+  it('omits fingerprint from payload when not present in analysis result', async () => {
+    mockIsAuthenticated.mockReturnValue(true);
+    localStorage.setItem('powerreader_webllm_cached', '1');
+    localStorage.setItem('pr_consent_analysis', '1');
+    localStorage.setItem('pr_confirm_model', '1');
+    localStorage.setItem('pr_confirm_gpu', '1');
+    setupMockDB();
+
+    const articles = [{ article_id: 'no-fp-1', title: 'No FP Test' }];
+
+    mockFetchEvents.mockResolvedValue({ success: false });
+    mockFetchArticles
+      .mockResolvedValueOnce({ success: true, data: { articles } })
+      .mockResolvedValueOnce({ success: true, data: { articles: [] } });
+
+    mockEnqueueAnalysis.mockResolvedValue({
+      bias_score: 50,
+      reasoning: 'test',
+      key_phrases: [],
+      points: [],
+      prompt_version: 'v4.2.0',
+      latency_ms: 100,
+      mode: 'webgpu',
+      // no fingerprint property
+    });
+    mockSubmitAnalysisResult.mockResolvedValue({ success: true });
+
+    const promise = mod.startAutoRunner();
+    await vi.advanceTimersByTimeAsync(30000);
+    await promise;
+
+    expect(mockSubmitAnalysisResult).toHaveBeenCalledTimes(1);
+    const [, payload] = mockSubmitAnalysisResult.mock.calls[0];
+    expect(payload.fingerprint).toBeUndefined();
+  });
+});
+
+// ══════════════════════════════════════════════
+// 10. Daily quota check before start
 // ══════════════════════════════════════════════
 
 describe('daily points limit (no longer blocks analysis)', () => {
