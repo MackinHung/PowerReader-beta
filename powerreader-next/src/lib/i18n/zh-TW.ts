@@ -851,4 +851,3 @@ export function t(key: string, params: Record<string, string | number> = {}): st
   return msg;
 }
 
-export default messages;

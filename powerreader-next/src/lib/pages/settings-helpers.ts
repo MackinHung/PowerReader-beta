@@ -42,20 +42,3 @@ export function formatBenchmarkDate(isoString: string | null | undefined): strin
   }
 }
 
-export function createInfoRow(label: string, value: string, color?: string): HTMLElement {
-  const row = document.createElement('div');
-  row.className = 'settings-about__row';
-
-  const labelEl = document.createElement('span');
-  labelEl.className = 'settings-about__label';
-  labelEl.textContent = label;
-
-  const valueEl = document.createElement('span');
-  valueEl.className = 'settings-about__value';
-  valueEl.textContent = value;
-  if (color) valueEl.style.color = color;
-
-  row.appendChild(labelEl);
-  row.appendChild(valueEl);
-  return row;
-}
