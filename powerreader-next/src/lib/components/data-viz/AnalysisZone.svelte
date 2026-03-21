@@ -17,15 +17,15 @@
     color: #FFFFFF;
     border-radius: 0;
     padding: 32px;
-    border: 4px solid var(--pr-ink);
-    box-shadow: 8px 8px 0px var(--pr-ink);
+    border: 3px solid var(--pr-analysis-border);
+    box-shadow: none;
   }
   .zone-title {
     font: 900 24px/32px var(--pr-font-sans);
     color: #00E5FF; /* Cyan accent */
     margin: 0 0 24px;
     padding-bottom: 8px;
-    border-bottom: 4px solid var(--pr-ink);
+    border-bottom: 2px solid var(--pr-analysis-border);
   }
   .zone-content {
     display: flex;

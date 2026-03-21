@@ -10,6 +10,7 @@
   import ClusterTimeline from '$lib/components/data-viz/ClusterTimeline.svelte';
   import AnalysisZone from '$lib/components/data-viz/AnalysisZone.svelte';
   import ArticleCard from '$lib/components/article/ArticleCard.svelte';
+  import SourceIcon from '$lib/components/article/SourceIcon.svelte';
   import ProgressIndicator from '$lib/components/ui/ProgressIndicator.svelte';
   import GroupReport from '$lib/components/data-viz/GroupReport.svelte';
   import { t } from '$lib/i18n/zh-TW.js';
@@ -321,6 +322,7 @@
           {#each articlesBySource as [source, sourceArticles], rowIdx}
             <div class="comparison-row" class:odd={rowIdx % 2 === 1}>
               <div class="comparison-source">
+                <SourceIcon source={source} size="medium" />
                 <span class="source-name">{source}</span>
                 <span class="source-count">{sourceArticles.length} 篇</span>
               </div>
@@ -360,7 +362,7 @@
           {@const subArticleIds = new Set(sub.article_ids || [])}
           {@const subArticles = articles.filter(a => subArticleIds.has(a.article_id))}
           {#if subArticles.length > 0}
-            <details class="sub-cluster-group" open>
+            <details class="sub-cluster-group" open={subIdx === 0}>
               <summary class="sub-cluster-header">
                 <span class="sub-cluster-label">{t('cluster.sub_event_prefix')}: {sub.representative_title}</span>
                 <span class="sub-cluster-count">{subArticles.length} 篇</span>
@@ -500,16 +502,16 @@
     flex: 1;
     height: 16px;
     background: #FFFFFF;
-    border: 3px solid var(--pr-ink);
+    border: 2px solid var(--pr-analysis-border);
     border-radius: 0;
-    box-shadow: 4px 4px 0px var(--pr-ink);
+    box-shadow: none;
     overflow: hidden;
   }
   .progress-bar {
     height: 100%;
     background: #00E5FF;
     border-radius: 0;
-    border-right: 3px solid var(--pr-ink);
+    border-right: 2px solid var(--pr-analysis-border);
     transition: width var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-standard);
   }
 
@@ -586,8 +588,8 @@
     flex-direction: column;
     border-radius: 0;
     overflow: hidden;
-    border: 4px solid var(--pr-ink);
-    box-shadow: 8px 8px 0px var(--pr-ink);
+    border: 3px solid var(--pr-ink);
+    box-shadow: none;
     background: #FFFFFF;
   }
   .comparison-header-row {
@@ -612,7 +614,7 @@
     gap: 6px;
     padding: 16px;
     background: #FFFFFF;
-    border-top: 4px solid var(--pr-ink);
+    border-top: 1px solid var(--pr-ink);
   }
   .comparison-row:first-of-type {
     border-top: none;
@@ -725,9 +727,10 @@
 
   /* === Sub-cluster Groups === */
   .sub-cluster-group {
-    border: 3px solid var(--pr-ink);
+    border: none;
+    border-left: 4px solid var(--pr-ink);
     border-radius: 0;
-    overflow: hidden;
+    overflow: visible;
   }
   .sub-cluster-header {
     display: flex;
@@ -735,7 +738,7 @@
     justify-content: space-between;
     gap: 8px;
     padding: 12px 16px;
-    background: var(--md-sys-color-surface-container-low);
+    background: transparent;
     cursor: pointer;
     list-style: none;
   }
@@ -771,7 +774,7 @@
     white-space: nowrap;
   }
   .sub-cluster-group > .articles-list {
-    padding: 8px;
+    padding: 4px 0 4px 12px;
   }
 
   /* === Articles List === */
@@ -779,6 +782,18 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+  }
+
+  /* === Sub-cluster expand animation === */
+  .sub-cluster-group[open] > .articles-list {
+    animation: slideDown var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-standard);
+  }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sub-cluster-group[open] > .articles-list { animation: none; }
   }
 
 </style>
