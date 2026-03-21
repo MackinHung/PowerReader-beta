@@ -34,7 +34,9 @@ vi.mock('../../src/lib/core/eta.js', () => ({
 }));
 
 vi.mock('../../src/lib/core/benchmark.js', () => ({
-  getCachedBenchmark: vi.fn(() => ({ mode: 'gpu' })),
+  getDeviceTier: vi.fn(() => 'gpu'),
+  getUserGPUSelection: vi.fn(() => null),
+  getCachedBenchmark: vi.fn(() => null),
   getTimeoutForTier: vi.fn((mode) => mode === 'gpu' ? 30000 : 120000),
   scanGPU: vi.fn(async () => ({ supported: true })),
 }));
@@ -81,7 +83,9 @@ beforeEach(async () => {
     getDualPassProgress: vi.fn(() => 0.5),
   }));
   vi.mock('../../src/lib/core/benchmark.js', () => ({
-    getCachedBenchmark: vi.fn(() => ({ mode: 'gpu' })),
+    getDeviceTier: vi.fn(() => 'gpu'),
+    getUserGPUSelection: vi.fn(() => null),
+    getCachedBenchmark: vi.fn(() => null),
     getTimeoutForTier: vi.fn((mode) => mode === 'gpu' ? 30000 : 120000),
     scanGPU: vi.fn(async () => ({ supported: true })),
   }));
@@ -297,8 +301,8 @@ describe('per-pass timeout', () => {
 // ══════════════════════════════════════════════
 
 describe('ETA helper calls', () => {
-  it('recordLatency called with correct tier from benchmark', async () => {
-    benchmarkMock.getCachedBenchmark.mockReturnValue({ mode: 'gpu' });
+  it('recordLatency called with correct tier from getDeviceTier', async () => {
+    benchmarkMock.getDeviceTier.mockReturnValue('gpu');
 
     const serverResponse = {
       bias_score: 50,
@@ -316,7 +320,7 @@ describe('ETA helper calls', () => {
     });
 
     // After modification, recordLatency should be called with the tier
-    // from getCachedBenchmark (i.e., 'gpu')
+    // from getDeviceTier (i.e., 'gpu')
     if (etaMock.recordLatency.mock.calls.length > 0) {
       const firstCall = etaMock.recordLatency.mock.calls[0];
       expect(firstCall[0]).toBe('gpu');

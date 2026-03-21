@@ -7,6 +7,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ── Mock benchmark module ──
 vi.mock('../../src/lib/core/benchmark.js', () => ({
+  getDeviceTier: vi.fn(() => 'gpu'),
+  getUserGPUSelection: vi.fn(() => ({ device: 'NVIDIA GeForce RTX 4060', vramMB: 8192 })),
   getCachedBenchmark: vi.fn(() => ({
     mode: 'gpu',
     latency_ms: 5000,
@@ -177,9 +179,11 @@ describe('buildFingerprint', () => {
 // ══════════════════════════════════════════════
 
 describe('buildFingerprint without benchmark', () => {
-  it('falls back to "none" tier and empty device', async () => {
-    const { getCachedBenchmark } = await import('../../src/lib/core/benchmark.js');
-    vi.mocked(getCachedBenchmark).mockReturnValueOnce(null);
+  it('falls back to cpu tier and empty device when no data', async () => {
+    const benchMod = await import('../../src/lib/core/benchmark.js');
+    vi.mocked(benchMod.getDeviceTier).mockReturnValueOnce('cpu');
+    vi.mocked(benchMod.getUserGPUSelection).mockReturnValueOnce(null);
+    vi.mocked(benchMod.getCachedBenchmark).mockReturnValueOnce(null);
 
     const fp = buildFingerprint({
       modelId: 'server',
@@ -190,7 +194,7 @@ describe('buildFingerprint without benchmark', () => {
       pass2TimeMs: 0,
     });
 
-    expect(fp.gpu_tier).toBe('none');
+    expect(fp.gpu_tier).toBe('cpu');
     expect(fp.gpu_device).toBe('');
   });
 });

@@ -19,16 +19,16 @@ import { t } from '$lib/i18n/zh-TW.js';
 import { createEventEmitter } from '$lib/utils/event-emitter.js';
 import { promisifyRequest, promisifyTransaction } from '$lib/utils/idb-helpers.js';
 import { isMobileDevice } from '$lib/utils/device-detect.js';
-import { scanGPU, getCachedBenchmark } from './benchmark.js';
+import { scanGPU, getDeviceTier } from './benchmark.js';
 import type { Article } from '$lib/types/models.js';
 import type { AutoRunnerStatus, AutoRunnerStats } from '$lib/types/inference.js';
 
 // ── Constants ──
 
 function getInterAnalysisDelay(): number {
-  const benchmark = getCachedBenchmark();
-  if (benchmark?.mode === 'gpu') return 1000;
-  if (benchmark?.mode === 'cpu') return 3000;
+  const tier = getDeviceTier();
+  if (tier === 'gpu') return 1000;
+  if (tier === 'cpu') return 3000;
   return 5000;
 }
 const NETWORK_PAUSE_MS = 30000;
@@ -124,6 +124,16 @@ export async function startAutoRunner(): Promise<void> {
 
   if (localStorage.getItem('powerreader_webllm_cached') !== '1') {
     _stopReason = t('auto_runner.error.model_not_ready');
+    _notify();
+    return;
+  }
+
+  // Three-gate confirmations (hard requirement)
+  const consentOk = localStorage.getItem('pr_consent_analysis') === '1';
+  const modelOk = localStorage.getItem('pr_confirm_model') === '1';
+  const gpuOk = localStorage.getItem('pr_confirm_gpu') === '1';
+  if (!consentOk || !modelOk || !gpuOk) {
+    _stopReason = '請先至設定頁面完成所有確認項目（同意分析模式、模型下載確認、GPU 條件確認）';
     _notify();
     return;
   }

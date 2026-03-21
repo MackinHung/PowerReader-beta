@@ -13,7 +13,7 @@
  */
 
 import type { InferenceFingerprint, GPUTier } from '$lib/types/inference.js';
-import { getCachedBenchmark } from './benchmark.js';
+import { getDeviceTier, getUserGPUSelection, getCachedBenchmark } from './benchmark.js';
 
 /**
  * SHA-256 hash of concatenated prompt strings.
@@ -41,6 +41,8 @@ export interface FingerprintInput {
  * GPU tier and device are read from the cached benchmark result.
  */
 export function buildFingerprint(input: FingerprintInput): InferenceFingerprint {
+  const tier = getDeviceTier();
+  const userGpu = getUserGPUSelection();
   const benchmark = getCachedBenchmark();
   const totalTokens = input.pass1Tokens + input.pass2Tokens;
   const totalTimeSec = (input.pass1TimeMs + input.pass2TimeMs) / 1000;
@@ -55,8 +57,8 @@ export function buildFingerprint(input: FingerprintInput): InferenceFingerprint 
     tokens_per_second: totalTimeSec > 0
       ? Math.round((totalTokens / totalTimeSec) * 100) / 100
       : 0,
-    gpu_tier: (benchmark?.mode ?? 'none') as GPUTier,
-    gpu_device: benchmark?.gpu_info?.device ?? '',
+    gpu_tier: tier,
+    gpu_device: userGpu?.device ?? benchmark?.gpu_info?.device ?? '',
     timestamp: new Date().toISOString(),
   };
 }

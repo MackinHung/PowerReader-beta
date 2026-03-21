@@ -1,13 +1,12 @@
 /**
  * Unit tests for settings-helpers.js
  *
- * Tests: formatVRAM, formatBenchmarkDate, formatBenchmarkMode
+ * Tests: formatVRAM, formatBenchmarkDate
  */
 import { describe, it, expect } from 'vitest';
 import {
   formatVRAM,
   formatBenchmarkDate,
-  formatBenchmarkMode,
 } from '../../src/lib/pages/settings-helpers.js';
 
 // ══════════════════════════════════════════════
@@ -85,41 +84,3 @@ describe('formatBenchmarkDate', () => {
   });
 });
 
-// ══════════════════════════════════════════════
-// 3. formatBenchmarkMode
-// ══════════════════════════════════════════════
-
-describe('formatBenchmarkMode', () => {
-  it('returns green label for gpu mode', () => {
-    const result = formatBenchmarkMode('gpu');
-    expect(result.color).toContain('#28A745');
-    expect(result.text).toBeTruthy();
-  });
-
-  it('returns secondary label for cpu mode', () => {
-    const result = formatBenchmarkMode('cpu');
-    expect(result.color).toContain('text-secondary');
-    expect(result.text).toBeTruthy();
-  });
-
-  it('returns red label for none mode', () => {
-    const result = formatBenchmarkMode('none');
-    expect(result.color).toContain('bias-extreme');
-    expect(result.text).toBeTruthy();
-  });
-
-  it('returns red label for unknown mode', () => {
-    const result = formatBenchmarkMode('unknown');
-    expect(result.color).toContain('bias-extreme');
-  });
-
-  it('all modes return { text, color } shape', () => {
-    for (const mode of ['gpu', 'cpu', 'none']) {
-      const result = formatBenchmarkMode(mode);
-      expect(result).toHaveProperty('text');
-      expect(result).toHaveProperty('color');
-      expect(typeof result.text).toBe('string');
-      expect(typeof result.color).toBe('string');
-    }
-  });
-});

@@ -10,7 +10,7 @@
   import { getAuthStore } from '$lib/stores/auth.svelte.js';
   import * as api from '$lib/core/api.js';
   import { getWebLLMEngine, clearAllModelCaches, hasWebGPU, detectBestMode, INFERENCE_MODES } from '$lib/core/inference.js';
-  import { scanGPU, getCachedBenchmark, runBenchmark, clearBenchmark, saveUserGPUSelection, getUserGPUSelection, getTimeoutForTier } from '$lib/core/benchmark.js';
+  import { scanGPU, getCachedBenchmark, clearBenchmark, saveUserGPUSelection, getUserGPUSelection, getDeviceTier, getTimeoutForTier } from '$lib/core/benchmark.js';
   import { isModelDownloaded } from '$lib/core/manager.js';
 
   const authStore = getAuthStore();
@@ -20,6 +20,11 @@
   let autoSubmit = $state(false);
   let notifications = $state(true);
   let cacheEnabled = $state(true);
+
+  // ── Three-gate confirmations (all required before auto-analysis) ──
+  let consentAnalysis = $state(false);   // 同意分析模式
+  let confirmModel = $state(false);      // 確認模型下載完成
+  let confirmGpu = $state(false);        // GPU 條件確認
 
   // ── Model download state ──
   let modelReady = $state(false);
@@ -43,10 +48,8 @@
   let gpuScanning = $state(false);
   let webgpuSupported = $state(false);
 
-  // ── Benchmark state ──
-  let benchResult = $state(null);       // { mode, latency_ms, gpu_info, tested_at }
-  let benchRunning = $state(false);
-  let benchStage = $state('');
+  // ── Device tier (VRAM-based) ──
+  let deviceTier = $state('cpu');
 
   // ── GPU manual selection ──
   let showGpuPicker = $state(false);
@@ -159,12 +162,17 @@
     notifications = localStorage.getItem('notifications') !== 'false';
     cacheEnabled = localStorage.getItem('cache_enabled') !== 'false';
 
+    // Three-gate confirmations
+    consentAnalysis = localStorage.getItem('pr_consent_analysis') === '1';
+    confirmModel = localStorage.getItem('pr_confirm_model') === '1';
+    confirmGpu = localStorage.getItem('pr_confirm_gpu') === '1';
+
     // Model status — check actual WebLLM caches in Cache API
     modelReady = await checkWebLLMCacheExists();
 
-    // GPU: load cached benchmark
-    benchResult = getCachedBenchmark();
+    // GPU: load user override + device tier
     userOverride = getUserGPUSelection();
+    deviceTier = getDeviceTier();
 
     // GPU: live scan
     gpuScanning = true;
@@ -198,6 +206,9 @@
     localStorage.setItem('auto_submit', String(autoSubmit));
     localStorage.setItem('notifications', String(notifications));
     localStorage.setItem('cache_enabled', String(cacheEnabled));
+    localStorage.setItem('pr_consent_analysis', consentAnalysis ? '1' : '0');
+    localStorage.setItem('pr_confirm_model', confirmModel ? '1' : '0');
+    localStorage.setItem('pr_confirm_gpu', confirmGpu ? '1' : '0');
   });
 
   // ── Model download ──
@@ -295,46 +306,7 @@
     saveUserGPUSelection(label, vram);
     userOverride = { device: label, vramMB: vram };
     selectedGpu = val;
-    // Clear stale benchmark so old "不建議本地推理" doesn't persist
-    if (benchResult && benchResult.mode === 'none') {
-      benchResult = null;
-    }
-  }
-
-  // ── Benchmark ──
-  async function handleRunBenchmark() {
-    // Guard: model must be downloaded first
-    if (!modelReady) {
-      benchStage = '尚未下載模型，請先下載';
-      return;
-    }
-    benchRunning = true;
-    benchStage = '掃描 GPU...';
-    try {
-      const result = await runBenchmark(
-        () => getWebLLMEngine(),
-        (progress) => {
-          const stages = {
-            scanning_gpu: '掃描 GPU...',
-            loading_engine: '載入模型...',
-            running_inference: '推理測試中...',
-            done: '完成',
-            error: '測試失敗'
-          };
-          benchStage = stages[progress.stage] || progress.stage;
-        }
-      );
-      benchResult = result;
-      // Update GPU result from benchmark
-      if (result.gpu_info) {
-        gpuResult = result.gpu_info;
-        webgpuSupported = result.gpu_info.supported;
-      }
-    } catch {
-      benchStage = '測試失敗';
-    } finally {
-      benchRunning = false;
-    }
+    deviceTier = getDeviceTier();
   }
 
   // ── Cache ──
@@ -411,25 +383,32 @@
     return { icon: 'error', text: 'VRAM 不足，建議使用伺服器模式', color: 'var(--md-sys-color-error)' };
   });
 
-  function getTierLabel(mode) {
-    const labels = { gpu: 'GPU 加速', cpu: 'CPU 模式', none: '不建議本地推理' };
-    return labels[mode] || '未測試';
-  }
-
-  function getTierColor(mode) {
-    const colors = { gpu: 'var(--md-sys-color-primary)', cpu: 'var(--md-sys-color-tertiary)', none: 'var(--md-sys-color-error)' };
-    return colors[mode] || 'var(--md-sys-color-on-surface-variant)';
-  }
-
   function getModeLabel(mode) {
     return mode === INFERENCE_MODES.WEBGPU ? 'WebGPU 本地推理' : '伺服器推理';
   }
+
+  // ── Readiness: all 3 gates must pass ──
+  let allGatesReady = $derived(consentAnalysis && confirmModel && confirmGpu);
+
+  // If model is deleted, auto-revoke model confirmation
+  $effect(() => {
+    if (initialized && !modelReady) {
+      confirmModel = false;
+    }
+  });
 </script>
 
 <div class="settings-page">
+  <header class="page-header">
+    <h1 class="page-title">設定</h1>
+  </header>
+
   <!-- ═══ Analysis Settings ═══ -->
   <section class="section">
-    <h3 class="section-title">分析設定</h3>
+    <h2 class="section-title">
+      <span class="material-symbols-outlined section-icon">tune</span>
+      分析設定
+    </h2>
     <Card variant="filled">
       <List>
         <ListItem headline="分析模式" supporting={autoMode ? '自動' : '手動'}>
@@ -453,12 +432,28 @@
           {/snippet}
         </ListItem>
       </List>
+      <!-- Gate 1: Consent -->
+      <div class="gate-item" class:gate-checked={consentAnalysis}>
+        <label class="gate-checkbox-row">
+          <input type="checkbox" class="gate-checkbox" bind:checked={consentAnalysis} />
+          <span class="gate-label">
+            <span class="material-symbols-outlined gate-icon">{consentAnalysis ? 'check_circle' : 'radio_button_unchecked'}</span>
+            同意分析模式
+          </span>
+        </label>
+        <p class="gate-reason">
+          自動分析會使用您的 GPU 在本機執行 AI 推理，過程中將消耗顯示卡資源與電力。啟用前請確認您已了解此運作方式，並同意將裝置算力貢獻於新聞偏見分析。
+        </p>
+      </div>
     </Card>
   </section>
 
   <!-- ═══ Model Management ═══ -->
   <section class="section">
-    <h3 class="section-title">模型管理</h3>
+    <h2 class="section-title">
+      <span class="material-symbols-outlined section-icon">smart_toy</span>
+      模型管理
+    </h2>
     <Card variant="filled">
       <div class="model-section">
         <!-- Header -->
@@ -530,13 +525,34 @@
             </Button>
           {/if}
         </div>
+
+        <!-- Gate 2: Model downloaded confirmation -->
+        <div class="gate-item" class:gate-checked={confirmModel} class:gate-disabled={!modelReady}>
+          <label class="gate-checkbox-row">
+            <input type="checkbox" class="gate-checkbox" bind:checked={confirmModel} disabled={!modelReady} />
+            <span class="gate-label">
+              <span class="material-symbols-outlined gate-icon">{confirmModel ? 'check_circle' : 'radio_button_unchecked'}</span>
+              確認模型下載完成
+            </span>
+          </label>
+          <p class="gate-reason">
+            {#if modelReady}
+              模型已下載至本機快取。請確認下載完整無誤，確保推理品質與分析結果的正確性。
+            {:else}
+              請先下載 AI 模型，才能啟用本地推理功能。模型未完整下載將導致分析失敗或產生錯誤結果。
+            {/if}
+          </p>
+        </div>
       </div>
     </Card>
   </section>
 
   <!-- ═══ Hardware Detection ═══ -->
   <section class="section">
-    <h3 class="section-title">硬體偵測</h3>
+    <h2 class="section-title">
+      <span class="material-symbols-outlined section-icon">memory</span>
+      硬體偵測
+    </h2>
     <Card variant="filled">
       <div class="hardware-section">
         <!-- GPU Info -->
@@ -551,13 +567,7 @@
           </span>
         </div>
 
-        <!-- VRAM Verdict -->
-        {#if !gpuScanning}
-          <div class="verdict-row" style:color={vramVerdict.color}>
-            <span class="material-symbols-outlined verdict-icon">{vramVerdict.icon}</span>
-            <span>{vramVerdict.text}</span>
-          </div>
-        {/if}
+        <!-- (VRAM verdict shown in hardware guide below) -->
 
         <!-- GPU Type -->
         {#if gpuResult?.gpuType && gpuResult.gpuType !== 'unknown'}
@@ -605,39 +615,87 @@
           {/if}
         </div>
 
-        <!-- Benchmark Section -->
-        <div class="bench-section">
-          {#if benchResult && !benchRunning}
-            <div class="bench-result">
-              <div class="bench-tier" style:color={getTierColor(benchResult.mode)}>
-                <span class="material-symbols-outlined">
-                  {benchResult.mode === 'gpu' ? 'bolt' : benchResult.mode === 'cpu' ? 'memory' : 'block'}
-                </span>
-                <span class="bench-tier-text">{getTierLabel(benchResult.mode)}</span>
-              </div>
-              <div class="bench-details">
-                <span>延遲：{(benchResult.latency_ms / 1000).toFixed(1)} 秒</span>
-                <span>逾時設定：{(getTimeoutForTier(benchResult.mode) / 1000).toFixed(0)} 秒/Pass</span>
-              </div>
+        <!-- Hardware Guide -->
+        <div class="hw-guide">
+          <span class="hw-guide-title">GPU 條件</span>
+          <p class="hw-guide-desc">
+            自動分析需使用裝置的 GPU 進行本地 AI 推理。執行前必須經由使用者確認硬體可用，確保裝置具備足夠的顯示卡記憶體 (VRAM) 以完成推理工作。目前不支援手機版本 — 行動裝置的 GPU 效能不足以執行大型語言模型推理，且會造成裝置過熱與耗電問題。
+          </p>
+          <div class="hw-guide-tiers">
+            <div class="hw-guide-tier">
+              <span class="material-symbols-outlined" style="color: var(--md-sys-color-primary)">check_circle</span>
+              <span>&ge; 6 GB &mdash; 推薦，可順暢運行本地推理</span>
             </div>
-          {/if}
+            <div class="hw-guide-tier">
+              <span class="material-symbols-outlined" style="color: var(--md-sys-color-tertiary)">warning</span>
+              <span>4~6 GB &mdash; 可運行但速度較慢</span>
+            </div>
+            <div class="hw-guide-tier">
+              <span class="material-symbols-outlined" style="color: var(--md-sys-color-error)">error</span>
+              <span>&lt; 4 GB &mdash; 不建議，請使用伺服器模式</span>
+            </div>
+          </div>
+          <div class="hw-guide-how">
+            <span class="hw-guide-how-title">
+              <span class="material-symbols-outlined" style="font-size: 18px">lightbulb</span>
+              查看方法
+            </span>
+            <div class="hw-guide-how-content">
+              <div><strong>Windows:</strong> Ctrl+Shift+Esc &rarr; 效能 &rarr; GPU &rarr; 「專用 GPU 記憶體」即為 VRAM</div>
+              <div><strong>macOS:</strong>  &rarr; 關於這台 Mac &rarr; 記憶體即共用 (Apple Silicon 為統一記憶體)</div>
+            </div>
+          </div>
+          <div class="verdict-row" style:color={vramVerdict.color}>
+            <span class="material-symbols-outlined verdict-icon">{vramVerdict.icon}</span>
+            <span>目前狀態：{vramVerdict.text}{vramMB > 0 ? ` (${(vramMB / 1024).toFixed(0)} GB)` : ''}</span>
+          </div>
 
-          {#if benchRunning}
-            <div class="bench-running">
-              <ProgressIndicator type="circular" />
-              <span>{benchStage}</span>
-            </div>
-          {:else if benchStage && !benchResult}
-            <div class="bench-hint">
-              <span class="material-symbols-outlined">info</span>
-              <span>{benchStage}</span>
-            </div>
-          {/if}
+          <!-- Gate 3: GPU confirmation -->
+          <div class="gate-item" class:gate-checked={confirmGpu}>
+            <label class="gate-checkbox-row">
+              <input type="checkbox" class="gate-checkbox" bind:checked={confirmGpu} />
+              <span class="gate-label">
+                <span class="material-symbols-outlined gate-icon">{confirmGpu ? 'check_circle' : 'radio_button_unchecked'}</span>
+                GPU 條件確認
+              </span>
+            </label>
+            <p class="gate-reason">
+              請確認您的裝置為桌上型電腦或筆記型電腦，且 GPU 具備足夠 VRAM（建議 6 GB 以上）。確認此項代表您已檢查硬體規格，並同意在此裝置上執行 AI 推理運算。
+            </p>
+          </div>
+        </div>
+      </div>
+    </Card>
+  </section>
 
-          <Button variant="outlined" onclick={handleRunBenchmark} disabled={benchRunning}>
-            <span class="material-symbols-outlined">speed</span>
-            {benchResult ? '重新測試' : '效能測試'}
-          </Button>
+  <!-- ═══ Analysis Readiness ═══ -->
+  <section class="section">
+    <h2 class="section-title">
+      <span class="material-symbols-outlined section-icon">verified</span>
+      自動分析就緒狀態
+    </h2>
+    <Card variant="filled">
+      <div class="readiness-section">
+        <div class="readiness-row" class:ready={consentAnalysis}>
+          <span class="material-symbols-outlined readiness-icon">{consentAnalysis ? 'check_circle' : 'cancel'}</span>
+          <span>同意分析模式</span>
+        </div>
+        <div class="readiness-row" class:ready={confirmModel}>
+          <span class="material-symbols-outlined readiness-icon">{confirmModel ? 'check_circle' : 'cancel'}</span>
+          <span>模型下載確認</span>
+        </div>
+        <div class="readiness-row" class:ready={confirmGpu}>
+          <span class="material-symbols-outlined readiness-icon">{confirmGpu ? 'check_circle' : 'cancel'}</span>
+          <span>GPU 條件確認</span>
+        </div>
+        <div class="readiness-verdict" class:all-ready={allGatesReady}>
+          {#if allGatesReady}
+            <span class="material-symbols-outlined">rocket_launch</span>
+            <span>所有條件已滿足，可以啟動自動分析</span>
+          {:else}
+            <span class="material-symbols-outlined">block</span>
+            <span>尚有未完成的確認項目，無法啟動自動分析</span>
+          {/if}
         </div>
       </div>
     </Card>
@@ -645,7 +703,10 @@
 
   <!-- ═══ Cache Management ═══ -->
   <section class="section">
-    <h3 class="section-title">快取管理</h3>
+    <h2 class="section-title">
+      <span class="material-symbols-outlined section-icon">cached</span>
+      快取管理
+    </h2>
     <Card variant="filled">
       <List>
         <ListItem headline="快取大小" supporting={cacheSize}>
@@ -660,7 +721,10 @@
   <!-- ═══ Account Management ═══ -->
   {#if authStore.isAuthenticated}
     <section class="section">
-      <h3 class="section-title">帳號管理</h3>
+      <h2 class="section-title">
+      <span class="material-symbols-outlined section-icon">manage_accounts</span>
+      帳號管理
+    </h2>
       <Card variant="filled">
         <div class="account-section">
           <Button variant="outlined" onclick={handleExportData} disabled={exportLoading}>
@@ -678,7 +742,10 @@
 
   <!-- ═══ About ═══ -->
   <section class="section">
-    <h3 class="section-title">關於</h3>
+    <h2 class="section-title">
+      <span class="material-symbols-outlined section-icon">info</span>
+      關於
+    </h2>
     <Card variant="filled">
       <List>
         <ListItem headline="版本" supporting="PowerReader v2.6-next" />
@@ -735,11 +802,31 @@
     flex-direction: column;
     gap: 8px;
   }
+  .page-header {
+    padding: 4px 0 12px;
+  }
+  .page-title {
+    margin: 0;
+    font: var(--md-sys-typescale-headline-medium-font);
+    color: var(--md-sys-color-on-surface);
+    padding-left: 16px;
+    border-left: 5px solid #FF5722;
+    letter-spacing: 0.01em;
+  }
   .section-title {
     margin: 0;
-    font: var(--md-sys-typescale-title-small-font);
+    font: var(--md-sys-typescale-title-medium-font);
     color: var(--md-sys-color-on-surface);
-    padding-left: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 12px;
+    border-left: 4px solid #FF5722;
+  }
+  .section-icon {
+    font-size: 24px;
+    color: #FF5722;
+    flex-shrink: 0;
   }
 
   /* ── Account Section ── */
@@ -954,52 +1041,155 @@
     align-self: flex-start;
   }
 
-  /* ── Benchmark ── */
-  .bench-section {
+  /* ── Hardware Guide ── */
+  .hw-guide {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding-top: 4px;
+    gap: 10px;
+    padding-top: 8px;
     border-top: 1px solid var(--md-sys-color-outline-variant);
   }
-  .bench-result {
+  .hw-guide-title {
+    font: var(--md-sys-typescale-label-large-font);
+    color: var(--md-sys-color-on-surface);
+    font-weight: 600;
+  }
+  .hw-guide-tiers {
     display: flex;
     flex-direction: column;
     gap: 4px;
   }
-  .bench-tier {
+  .hw-guide-tier {
     display: flex;
     align-items: center;
     gap: 6px;
+    font: var(--md-sys-typescale-body-small-font);
+    color: var(--md-sys-color-on-surface);
   }
-  .bench-tier .material-symbols-outlined {
-    font-size: 24px;
+  .hw-guide-tier .material-symbols-outlined {
+    font-size: 18px;
   }
-  .bench-tier-text {
-    font: var(--md-sys-typescale-title-small-font);
-    font-weight: 500;
-  }
-  .bench-details {
+  .hw-guide-how {
     display: flex;
-    gap: 16px;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 10px;
+    border-radius: var(--md-sys-shape-corner-small);
+    background: color-mix(in srgb, var(--md-sys-color-tertiary) 8%, transparent);
+  }
+  .hw-guide-how-title {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font: var(--md-sys-typescale-label-medium-font);
+    color: var(--md-sys-color-tertiary);
+    font-weight: 600;
+  }
+  .hw-guide-how-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
     font: var(--md-sys-typescale-body-small-font);
     color: var(--md-sys-color-on-surface-variant);
   }
-  .bench-running {
+  .hw-guide-desc {
+    margin: 0;
+    font: var(--md-sys-typescale-body-small-font);
+    color: var(--md-sys-color-on-surface-variant);
+    line-height: 1.6;
+  }
+
+  /* ── Gate Confirmation Items ── */
+  .gate-item {
+    margin-top: 12px;
+    padding: 12px;
+    border: 2px solid var(--md-sys-color-outline-variant);
+    border-radius: var(--md-sys-shape-corner-small);
+    background: color-mix(in srgb, var(--md-sys-color-surface) 50%, transparent);
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .gate-item.gate-checked {
+    border-color: var(--md-sys-color-primary);
+    background: color-mix(in srgb, var(--md-sys-color-primary) 6%, transparent);
+  }
+  .gate-item.gate-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  .gate-checkbox-row {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+    cursor: pointer;
+  }
+  .gate-checkbox {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .gate-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font: var(--md-sys-typescale-title-small-font);
+    color: var(--md-sys-color-on-surface);
+    font-weight: 600;
+  }
+  .gate-icon {
+    font-size: 22px;
+    color: var(--md-sys-color-outline);
+  }
+  .gate-checked .gate-icon {
+    color: var(--md-sys-color-primary);
+  }
+  .gate-reason {
+    margin: 6px 0 0 28px;
+    font: var(--md-sys-typescale-body-small-font);
+    color: var(--md-sys-color-on-surface-variant);
+    line-height: 1.6;
+  }
+
+  /* ── Readiness Summary ── */
+  .readiness-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 4px 0;
+  }
+  .readiness-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font: var(--md-sys-typescale-body-medium-font);
     color: var(--md-sys-color-on-surface-variant);
   }
-  .bench-hint {
+  .readiness-row.ready {
+    color: var(--md-sys-color-on-surface);
+  }
+  .readiness-icon {
+    font-size: 20px;
+    color: var(--md-sys-color-error);
+  }
+  .readiness-row.ready .readiness-icon {
+    color: var(--md-sys-color-primary);
+  }
+  .readiness-verdict {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font: var(--md-sys-typescale-body-small-font);
-    color: var(--md-sys-color-tertiary);
+    gap: 8px;
+    margin-top: 4px;
+    padding: 10px 12px;
+    border-radius: var(--md-sys-shape-corner-small);
+    font: var(--md-sys-typescale-label-large-font);
+    background: color-mix(in srgb, var(--md-sys-color-error) 8%, transparent);
+    color: var(--md-sys-color-error);
   }
-  .bench-hint .material-symbols-outlined {
-    font-size: 18px;
+  .readiness-verdict.all-ready {
+    background: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
+    color: var(--md-sys-color-primary);
+  }
+  .readiness-verdict .material-symbols-outlined {
+    font-size: 20px;
   }
 </style>

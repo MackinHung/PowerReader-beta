@@ -200,6 +200,21 @@
       return;
     }
 
+    // Check: three-gate confirmations (hard requirement)
+    const consentOk = localStorage.getItem('pr_consent_analysis') === '1';
+    const modelOk = localStorage.getItem('pr_confirm_model') === '1';
+    const gpuOk = localStorage.getItem('pr_confirm_gpu') === '1';
+    if (!consentOk || !modelOk || !gpuOk) {
+      const missing = [];
+      if (!consentOk) missing.push('同意分析模式');
+      if (!modelOk) missing.push('模型下載確認');
+      if (!gpuOk) missing.push('GPU 條件確認');
+      showSnackbar(`尚未完成：${missing.join('、')}`, {
+        action: { label: '前往設定', onclick: () => goto('/settings') }
+      });
+      return;
+    }
+
     // All checks passed — start
     await store.startAuto();
   }

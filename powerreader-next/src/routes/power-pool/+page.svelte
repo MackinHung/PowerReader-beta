@@ -163,16 +163,19 @@
     width: 100%;
   }
   .page-header {
-    text-align: center;
-    padding: 8px 0;
+    padding: 4px 0 12px;
   }
   .page-title {
     margin: 0;
     font: var(--md-sys-typescale-headline-medium-font);
     color: var(--md-sys-color-on-surface);
+    padding-left: 16px;
+    border-left: 5px solid #FF5722;
+    letter-spacing: 0.01em;
   }
   .page-subtitle {
-    margin: 4px 0 0;
+    margin: 6px 0 0;
+    padding-left: 21px;
     font: var(--md-sys-typescale-body-medium-font);
     color: var(--md-sys-color-on-surface-variant);
   }
@@ -188,9 +191,11 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    padding-left: 12px;
+    border-left: 4px solid #FF5722;
   }
   .section-icon {
-    font-size: 28px;
+    font-size: 24px;
     color: #FF5722;
     flex-shrink: 0;
   }

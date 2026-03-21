@@ -40,7 +40,7 @@ beforeEach(async () => {
 
   vi.doMock('../../src/lib/core/benchmark.js', () => ({
     scanGPU: mockScanGPU,
-    getCachedBenchmark: vi.fn(() => ({ mode: 'gpu' })),
+    getDeviceTier: vi.fn(() => 'gpu'),
   }));
   vi.doMock('../../src/lib/core/queue.js', () => ({
     enqueueAnalysis: mockEnqueueAnalysis,
@@ -254,6 +254,9 @@ describe('startAutoRunner', () => {
   it('does not duplicate-start when already running', async () => {
     mockIsAuthenticated.mockReturnValue(true);
     localStorage.setItem('powerreader_webllm_cached', '1');
+    localStorage.setItem('pr_consent_analysis', '1');
+    localStorage.setItem('pr_confirm_model', '1');
+    localStorage.setItem('pr_confirm_gpu', '1');
     setupMockDB();
 
     // fetchArticles will hang until resolved, keeping the runner in _running state
@@ -286,6 +289,9 @@ describe('startAutoRunner', () => {
   it('stops with no_articles when fetchArticles returns empty', async () => {
     mockIsAuthenticated.mockReturnValue(true);
     localStorage.setItem('powerreader_webllm_cached', '1');
+    localStorage.setItem('pr_consent_analysis', '1');
+    localStorage.setItem('pr_confirm_model', '1');
+    localStorage.setItem('pr_confirm_gpu', '1');
     setupMockDB();
 
     mockFetchArticles.mockResolvedValue({
@@ -306,6 +312,9 @@ describe('startAutoRunner', () => {
   it('stops with no_articles when fetchArticles returns success=false', async () => {
     mockIsAuthenticated.mockReturnValue(true);
     localStorage.setItem('powerreader_webllm_cached', '1');
+    localStorage.setItem('pr_consent_analysis', '1');
+    localStorage.setItem('pr_confirm_model', '1');
+    localStorage.setItem('pr_confirm_gpu', '1');
     setupMockDB();
 
     mockFetchArticles.mockResolvedValue({
@@ -323,6 +332,9 @@ describe('startAutoRunner', () => {
   it('stops with no_articles when all articles are already processed', async () => {
     mockIsAuthenticated.mockReturnValue(true);
     localStorage.setItem('powerreader_webllm_cached', '1');
+    localStorage.setItem('pr_consent_analysis', '1');
+    localStorage.setItem('pr_confirm_model', '1');
+    localStorage.setItem('pr_confirm_gpu', '1');
     setupMockDB(['article-1', 'article-2']);
 
     mockFetchArticles.mockResolvedValue({
@@ -345,6 +357,9 @@ describe('startAutoRunner', () => {
   it('processes an article successfully and updates stats', async () => {
     mockIsAuthenticated.mockReturnValue(true);
     localStorage.setItem('powerreader_webllm_cached', '1');
+    localStorage.setItem('pr_consent_analysis', '1');
+    localStorage.setItem('pr_confirm_model', '1');
+    localStorage.setItem('pr_confirm_gpu', '1');
     setupMockDB();
 
     const articles = [
@@ -387,6 +402,9 @@ describe('stopAutoRunner', () => {
   it('sets paused=true when runner is active', async () => {
     mockIsAuthenticated.mockReturnValue(true);
     localStorage.setItem('powerreader_webllm_cached', '1');
+    localStorage.setItem('pr_consent_analysis', '1');
+    localStorage.setItem('pr_confirm_model', '1');
+    localStorage.setItem('pr_confirm_gpu', '1');
     setupMockDB();
 
     // fetchArticles will hang until resolved
@@ -431,6 +449,9 @@ describe('stopAutoRunner', () => {
   it('force-stops by calling cancelAll when called twice while running', async () => {
     mockIsAuthenticated.mockReturnValue(true);
     localStorage.setItem('powerreader_webllm_cached', '1');
+    localStorage.setItem('pr_consent_analysis', '1');
+    localStorage.setItem('pr_confirm_model', '1');
+    localStorage.setItem('pr_confirm_gpu', '1');
     setupMockDB();
 
     let resolveFetch;
@@ -464,6 +485,9 @@ describe('pauseAutoRunner', () => {
   it('pauses and resumeAutoRunner continues the loop', async () => {
     mockIsAuthenticated.mockReturnValue(true);
     localStorage.setItem('powerreader_webllm_cached', '1');
+    localStorage.setItem('pr_consent_analysis', '1');
+    localStorage.setItem('pr_confirm_model', '1');
+    localStorage.setItem('pr_confirm_gpu', '1');
     setupMockDB();
 
     const articles = [
@@ -509,6 +533,9 @@ describe('pauseAutoRunner', () => {
   it('forceStopAutoRunner cancels everything and exits', async () => {
     mockIsAuthenticated.mockReturnValue(true);
     localStorage.setItem('powerreader_webllm_cached', '1');
+    localStorage.setItem('pr_consent_analysis', '1');
+    localStorage.setItem('pr_confirm_model', '1');
+    localStorage.setItem('pr_confirm_gpu', '1');
     setupMockDB();
 
     let resolveFetch;
@@ -546,6 +573,9 @@ describe('cluster-priority ordering', () => {
   it('fetches events first and searches articles per cluster', async () => {
     mockIsAuthenticated.mockReturnValue(true);
     localStorage.setItem('powerreader_webllm_cached', '1');
+    localStorage.setItem('pr_consent_analysis', '1');
+    localStorage.setItem('pr_confirm_model', '1');
+    localStorage.setItem('pr_confirm_gpu', '1');
     setupMockDB();
 
     mockFetchEvents
@@ -597,6 +627,9 @@ describe('cluster-priority ordering', () => {
   it('deduplicates articles across clusters', async () => {
     mockIsAuthenticated.mockReturnValue(true);
     localStorage.setItem('powerreader_webllm_cached', '1');
+    localStorage.setItem('pr_consent_analysis', '1');
+    localStorage.setItem('pr_confirm_model', '1');
+    localStorage.setItem('pr_confirm_gpu', '1');
     setupMockDB();
 
     mockFetchEvents.mockResolvedValueOnce({
@@ -638,6 +671,9 @@ describe('cluster-priority ordering', () => {
   it('falls back to flat article list when no events available', async () => {
     mockIsAuthenticated.mockReturnValue(true);
     localStorage.setItem('powerreader_webllm_cached', '1');
+    localStorage.setItem('pr_consent_analysis', '1');
+    localStorage.setItem('pr_confirm_model', '1');
+    localStorage.setItem('pr_confirm_gpu', '1');
     setupMockDB();
 
     // No events
@@ -676,6 +712,9 @@ describe('pre-analysis duplicate check', () => {
   it('skips article if fresh API check shows already analyzed', async () => {
     mockIsAuthenticated.mockReturnValue(true);
     localStorage.setItem('powerreader_webllm_cached', '1');
+    localStorage.setItem('pr_consent_analysis', '1');
+    localStorage.setItem('pr_confirm_model', '1');
+    localStorage.setItem('pr_confirm_gpu', '1');
     setupMockDB();
 
     // No events → fallback to flat
@@ -705,6 +744,9 @@ describe('pre-analysis duplicate check', () => {
   it('proceeds with analysis if pre-check fails (network error)', async () => {
     mockIsAuthenticated.mockReturnValue(true);
     localStorage.setItem('powerreader_webllm_cached', '1');
+    localStorage.setItem('pr_consent_analysis', '1');
+    localStorage.setItem('pr_confirm_model', '1');
+    localStorage.setItem('pr_confirm_gpu', '1');
     setupMockDB();
 
     mockFetchEvents.mockResolvedValue({ success: false });
@@ -742,6 +784,9 @@ describe('daily points limit (no longer blocks analysis)', () => {
   it('continues analysis even when daily points limit reached', async () => {
     mockIsAuthenticated.mockReturnValue(true);
     localStorage.setItem('powerreader_webllm_cached', '1');
+    localStorage.setItem('pr_consent_analysis', '1');
+    localStorage.setItem('pr_confirm_model', '1');
+    localStorage.setItem('pr_confirm_gpu', '1');
     setupMockDB();
 
     mockFetchArticles.mockResolvedValue({

@@ -1,16 +1,16 @@
 /**
- * PowerReader - GPU Capability Scan & Inference Benchmark
+ * PowerReader - GPU Capability Scan & VRAM-based Tier Detection
  *
- * Detects WebGPU support, estimates VRAM, and benchmarks local
- * inference latency to classify the device as GPU / CPU / none.
- * Results are cached in localStorage so detection runs once.
+ * Detects WebGPU support, estimates VRAM, and classifies the device
+ * tier (GPU / CPU / none) based on available VRAM — no benchmark needed.
  *
  * Exports:
- *   scanGPU()            - Instant GPU capability probe (no model needed)
- *   runBenchmark()       - Timed inference test (requires loaded engine)
- *   getCachedBenchmark() - Read cached benchmark result
- *   clearBenchmark()     - Remove all cached benchmark data
- *   getTimeoutForTier()  - Tier-based inference timeout
+ *   scanGPU()              - Instant GPU capability probe (no model needed)
+ *   deriveTierFromVRAM()   - Pure VRAM → tier classification
+ *   getDeviceTier()        - Read tier from user selection or cached scan
+ *   getCachedBenchmark()   - Read cached benchmark result (legacy)
+ *   clearBenchmark()       - Remove all cached benchmark data
+ *   getTimeoutForTier()    - Tier-based inference timeout
  *
  * @copyright MackinHung
  * @license AGPL-3.0
@@ -21,10 +21,6 @@ import type { GPUScanResult, BenchmarkResult, GPUTier } from '$lib/types/inferen
 
 // Inlined from shared/config.js BENCHMARK section (cannot import outside src/)
 const BENCHMARK = {
-  BENCHMARK_PROMPT: '分析以下新聞標題的政治立場：總統出席國防展覽',
-  BENCHMARK_MAX_WAIT_MS: 30000,
-  BENCHMARK_GPU_THRESHOLD_MS: 8000,
-  BENCHMARK_CPU_THRESHOLD_MS: 60000,
   TIMEOUT_GPU_MS: 30000,
   TIMEOUT_CPU_MS: 120000,
   TIMEOUT_CPU_SLOW_MS: 180000,
@@ -108,55 +104,47 @@ export async function scanGPU(): Promise<GPUScanResult> {
 }
 
 // =============================================
-// 2. Inference Benchmark
+// 2. VRAM-based Tier Detection
 // =============================================
 
 /**
- * Run a short inference timing test to classify the device tier.
+ * Classify device tier purely from VRAM size.
+ *   ≥ 6 GB (6144 MB) → 'gpu'  (recommended, smooth local inference)
+ *   ≥ 4 GB (4096 MB) → 'cpu'  (runs but slower)
+ *   < 4 GB           → 'none' (insufficient, use server mode)
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function runBenchmark(getEngine: () => Promise<any>, onProgress?: (p: { stage: string; elapsed_ms: number }) => void): Promise<BenchmarkResult> {
-  const notify = (stage: string, elapsed_ms: number): void => {
-    if (onProgress) onProgress({ stage, elapsed_ms });
-  };
+export function deriveTierFromVRAM(vramMB: number): GPUTier {
+  if (vramMB >= 6144) return 'gpu';
+  if (vramMB >= 4096) return 'cpu';
+  return 'none';
+}
 
-  // Step 1 -- GPU info (instant, no model)
-  notify('scanning_gpu', 0);
-  const gpu_info = await scanGPU();
-
-  // Step 2 -- Acquire engine (may trigger model download)
-  const t0 = Date.now();
-  notify('loading_engine', 0);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let engine: any;
-  try {
-    engine = await getEngine();
-  } catch {
-    return buildResult('none', BENCHMARK.BENCHMARK_MAX_WAIT_MS, gpu_info);
+/**
+ * Determine device tier from available VRAM data.
+ * Priority: user GPU selection > cached GPU scan > fallback 'cpu'.
+ */
+export function getDeviceTier(): GPUTier {
+  // 1. User manual selection
+  const userSelection = getUserGPUSelection();
+  if (userSelection && userSelection.vramMB > 0) {
+    return deriveTierFromVRAM(userSelection.vramMB);
   }
 
-  // Step 3 -- Timed inference
-  notify('running_inference', Date.now() - t0);
+  // 2. Cached GPU scan result (from scanGPU → localStorage)
   try {
-    const inferenceStart = Date.now();
-
-    await engine.chat.completions.create({
-      messages: [{ role: 'user', content: BENCHMARK.BENCHMARK_PROMPT }],
-      max_tokens: 50,
-      temperature: 0.3,
-      signal: AbortSignal.timeout(BENCHMARK.BENCHMARK_MAX_WAIT_MS),
-    });
-
-    const latency_ms = Date.now() - inferenceStart;
-    const mode = classifyLatency(latency_ms);
-
-    notify('done', Date.now() - t0);
-    return buildResult(mode, latency_ms, gpu_info);
+    const raw = localStorage.getItem(BENCHMARK.LS_BENCHMARK_RESULT);
+    if (raw) {
+      const cached = JSON.parse(raw) as BenchmarkResult;
+      if (cached.gpu_info?.vramMB && cached.gpu_info.vramMB > 0) {
+        return deriveTierFromVRAM(cached.gpu_info.vramMB);
+      }
+    }
   } catch {
-    notify('error', Date.now() - t0);
-    return buildResult('none', BENCHMARK.BENCHMARK_MAX_WAIT_MS, gpu_info);
+    // Corrupted data — fall through
   }
+
+  // 3. Safe fallback (matches existing inference.ts behavior)
+  return 'cpu';
 }
 
 // =============================================
@@ -242,35 +230,6 @@ export function getTimeoutForTier(mode: string): number {
 // =============================================
 // Internal Helpers
 // =============================================
-
-/**
- * Classify raw latency into a device tier.
- */
-function classifyLatency(latency_ms: number): GPUTier {
-  if (latency_ms < BENCHMARK.BENCHMARK_GPU_THRESHOLD_MS) return 'gpu';
-  if (latency_ms < BENCHMARK.BENCHMARK_CPU_THRESHOLD_MS) return 'cpu';
-  return 'none';
-}
-
-/**
- * Build an immutable result object and persist it to localStorage.
- */
-function buildResult(mode: GPUTier, latency_ms: number, gpu_info: GPUScanResult): BenchmarkResult {
-  const result: BenchmarkResult = {
-    mode,
-    latency_ms,
-    gpu_info,
-    tested_at: new Date().toISOString(),
-  };
-
-  try {
-    localStorage.setItem(BENCHMARK.LS_BENCHMARK_RESULT, JSON.stringify(result));
-  } catch {
-    // localStorage quota exceeded or unavailable
-  }
-
-  return result;
-}
 
 /**
  * Persist the WebGPU availability flag to localStorage.

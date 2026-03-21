@@ -35,13 +35,14 @@
         <span class="material-symbols-outlined">menu</span>
       </button>
     {/if}
-  </div>
-  {#if title}
-    <h1 class="bar-title">{title}</h1>
-  {/if}
-  <div class="bar-trailing">
-    <span class="bar-date">{dateDisplay}</span>
     {@render children?.()}
+  </div>
+  <div class="bar-spacer"></div>
+  <div class="bar-brand">
+    {#if title}
+      <h1 class="bar-title">{title}</h1>
+    {/if}
+    <span class="bar-date">{dateDisplay}</span>
   </div>
 </header>
 
@@ -91,30 +92,31 @@
       display: none;
     }
   }
-  .bar-title {
+  .bar-spacer {
     flex: 1;
-    min-width: 0;
+  }
+  .bar-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    flex-shrink: 0;
+    padding-right: 12px;
+    gap: 2px;
+  }
+  .bar-title {
     font-family: var(--pr-font-sans);
-    font-size: 24px;
-    line-height: 32px;
+    font-size: 22px;
+    line-height: 26px;
     font-weight: 900;
     font-style: italic;
     color: var(--pr-ink);
-    padding: 0 12px;
     letter-spacing: 0.5px;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
-  }
-  .bar-trailing {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
-    padding-right: 8px;
+    margin: 0;
   }
   .bar-date {
-    font: 700 13px/1 var(--pr-font-sans);
+    font: 700 12px/1 var(--pr-font-sans);
+    font-style: italic;
     color: var(--md-sys-color-on-surface-variant);
     white-space: nowrap;
   }

@@ -1,22 +1,26 @@
 /**
  * Unit tests for benchmark.js
  *
- * Tests cover: scanGPU, runBenchmark, getCachedBenchmark,
- *              clearBenchmark, getTimeoutForTier
+ * Tests cover: scanGPU, deriveTierFromVRAM, getDeviceTier,
+ *              getCachedBenchmark, clearBenchmark, getTimeoutForTier
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   scanGPU,
-  runBenchmark,
+  deriveTierFromVRAM,
+  getDeviceTier,
   getCachedBenchmark,
   clearBenchmark,
   getTimeoutForTier,
+  saveUserGPUSelection,
+  getUserGPUSelection,
 } from '../../src/lib/core/benchmark.js';
 
 // ── Constants (mirrored from source for assertions) ──
 
 const LS_BENCHMARK_RESULT = 'pr_benchmark_result';
 const LS_WEBGPU_AVAILABLE = 'pr_webgpu_available';
+const LS_GPU_OVERRIDE = 'pr_gpu_override';
 
 // ── Helper: build a mock GPU adapter ──
 
@@ -246,157 +250,96 @@ describe('scanGPU', () => {
 });
 
 // ══════════════════════════════════════════════
-// 2. runBenchmark
+// 2. deriveTierFromVRAM
 // ══════════════════════════════════════════════
 
-describe('runBenchmark', () => {
-  beforeEach(() => {
-    // Provide a default navigator.gpu so scanGPU doesn't hit the
-    // "no gpu" branch unless we override it per test
-    delete globalThis.navigator.gpu;
+describe('deriveTierFromVRAM', () => {
+  it('returns "gpu" for >= 6144 MB (6 GB)', () => {
+    expect(deriveTierFromVRAM(6144)).toBe('gpu');
+    expect(deriveTierFromVRAM(8192)).toBe('gpu');
+    expect(deriveTierFromVRAM(24576)).toBe('gpu');
   });
 
-  it('returns mode="gpu" when engine inference is fast (< 8000ms)', async () => {
-    const mockEngine = {
-      chat: {
-        completions: {
-          create: vi.fn().mockResolvedValue({}),
-        },
-      },
-    };
-    const getEngine = vi.fn().mockResolvedValue(mockEngine);
-
-    const result = await runBenchmark(getEngine);
-
-    expect(result.mode).toBe('gpu');
-    expect(result.latency_ms).toBeLessThan(8000);
-    expect(result.gpu_info).toBeDefined();
-    expect(result.tested_at).toBeDefined();
-    // Result should be cached in localStorage
-    const cached = JSON.parse(localStorage.getItem(LS_BENCHMARK_RESULT));
-    expect(cached.mode).toBe('gpu');
+  it('returns "cpu" for >= 4096 MB but < 6144 MB', () => {
+    expect(deriveTierFromVRAM(4096)).toBe('cpu');
+    expect(deriveTierFromVRAM(5120)).toBe('cpu');
+    expect(deriveTierFromVRAM(6143)).toBe('cpu');
   });
 
-  it('returns mode="cpu" when engine inference takes 8000-60000ms', async () => {
-    const mockEngine = {
-      chat: {
-        completions: {
-          // Simulate ~10000ms latency
-          create: vi.fn().mockImplementation(() => {
-            return new Promise(resolve => {
-              const start = Date.now();
-              // Busy wait to simulate elapsed time
-              // Instead, we mock Date.now
-              resolve({});
-            });
-          }),
-        },
-      },
-    };
-
-    // Mock Date.now to simulate slow inference
-    let callCount = 0;
-    const originalDateNow = Date.now;
-    const startTime = 1000000;
-    vi.spyOn(Date, 'now').mockImplementation(() => {
-      callCount++;
-      // First few calls: pre-inference setup
-      // The key calls are around inferenceStart and after create()
-      // We need: inferenceStart = Date.now() → X, then after create: Date.now() → X + 10000
-      if (callCount <= 3) return startTime;       // t0, loading_engine notify, running_inference notify
-      if (callCount === 4) return startTime;       // inferenceStart
-      if (callCount === 5) return startTime + 10000; // latency_ms = 10000 (cpu range)
-      return startTime + 10000;
-    });
-
-    const getEngine = vi.fn().mockResolvedValue(mockEngine);
-    const result = await runBenchmark(getEngine);
-
-    expect(result.mode).toBe('cpu');
-    expect(result.latency_ms).toBe(10000);
-
-    Date.now.mockRestore();
+  it('returns "none" for < 4096 MB', () => {
+    expect(deriveTierFromVRAM(0)).toBe('none');
+    expect(deriveTierFromVRAM(2048)).toBe('none');
+    expect(deriveTierFromVRAM(4095)).toBe('none');
   });
 
-  it('returns mode="none" when getEngine throws', async () => {
-    const getEngine = vi.fn().mockRejectedValue(new Error('Engine load failed'));
-
-    const result = await runBenchmark(getEngine);
-
-    expect(result.mode).toBe('none');
-    expect(result.latency_ms).toBe(30000); // BENCHMARK_MAX_WAIT_MS
-  });
-
-  it('returns mode="none" when engine.chat.completions.create throws', async () => {
-    const mockEngine = {
-      chat: {
-        completions: {
-          create: vi.fn().mockRejectedValue(new Error('Inference timeout')),
-        },
-      },
-    };
-    const getEngine = vi.fn().mockResolvedValue(mockEngine);
-
-    const result = await runBenchmark(getEngine);
-
-    expect(result.mode).toBe('none');
-    expect(result.latency_ms).toBe(30000); // BENCHMARK_MAX_WAIT_MS
-  });
-
-  it('calls onProgress with correct stages in order', async () => {
-    const mockEngine = {
-      chat: {
-        completions: {
-          create: vi.fn().mockResolvedValue({}),
-        },
-      },
-    };
-    const getEngine = vi.fn().mockResolvedValue(mockEngine);
-    const onProgress = vi.fn();
-
-    await runBenchmark(getEngine, onProgress);
-
-    const stages = onProgress.mock.calls.map(call => call[0].stage);
-    expect(stages).toEqual([
-      'scanning_gpu',
-      'loading_engine',
-      'running_inference',
-      'done',
-    ]);
-  });
-
-  it('calls onProgress with error stage when inference fails', async () => {
-    const mockEngine = {
-      chat: {
-        completions: {
-          create: vi.fn().mockRejectedValue(new Error('fail')),
-        },
-      },
-    };
-    const getEngine = vi.fn().mockResolvedValue(mockEngine);
-    const onProgress = vi.fn();
-
-    await runBenchmark(getEngine, onProgress);
-
-    const stages = onProgress.mock.calls.map(call => call[0].stage);
-    expect(stages).toContain('error');
-    expect(stages).not.toContain('done');
-  });
-
-  it('works without onProgress callback', async () => {
-    const mockEngine = {
-      chat: { completions: { create: vi.fn().mockResolvedValue({}) } },
-    };
-    const getEngine = vi.fn().mockResolvedValue(mockEngine);
-
-    // Should not throw
-    const result = await runBenchmark(getEngine);
-    expect(result.mode).toBeDefined();
+  it('returns "none" for 0 MB (no VRAM)', () => {
+    expect(deriveTierFromVRAM(0)).toBe('none');
   });
 });
 
 // ══════════════════════════════════════════════
-// 3. getCachedBenchmark
+// 3. getDeviceTier
+// ══════════════════════════════════════════════
+
+describe('getDeviceTier', () => {
+  it('returns "cpu" fallback when no data is available', () => {
+    expect(getDeviceTier()).toBe('cpu');
+  });
+
+  it('uses user GPU selection when available', () => {
+    saveUserGPUSelection('RTX 4090', 24576);
+    expect(getDeviceTier()).toBe('gpu');
+  });
+
+  it('uses user GPU selection with low VRAM', () => {
+    saveUserGPUSelection('GTX 1050', 2048);
+    expect(getDeviceTier()).toBe('none');
+  });
+
+  it('uses cached benchmark gpu_info when no user selection', () => {
+    // Simulate a cached benchmark with gpu_info containing VRAM
+    localStorage.setItem(LS_BENCHMARK_RESULT, JSON.stringify({
+      mode: 'gpu',
+      latency_ms: 5000,
+      gpu_info: { supported: true, vramMB: 8192, device: 'RTX 3060' },
+      tested_at: '2026-01-01T00:00:00Z',
+    }));
+
+    expect(getDeviceTier()).toBe('gpu');
+  });
+
+  it('falls back to "cpu" when cached benchmark has no vramMB', () => {
+    localStorage.setItem(LS_BENCHMARK_RESULT, JSON.stringify({
+      mode: 'cpu',
+      latency_ms: 15000,
+      gpu_info: { supported: true, vramMB: 0, device: '' },
+      tested_at: '2026-01-01T00:00:00Z',
+    }));
+
+    expect(getDeviceTier()).toBe('cpu');
+  });
+
+  it('prefers user selection over cached benchmark', () => {
+    // Cached benchmark says GPU (8 GB), but user selected a 2 GB card
+    localStorage.setItem(LS_BENCHMARK_RESULT, JSON.stringify({
+      mode: 'gpu',
+      latency_ms: 3000,
+      gpu_info: { supported: true, vramMB: 8192, device: 'RTX 3060' },
+      tested_at: '2026-01-01T00:00:00Z',
+    }));
+    saveUserGPUSelection('Iris Xe', 2048);
+
+    expect(getDeviceTier()).toBe('none');
+  });
+
+  it('handles corrupted localStorage gracefully', () => {
+    localStorage.setItem(LS_BENCHMARK_RESULT, '{broken json!!!');
+    expect(getDeviceTier()).toBe('cpu');
+  });
+});
+
+// ══════════════════════════════════════════════
+// 4. getCachedBenchmark
 // ══════════════════════════════════════════════
 
 describe('getCachedBenchmark', () => {
@@ -433,7 +376,7 @@ describe('getCachedBenchmark', () => {
 });
 
 // ══════════════════════════════════════════════
-// 4. clearBenchmark
+// 5. clearBenchmark
 // ══════════════════════════════════════════════
 
 describe('clearBenchmark', () => {
@@ -453,7 +396,7 @@ describe('clearBenchmark', () => {
 });
 
 // ══════════════════════════════════════════════
-// 5. getTimeoutForTier
+// 6. getTimeoutForTier
 // ══════════════════════════════════════════════
 
 describe('getTimeoutForTier', () => {

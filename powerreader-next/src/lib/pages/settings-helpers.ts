@@ -42,16 +42,6 @@ export function formatBenchmarkDate(isoString: string | null | undefined): strin
   }
 }
 
-export function formatBenchmarkMode(mode: string): { text: string; color: string } {
-  if (mode === 'gpu') {
-    return { text: t('settings.hw.mode_gpu'), color: '#28A745' };
-  }
-  if (mode === 'cpu') {
-    return { text: t('settings.hw.mode_cpu'), color: 'var(--color-text-secondary)' };
-  }
-  return { text: t('settings.hw.mode_none'), color: 'var(--color-bias-extreme)' };
-}
-
 export function createInfoRow(label: string, value: string, color?: string): HTMLElement {
   const row = document.createElement('div');
   row.className = 'settings-about__row';

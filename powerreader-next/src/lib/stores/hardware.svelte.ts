@@ -11,7 +11,7 @@ import type { GPUScanResult, BenchmarkResult, InferenceMode, PreDownloadChecks }
 
 import {
   scanGPU,
-  runBenchmark,
+  getDeviceTier,
   getCachedBenchmark,
   clearBenchmark,
   saveUserGPUSelection,
@@ -40,10 +40,8 @@ import {
 let gpuInfo: GPUScanResult | null = $state(null);
 let gpuScanning: boolean = $state(false);
 
-// -- Benchmark --
+// -- Benchmark (legacy cache) --
 let benchmarkResult: BenchmarkResult | null = $state(getCachedBenchmark());
-let benchmarking: boolean = $state(false);
-let benchmarkStage: string | null = $state(null);
 
 // -- Model --
 let modelDownloaded: boolean = $state(false);
@@ -65,13 +63,11 @@ export function getHardwareStore() {
     get hasWebGPU() { return gpuInfo?.supported ?? false; },
     get userGPUSelection() { return getUserGPUSelection(); },
 
-    // -- Getters: Benchmark --
+    // -- Getters: Device Tier --
     get benchmarkResult() { return benchmarkResult; },
-    get benchmarking() { return benchmarking; },
-    get benchmarkStage() { return benchmarkStage; },
-    get deviceTier() { return benchmarkResult?.mode || 'unknown'; },
+    get deviceTier() { return getDeviceTier(); },
     get inferenceTimeout(): number {
-      return benchmarkResult ? getTimeoutForTier(benchmarkResult.mode) : 90000;
+      return getTimeoutForTier(getDeviceTier());
     },
 
     // -- Getters: Model --
@@ -101,31 +97,10 @@ export function getHardwareStore() {
       }
     },
 
-    /**
-     * Run inference benchmark to classify device tier.
-     */
-    async runBenchmark(): Promise<void> {
-      benchmarking = true;
-      benchmarkStage = 'scanning_gpu';
-      try {
-        const result = await runBenchmark(
-          () => getWebLLMEngine(),
-          (progress: { stage: string }) => { benchmarkStage = progress.stage; }
-        );
-        benchmarkResult = result;
-      } catch (e) {
-        benchmarkResult = { mode: 'none', latency_ms: 0, gpu_info: gpuInfo, tested_at: new Date().toISOString() };
-      } finally {
-        benchmarking = false;
-        benchmarkStage = null;
-      }
-    },
-
-    /** Clear cached benchmark data and re-scan. */
+    /** Clear cached benchmark data. */
     async clearBenchmark(): Promise<void> {
       clearBenchmark();
       benchmarkResult = null;
-      benchmarkStage = null;
     },
 
     /**

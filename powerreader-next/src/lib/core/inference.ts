@@ -25,7 +25,7 @@ import {
 import { parseScoreOutput, parseNarrativeOutput } from './output-parser.js';
 import { isMobileDevice } from '$lib/utils/device-detect.js';
 import { recordLatency, estimateRemaining, getDualPassProgress } from './eta.js';
-import { getCachedBenchmark, getTimeoutForTier } from './benchmark.js';
+import { getDeviceTier, getTimeoutForTier } from './benchmark.js';
 import type { Article, AnalysisResult, KnowledgeEntry, ScoreOutput } from '$lib/types/models.js';
 import type { InferenceMode, AnalysisRunOptions, StatusCallback } from '$lib/types/inference.js';
 import { hashPrompts, buildFingerprint } from './fingerprint.js';
@@ -228,7 +228,7 @@ export async function runAnalysis({ article, knowledgeEntries = [], mode, onStat
 
   const updateStatus: StatusCallback = (stage, elapsedMs, extra) => {
     const elapsed = Date.now() - startTime;
-    const tier = getCachedBenchmark()?.mode || 'cpu';
+    const tier = getDeviceTier();
     const progress = getDualPassProgress(stage, elapsed, tier);
     const etaEstimate = estimateRemaining(tier, stage.includes('pass2') ? 'pass2' : 'pass1', elapsed);
     if (onStatus) onStatus(stage, elapsed, { ...extra, eta: etaEstimate?.remainingMs ?? null, progress });
@@ -278,7 +278,7 @@ async function runWebLLMInference(article: Article, knowledgeEntries: KnowledgeE
   });
 
   const userMessage = assembleUserMessage(article, knowledgeEntries);
-  const tier = getCachedBenchmark()?.mode || 'cpu';
+  const tier = getDeviceTier();
 
   // Phase 1: Score extraction (per-pass timeout)
   updateStatus('pass1_running', 0);
@@ -425,7 +425,7 @@ async function runServerInference(article: Article, knowledgeEntries: KnowledgeE
       knowledge: knowledgeEntries,
       model_params: { think: false, temperature: 0.5 }
     }),
-    signal: AbortSignal.timeout(getTimeoutForTier(getCachedBenchmark()?.mode || 'cpu'))
+    signal: AbortSignal.timeout(getTimeoutForTier(getDeviceTier()))
   });
 
   if (!response.ok) {
