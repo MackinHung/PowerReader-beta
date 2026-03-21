@@ -128,6 +128,17 @@
         <span class="nav-label">設定</span>
       {/if}
     </a>
+    <a
+      href="/privacy"
+      class="nav-item"
+      class:active={currentPath === '/privacy'}
+      title={expanded ? undefined : '隱私與條款'}
+    >
+      <span class="material-symbols-outlined nav-icon">policy</span>
+      {#if expanded}
+        <span class="nav-label">隱私與條款</span>
+      {/if}
+    </a>
   </div>
 </nav>
 

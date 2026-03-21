@@ -34,7 +34,7 @@ function getInterAnalysisDelay(): number {
 const NETWORK_PAUSE_MS = 30000;
 const MAX_CONSECUTIVE_FAILURES = 5;
 const FETCH_BATCH_SIZE = 50;
-const ANALYSIS_MODE_KEY = 'powerreader_analysis_mode';
+const ANALYSIS_MODE_KEY = 'analysis_mode';
 
 // ── Module State ──
 

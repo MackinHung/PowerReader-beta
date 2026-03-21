@@ -17,8 +17,6 @@
 
   // ── Analysis settings ──
   let autoMode = $state(false);
-  let autoSubmit = $state(false);
-  let notifications = $state(true);
   let cacheEnabled = $state(true);
 
   // ── Three-gate confirmations (all required before auto-analysis) ──
@@ -158,8 +156,6 @@
   async function initSettings() {
     // Load saved settings
     autoMode = localStorage.getItem('analysis_mode') === 'auto';
-    autoSubmit = localStorage.getItem('auto_submit') === 'true';
-    notifications = localStorage.getItem('notifications') !== 'false';
     cacheEnabled = localStorage.getItem('cache_enabled') !== 'false';
 
     // Three-gate confirmations
@@ -203,8 +199,6 @@
   $effect(() => {
     if (!initialized || typeof window === 'undefined') return;
     localStorage.setItem('analysis_mode', autoMode ? 'auto' : 'manual');
-    localStorage.setItem('auto_submit', String(autoSubmit));
-    localStorage.setItem('notifications', String(notifications));
     localStorage.setItem('cache_enabled', String(cacheEnabled));
     localStorage.setItem('pr_consent_analysis', consentAnalysis ? '1' : '0');
     localStorage.setItem('pr_confirm_model', confirmModel ? '1' : '0');
@@ -423,16 +417,6 @@
             <Switch bind:checked={autoMode} />
           {/snippet}
         </ListItem>
-        <ListItem headline="自動提交結果" supporting="分析完成後自動提交">
-          {#snippet trailing()}
-            <Switch bind:checked={autoSubmit} />
-          {/snippet}
-        </ListItem>
-        <ListItem headline="通知" supporting="接收分析完成通知">
-          {#snippet trailing()}
-            <Switch bind:checked={notifications} />
-          {/snippet}
-        </ListItem>
         <ListItem headline="快取" supporting="離線存取已載入內容">
           {#snippet trailing()}
             <Switch bind:checked={cacheEnabled} />
@@ -449,7 +433,11 @@
           </span>
         </label>
         <p class="gate-reason">
-          自動分析會用你電腦的顯示卡在本機跑 AI 模型，過程中會消耗顯示卡資源和電力。啟用前請確認你了解這個運作方式，並同意把電腦算力貢獻給新聞偏見分析。
+          自動分析會用你電腦的顯示卡在本機跑 AI 模型，過程中會消耗顯示卡資源和電力。
+          <br /><br />
+          所有 AI 運算都在你的電腦上完成，平台無法存取你的 GPU、個人檔案或瀏覽紀錄。唯一上傳的資料是新聞偏見分析結果（分數、立場判斷），不含任何個人資訊。
+          <br /><br />
+          啟用前請確認你了解這個運作方式，並同意把電腦算力貢獻給新聞偏見分析。
         </p>
       </div>
     </Card>
@@ -764,6 +752,11 @@
           onclick={() => window.open('https://github.com/MackinHung', '_blank')}
         />
         <ListItem headline="授權" supporting="AGPL-3.0" />
+        <ListItem
+          headline="隱私與條款"
+          supporting="隱私政策、使用條款、免責聲明"
+          onclick={() => goto('/privacy')}
+        />
         <ListItem headline="技術" supporting="Svelte 5 + Cloudflare Workers + WebGPU" />
       </List>
     </Card>

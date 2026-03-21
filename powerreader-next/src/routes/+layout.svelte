@@ -39,7 +39,8 @@
     '/knowledge': '資料庫',
     '/profile': '個人貢獻',
     '/power-pool': '動力池',
-    '/settings': '設定'
+    '/settings': '設定',
+    '/privacy': '隱私與條款'
   };
 
   // Dynamic title for event/knowledge detail pages

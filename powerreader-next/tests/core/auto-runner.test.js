@@ -221,7 +221,7 @@ describe('isAutoModeEnabled / setAnalysisMode', () => {
 
   it('stores value in localStorage with correct key', () => {
     mod.setAnalysisMode('auto');
-    expect(localStorage.getItem('powerreader_analysis_mode')).toBe('auto');
+    expect(localStorage.getItem('analysis_mode')).toBe('auto');
   });
 });
 
