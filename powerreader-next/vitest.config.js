@@ -17,6 +17,18 @@ export default defineConfig({
 	test: {
 		environment: 'jsdom',
 		globals: true,
-		include: ['tests/**/*.test.{js,ts}']
+		include: ['tests/**/*.test.{js,ts}'],
+		passWithNoTests: true,
+		coverage: {
+			provider: 'v8',
+			include: ['src/lib/**/*.{ts,js,svelte}'],
+			exclude: [
+				'src/lib/assets/**',
+				'src/lib/i18n/**',
+				'src/lib/types/**'
+			],
+			reporter: ['text', 'json-summary'],
+			reportsDirectory: './coverage'
+		}
 	}
 });
