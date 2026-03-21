@@ -118,8 +118,8 @@ const ROUTES = [
   ['GET', '/api/v1/sources/:source',  getSource,  { auth: 'none', rateLimit: true, cache: `public, max-age=${CLOUDFLARE.CDN_NEWS_LIST_TTL}` }],
 
   // Sponsor API (ECPay integration — Power Pool)
-  ['POST', '/api/v1/sponsor/create',   createSponsorOrder,  { auth: 'jwt',  rateLimit: true,  cache: 'no-store' }],
-  ['POST', '/api/v1/sponsor/callback', handleEcpayCallback, { auth: 'none', rateLimit: false, cache: 'no-store' }],
+  ['POST', '/api/v1/sponsor/create',   createSponsorOrder,  { auth: 'jwt-optional', rateLimit: true,  cache: 'no-store' }],
+  ['POST', '/api/v1/sponsor/callback', handleEcpayCallback, { auth: 'none',         rateLimit: true,  cache: 'no-store' }],
   ['GET',  '/api/v1/sponsor/stats',    getSponsorStats,     { auth: 'none', rateLimit: true,  cache: `public, max-age=60` }],
   ['GET',  '/api/v1/sponsor/me',       getMySponsorships,   { auth: 'jwt',  rateLimit: true,  cache: 'private, no-cache' }],
 
@@ -209,6 +209,12 @@ export async function handleRequest(request, env, ctx) {
       });
     }
     user = authResult.user;
+  } else if (options.auth === 'jwt-optional') {
+    // Optional JWT — associate user if token present, allow anonymous otherwise
+    const authResult = await verifyJwt(request, env);
+    if (authResult.valid) {
+      user = authResult.user;
+    }
   } else if (options.auth === 'service') {
     const authResult = verifyServiceToken(request, env);
     if (!authResult.valid) {

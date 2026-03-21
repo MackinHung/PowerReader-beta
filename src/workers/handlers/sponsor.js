@@ -39,8 +39,8 @@ function computeAllocation(amount, type) {
   const ratios = ALLOCATION_RATIOS[type];
   const alloc_platform = Math.round(amount * ratios.platform);
   const alloc_compute = Math.round(amount * ratios.compute);
-  // Developer absorbs rounding residual
-  const alloc_developer = amount - alloc_platform - alloc_compute;
+  // Developer absorbs rounding residual (clamped to ≥0 for safety)
+  const alloc_developer = Math.max(0, amount - alloc_platform - alloc_compute);
   return { alloc_developer, alloc_platform, alloc_compute };
 }
 
@@ -157,6 +157,14 @@ export async function handleEcpayCallback(request, env) {
 
   if (!order) {
     return new Response('0|Order not found', {
+      status: 200,
+      headers: { 'Content-Type': 'text/plain' },
+    });
+  }
+
+  // Idempotency: already processed → acknowledge without re-updating
+  if (order.status !== 'pending') {
+    return new Response('1|OK', {
       status: 200,
       headers: { 'Content-Type': 'text/plain' },
     });

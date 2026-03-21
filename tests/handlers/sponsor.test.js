@@ -11,7 +11,7 @@
  */
 
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { generateCheckMacValue, verifyCallback, dotNetUrlEncode, buildAioCheckOutForm } from '../../src/workers/utils/ecpay.js';
+import { generateCheckMacValue, verifyCallback, dotNetUrlEncode, buildAioCheckOutForm, constantTimeEqual } from '../../src/workers/utils/ecpay.js';
 import { createSponsorOrder, handleEcpayCallback, getSponsorStats, getMySponsorships } from '../../src/workers/handlers/sponsor.js';
 
 // =============================================
@@ -30,6 +30,28 @@ describe('dotNetUrlEncode', () => {
   test('result is lowercase', () => {
     const result = dotNetUrlEncode('ABC=123');
     expect(result).toBe(result.toLowerCase());
+  });
+});
+
+describe('constantTimeEqual', () => {
+  test('returns true for identical strings', () => {
+    expect(constantTimeEqual('ABC123', 'ABC123')).toBe(true);
+  });
+
+  test('returns false for different strings', () => {
+    expect(constantTimeEqual('ABC123', 'ABC124')).toBe(false);
+  });
+
+  test('returns false for different lengths', () => {
+    expect(constantTimeEqual('short', 'longer_string')).toBe(false);
+  });
+
+  test('returns true for empty strings', () => {
+    expect(constantTimeEqual('', '')).toBe(true);
+  });
+
+  test('returns false for empty vs non-empty', () => {
+    expect(constantTimeEqual('', 'x')).toBe(false);
   });
 });
 
@@ -337,6 +359,48 @@ describe('handleEcpayCallback', () => {
     const text = await res.text();
 
     expect(text).toContain('verification failed');
+  });
+
+  test('idempotent — already paid order returns 1|OK without re-updating', async () => {
+    const env = createMockEnv([{ id: 1, status: 'paid' }]); // already paid
+    const params = {
+      MerchantTradeNo: 'PR12345678901234',
+      RtnCode: '1',
+      TradeNo: 'ECPay789',
+      PaymentType: 'Credit_CreditCard',
+      PaymentDate: '2026/03/21 13:00:00',
+    };
+    const mac = await generateCheckMacValue(params, env.ECPAY_HASH_KEY, env.ECPAY_HASH_IV);
+    params.CheckMacValue = mac;
+
+    const bodyStr = new URLSearchParams(params).toString();
+    const req = { text: vi.fn().mockResolvedValue(bodyStr) };
+
+    const res = await handleEcpayCallback(req, env);
+    const text = await res.text();
+
+    expect(text).toBe('1|OK');
+    // Should NOT have called UPDATE
+    const updateCall = env.DB.prepare.mock.calls.find(c =>
+      c[0].includes('UPDATE sponsorships')
+    );
+    expect(updateCall).toBeUndefined();
+  });
+
+  test('idempotent — already failed order returns 1|OK without re-updating', async () => {
+    const env = createMockEnv([{ id: 1, status: 'failed' }]);
+    const params = {
+      MerchantTradeNo: 'PR12345678901234',
+      RtnCode: '1',
+    };
+    const mac = await generateCheckMacValue(params, env.ECPAY_HASH_KEY, env.ECPAY_HASH_IV);
+    params.CheckMacValue = mac;
+
+    const bodyStr = new URLSearchParams(params).toString();
+    const req = { text: vi.fn().mockResolvedValue(bodyStr) };
+
+    const res = await handleEcpayCallback(req, env);
+    expect(await res.text()).toBe('1|OK');
   });
 
   test('returns error for unknown order', async () => {

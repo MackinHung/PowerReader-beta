@@ -122,7 +122,26 @@ export async function buildAioCheckOutForm(order, env, returnURL, clientBackURL)
 }
 
 /**
+ * Constant-time string comparison to prevent timing attacks.
+ * Both strings are XOR-compared byte-by-byte; the result leaks no
+ * positional information about where differences occur.
+ *
+ * @param {string} a
+ * @param {string} b
+ * @returns {boolean}
+ */
+export function constantTimeEqual(a, b) {
+  const len = Math.max(a.length, b.length);
+  let result = a.length ^ b.length; // non-zero if different lengths
+  for (let i = 0; i < len; i++) {
+    result |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  }
+  return result === 0;
+}
+
+/**
  * Verify ECPay callback CheckMacValue.
+ * Uses constant-time comparison to prevent timing attacks.
  *
  * @param {Record<string, string>} body - Parsed callback body (URL-decoded key-value pairs)
  * @param {string} hashKey - ECPay HashKey
@@ -138,5 +157,5 @@ export async function verifyCallback(body, hashKey, hashIV) {
   delete params.CheckMacValue;
 
   const computed = await generateCheckMacValue(params, hashKey, hashIV);
-  return computed === receivedMac;
+  return constantTimeEqual(computed, receivedMac);
 }
