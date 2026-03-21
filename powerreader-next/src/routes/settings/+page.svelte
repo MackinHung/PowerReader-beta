@@ -377,14 +377,14 @@
   let vramMB = $derived(userOverride ? userOverride.vramMB : (gpuResult?.vramMB || 0));
 
   let vramVerdict = $derived.by(() => {
-    if (vramMB === 0) return { icon: 'help', text: '無法判斷', color: 'var(--md-sys-color-on-surface-variant)' };
-    if (vramMB >= 6144) return { icon: 'check_circle', text: '可運行本地推理', color: 'var(--md-sys-color-primary)' };
-    if (vramMB >= 4096) return { icon: 'warning', text: '可能較慢', color: 'var(--md-sys-color-tertiary)' };
-    return { icon: 'error', text: 'VRAM 不足，建議使用伺服器模式', color: 'var(--md-sys-color-error)' };
+    if (vramMB === 0) return { icon: 'help', text: '尚未選擇 GPU，請先選擇', color: 'var(--md-sys-color-on-surface-variant)' };
+    if (vramMB >= 6144) return { icon: 'check_circle', text: '符合需求，可以跑 AI 模型', color: 'var(--md-sys-color-primary)' };
+    if (vramMB >= 4096) return { icon: 'warning', text: '勉強可用，速度會較慢', color: 'var(--md-sys-color-tertiary)' };
+    return { icon: 'error', text: '硬體不符合需求，建議純閱讀即可', color: 'var(--md-sys-color-error)' };
   });
 
   function getModeLabel(mode) {
-    return mode === INFERENCE_MODES.WEBGPU ? 'WebGPU 本地推理' : '伺服器推理';
+    return mode === INFERENCE_MODES.WEBGPU ? '本機 AI 運算' : '雲端模式';
   }
 
   // ── Readiness: all 3 gates must pass ──
@@ -394,6 +394,13 @@
   $effect(() => {
     if (initialized && !modelReady) {
       confirmModel = false;
+    }
+  });
+
+  // If VRAM unknown (no GPU selected), auto-revoke GPU confirmation
+  $effect(() => {
+    if (initialized && vramMB === 0) {
+      confirmGpu = false;
     }
   });
 </script>
@@ -442,7 +449,7 @@
           </span>
         </label>
         <p class="gate-reason">
-          自動分析會使用您的 GPU 在本機執行 AI 推理，過程中將消耗顯示卡資源與電力。啟用前請確認您已了解此運作方式，並同意將裝置算力貢獻於新聞偏見分析。
+          自動分析會用你電腦的顯示卡在本機跑 AI 模型，過程中會消耗顯示卡資源和電力。啟用前請確認你了解這個運作方式，並同意把電腦算力貢獻給新聞偏見分析。
         </p>
       </div>
     </Card>
@@ -461,7 +468,7 @@
           <span class="material-symbols-outlined model-icon">smart_toy</span>
           <div class="model-text">
             <span class="model-name">Qwen3-8B</span>
-            <span class="model-size">~4.5 GB (WebGPU 4-bit 量化)</span>
+            <span class="model-size">約 4.5 GB（4-bit 量化版）</span>
           </div>
           {#if modelReady && !modelLoading}
             <span class="material-symbols-outlined model-check">check_circle</span>
@@ -499,9 +506,9 @@
         {#if !modelLoading && !modelError}
           <span class="model-status-text">
             {#if modelReady}
-              已下載，可進行本地推理
+              已下載，可以開始跑 AI 分析
             {:else}
-              尚未下載，需要 Wi-Fi 和足夠儲存空間
+              尚未下載，需要穩定網路和足夠儲存空間
             {/if}
           </span>
         {/if}
@@ -537,9 +544,9 @@
           </label>
           <p class="gate-reason">
             {#if modelReady}
-              模型已下載至本機快取。請確認下載完整無誤，確保推理品質與分析結果的正確性。
+              AI 模型已下載到你的電腦。請確認下載完整無誤，才能確保分析結果的品質。
             {:else}
-              請先下載 AI 模型，才能啟用本地推理功能。模型未完整下載將導致分析失敗或產生錯誤結果。
+              請先下載 AI 模型才能使用分析功能。模型沒下載完整的話，分析會失敗或產生錯誤。
             {/if}
           </p>
         </div>
@@ -551,7 +558,7 @@
   <section class="section">
     <h2 class="section-title">
       <span class="material-symbols-outlined section-icon">memory</span>
-      硬體偵測
+      硬體檢查
     </h2>
     <Card variant="filled">
       <div class="hardware-section">
@@ -560,7 +567,7 @@
           <span class="hw-label">GPU</span>
           <span class="hw-value">
             {#if gpuScanning}
-              偵測中...
+              檢查中...
             {:else}
               {gpuDisplayName}
             {/if}
@@ -595,7 +602,7 @@
 
         <!-- Manual GPU Selection -->
         <div class="gpu-picker">
-          <span class="gpu-picker-label">偵測不到 GPU？手動選擇：</span>
+          <span class="gpu-picker-label">找不到你的 GPU？手動選擇：</span>
           <select class="gpu-select" value={selectedGpu} onchange={handleGpuSelect}>
             <option value="">-- 選擇你的 GPU --</option>
             {#each GPU_OPTIONS as group}
@@ -619,20 +626,20 @@
         <div class="hw-guide">
           <span class="hw-guide-title">GPU 條件</span>
           <p class="hw-guide-desc">
-            自動分析需使用裝置的 GPU 進行本地 AI 推理。執行前必須經由使用者確認硬體可用，確保裝置具備足夠的顯示卡記憶體 (VRAM) 以完成推理工作。目前不支援手機版本 — 行動裝置的 GPU 效能不足以執行大型語言模型推理，且會造成裝置過熱與耗電問題。
+            自動分析會在你的電腦上執行 AI 模型，需要用到顯示卡 (GPU) 的運算能力。請先確認你的電腦有足夠的顯示卡記憶體 (VRAM) 來跑模型。手機不支援此功能 — 手機的 GPU 跑不動 AI 模型，還會造成過熱和快速耗電。
           </p>
           <div class="hw-guide-tiers">
             <div class="hw-guide-tier">
               <span class="material-symbols-outlined" style="color: var(--md-sys-color-primary)">check_circle</span>
-              <span>&ge; 6 GB &mdash; 推薦，可順暢運行本地推理</span>
+              <span>&ge; 6 GB &mdash; 推薦，AI 模型可以順暢運作</span>
             </div>
             <div class="hw-guide-tier">
               <span class="material-symbols-outlined" style="color: var(--md-sys-color-tertiary)">warning</span>
-              <span>4~6 GB &mdash; 可運行但速度較慢</span>
+              <span>4~6 GB &mdash; 可以跑但速度會比較慢</span>
             </div>
             <div class="hw-guide-tier">
               <span class="material-symbols-outlined" style="color: var(--md-sys-color-error)">error</span>
-              <span>&lt; 4 GB &mdash; 不建議，請使用伺服器模式</span>
+              <span>&lt; 4 GB &mdash; 硬體不符合需求，建議純閱讀即可</span>
             </div>
           </div>
           <div class="hw-guide-how">
@@ -651,16 +658,16 @@
           </div>
 
           <!-- Gate 3: GPU confirmation -->
-          <div class="gate-item" class:gate-checked={confirmGpu}>
+          <div class="gate-item" class:gate-checked={confirmGpu} class:gate-disabled={vramMB === 0}>
             <label class="gate-checkbox-row">
-              <input type="checkbox" class="gate-checkbox" bind:checked={confirmGpu} />
+              <input type="checkbox" class="gate-checkbox" bind:checked={confirmGpu} disabled={vramMB === 0} />
               <span class="gate-label">
                 <span class="material-symbols-outlined gate-icon">{confirmGpu ? 'check_circle' : 'radio_button_unchecked'}</span>
                 GPU 條件確認
               </span>
             </label>
             <p class="gate-reason">
-              請確認您的裝置為桌上型電腦或筆記型電腦，且 GPU 具備足夠 VRAM（建議 6 GB 以上）。確認此項代表您已檢查硬體規格，並同意在此裝置上執行 AI 推理運算。
+              請確認你的電腦（桌機或筆電）有足夠的顯示卡記憶體（建議 6 GB 以上）。勾選代表你已經確認硬體規格，同意在這台電腦上跑 AI 模型。
             </p>
           </div>
         </div>
@@ -691,10 +698,10 @@
         <div class="readiness-verdict" class:all-ready={allGatesReady}>
           {#if allGatesReady}
             <span class="material-symbols-outlined">rocket_launch</span>
-            <span>所有條件已滿足，可以啟動自動分析</span>
+            <span>所有條件已滿足，可以開始自動分析了！</span>
           {:else}
             <span class="material-symbols-outlined">block</span>
-            <span>尚有未完成的確認項目，無法啟動自動分析</span>
+            <span>還有未完成的確認項目，請完成後才能開始自動分析</span>
           {/if}
         </div>
       </div>
@@ -749,12 +756,15 @@
     <Card variant="filled">
       <List>
         <ListItem headline="版本" supporting="PowerReader v2.6-next" />
-        <ListItem headline="授權" supporting="AGPL-3.0" />
+        <ListItem headline="開發者" supporting="Mackin Hung" />
+        <ListItem headline="Email" supporting="mackinhung@gmail.com" />
         <ListItem
-          headline="原始碼"
-          supporting="GitHub"
-          onclick={() => window.open('https://github.com/MackinHung/powerreader', '_blank')}
+          headline="GitHub"
+          supporting="github.com/MackinHung"
+          onclick={() => window.open('https://github.com/MackinHung', '_blank')}
         />
+        <ListItem headline="授權" supporting="AGPL-3.0" />
+        <ListItem headline="技術" supporting="Svelte 5 + Cloudflare Workers + WebGPU" />
       </List>
     </Card>
   </section>
