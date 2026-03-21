@@ -4,7 +4,7 @@
 - **Stack**: SvelteKit + Svelte 5 + TypeScript + Vite + Vitest
 - **Repo**: `MackinHung/PowerReader-beta` branch `master`
 - **Deploy**: Cloudflare Pages project `powerreader` (production branch = `master`)
-- **Tests**: `npm test` (vitest run) — 1028 tests (1020 pass, 8 known-failing in ClusterCardV2)
+- **Tests**: `npm test` (vitest run) — 1239 tests (all passing)
 
 ## Directory Structure
 ```
@@ -33,12 +33,11 @@ scripts/          # Build scripts
 - i18n via `t()` function from `$lib/i18n/zh-TW.js`
 
 ## Known Issues
-- ClusterCardV2.test.js: 8 failing tests (sub-cluster badge `.sub-badge` selector mismatch)
 - `@tsconfig/svelte` devDep appears unused by knip but tsconfig extends it
 
 ## Build & Test
 ```bash
-npm test           # vitest run (875 tests)
+npm test           # vitest run (1239 tests)
 npm run build      # node scripts/build.mjs
 npm run dev        # vite dev
 npm run typecheck  # svelte-check
@@ -93,3 +92,26 @@ npm run typecheck  # svelte-check
 - Svelte 5 rune stores (`.svelte.ts`): `vi.resetModules()` + dynamic import per test group for singleton reset
 - API tests: Mock `fetch` + IDB (`db.js`), test both online/offline paths + TTL freshness
 - Page logic tests: `vi.doMock()` for all dependencies, DOM assertions via `querySelector`
+
+### Round 2 (2026-03-21) — +219 tests (1020 → 1239 all passing)
+
+| Test File | Tests | Target Module | Coverage Change |
+|-----------|-------|---------------|-----------------|
+| `tests/components/Sidebar.test.js` | 32 | `components/ui/Sidebar.svelte` | 0% → ~90%+ |
+| `tests/components/AnalysisDetailPanel.test.js` | 22 | `components/analysis/AnalysisDetailPanel.svelte` | 0% → ~85%+ |
+| `tests/components/AnalysisResult.test.js` | 22 | `components/analysis/AnalysisResult.svelte` | 0% → ~85%+ |
+| `tests/components/GlobalAutoRunnerBar.test.js` | 25 | `components/analysis/GlobalAutoRunnerBar.svelte` | 0% → ~90%+ |
+| `tests/components/ShareCardDialog-extended.test.js` | 14 | `components/share/ShareCardDialog.svelte` | ~68% → ~85%+ |
+| `tests/components/GroupReport-extended.test.js` | 23 | `components/data-viz/GroupReport.svelte` | ~70% → ~85%+ |
+| `tests/core/inference-extended.test.js` | 45 | `core/inference.ts` deep branches | partial → ~90%+ |
+| `tests/pages/article-detail-branches.test.js` | 28 | `pages/article-detail.ts` functions+branches | 78% → ~99%+ |
+| `tests/components/ClusterCardV2.test.js` (fix) | 12 | Rewritten to match actual DOM | 8 failing → 0 |
+
+**New source files added:**
+- `src/lib/components/article/SourceIcon.svelte` — compact source brand icon (used by GroupReport, SourceDots, event page)
+- `src/lib/core/sources.ts` — source ID → display name/color mapping
+
+**Additional patterns:**
+- Svelte 5 component deps: mock deep dependencies (e.g., `$lib/core/sources.js`) not component constructors
+- `vi.hoisted()` for mock fn refs inside `vi.mock()` factories
+- `getAllByText()` + `container.querySelector()` when text appears in multiple child components
