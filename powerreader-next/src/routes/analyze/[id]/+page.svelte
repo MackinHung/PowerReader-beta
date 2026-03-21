@@ -199,7 +199,7 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    padding: 16px;
+    padding: var(--pr-page-padding, 16px);
   }
   .center-state {
     display: flex;
@@ -234,6 +234,8 @@
     align-items: center;
     padding: 8px 0;
     gap: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .step {
     display: flex;

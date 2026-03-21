@@ -62,12 +62,14 @@
     text-decoration: none;
     color: var(--md-sys-color-on-surface-variant);
     min-width: 48px;
+    min-height: 44px;
     position: relative;
     border: none;
     background: none;
     padding: 0;
     cursor: pointer;
     font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
   }
   .nav-item.active {
     color: #FFFFFF;

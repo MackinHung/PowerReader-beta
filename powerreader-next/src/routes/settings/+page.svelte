@@ -791,8 +791,8 @@
   .settings-page {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    padding: 16px;
+    gap: var(--pr-page-gap);
+    padding: var(--pr-page-padding);
     max-width: 800px;
     margin: 0 auto;
     width: 100%;
@@ -914,20 +914,31 @@
   .model-status-text {
     font: var(--md-sys-typescale-body-small-font);
     color: var(--md-sys-color-on-surface-variant);
-    padding-left: 44px;
+    padding-left: 0;
   }
   .model-actions {
     display: flex;
     gap: 8px;
-    padding-left: 44px;
+    padding-left: 0;
   }
   .model-error {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding-left: 44px;
+    padding-left: 0;
     font: var(--md-sys-typescale-body-small-font);
     color: var(--md-sys-color-error);
+  }
+  @media (min-width: 768px) {
+    .model-status-text {
+      padding-left: 44px;
+    }
+    .model-actions {
+      padding-left: 44px;
+    }
+    .model-error {
+      padding-left: 44px;
+    }
   }
   .model-error .material-symbols-outlined {
     font-size: 18px;
@@ -938,7 +949,12 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    padding: 0 44px 0 44px;
+    padding: 0;
+  }
+  @media (min-width: 768px) {
+    .download-progress {
+      padding: 0 44px;
+    }
   }
   .progress-header {
     display: flex;
@@ -1027,7 +1043,12 @@
     font: var(--md-sys-typescale-body-medium-font);
     outline: none;
     cursor: pointer;
-    max-width: 320px;
+    max-width: 100%;
+  }
+  @media (min-width: 768px) {
+    .gpu-select {
+      max-width: 400px;
+    }
   }
   .gpu-select:focus {
     border-color: var(--md-sys-color-primary);

@@ -156,8 +156,8 @@
   .power-pool-page {
     display: flex;
     flex-direction: column;
-    gap: 24px;
-    padding: 16px;
+    gap: var(--pr-page-gap);
+    padding: var(--pr-page-padding);
     max-width: 800px;
     margin: 0 auto;
     width: 100%;
@@ -215,8 +215,14 @@
   }
   .flywheel-ring {
     position: relative;
-    width: 300px;
-    height: 300px;
+    width: min(260px, 75vw);
+    height: min(260px, 75vw);
+  }
+  @media (min-width: 768px) {
+    .flywheel-ring {
+      width: 300px;
+      height: 300px;
+    }
   }
   .flywheel-svg {
     position: absolute;
@@ -420,10 +426,4 @@
     color: var(--md-sys-color-on-surface-variant);
   }
 
-  @media (max-width: 480px) {
-    .flywheel-ring {
-      width: 260px;
-      height: 260px;
-    }
-  }
 </style>

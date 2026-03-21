@@ -105,14 +105,18 @@
   }
   .bar-title {
     font-family: var(--pr-font-sans);
-    font-size: 22px;
-    line-height: 26px;
+    font-size: clamp(24px, 4vw, 33px);
+    line-height: 1.2;
     font-weight: 900;
     font-style: italic;
     color: var(--pr-ink);
     letter-spacing: 0.5px;
     white-space: nowrap;
     margin: 0;
+    transition: font-size var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+  }
+  .scrolled .bar-title {
+    font-size: clamp(20px, 3vw, 26px);
   }
   .bar-date {
     font: 700 12px/1 var(--pr-font-sans);

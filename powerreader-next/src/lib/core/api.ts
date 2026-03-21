@@ -367,11 +367,11 @@ export async function fetchUserPoints(token: string): Promise<ApiResponse<UserPo
 /**
  * GET /api/v1/user/me/contributions — contribution history.
  */
-export async function fetchUserContributions(token: string, { page = 1, limit = 20, days }: FetchContributionsParams = {}): Promise<ApiResponse<{ contributions: Contribution[]; pagination: PaginationMeta }>> {
+export async function fetchUserContributions(token: string, { page = 1, limit = 20, days }: FetchContributionsParams = {}): Promise<ApiResponse<{ contributions: Contribution[]; pagination: PaginationMeta; daily_counts?: Array<{ date: string; value: number }> }>> {
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (days) params.set('days', String(days));
 
-  return apiFetch<{ contributions: Contribution[]; pagination: PaginationMeta }>(`/user/me/contributions?${params}`, {
+  return apiFetch<{ contributions: Contribution[]; pagination: PaginationMeta; daily_counts?: Array<{ date: string; value: number }> }>(`/user/me/contributions?${params}`, {
     headers: { 'Authorization': `Bearer ${token}` }
   });
 }

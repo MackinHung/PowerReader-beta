@@ -95,8 +95,8 @@
   .source-page {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    padding: 16px;
+    gap: var(--pr-page-gap);
+    padding: var(--pr-page-padding);
   }
   .center-state {
     display: flex;

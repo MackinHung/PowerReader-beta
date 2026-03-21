@@ -107,15 +107,24 @@ export type KnowledgeEntry = FigureEntry | IssueEntry | IncidentEntry | Knowledg
 export interface UserProfile {
   user_hash: string;
   display_name?: string;
+  avatar_url?: string;
+  role?: string;
+  member_since?: string;
+  contribution_count?: number;
+  display_points?: string;
   created_at?: string;
   login_provider?: string;
 }
 
 export interface UserPoints {
   total_points: number;
+  total_points_cents?: number;
+  display_points?: string;
+  contribution_count?: number;
   daily_analysis_count: number;
   daily_analysis_limit: number;
   vote_rights: number;
+  last_contribution_at?: string;
   rank?: number;
 }
 
@@ -123,6 +132,8 @@ export interface Contribution {
   article_id: string;
   points_earned: number;
   created_at: string;
+  title?: string;
+  status?: string;
 }
 
 export interface BlindspotEvent {

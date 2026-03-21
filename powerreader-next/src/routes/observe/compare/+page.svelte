@@ -118,8 +118,8 @@
   .compare-page {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    padding: 16px;
+    gap: var(--pr-page-gap);
+    padding: var(--pr-page-padding);
     max-width: 1200px;
     margin: 0 auto;
     width: 100%;
@@ -150,8 +150,13 @@
   }
   .comparison-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    grid-template-columns: 1fr;
+    gap: var(--pr-page-gap);
+  }
+  @media (min-width: 768px) {
+    .comparison-grid {
+      grid-template-columns: 1fr 1fr;
+    }
   }
   .compare-card {
     display: flex;

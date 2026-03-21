@@ -116,8 +116,8 @@
   .blindspot-page {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 12px 16px;
+    gap: var(--pr-page-gap);
+    padding: var(--pr-page-padding);
   }
   .filter-chips {
     display: flex;

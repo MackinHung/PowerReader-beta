@@ -220,7 +220,7 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    padding: 16px;
+    padding: var(--pr-page-padding, 16px);
     max-width: 720px;
     margin: 0 auto;
   }
@@ -276,6 +276,7 @@
     margin: 0;
     font: var(--pr-heading-font, var(--md-sys-typescale-headline-small-font));
     color: var(--md-sys-color-on-surface);
+    overflow-wrap: break-word;
   }
 
   .entry-id {
@@ -333,12 +334,18 @@
 
   .entry-actions {
     display: flex;
-    justify-content: flex-end;
+    flex-direction: column;
     gap: 8px;
     padding-top: 8px;
     border-top: 1px solid var(--md-sys-color-outline-variant);
     margin-top: 4px;
-    flex-wrap: wrap;
+  }
+  @media (min-width: 768px) {
+    .entry-actions {
+      flex-direction: row;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
   }
   .report-btn {
     display: inline-flex;

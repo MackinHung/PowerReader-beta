@@ -266,13 +266,8 @@
   .article-page {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    padding: 16px;
-  }
-  .article-page.desktop {
-    flex-direction: row;
-    gap: 24px;
-    align-items: flex-start;
+    gap: var(--pr-page-gap, 16px);
+    padding: var(--pr-page-padding, 16px);
   }
   .article-left {
     flex: 1;
@@ -286,11 +281,22 @@
     flex-direction: column;
     gap: 12px;
   }
-  .article-page.desktop .article-right {
-    width: 360px;
-    flex-shrink: 0;
-    position: sticky;
-    top: 80px;
+  @media (min-width: 768px) {
+    .article-page {
+      flex-direction: row;
+      align-items: flex-start;
+    }
+    .article-right {
+      width: 300px;
+      flex-shrink: 0;
+    }
+  }
+  @media (min-width: 1024px) {
+    .article-right {
+      width: 360px;
+      position: sticky;
+      top: 80px;
+    }
   }
 
   .loading-state, .error-state {
@@ -326,6 +332,7 @@
     font: var(--md-sys-typescale-headline-small-font);
     color: var(--md-sys-color-on-surface);
     line-height: 1.4;
+    overflow-wrap: break-word;
   }
   .original-link {
     display: inline-flex;

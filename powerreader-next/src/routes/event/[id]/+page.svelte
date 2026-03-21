@@ -412,8 +412,8 @@
   .cluster-detail {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    padding: 16px;
+    gap: var(--pr-page-gap);
+    padding: var(--pr-page-padding);
     max-width: 900px;
     margin: 0 auto;
     width: 100%;
@@ -477,8 +477,12 @@
   }
   .detail-title {
     margin: 16px 0;
-    font: 900 40px/1.2 var(--pr-font-sans);
+    font-size: var(--pr-detail-title);
+    font-weight: 900;
+    line-height: 1.2;
+    font-family: var(--pr-font-sans);
     color: var(--pr-ink);
+    overflow-wrap: break-word;
   }
 
   /* === Analysis Progress === */
@@ -777,10 +781,4 @@
     gap: 8px;
   }
 
-  @media (min-width: 768px) {
-    .detail-title {
-      font-size: 32px;
-      line-height: 40px;
-    }
-  }
 </style>

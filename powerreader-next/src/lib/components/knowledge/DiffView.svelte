@@ -149,13 +149,13 @@
 
   .diff-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 8px;
   }
 
-  @media (max-width: 600px) {
+  @media (min-width: 768px) {
     .diff-grid {
-      grid-template-columns: 1fr;
+      grid-template-columns: 1fr 1fr;
     }
   }
 

@@ -140,6 +140,14 @@
     });
   });
 
+  // Fetch user profile on auth (sidebar avatar)
+  $effect(() => {
+    if (typeof window === 'undefined') return;
+    if (authStore.isAuthenticated && !authStore.userProfile) {
+      untrack(() => authStore.fetchProfile());
+    }
+  });
+
   // SW sync-complete message handler (runs once)
   $effect(() => {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
@@ -274,6 +282,9 @@
       expanded={media.sidebarExpanded}
       ontoggle={media.toggleSidebar}
       onaction={handleAutoAnalysis}
+      isAuthenticated={authStore.isAuthenticated}
+      avatarUrl={authStore.userProfile?.avatar_url ?? ''}
+      displayName={authStore.userProfile?.display_name ?? ''}
     />
   {/if}
 
@@ -377,6 +388,7 @@
   .content-wrapper {
     max-width: var(--content-max-width);
     margin: 0 auto;
+    padding: 0 var(--pr-page-padding);
   }
   .sync-snackbar {
     position: fixed;

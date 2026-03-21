@@ -115,7 +115,7 @@
     display: flex;
     flex-direction: column;
     min-height: calc(100vh - 64px);
-    padding: 24px 16px;
+    padding: var(--pr-page-padding);
   }
   .step-dots {
     display: flex;
@@ -162,8 +162,18 @@
     margin: 0;
     font: var(--md-sys-typescale-body-large-font);
     color: var(--md-sys-color-on-surface-variant);
-    max-width: 320px;
+    max-width: 100%;
     line-height: 1.6;
+  }
+  @media (min-width: 768px) {
+    .step-description {
+      max-width: 80%;
+    }
+  }
+  @media (min-width: 1024px) {
+    .step-description {
+      max-width: 60%;
+    }
   }
   .camp-demo {
     width: 100%;

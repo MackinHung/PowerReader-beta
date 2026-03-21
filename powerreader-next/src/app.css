@@ -135,6 +135,15 @@
   --md-sys-state-pressed-opacity: 0.12;
   --md-sys-state-dragged-opacity: 0.16;
 
+  /* === Responsive Design Tokens === */
+  --pr-page-padding: 16px;
+  --pr-page-gap: 16px;
+  --pr-hero-title: clamp(28px, 5vw, 42px);
+  --pr-detail-title: clamp(24px, 4vw, 40px);
+  --pr-section-heading: clamp(18px, 3vw, 24px);
+  --pr-section-icon: clamp(20px, 3.5vw, 28px);
+  --pr-stat-number: clamp(24px, 5vw, 36px);
+
   /* Motion */
   --md-sys-motion-duration-short1: 50ms;
   --md-sys-motion-duration-short2: 100ms;
@@ -243,6 +252,20 @@ body {
 @keyframes slide-in-top {
   from { transform: translateY(-100%); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+/* === Responsive Token Overrides === */
+@media (min-width: 768px) {
+  :root {
+    --pr-page-padding: 24px;
+    --pr-page-gap: 20px;
+  }
+}
+@media (min-width: 1024px) {
+  :root {
+    --pr-page-padding: 32px;
+    --pr-page-gap: 24px;
+  }
 }
 
 /* Reduced motion */

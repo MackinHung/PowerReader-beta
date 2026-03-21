@@ -334,7 +334,7 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    padding: 16px;
+    padding: var(--pr-page-padding, 16px);
     max-width: 720px;
     margin: 0 auto;
   }

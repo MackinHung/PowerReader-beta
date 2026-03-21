@@ -58,13 +58,13 @@
 
   .stances-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr;
     gap: 12px;
   }
 
-  @media (max-width: 768px) {
+  @media (min-width: 768px) {
     .stances-grid {
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(3, 1fr);
     }
   }
 

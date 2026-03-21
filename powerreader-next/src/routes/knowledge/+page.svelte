@@ -173,8 +173,8 @@
   .knowledge-page {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 16px;
+    gap: var(--pr-page-gap);
+    padding: var(--pr-page-padding);
   }
 
   /* Search Bar */
@@ -239,12 +239,12 @@
   /* Grid */
   .knowledge-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 12px;
+    grid-template-columns: 1fr;
+    gap: var(--pr-page-gap);
   }
-  @media (max-width: 375px) {
+  @media (min-width: 768px) {
     .knowledge-grid {
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     }
   }
 

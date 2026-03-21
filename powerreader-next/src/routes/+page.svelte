@@ -411,8 +411,8 @@
   .home-page {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    padding: 16px;
+    gap: var(--pr-page-gap);
+    padding: var(--pr-page-gap) var(--pr-page-padding);
   }
   .search-section {
     width: 100%;
@@ -452,7 +452,7 @@
     color: #ffffff;
     border-radius: 16px;
     border: 4px solid var(--pr-ink);
-    padding: 40px;
+    padding: 24px;
     min-height: 320px;
     width: 100%;
     position: relative;
@@ -466,6 +466,7 @@
     top: 24px;
     left: 24px;
     display: flex;
+    flex-wrap: wrap;
     gap: 12px;
     align-items: center;
   }
@@ -492,11 +493,12 @@
     margin-right: 4px;
   }
   .hero-title {
-    font: 900 28px/1.2 var(--pr-font-sans);
+    font: 900 var(--pr-hero-title)/1.2 var(--pr-font-sans);
     color: #ffffff;
     margin: 64px 0 24px 0;
-    width: 75%;
+    width: 100%;
     transition: color 200ms ease;
+    overflow-wrap: break-word;
   }
   .hero-card:hover .hero-title {
     text-decoration: underline;
@@ -505,8 +507,8 @@
   }
   .hero-bottom-info {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
+    flex-direction: column;
+    gap: 16px;
     width: 100%;
   }
   .hero-stats {
@@ -518,7 +520,7 @@
     flex-direction: column;
   }
   .stat-number {
-    font: 900 36px/1 var(--pr-font-sans);
+    font: 900 var(--pr-stat-number)/1 var(--pr-font-sans);
     color: #ffffff;
   }
   .stat-label {
@@ -528,7 +530,7 @@
     margin-top: 4px;
   }
   .hero-viz {
-    width: 41%; /* 5/12 approx */
+    width: 100%;
     display: flex;
     justify-content: flex-end;
   }
@@ -544,11 +546,11 @@
     margin: 24px 0 32px 0;
     padding-left: 0;
     border-left: none;
-    font: 900 30px/36px var(--pr-font-sans);
+    font: 900 var(--pr-section-heading)/1.2 var(--pr-font-sans);
     color: var(--pr-ink);
   }
   .section-icon {
-    font-size: 40px;
+    font-size: var(--pr-section-icon);
     color: #FF5722;
     flex-shrink: 0;
   }
@@ -613,12 +615,20 @@
   }
 
   @media (min-width: 768px) {
-    .hero-title {
-      font-size: 36px;
-      line-height: 44px;
+    .hero-card {
+      padding: 40px;
     }
-    .hero-content {
-      padding: 32px;
+    .hero-title {
+      width: 75%;
+    }
+    .hero-bottom-info {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 0;
+    }
+    .hero-viz {
+      width: 41%;
     }
   }
 </style>

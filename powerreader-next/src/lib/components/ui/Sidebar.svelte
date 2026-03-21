@@ -1,7 +1,7 @@
 <script>
   import { page } from '$app/state';
 
-  let { items = [], extraItems = [], expanded = true, ontoggle, onaction } = $props();
+  let { items = [], extraItems = [], expanded = true, ontoggle, onaction, isAuthenticated = false, avatarUrl = '', displayName = '' } = $props();
 
   let currentPath = $derived(page.url.pathname);
 
@@ -88,9 +88,38 @@
   </div>
 
   <div class="sidebar-bottom">
+    {#if isAuthenticated}
+      <a
+        href="/profile"
+        class="nav-item user-row"
+        class:active={isActive('/profile')}
+        title={expanded ? undefined : displayName || '個人'}
+      >
+        {#if avatarUrl}
+          <img src={avatarUrl} alt="" class="user-avatar" referrerpolicy="no-referrer" />
+        {:else}
+          <span class="material-symbols-outlined nav-icon">account_circle</span>
+        {/if}
+        {#if expanded}
+          <span class="nav-label">{displayName || '使用者'}</span>
+        {/if}
+      </a>
+    {:else}
+      <a
+        href="/profile"
+        class="nav-item"
+        class:active={isActive('/profile')}
+        title={expanded ? undefined : '登入'}
+      >
+        <span class="material-symbols-outlined nav-icon">login</span>
+        {#if expanded}
+          <span class="nav-label">登入</span>
+        {/if}
+      </a>
+    {/if}
     <a
       href="/settings"
-      class="nav-item"
+      class="nav-item settings-link"
       class:active={currentPath === '/settings'}
       title={expanded ? undefined : '設定'}
     >
@@ -269,6 +298,24 @@
     background: rgba(255, 255, 255, 0.05);
     color: #ffffff;
     border-left-color: #FF5722;
+  }
+  .settings-link .nav-icon {
+    color: #FF5722;
+  }
+  .settings-link.active .nav-icon {
+    color: #000000;
+  }
+  .user-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 0;
+    border: 2px solid #FF5722;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+  .rail .user-avatar {
+    width: 24px;
+    height: 24px;
   }
 
   @media (max-width: 767px) {
