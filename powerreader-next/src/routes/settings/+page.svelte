@@ -501,6 +501,10 @@
           </span>
         {/if}
 
+        <p class="model-note">
+          模型資料儲存在瀏覽器內部儲存空間（Browser Storage），不會在你的硬碟上產生任何可見的檔案。這些資料僅限本網站存取，不會出現在你的下載資料夾或檔案總管中。清除瀏覽器資料時會一併移除。
+        </p>
+
         <!-- Actions -->
         <div class="model-actions">
           {#if !modelReady && !modelLoading}
@@ -919,6 +923,13 @@
     color: var(--md-sys-color-on-surface-variant);
     padding-left: 0;
   }
+  .model-note {
+    margin: 4px 0 0;
+    padding-left: 0;
+    font: var(--md-sys-typescale-body-small-font);
+    color: var(--md-sys-color-outline);
+    line-height: 1.5;
+  }
   .model-actions {
     display: flex;
     gap: 8px;
@@ -940,6 +951,9 @@
       padding-left: 44px;
     }
     .model-error {
+      padding-left: 44px;
+    }
+    .model-note {
       padding-left: 44px;
     }
   }
