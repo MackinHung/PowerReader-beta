@@ -169,15 +169,6 @@ export interface SourceProfile {
   article_count: number;
 }
 
-export type BiasCategory =
-  | 'extreme_left'
-  | 'left'
-  | 'center_left'
-  | 'center'
-  | 'center_right'
-  | 'right'
-  | 'extreme_right';
-
 // ── Group Analysis Types ──
 
 export type CampType = 'green' | 'white' | 'blue' | 'gray';

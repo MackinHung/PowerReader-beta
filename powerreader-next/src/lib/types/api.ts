@@ -65,8 +65,6 @@ export interface SearchKnowledgeParams {
   type?: string;
 }
 
-export type ReportReason = string;
-
 export interface FetchClustersParams {
   page?: number;
   limit?: number;

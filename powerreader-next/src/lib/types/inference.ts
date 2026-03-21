@@ -47,14 +47,6 @@ export interface QueueStatus {
   pending: string[];
 }
 
-export interface QueueJob {
-  articleId: string;
-  article: Article;
-  options: AnalysisOptions;
-  resolve: (value: AnalysisResult) => void;
-  reject: (reason: unknown) => void;
-}
-
 export interface BenchmarkResult {
   mode: GPUTier;
   latency_ms: number;
@@ -104,14 +96,6 @@ export interface AutoRunnerStats {
 export interface EtaEstimate {
   remainingMs: number;
   confidence: number;
-}
-
-export interface BrowserInfo {
-  name: string;
-  version: number;
-  webgpuMinVersion: number;
-  isCompatible: boolean;
-  message: string;
 }
 
 /** Cryptographic fingerprint proving an analysis was produced by the inference pipeline */
