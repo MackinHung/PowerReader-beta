@@ -59,6 +59,14 @@
   let showNav = $derived(
     !currentPath.startsWith('/onboarding') && !currentPath.startsWith('/auth')
   );
+  let mobileSidebarOpen = $state(false);
+
+  // Close mobile drawer on navigation
+  $effect(() => {
+    currentPath;
+    mobileSidebarOpen = false;
+  });
+
   let isOnline = $state(true);
   let pendingSyncCount = $state(0);
   let snackbarMessage = $state('');
@@ -257,14 +265,33 @@
 {/if}
 
 {#if media.isMobile}
-  <!-- Mobile layout: TopAppBar + content + NavigationBar -->
-  <TopAppBar {title} {showBack} onback={() => history.back()}>
+  <!-- Mobile layout: TopAppBar + Sidebar drawer + content + NavigationBar -->
+  <TopAppBar {title} {showBack} onback={() => history.back()} showMenuToggle={showNav && !showBack} ontoggle={() => mobileSidebarOpen = true}>
     {#if currentPath === '/profile'}
       <a href="/settings" class="settings-link">
         <span class="material-symbols-outlined">settings</span>
       </a>
     {/if}
   </TopAppBar>
+
+  {#if mobileSidebarOpen}
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <div class="mobile-drawer-backdrop" onclick={() => mobileSidebarOpen = false} role="presentation">
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <div class="mobile-drawer" onclick={(e) => e.stopPropagation()} role="navigation">
+        <Sidebar
+          items={navItems}
+          extraItems={sidebarExtraItems}
+          expanded={true}
+          ontoggle={() => mobileSidebarOpen = false}
+          onaction={() => { mobileSidebarOpen = false; handleAutoAnalysis(); }}
+          isAuthenticated={authStore.isAuthenticated}
+          avatarUrl={authStore.userProfile?.avatar_url ?? ''}
+          displayName={authStore.userProfile?.display_name ?? ''}
+        />
+      </div>
+    </div>
+  {/if}
 
   <main class="page-content" class:has-nav={showNav}>
     {@render children?.()}
@@ -368,11 +395,41 @@
     padding-bottom: 0;
   }
   .settings-link {
-    color: var(--md-sys-color-on-surface);
+    color: #FF5722;
     text-decoration: none;
     display: flex;
     align-items: center;
     padding: 8px;
+  }
+
+  /* Mobile drawer overlay */
+  .mobile-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    background: rgba(0, 0, 0, 0.5);
+    animation: fade-in 200ms ease-out;
+  }
+  .mobile-drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    z-index: 301;
+    animation: slide-in-left 250ms var(--md-sys-motion-easing-emphasized-decelerate);
+  }
+  .mobile-drawer :global(.sidebar) {
+    display: flex !important;
+    width: 280px !important;
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slide-in-left {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
   }
 
   /* Desktop layout offsets */
