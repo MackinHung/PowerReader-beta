@@ -1,6 +1,7 @@
 <script>
   import Card from '$lib/components/ui/Card.svelte';
   import EmotionMeter from '$lib/components/data-viz/EmotionMeter.svelte';
+  import SourceIcon from '$lib/components/article/SourceIcon.svelte';
   import { t } from '$lib/i18n/zh-TW.js';
 
   /** @type {import('$lib/types/models.js').GroupAnalysisResult | null} */
@@ -52,6 +53,7 @@
           {#each report.source_breakdowns as bd}
             <div class="source-row">
               <span class="camp-dot" style="background: {CAMP_COLORS[bd.camp]}"></span>
+              <SourceIcon source={bd.source} />
               <span class="source-name">{bd.source}</span>
               <span class="source-camp" style="color: {CAMP_COLORS[bd.camp]}">
                 {CAMP_LABELS[bd.camp]}

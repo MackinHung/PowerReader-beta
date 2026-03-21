@@ -3,6 +3,8 @@
    * SourceDots — neutral dot grid showing source distribution.
    * No camp coloring — all dots use the same neutral color.
    */
+  import SourceIcon from '$lib/components/article/SourceIcon.svelte';
+
   let { sources = [] } = $props();
 
   // Show at most 5 sources, truncate rest
@@ -26,6 +28,7 @@
           <span class="dot-overflow">+{src.count - 8}</span>
         {/if}
       </div>
+      <SourceIcon source={src.source} />
       <span class="source-name">{src.source}</span>
     </div>
   {/each}

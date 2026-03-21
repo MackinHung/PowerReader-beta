@@ -187,13 +187,11 @@
         </Card>
       {/if}
 
-      <div class="action-row">
-        {#if articleShareData}
-          <ShareCardButton articleData={articleShareData} variant="icon" />
-        {/if}
-      </div>
-
-      {#if article.analysis_status !== 'done'}
+      {#if article.analysis_status === 'done'}
+        <div class="share-row">
+          <ShareCardButton articleData={articleShareData} variant="text" />
+        </div>
+      {:else}
         <Button onclick={goAnalyze}>
           <span class="material-symbols-outlined">psychology</span>
           分析此文章
@@ -202,27 +200,37 @@
     </div>
 
     <div class="article-right">
-      {#if article.bias_score != null}
-        <Card variant="filled">
-          <div class="viz-block">
-            <span class="viz-label">立場偏向</span>
+      <Card variant="filled">
+        <div class="viz-block">
+          <span class="viz-label">立場偏向</span>
+          {#if article.bias_score != null}
             <BiasSpectrum score={article.bias_score} />
-          </div>
-        </Card>
-      {/if}
+          {:else}
+            <div class="viz-placeholder">
+              <span class="material-symbols-outlined placeholder-icon">psychology</span>
+              <span class="placeholder-text">尚未分析</span>
+            </div>
+          {/if}
+        </div>
+      </Card>
 
-      {#if article.camp_ratio}
-        <Card variant="filled">
-          <div class="viz-block">
-            <span class="viz-label">陣營比例</span>
+      <Card variant="filled">
+        <div class="viz-block">
+          <span class="viz-label">陣營比例</span>
+          {#if article.camp_ratio}
             <CampBar
               green={article.camp_ratio?.green ?? 0}
               white={article.camp_ratio?.white ?? 0}
               blue={article.camp_ratio?.blue ?? 0}
             />
-          </div>
-        </Card>
-      {/if}
+          {:else}
+            <div class="viz-placeholder">
+              <span class="material-symbols-outlined placeholder-icon">group_work</span>
+              <span class="placeholder-text">尚未分析</span>
+            </div>
+          {/if}
+        </div>
+      </Card>
 
       <!-- Knowledge Panel -->
       {#if knowledgeLoading}
@@ -375,26 +383,29 @@
     line-height: 1.6;
     white-space: pre-wrap;
   }
-  .action-row {
+  .share-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 8px;
     padding: 8px 0;
   }
-  .icon-action {
-    display: inline-flex;
+  .viz-placeholder {
+    display: flex;
     align-items: center;
     justify-content: center;
-    width: 48px;
-    height: 48px;
-    border: none;
-    border-radius: var(--md-sys-shape-corner-full);
-    background: transparent;
-    color: var(--md-sys-color-on-surface-variant);
-    cursor: pointer;
+    gap: 8px;
+    padding: 16px;
+    border: 2px dashed var(--md-sys-color-outline-variant);
   }
-  .icon-action:hover {
-    background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
+  .placeholder-icon {
+    font-size: 20px;
+    color: var(--md-sys-color-on-surface-variant);
+    opacity: 0.5;
+  }
+  .placeholder-text {
+    font: var(--md-sys-typescale-label-medium-font);
+    color: var(--md-sys-color-on-surface-variant);
+    opacity: 0.6;
   }
   .skeleton-block {
     display: flex;

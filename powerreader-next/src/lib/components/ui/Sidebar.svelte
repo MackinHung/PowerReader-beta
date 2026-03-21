@@ -299,11 +299,17 @@
     color: #ffffff;
     border-left-color: #FF5722;
   }
+  .sidebar-bottom .nav-item.active {
+    background: rgba(255, 87, 34, 0.15);
+    color: #FFFFFF;
+    border-left-color: #FF5722;
+  }
+  .sidebar-bottom .nav-item.active .nav-icon {
+    color: #FF5722;
+    font-variation-settings: 'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 24;
+  }
   .settings-link .nav-icon {
     color: #FF5722;
-  }
-  .settings-link.active .nav-icon {
-    color: #000000;
   }
   .user-avatar {
     width: 28px;
