@@ -81,6 +81,27 @@ Client (Cloudflare Pages PWA)
 | Crawler | GitHub Actions (every 2h), 13 RSS/API sources |
 | Auth | Google OAuth (server-side redirect) + JWT RS256 |
 
+## Support This Project
+
+PowerReader 是一個完全開源的公民科技專案，致力於讓每個人都能用 AI 理解新聞背後的立場與偏見。
+
+我們靠社群的力量維持營運 — 伺服器費用、資料處理、模型優化都需要持續投入。
+
+### How to Support
+
+| 管道 | 說明 |
+|------|------|
+| [GitHub Sponsors](https://github.com/sponsors/MackinHung) | 零手續費，直接支持開發者 |
+| [Open Collective](https://opencollective.com/powerreader) | 完全透明的收支紀錄 |
+
+即使是一杯咖啡的金額，也能幫助我們持續改善台灣的新聞分析工具。
+
+### Why Sponsor?
+
+- **100% 開源** — 你的贊助讓公共財持續存在
+- **透明化** — 所有資金用途公開可查
+- **公民驅動** — 不接受政黨或企業廣告收入
+
 ## License
 
 AGPL-3.0 — see [LICENSE](LICENSE)
