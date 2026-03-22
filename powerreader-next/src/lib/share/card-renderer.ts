@@ -18,11 +18,13 @@ const CONTENT_W = W - PAD * 2;
 
 // ── Colors ──────────────────────────────────────────────────
 
-const BG = '#FAFAF7';
-const GOLD = '#C9A96E';
+const BG = '#FFFFFF';
+const ACCENT = '#FF5722';
+const INK = '#1A1A1A';
 const TEXT_PRIMARY = '#1A1A1A';
 const TEXT_SECONDARY = '#6B6B6B';
-const GOLD_LINE_ALPHA = 'rgba(201, 169, 110, 0.4)';
+const CYAN = '#00E5FF';
+const BORDER = '#1A1A1A';
 
 const BIAS_COLORS = [
   '#1B5E20', '#2E7D32', '#66BB6A', '#9E9E9E',
@@ -149,40 +151,60 @@ function drawBackground(ctx: CanvasRenderingContext2D): void {
 }
 
 function drawHeader(ctx: CanvasRenderingContext2D, y: number): number {
-  // Brand title
-  ctx.font = `bold 36px ${SERIF}`;
-  ctx.fillStyle = GOLD;
-  ctx.fillText('PowerReader · 新聞立場分析', PAD, y + 36);
-  y += 72;
+  // Left accent bar
+  ctx.fillStyle = ACCENT;
+  ctx.fillRect(PAD, y, 5, 40);
 
+  // Brand
+  ctx.font = `900 34px ${SANS}`;
+  ctx.fillStyle = INK;
+  ctx.fillText('PowerReader', PAD + 16, y + 28);
+
+  // Subtitle
+  const brandW = ctx.measureText('PowerReader').width;
+  ctx.font = `28px ${SANS}`;
+  ctx.fillStyle = TEXT_SECONDARY;
+  ctx.fillText('新聞立場分析', PAD + 16 + brandW + 12, y + 28);
+
+  y += 64;
   return y;
 }
 
 function drawTitle(ctx: CanvasRenderingContext2D, title: string, y: number): number {
-  ctx.font = `bold 48px ${SERIF}`;
-  ctx.fillStyle = TEXT_PRIMARY;
-  const { lines, totalHeight } = wrapText(ctx, title, CONTENT_W, 64, 3);
+  ctx.font = `900 48px ${SANS}`;
+  ctx.fillStyle = INK;
+  const { lines } = wrapText(ctx, title, CONTENT_W, 64, 3);
   for (const line of lines) {
     y += 56;
     ctx.fillText(line, PAD, y);
   }
-  y += 30;
+  y += 24;
   return y;
 }
 
 function drawSourceBadge(ctx: CanvasRenderingContext2D, text: string, y: number): number {
-  ctx.font = `28px ${SANS}`;
-  ctx.fillStyle = TEXT_SECONDARY;
-  ctx.fillText(text, PAD, y + 28);
-  y += 50;
+  // Source with border box
+  ctx.font = `24px ${SANS}`;
+  const tw = ctx.measureText(text).width;
+  ctx.fillStyle = '#F5F5F5';
+  ctx.fillRect(PAD, y, tw + 24, 38);
+  ctx.strokeStyle = BORDER;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(PAD, y, tw + 24, 38);
+  ctx.fillStyle = INK;
+  ctx.fillText(text, PAD + 12, y + 26);
+  y += 54;
   return y;
 }
 
 function drawSectionLabel(ctx: CanvasRenderingContext2D, label: string, y: number): number {
-  y += 30;
-  ctx.font = `600 26px ${SANS}`;
-  ctx.fillStyle = GOLD;
-  ctx.fillText(label, PAD, y + 24);
+  y += 24;
+  // Left accent mark
+  ctx.fillStyle = ACCENT;
+  ctx.fillRect(PAD, y + 6, 4, 20);
+  ctx.font = `700 26px ${SANS}`;
+  ctx.fillStyle = INK;
+  ctx.fillText(label, PAD + 14, y + 24);
   y += 40;
   return y;
 }
@@ -443,22 +465,34 @@ function drawEventStats(
     { value: String(data.sourceCount), label: '家媒體' },
   ];
   const colW = w / cols.length;
+  const boxH = 120;
+
+  // Border box
+  ctx.strokeStyle = BORDER;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x, y, w, boxH);
+
+  // Vertical divider
+  ctx.beginPath();
+  ctx.moveTo(x + colW, y);
+  ctx.lineTo(x + colW, y + boxH);
+  ctx.stroke();
 
   for (let i = 0; i < cols.length; i++) {
     const cx = x + i * colW;
 
     // Large number
-    ctx.font = `900 72px ${SANS}`;
-    ctx.fillStyle = TEXT_PRIMARY;
-    ctx.fillText(cols[i].value, cx + 8, y + 68);
+    ctx.font = `900 64px ${SANS}`;
+    ctx.fillStyle = INK;
+    ctx.fillText(cols[i].value, cx + 20, y + 60);
 
     // Label below
-    ctx.font = `28px ${SANS}`;
+    ctx.font = `24px ${SANS}`;
     ctx.fillStyle = TEXT_SECONDARY;
-    ctx.fillText(cols[i].label, cx + 8, y + 108);
+    ctx.fillText(cols[i].label, cx + 20, y + 96);
   }
 
-  y += 130;
+  y += boxH + 16;
 
   return y;
 }
@@ -471,25 +505,26 @@ function drawAnalysisProgressBar(
   const { analyzed, total } = progress;
   const pct = total > 0 ? Math.min(100, Math.round((analyzed / total) * 100)) : 0;
 
-  // Label
-  ctx.font = `600 26px ${SANS}`;
-  ctx.fillStyle = GOLD;
-  ctx.fillText('分析進度', x, y + 26);
+  // Label with accent mark
+  ctx.fillStyle = ACCENT;
+  ctx.fillRect(x, y + 4, 4, 20);
+  ctx.font = `700 26px ${SANS}`;
+  ctx.fillStyle = INK;
+  ctx.fillText('分析進度', x + 14, y + 24);
   y += 44;
 
-  // Bar background
+  // Bar — white bg + black border + cyan fill
   const barH = 20;
-  ctx.fillStyle = '#E8E4DE';
+  ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(x, y, w, barH);
+  ctx.strokeStyle = BORDER;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x, y, w, barH);
 
-  // Bar fill
   if (pct > 0) {
     const fillW = Math.max(20, (pct / 100) * w);
-    const grad = ctx.createLinearGradient(x, y, x + fillW, y);
-    grad.addColorStop(0, GOLD);
-    grad.addColorStop(1, '#E8C97A');
-    ctx.fillStyle = grad;
-    ctx.fillRect(x, y, fillW, barH);
+    ctx.fillStyle = CYAN;
+    ctx.fillRect(x + 1, y + 1, fillW - 2, barH - 2);
   }
   y += barH + 14;
 
@@ -507,27 +542,34 @@ function drawAnalysisCTA(
   x: number, y: number, w: number,
   total: number,
 ): number {
+  // CTA box with accent left border
+  const boxH = 140;
+  ctx.strokeStyle = BORDER;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x, y, w, boxH);
+  ctx.fillStyle = ACCENT;
+  ctx.fillRect(x, y, 5, boxH);
+
   // Status headline
-  ctx.font = `bold 36px ${SANS}`;
-  ctx.fillStyle = GOLD;
-  ctx.textAlign = 'center';
-  ctx.fillText('等待公民算力分析', x + w / 2, y + 36);
-  y += 64;
+  ctx.font = `900 34px ${SANS}`;
+  ctx.fillStyle = ACCENT;
+  ctx.fillText('等待公民算力分析', x + 24, y + 42);
 
   // Invitation copy
-  ctx.font = `28px ${SANS}`;
+  ctx.font = `26px ${SANS}`;
   ctx.fillStyle = TEXT_SECONDARY;
-  ctx.fillText('點擊加入，用你的裝置', x + w / 2, y + 28);
-  y += 40;
-  ctx.fillText('幫助揭示這則事件的媒體偏見', x + w / 2, y + 28);
-  y += 60;
+  ctx.fillText('點擊加入，用你的裝置', x + 24, y + 80);
+  ctx.fillText('幫助揭示這則事件的媒體偏見', x + 24, y + 112);
 
-  ctx.textAlign = 'left';
+  y += boxH + 16;
 
-  // Compact progress bar
+  // Progress bar
   const barH = 16;
-  ctx.fillStyle = '#E8E4DE';
+  ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(x, y, w, barH);
+  ctx.strokeStyle = BORDER;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x, y, w, barH);
   y += barH + 12;
 
   // Progress text
@@ -539,9 +581,9 @@ function drawAnalysisCTA(
   return y;
 }
 
-function drawFooterAt(ctx: CanvasRenderingContext2D, y: number): void {
-  ctx.font = `26px ${SANS}`;
-  ctx.fillStyle = GOLD;
+function drawFooterContent(ctx: CanvasRenderingContext2D, y: number): void {
+  ctx.font = `600 26px ${SANS}`;
+  ctx.fillStyle = ACCENT;
   ctx.textAlign = 'center';
   ctx.fillText('powerreader.pages.dev', W / 2, y + 28);
 
@@ -551,20 +593,12 @@ function drawFooterAt(ctx: CanvasRenderingContext2D, y: number): void {
   ctx.textAlign = 'left';
 }
 
+function drawFooterAt(ctx: CanvasRenderingContext2D, y: number): void {
+  drawFooterContent(ctx, y);
+}
+
 function drawFooter(ctx: CanvasRenderingContext2D): void {
-  const y = H - 90;
-
-  // URL
-  ctx.font = `26px ${SANS}`;
-  ctx.fillStyle = GOLD;
-  ctx.textAlign = 'center';
-  ctx.fillText('powerreader.pages.dev', W / 2, y + 28);
-
-  // Tagline
-  ctx.font = `22px ${SANS}`;
-  ctx.fillStyle = TEXT_SECONDARY;
-  ctx.fillText('利用 AI 看透新聞濾鏡 · 透過公民驅動透明', W / 2, y + 60);
-  ctx.textAlign = 'left';
+  drawFooterContent(ctx, H - 90);
 }
 
 // ── Canvas Utilities ────────────────────────────────────────
