@@ -85,7 +85,7 @@ describe('card-renderer', () => {
     it('draws header text', async () => {
       await renderArticleCard(baseData);
       const fillTextCalls = mockCtx.fillText.mock.calls.map(c => c[0]);
-      expect(fillTextCalls.some(t => t.includes('PowerReader'))).toBe(true);
+      expect(fillTextCalls.some(t => t.includes('POWERREADER'))).toBe(true);
     });
 
     it('draws title', async () => {
@@ -129,7 +129,7 @@ describe('card-renderer', () => {
       await renderArticleCard(baseData);
       const fillTextCalls = mockCtx.fillText.mock.calls.map(c => c[0]);
       expect(fillTextCalls.some(t => t.includes('powerreader.pages.dev'))).toBe(true);
-      expect(fillTextCalls.some(t => t.includes('透過公民驅動透明'))).toBe(true);
+      expect(fillTextCalls.some(t => t.includes('新聞立場透視'))).toBe(true);
     });
 
     it('handles non-political article (no bias/camp)', async () => {
@@ -225,8 +225,8 @@ describe('card-renderer', () => {
       const data = { ...baseData, analysisProgress: { analyzed: 0, total: 12 } };
       await renderEventCard(data);
       const fillTextCalls = mockCtx.fillText.mock.calls.map(c => c[0]);
-      expect(fillTextCalls.some(t => t.includes('等待公民算力分析'))).toBe(true);
-      expect(fillTextCalls.some(t => t.includes('幫助揭示'))).toBe(true);
+      expect(fillTextCalls.some(t => t.includes('這則事件尚未被分析'))).toBe(true);
+      expect(fillTextCalls.some(t => t.includes('揭露立場偏見'))).toBe(true);
       expect(fillTextCalls.some(t => t.includes('0/12'))).toBe(true);
       // Should NOT draw the normal progress label
       expect(fillTextCalls.some(t => t === '分析進度')).toBe(false);

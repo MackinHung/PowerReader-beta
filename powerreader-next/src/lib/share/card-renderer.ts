@@ -126,7 +126,12 @@ export async function renderEventCard(data: EventCardData): Promise<Blob> {
   // Footer right after content
   y += 40;
   drawFooterAt(ctx, y);
-  const finalH = y + 80 + PAD;
+  y += 50;
+
+  // Bottom border anchor — 8px accent bar
+  ctx.fillStyle = ACCENT;
+  ctx.fillRect(0, y, W, 8);
+  const finalH = y + 8 + 20;
 
   // Crop to actual content height
   const cropped = createCanvas(W, finalH);
@@ -151,22 +156,22 @@ function drawBackground(ctx: CanvasRenderingContext2D): void {
 }
 
 function drawHeader(ctx: CanvasRenderingContext2D, y: number): number {
-  // Left accent bar
+  // Full-width accent block
+  const blockH = 130;
   ctx.fillStyle = ACCENT;
-  ctx.fillRect(PAD, y, 5, 40);
+  ctx.fillRect(0, 0, W, blockH);
 
-  // Brand
-  ctx.font = `900 34px ${SANS}`;
-  ctx.fillStyle = INK;
-  ctx.fillText('PowerReader', PAD + 16, y + 28);
+  // Brand — white bold
+  ctx.font = `900 40px ${SANS}`;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillText('POWERREADER', PAD, 56);
 
-  // Subtitle
-  const brandW = ctx.measureText('PowerReader').width;
-  ctx.font = `28px ${SANS}`;
-  ctx.fillStyle = TEXT_SECONDARY;
-  ctx.fillText('新聞立場分析', PAD + 16 + brandW + 12, y + 28);
+  // Subtitle — white lighter
+  ctx.font = `24px ${SANS}`;
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.fillText('新聞立場分析', PAD, 92);
 
-  y += 64;
+  y = blockH + 36;
   return y;
 }
 
@@ -464,36 +469,24 @@ function drawEventStats(
     { value: String(data.articleCount), label: '篇報導' },
     { value: String(data.sourceCount), label: '家媒體' },
   ];
-  const colW = w / cols.length;
-  const boxH = 120;
 
-  // Border box
-  ctx.strokeStyle = BORDER;
-  ctx.lineWidth = 2;
-  ctx.strokeRect(x, y, w, boxH);
-
-  // Vertical divider
-  ctx.beginPath();
-  ctx.moveTo(x + colW, y);
-  ctx.lineTo(x + colW, y + boxH);
-  ctx.stroke();
-
+  // Oversized numbers — no border box, just whitespace
   for (let i = 0; i < cols.length; i++) {
-    const cx = x + i * colW;
+    const cx = x + i * (w / cols.length);
 
-    // Large number
-    ctx.font = `900 64px ${SANS}`;
+    // Giant number
+    ctx.font = `900 80px ${SANS}`;
     ctx.fillStyle = INK;
-    ctx.fillText(cols[i].value, cx + 20, y + 60);
+    ctx.fillText(cols[i].value, cx, y + 72);
 
-    // Label below
-    ctx.font = `24px ${SANS}`;
+    // Label to the right of number
+    const numW = ctx.measureText(cols[i].value).width;
+    ctx.font = `26px ${SANS}`;
     ctx.fillStyle = TEXT_SECONDARY;
-    ctx.fillText(cols[i].label, cx + 20, y + 96);
+    ctx.fillText(cols[i].label, cx + numW + 10, y + 72);
   }
 
-  y += boxH + 16;
-
+  y += 100;
   return y;
 }
 
@@ -542,54 +535,33 @@ function drawAnalysisCTA(
   x: number, y: number, w: number,
   total: number,
 ): number {
-  // CTA box with accent left border
-  const boxH = 140;
-  ctx.strokeStyle = BORDER;
-  ctx.lineWidth = 2;
-  ctx.strokeRect(x, y, w, boxH);
+  // Large status headline — agency framing
+  ctx.font = `900 36px ${SANS}`;
+  ctx.fillStyle = INK;
+  ctx.fillText('這則事件尚未被分析', x, y + 36);
+  y += 56;
+
+  // Empowerment copy
+  ctx.font = `28px ${SANS}`;
   ctx.fillStyle = ACCENT;
-  ctx.fillRect(x, y, 5, boxH);
+  ctx.fillText('成為第一個揭露立場偏見的人', x, y + 28);
+  y += 48;
 
-  // Status headline
-  ctx.font = `900 34px ${SANS}`;
-  ctx.fillStyle = ACCENT;
-  ctx.fillText('等待公民算力分析', x + 24, y + 42);
-
-  // Invitation copy
-  ctx.font = `26px ${SANS}`;
-  ctx.fillStyle = TEXT_SECONDARY;
-  ctx.fillText('點擊加入，用你的裝置', x + 24, y + 80);
-  ctx.fillText('幫助揭示這則事件的媒體偏見', x + 24, y + 112);
-
-  y += boxH + 16;
-
-  // Progress bar
-  const barH = 16;
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(x, y, w, barH);
-  ctx.strokeStyle = BORDER;
-  ctx.lineWidth = 2;
-  ctx.strokeRect(x, y, w, barH);
-  y += barH + 12;
-
-  // Progress text
+  // Minimal progress indicator
   ctx.font = `24px ${SANS}`;
   ctx.fillStyle = TEXT_SECONDARY;
-  ctx.fillText(`已分析 0/${total} 篇`, x, y + 22);
+  ctx.fillText(`0/${total} 篇已分析`, x, y + 22);
   y += 44;
 
   return y;
 }
 
 function drawFooterContent(ctx: CanvasRenderingContext2D, y: number): void {
-  ctx.font = `600 26px ${SANS}`;
-  ctx.fillStyle = ACCENT;
-  ctx.textAlign = 'center';
-  ctx.fillText('powerreader.pages.dev', W / 2, y + 28);
-
-  ctx.font = `22px ${SANS}`;
+  // Single-line footer: URL — tagline
+  ctx.font = `600 24px ${SANS}`;
   ctx.fillStyle = TEXT_SECONDARY;
-  ctx.fillText('利用 AI 看透新聞濾鏡 · 透過公民驅動透明', W / 2, y + 60);
+  ctx.textAlign = 'center';
+  ctx.fillText('powerreader.pages.dev ── AI 驅動的新聞立場透視', W / 2, y + 28);
   ctx.textAlign = 'left';
 }
 
@@ -598,7 +570,10 @@ function drawFooterAt(ctx: CanvasRenderingContext2D, y: number): void {
 }
 
 function drawFooter(ctx: CanvasRenderingContext2D): void {
-  drawFooterContent(ctx, H - 90);
+  drawFooterContent(ctx, H - 80);
+  // Bottom border anchor
+  ctx.fillStyle = ACCENT;
+  ctx.fillRect(0, H - 8, W, 8);
 }
 
 // ── Canvas Utilities ────────────────────────────────────────
