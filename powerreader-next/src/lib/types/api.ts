@@ -127,3 +127,52 @@ export interface Sponsorship {
   created_at: string;
   paid_at: string | null;
 }
+
+// =============================================
+// Point Shop API
+// =============================================
+
+export type ShopItemCategory = 'cosmetic' | 'functional';
+
+export interface ShopItem {
+  id: string;
+  name_key: string;
+  description_key: string;
+  cost_cents: number;
+  category: ShopItemCategory;
+  icon: string;
+  is_consumable: number;
+  duration_hours: number | null;
+  max_per_user: number | null;
+  display_order: number;
+}
+
+export interface PurchaseResponse {
+  item_id: string;
+  cost_cents: number;
+  remaining_points_cents: number;
+  display_remaining: string;
+  expires_at: string | null;
+}
+
+export interface InventoryItem {
+  purchase_id: number;
+  item_id: string;
+  cost_cents: number;
+  purchased_at: string;
+  expires_at: string | null;
+  is_consumed: number;
+  consumed_at: string | null;
+  name_key: string;
+  description_key: string;
+  category: ShopItemCategory;
+  icon: string;
+  is_consumable: number;
+  is_active: boolean;
+}
+
+export interface UseItemResponse {
+  purchase_id: number;
+  item_id: string;
+  effect_applied: boolean;
+}

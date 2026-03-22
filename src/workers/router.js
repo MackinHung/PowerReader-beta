@@ -31,6 +31,7 @@ import { getEvents, getEventDetail } from './handlers/events.js';
 import { getClusters, getClusterDetail } from './handlers/clusters.js';
 import { proposeEdit, listPRs, getPRDetail, mergePR, closePR } from './handlers/knowledge-github.js';
 import { createSponsorOrder, handleEcpayCallback, getSponsorStats, getMySponsorships } from './handlers/sponsor.js';
+import { getShopItems, purchaseItem, getInventory, useItem } from './handlers/point-shop.js';
 
 /**
  * Route table: [method, pattern, handler, options]
@@ -122,6 +123,12 @@ const ROUTES = [
   ['POST', '/api/v1/sponsor/callback', handleEcpayCallback, { auth: 'none',         rateLimit: true,  cache: 'no-store' }],
   ['GET',  '/api/v1/sponsor/stats',    getSponsorStats,     { auth: 'none', rateLimit: true,  cache: `public, max-age=60` }],
   ['GET',  '/api/v1/sponsor/me',       getMySponsorships,   { auth: 'jwt',  rateLimit: true,  cache: 'private, no-cache' }],
+
+  // Point Shop API (T05 — points spending)
+  ['GET',  '/api/v1/point-shop/items',     getShopItems,   { auth: 'none', rateLimit: true,  cache: `public, max-age=60` }],
+  ['POST', '/api/v1/point-shop/purchase',  purchaseItem,   { auth: 'jwt',  rateLimit: true,  cache: 'no-store' }],
+  ['GET',  '/api/v1/point-shop/inventory', getInventory,   { auth: 'jwt',  rateLimit: true,  cache: 'private, no-cache' }],
+  ['POST', '/api/v1/point-shop/use',       useItem,        { auth: 'jwt',  rateLimit: true,  cache: 'no-store' }],
 
   // Health & Monitoring API (T07 provides monitoring logic)
   ['GET', '/api/v1/health',           healthCheck,     { auth: 'none',    rateLimit: false, cache: 'no-store' }],

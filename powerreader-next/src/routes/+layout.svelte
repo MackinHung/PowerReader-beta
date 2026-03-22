@@ -28,7 +28,7 @@
 
   const sidebarExtraItems = [
     { icon: 'rocket_launch', label: '動力池', href: '/power-pool' },
-    { icon: 'storefront', label: '點數商店', href: '', disabled: true, badge: 'Soon' }
+    { icon: 'storefront', label: '點數商店', href: '/point-shop' }
   ];
 
   const titles = {
@@ -39,6 +39,7 @@
     '/knowledge': '資料庫',
     '/profile': '個人貢獻',
     '/power-pool': '動力池',
+    '/point-shop': '點數商店',
     '/settings': '設定',
     '/privacy': '隱私與條款'
   };

@@ -26,7 +26,11 @@ import type {
   SponsorOrder,
   SponsorFormResponse,
   SponsorStats,
-  Sponsorship
+  Sponsorship,
+  ShopItem,
+  PurchaseResponse,
+  InventoryItem,
+  UseItemResponse
 } from '$lib/types/api.js';
 import type {
   Article,
@@ -923,5 +927,62 @@ export async function fetchSponsorStats(): Promise<ApiResponse<SponsorStats>> {
 export async function fetchMySponsorships(token: string): Promise<ApiResponse<{ sponsorships: Sponsorship[] }>> {
   return apiFetch<{ sponsorships: Sponsorship[] }>('/sponsor/me', {
     headers: { 'Authorization': `Bearer ${token}` }
+  });
+}
+
+// =============================================
+// Point Shop API
+// =============================================
+
+/**
+ * GET /api/v1/point-shop/items — list all available shop items.
+ */
+export async function fetchShopItems(): Promise<ApiResponse<{ items: ShopItem[] }>> {
+  const cacheKey = 'shop:items';
+
+  if (!navigator.onLine) {
+    const cached = await getCachedResponse<{ items: ShopItem[] }>(cacheKey);
+    if (cached) return { success: true, data: cached, error: null };
+    return { success: false, data: null, error: { type: 'offline' } };
+  }
+
+  const fresh = await getFreshCachedResponse<{ items: ShopItem[] }>(cacheKey);
+  if (fresh) return { success: true, data: fresh, error: null };
+
+  const result = await apiFetch<{ items: ShopItem[] }>('/point-shop/items');
+  if (result.success && result.data) {
+    cacheResponse(cacheKey, result.data).catch(() => {});
+  }
+  return result;
+}
+
+/**
+ * POST /api/v1/point-shop/purchase — purchase an item.
+ */
+export async function purchaseShopItem(itemId: string, token: string): Promise<ApiResponse<PurchaseResponse>> {
+  return apiFetch<PurchaseResponse>('/point-shop/purchase', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({ item_id: itemId })
+  });
+}
+
+/**
+ * GET /api/v1/point-shop/inventory — user's purchased items.
+ */
+export async function fetchInventory(token: string): Promise<ApiResponse<{ inventory: InventoryItem[] }>> {
+  return apiFetch<{ inventory: InventoryItem[] }>('/point-shop/inventory', {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+}
+
+/**
+ * POST /api/v1/point-shop/use — consume a consumable item.
+ */
+export async function useShopItem(purchaseId: number, token: string): Promise<ApiResponse<UseItemResponse>> {
+  return apiFetch<UseItemResponse>('/point-shop/use', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({ purchase_id: purchaseId })
   });
 }
