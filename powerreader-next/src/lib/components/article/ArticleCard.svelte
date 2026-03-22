@@ -84,10 +84,6 @@
   .article-card-wrapper {
     display: block;
     cursor: pointer;
-    transition: transform 150ms ease;
-  }
-  .article-card-wrapper:hover {
-    transform: translate(-2px, -2px);
   }
   .article-card-wrapper:focus-visible {
     outline: 4px solid #FF5722;
@@ -102,11 +98,11 @@
     box-shadow: none;
     padding: 16px;
     border-radius: 0;
-    transition: border-color 150ms ease, box-shadow 150ms ease;
+    transition: background 150ms ease, border-color 150ms ease;
   }
   .article-card-wrapper:hover .brutalist-article {
-    border-color: var(--pr-ink);
-    box-shadow: 3px 3px 0px var(--pr-ink);
+    background: var(--md-sys-color-surface-container, #F4F4F5);
+    border-color: var(--md-sys-color-outline, #B0A898);
   }
   .card-top {
     display: flex;
