@@ -142,27 +142,35 @@
       <span class="material-symbols-outlined section-icon">verified</span>
       {t('power_pool.transparency.title')}
     </h2>
+    <p class="section-desc">{t('power_pool.transparency.subtitle')}</p>
     <Card variant="elevated">
       <div class="transparency-card">
         <div class="transparency-item">
-          <span class="material-symbols-outlined item-icon">how_to_vote</span>
+          <span class="material-symbols-outlined item-icon">account_balance</span>
           <div class="item-content">
-            <h3>{t('power_pool.transparency.distribution').split('：')[0]}</h3>
-            <p>{t('power_pool.transparency.governance')}</p>
+            <h3>{t('power_pool.transparency.platform_fund_title')}</h3>
+            <p>{t('power_pool.transparency.platform_fund_desc')}</p>
           </div>
         </div>
         <div class="transparency-item">
-          <span class="material-symbols-outlined item-icon">visibility</span>
+          <span class="material-symbols-outlined item-icon">memory</span>
           <div class="item-content">
-            <h3>{t('power_pool.transparency.commitment').split('，')[0]}</h3>
-            <p>{t('power_pool.transparency.commitment')}</p>
+            <h3>{t('power_pool.transparency.proxy_compute_title')}</h3>
+            <p>{t('power_pool.transparency.proxy_compute_desc')}</p>
           </div>
         </div>
         <div class="transparency-item">
-          <span class="material-symbols-outlined item-icon">groups</span>
+          <span class="material-symbols-outlined item-icon">edit_note</span>
           <div class="item-content">
-            <h3>{t('power_pool.transparency.distribution').split('：')[0]}</h3>
-            <p>{t('power_pool.transparency.distribution')}</p>
+            <h3>{t('power_pool.transparency.other_contrib_title')}</h3>
+            <p>{t('power_pool.transparency.other_contrib_desc')}</p>
+          </div>
+        </div>
+        <div class="transparency-item highlight">
+          <span class="material-symbols-outlined item-icon">casino</span>
+          <div class="item-content">
+            <h3>{t('power_pool.transparency.lottery_title')}</h3>
+            <p>{t('power_pool.transparency.lottery_desc')}</p>
           </div>
         </div>
       </div>
@@ -470,6 +478,14 @@
     margin: 4px 0 0;
     font: var(--md-sys-typescale-body-medium-font);
     color: var(--md-sys-color-on-surface-variant);
+  }
+  .transparency-item.highlight {
+    background: rgba(255, 87, 34, 0.06);
+    padding: 12px;
+    border-left: 3px solid #FF5722;
+  }
+  .transparency-item.highlight .item-icon {
+    color: #FF5722;
   }
 
   /* Report Mock */

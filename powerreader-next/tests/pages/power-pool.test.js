@@ -93,9 +93,15 @@ vi.mock('$lib/i18n/zh-TW.js', () => ({
       'sponsor.error': '訂單建立失敗',
       'common.label.loading': '載入中...',
       'power_pool.transparency.title': '獎池透明計劃',
-      'power_pool.transparency.governance': '社群投票決定',
-      'power_pool.transparency.commitment': '資金流向公開透明',
-      'power_pool.transparency.distribution': '分配權：點數可兌換',
+      'power_pool.transparency.subtitle': '你的每一次運算都在推動飛輪前進',
+      'power_pool.transparency.platform_fund_title': '平台基金',
+      'power_pool.transparency.platform_fund_desc': '用於建構點數商店與回饋機制',
+      'power_pool.transparency.proxy_compute_title': '代理運算',
+      'power_pool.transparency.proxy_compute_desc': '由伺服器驅動 AI 模型',
+      'power_pool.transparency.other_contrib_title': '其它貢獻',
+      'power_pool.transparency.other_contrib_desc': '包含資料庫維護',
+      'power_pool.transparency.lottery_title': '公平抽獎回饋',
+      'power_pool.transparency.lottery_desc': '每月設有固定獎金池',
       'power_pool.report.title': '群體分析報告',
       'power_pool.report.desc': '自動生成報告',
       'power_pool.report.mock_label': '範例預覽',
@@ -152,10 +158,13 @@ describe('Power Pool Page', () => {
     expect(statsTitle).toBeTruthy();
   });
 
-  it('renders transparency section with 3 items', () => {
+  it('renders transparency section with 4 items including lottery highlight', () => {
     const { container } = render(PowerPoolPage);
     const items = container.querySelectorAll('.transparency-item');
-    expect(items.length).toBe(3);
+    expect(items.length).toBe(4);
+    const highlight = container.querySelector('.transparency-item.highlight');
+    expect(highlight).toBeTruthy();
+    expect(highlight.textContent).toContain('公平抽獎回饋');
   });
 
   it('renders report mock section', () => {
