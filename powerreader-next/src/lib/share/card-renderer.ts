@@ -103,21 +103,14 @@ export async function renderEventCard(data: EventCardData): Promise<Blob> {
 
   y = drawHeader(ctx, y);
   y = drawTitle(ctx, data.title, y);
-  y = drawSourceBadge(ctx, `${data.articleCount} 篇報導 · ${data.sourceCount} 家媒體`, y);
 
-  // Analysis progress
-  ctx.font = `28px ${SANS}`;
-  ctx.fillStyle = TEXT_SECONDARY;
-  ctx.fillText(
-    `已分析 ${data.analysisProgress.analyzed}/${data.analysisProgress.total} 篇`,
-    PAD, y + 30,
-  );
-  y += 50;
+  // Stats row — large numbers with labels
+  y += 10;
+  y = drawEventStats(ctx, PAD, y, CONTENT_W, data);
 
-  if (data.campDistribution) {
-    y = drawSectionLabel(ctx, '陣營比例', y);
-    y = drawCampBar(ctx, PAD, y, CONTENT_W, data.campDistribution);
-  }
+  // Analysis progress bar
+  y += 10;
+  y = drawAnalysisProgressBar(ctx, PAD, y, CONTENT_W, data.analysisProgress);
 
   if (data.blindspotType) {
     y = drawBlindspotWarning(ctx, y, data.blindspotType);
@@ -456,6 +449,105 @@ function drawBlindspotWarning(
   ctx.textAlign = 'left';
 
   y += chipH + 16;
+  return y;
+}
+
+function drawEventStats(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number, w: number,
+  data: EventCardData,
+): number {
+  const cols = [
+    { value: String(data.articleCount), label: '篇報導' },
+    { value: String(data.sourceCount), label: '家媒體' },
+  ];
+  const colW = w / cols.length;
+
+  // Divider line above
+  ctx.strokeStyle = GOLD_LINE_ALPHA;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + w, y);
+  ctx.stroke();
+  y += 32;
+
+  for (let i = 0; i < cols.length; i++) {
+    const cx = x + i * colW;
+
+    // Large number
+    ctx.font = `900 72px ${SANS}`;
+    ctx.fillStyle = TEXT_PRIMARY;
+    ctx.fillText(cols[i].value, cx + 8, y + 68);
+
+    // Label below
+    ctx.font = `28px ${SANS}`;
+    ctx.fillStyle = TEXT_SECONDARY;
+    ctx.fillText(cols[i].label, cx + 8, y + 108);
+
+    // Vertical divider between columns
+    if (i < cols.length - 1) {
+      ctx.strokeStyle = GOLD_LINE_ALPHA;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cx + colW, y - 10);
+      ctx.lineTo(cx + colW, y + 115);
+      ctx.stroke();
+    }
+  }
+
+  y += 140;
+
+  // Divider line below
+  ctx.strokeStyle = GOLD_LINE_ALPHA;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + w, y);
+  ctx.stroke();
+  y += 16;
+
+  return y;
+}
+
+function drawAnalysisProgressBar(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number, w: number,
+  progress: { analyzed: number; total: number },
+): number {
+  const { analyzed, total } = progress;
+  const pct = total > 0 ? Math.min(100, Math.round((analyzed / total) * 100)) : 0;
+
+  // Label
+  ctx.font = `600 26px ${SANS}`;
+  ctx.fillStyle = GOLD;
+  ctx.fillText('分析進度', x, y + 26);
+  y += 44;
+
+  // Bar background
+  const barH = 20;
+  ctx.fillStyle = '#E8E4DE';
+  roundRect(ctx, x, y, w, barH, [10, 10, 10, 10]);
+  ctx.fill();
+
+  // Bar fill
+  if (pct > 0) {
+    const fillW = Math.max(20, (pct / 100) * w);
+    const grad = ctx.createLinearGradient(x, y, x + fillW, y);
+    grad.addColorStop(0, GOLD);
+    grad.addColorStop(1, '#E8C97A');
+    ctx.fillStyle = grad;
+    roundRect(ctx, x, y, fillW, barH, [10, 10, 10, 10]);
+    ctx.fill();
+  }
+  y += barH + 14;
+
+  // Progress text
+  ctx.font = `28px ${SANS}`;
+  ctx.fillStyle = TEXT_SECONDARY;
+  ctx.fillText(`已分析 ${analyzed}/${total} 篇（${pct}%）`, x, y + 26);
+  y += 50;
+
   return y;
 }
 

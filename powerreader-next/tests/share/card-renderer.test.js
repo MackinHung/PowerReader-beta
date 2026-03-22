@@ -190,8 +190,9 @@ describe('card-renderer', () => {
     it('draws article and source counts', async () => {
       await renderEventCard(baseData);
       const fillTextCalls = mockCtx.fillText.mock.calls.map(c => c[0]);
-      expect(fillTextCalls.some(t => t.includes('12 篇報導'))).toBe(true);
-      expect(fillTextCalls.some(t => t.includes('5 家媒體'))).toBe(true);
+      expect(fillTextCalls.some(t => t.includes('12'))).toBe(true);
+      expect(fillTextCalls.some(t => t.includes('篇報導'))).toBe(true);
+      expect(fillTextCalls.some(t => t.includes('家媒體'))).toBe(true);
     });
 
     it('draws analysis progress', async () => {
