@@ -557,7 +557,7 @@
           {/if}
         </div>
         <p class="model-desc">
-          Qwen3-8B 是阿里巴巴開源的大型語言模型，支援多語言理解與推理。PowerReader 使用 4-bit 量化版本，在瀏覽器內透過 WebGPU 直接執行，無需伺服器。
+          開源語言模型，所有推論在你的瀏覽器本機完成，無需伺服器。
         </p>
 
         <!-- Progress bar during download -->
@@ -581,10 +581,9 @@
                 <span class="progress-finish">預計 {downloadFinishTime} 完成</span>
               {/if}
             </div>
-            <div class="progress-tip">
-              <span class="material-symbols-outlined tip-icon">info</span>
-              <span>下載過程中可以離開此頁面瀏覽其他內容，不影響下載進度。回來後會自動顯示最新狀態。</span>
-            </div>
+            <p class="progress-tip">
+              下載需要一些時間，<strong>可以先離開掛機</strong>，不影響進度。
+            </p>
           </div>
         {/if}
 
@@ -608,20 +607,19 @@
           {#if !modelReady}
             <div class="download-hint">
               <span class="material-symbols-outlined hint-icon">schedule</span>
-              <div class="hint-text">
-                <span>下載時間因網路環境而異</span>
+              <span class="hint-text">
                 {#if preDownloadTimeText()}
-                  <span class="hint-estimate">目前網速預估：約 {preDownloadTimeText()}（約 {preDownloadFinishText()} 完成）</span>
+                  預估下載 {preDownloadTimeText()}，約 {preDownloadFinishText()} 完成
                 {:else}
-                  <span class="hint-estimate">Wi-Fi 環境約 5-15 分鐘，行動網路可能更久</span>
+                  首次下載約 5-15 分鐘，可掛機等待
                 {/if}
-              </div>
+              </span>
             </div>
           {/if}
         {/if}
 
         <p class="model-note">
-          模型資料儲存在瀏覽器內部儲存空間（Browser Storage），不會在你的硬碟上產生任何可見的檔案。這些資料僅限本網站存取，不會出現在你的下載資料夾或檔案總管中。清除瀏覽器資料時會一併移除。
+          模型儲存於瀏覽器內部空間，不會出現在下載資料夾。清除瀏覽器資料時一併移除。
         </p>
 
         <!-- Actions -->
@@ -1064,14 +1062,8 @@
     margin-top: 1px;
   }
   .hint-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
     font: var(--md-sys-typescale-body-small-font);
     color: var(--md-sys-color-on-surface-variant);
-  }
-  .hint-estimate {
-    color: var(--md-sys-color-outline);
   }
   .model-note {
     margin: 4px 0 0;
@@ -1171,17 +1163,13 @@
     flex-shrink: 0;
   }
   .progress-tip {
-    display: flex;
-    align-items: flex-start;
-    gap: 6px;
+    margin: 0;
     font: var(--md-sys-typescale-body-small-font);
-    color: var(--md-sys-color-outline);
+    color: var(--md-sys-color-on-surface-variant);
     line-height: 1.4;
   }
-  .tip-icon {
-    font-size: 16px;
-    flex-shrink: 0;
-    margin-top: 1px;
+  .progress-tip strong {
+    color: var(--md-sys-color-primary);
   }
 
   /* ── Hardware Section ── */
