@@ -127,7 +127,7 @@ describe('card-renderer', () => {
       await renderArticleCard(baseData);
       const fillTextCalls = mockCtx.fillText.mock.calls.map(c => c[0]);
       expect(fillTextCalls.some(t => t.includes('powerreader.pages.dev'))).toBe(true);
-      expect(fillTextCalls.some(t => t.includes('公民算力驅動'))).toBe(true);
+      expect(fillTextCalls.some(t => t.includes('透過公民驅動透明'))).toBe(true);
     });
 
     it('handles non-political article (no bias/camp)', async () => {
@@ -217,6 +217,17 @@ describe('card-renderer', () => {
     it('handles no blindspot', async () => {
       const blob = await renderEventCard(baseData);
       expect(blob).toBeInstanceOf(Blob);
+    });
+
+    it('draws CTA when analysis progress is 0', async () => {
+      const data = { ...baseData, analysisProgress: { analyzed: 0, total: 12 } };
+      await renderEventCard(data);
+      const fillTextCalls = mockCtx.fillText.mock.calls.map(c => c[0]);
+      expect(fillTextCalls.some(t => t.includes('等待公民算力分析'))).toBe(true);
+      expect(fillTextCalls.some(t => t.includes('幫助揭示'))).toBe(true);
+      expect(fillTextCalls.some(t => t.includes('0/12'))).toBe(true);
+      // Should NOT draw the normal progress label
+      expect(fillTextCalls.some(t => t === '分析進度')).toBe(false);
     });
   });
 });

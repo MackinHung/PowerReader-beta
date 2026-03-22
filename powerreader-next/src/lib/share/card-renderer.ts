@@ -108,9 +108,13 @@ export async function renderEventCard(data: EventCardData): Promise<Blob> {
   y += 10;
   y = drawEventStats(ctx, PAD, y, CONTENT_W, data);
 
-  // Analysis progress bar
+  // Analysis progress — CTA when 0%, normal bar otherwise
   y += 10;
-  y = drawAnalysisProgressBar(ctx, PAD, y, CONTENT_W, data.analysisProgress);
+  if (data.analysisProgress.analyzed === 0) {
+    y = drawAnalysisCTA(ctx, PAD, y, CONTENT_W, data.analysisProgress.total);
+  } else {
+    y = drawAnalysisProgressBar(ctx, PAD, y, CONTENT_W, data.analysisProgress);
+  }
 
   if (data.blindspotType) {
     y = drawBlindspotWarning(ctx, y, data.blindspotType);
@@ -551,6 +555,44 @@ function drawAnalysisProgressBar(
   return y;
 }
 
+function drawAnalysisCTA(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number, w: number,
+  total: number,
+): number {
+  // Status headline
+  ctx.font = `bold 36px ${SANS}`;
+  ctx.fillStyle = GOLD;
+  ctx.textAlign = 'center';
+  ctx.fillText('等待公民算力分析', x + w / 2, y + 36);
+  y += 64;
+
+  // Invitation copy
+  ctx.font = `28px ${SANS}`;
+  ctx.fillStyle = TEXT_SECONDARY;
+  ctx.fillText('點擊加入，用你的裝置', x + w / 2, y + 28);
+  y += 40;
+  ctx.fillText('幫助揭示這則事件的媒體偏見', x + w / 2, y + 28);
+  y += 60;
+
+  ctx.textAlign = 'left';
+
+  // Compact progress bar
+  const barH = 16;
+  ctx.fillStyle = '#E8E4DE';
+  roundRect(ctx, x, y, w, barH, [8, 8, 8, 8]);
+  ctx.fill();
+  y += barH + 12;
+
+  // Progress text
+  ctx.font = `24px ${SANS}`;
+  ctx.fillStyle = TEXT_SECONDARY;
+  ctx.fillText(`已分析 0/${total} 篇`, x, y + 22);
+  y += 44;
+
+  return y;
+}
+
 function drawFooter(ctx: CanvasRenderingContext2D): void {
   const y = H - 100;
 
@@ -571,7 +613,7 @@ function drawFooter(ctx: CanvasRenderingContext2D): void {
   // Tagline
   ctx.font = `22px ${SANS}`;
   ctx.fillStyle = TEXT_SECONDARY;
-  ctx.fillText('台灣新聞立場分析 · 公民算力驅動', W / 2, y + 68);
+  ctx.fillText('利用 AI 看透新聞濾鏡 · 透過公民驅動透明', W / 2, y + 68);
   ctx.textAlign = 'left';
 }
 
