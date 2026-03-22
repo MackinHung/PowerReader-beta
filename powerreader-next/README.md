@@ -1,42 +1,160 @@
-# sv
+# PowerReader
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+**公民算力驅動的台灣新聞偏見分析平台**
 
-## Creating a project
+> 你的瀏覽器就是分析引擎 — 透過 WebGPU 在本機執行 AI 推論，不上傳任何報導內容，保障你的閱讀隱私。
 
-If you're seeing this, you've probably already done this step. Congrats!
+<!-- 截圖預留區：之後補上 -->
 
-```sh
-# create a new project
-npx sv create my-app
+---
+
+## 這是什麼？
+
+PowerReader 是一個開源的公民科技平台，讓任何人都能用自己裝置的 GPU 算力，分析台灣新聞報導中的政治偏見與情緒煽動程度。
+
+我們相信媒體素養不應依賴單一權威判定，而是由公民社群共同建構。每一次分析都是一次公民參與 — 你貢獻算力，平台回饋點數，形成正向飛輪。
+
+---
+
+## 核心理念
+
+### 公民算力 (Civic Computing)
+
+```
+貢獻算力 → 獲得點數 → 分享分析 → 提升意識 → 更多參與
 ```
 
-To recreate this project with the same configuration:
+- 分析結果由社群公民集體產出，非單一機構判定
+- 所有分析邏輯皆為開源，可審計、可驗證
+- 推論指紋機制確保每筆分析的完整性與可追溯性
 
-```sh
-# recreate this project
-npx sv@0.12.7 create --template minimal --no-types --install npm powerreader-next
+### 隱私優先
+
+- 報導全文**僅在你的裝置上處理**，絕不上傳至伺服器
+- 提交至平台的僅有結構化分析結果（分數、比例、摘要）
+- 離線模式：無網路時結果暫存本地，恢復連線後自動同步
+
+---
+
+## 功能特色
+
+### 政治偏見分析
+
+對每篇報導進行雙輪 AI 分析：
+
+| 分析輪次 | 輸出 | 用時 |
+|---------|------|------|
+| **第一輪：量化評分** | 偏見分數 (0-100)、陣營比例 (綠/藍/白/灰)、情緒煽動度 | ~8-10 秒 |
+| **第二輪：敘事解析** | 3-5 個關鍵論述、涉及政黨立場 | ~5-7 秒 |
+
+**偏見光譜**：極左 ← 偏綠 ← 略偏綠 ← **中立** → 略偏藍 → 偏右 → 極右
+
+### 跨媒體比較
+
+同一事件、多家媒體 — 一目了然：
+- 立場分歧視覺化（同事件不同來源的偏見分數對比）
+- 涵蓋 20+ 家台灣主要媒體（中央社、自由時報、聯合報、公視、風傳媒等）
+
+### 報導盲區偵測
+
+自動辨識資訊盲點：
+- 僅泛綠媒體報導的事件
+- 僅泛藍媒體報導的事件
+- 缺乏中立觀點的話題
+- 報導比例嚴重失衡的議題
+
+### 事件聚類
+
+- 二層事件架構：主事件 → 子事件
+- 自動將同一議題的報導聚類
+- 事件時間軸視覺化
+
+### 知識庫
+
+社群共建的政治脈絡資料庫：
+- 政治人物、社會議題、歷史事件
+- 各黨立場比較（民進黨 / 國民黨 / 民眾黨 / 時代力量）
+- 社群建議編輯 → 審核合併機制
+
+### 點數經濟與動力池
+
+- 每次分析可獲得 0.1–0.5 點數
+- 點數可兌換：公民徽章、分析配額加量、冷卻跳過、擴展歷史記錄
+- 贊助飛輪：公民贊助資金透明分配（平台基金、代理算力、開發維護）
+
+---
+
+## 技術架構
+
+```
+┌─────────────┐     WebGPU      ┌──────────────┐
+│  瀏覽器 PWA  │ ◄────推論────► │ Qwen3-8B 模型 │
+│  SvelteKit 5 │                │  (4.3GB 本地)  │
+└──────┬───────┘                └──────────────┘
+       │ 僅結構化結果
+       ▼
+┌──────────────┐    ┌─────┐    ┌─────┐
+│  Cloudflare   │───►│ D1  │    │ R2  │
+│  Workers API  │    │(SQL)│    │(CDN)│
+└──────────────┘    └─────┘    └─────┘
 ```
 
-## Developing
+| 層級 | 技術 |
+|------|------|
+| 前端 | SvelteKit 2 + Svelte 5 + TypeScript |
+| AI 推論 | WebGPU + [WebLLM](https://github.com/mlc-ai/web-llm) (MLC) |
+| 模型 | Qwen3-8B (4-bit, 4.3GB) |
+| 執行環境 | Cloudflare Pages (靜態) + Workers (API) |
+| 資料庫 | Cloudflare D1 (SQLite) |
+| 物件儲存 | Cloudflare R2 |
+| 測試 | Vitest (1,342 tests) + Playwright E2E |
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+---
 
-```sh
-npm run dev
+## 瀏覽器需求
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
+PowerReader 的本地推論依賴 **WebGPU**，目前支援：
 
-## Building
+| 瀏覽器 | 支援狀態 |
+|--------|---------|
+| Chrome / Edge 113+ | 完整支援 |
+| Firefox Nightly | 實驗性 |
+| Safari 18+ | 部分支援 |
 
-To create a production version of your app:
+> 不支援 WebGPU 的裝置將自動回退至伺服器端推論。
 
-```sh
-npm run build
-```
+---
 
-You can preview the production build with `npm run preview`.
+## 開源依賴
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+本專案受益於以下優秀的開源項目：
+
+- **[WebLLM](https://github.com/mlc-ai/web-llm)** — MLC 團隊開發的瀏覽器端大型語言模型推論引擎，讓 LLM 在 WebGPU 上高效運行
+- **[SvelteKit](https://github.com/sveltejs/kit)** — 現代化全端 Web 框架
+- **[Qwen3](https://github.com/QwenLM/Qwen3)** — 阿里雲通義千問開源語言模型
+
+---
+
+## 授權
+
+本專案採用 [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE) 授權。
+
+這意味著：
+- 你可以自由使用、修改、散布本軟體
+- 若你修改後提供網路服務，**必須公開修改後的原始碼**
+- 衍生作品必須採用相同授權
+
+---
+
+## 貢獻
+
+歡迎任何形式的貢獻！包括：
+- 回報問題 (Issue)
+- 知識庫內容補充
+- 程式碼改進 (Pull Request)
+
+---
+
+<p align="center">
+  <strong>PowerReader</strong> — 用你的算力，守護媒體真相
+</p>
