@@ -99,14 +99,15 @@ vi.mock('$lib/i18n/zh-TW.js', () => ({
       'power_pool.transparency.proxy_compute_title': '代理運算',
       'power_pool.transparency.proxy_compute_desc': '由伺服器驅動 AI 模型',
       'power_pool.transparency.reward_title': '回饋機制',
+      'power_pool.transparency.reward_badge': '未開放',
       'power_pool.transparency.reward_desc': '每月設有綜合獎金池',
       'power_pool.report.title': '群體分析報告',
       'power_pool.report.desc': '自動生成報告',
       'power_pool.report.mock_label': '範例預覽',
-      'power_pool.report.stance_distribution': '立場分布',
-      'blindspot.camp.pan_green': '泛綠',
-      'blindspot.camp.pan_white': '中立',
-      'blindspot.camp.pan_blue': '泛藍',
+      'power_pool.report.mock_direction': '多元',
+      'power_pool.report.mock_topic': '勞基法修法爭議',
+      'power_pool.report.mock_meta': '5 篇 · 4 家媒體',
+      'power_pool.report.mock_summary': '此議題呈現多元觀點。',
     };
     return msgs[key] || key;
   },
@@ -165,7 +166,40 @@ describe('Power Pool Page', () => {
     expect(highlight.textContent).toContain('回饋機制');
   });
 
-  it('renders report mock section', () => {
+  it('renders reward badge with "未開放"', () => {
+    const { container } = render(PowerPoolPage);
+    const badge = container.querySelector('.reward-badge');
+    expect(badge).toBeTruthy();
+    expect(badge.textContent).toContain('未開放');
+  });
+
+  it('renders report preview with direction badge', () => {
+    const { container } = render(PowerPoolPage);
+    const badge = container.querySelector('.rp-direction-badge');
+    expect(badge).toBeTruthy();
+    expect(badge.textContent).toContain('多元');
+  });
+
+  it('renders 5 source rows in report preview', () => {
+    const { container } = render(PowerPoolPage);
+    const rows = container.querySelectorAll('.rp-source-row');
+    expect(rows.length).toBe(5);
+  });
+
+  it('renders 3 camp cards in report preview', () => {
+    const { container } = render(PowerPoolPage);
+    const cards = container.querySelectorAll('.rp-camp-card');
+    expect(cards.length).toBe(3);
+  });
+
+  it('renders report summary text', () => {
+    const { container } = render(PowerPoolPage);
+    const summary = container.querySelector('.rp-summary');
+    expect(summary).toBeTruthy();
+    expect(summary.textContent).toContain('此議題呈現多元觀點');
+  });
+
+  it('renders report preview badge with "範例預覽"', () => {
     const { container } = render(PowerPoolPage);
     const badge = container.querySelector('.report-badge');
     expect(badge).toBeTruthy();

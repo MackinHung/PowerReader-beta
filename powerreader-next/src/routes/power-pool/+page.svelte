@@ -162,7 +162,10 @@
         <div class="transparency-item highlight">
           <span class="material-symbols-outlined item-icon">casino</span>
           <div class="item-content">
-            <h3>{t('power_pool.transparency.reward_title')}</h3>
+            <h3>
+              {t('power_pool.transparency.reward_title')}
+              <span class="reward-badge">{t('power_pool.transparency.reward_badge')}</span>
+            </h3>
             <p>{t('power_pool.transparency.reward_desc')}</p>
           </div>
         </div>
@@ -178,36 +181,78 @@
     </h2>
     <p class="section-desc">{t('power_pool.report.desc')}</p>
     <Card variant="elevated">
-      <div class="report-mock">
+      <div class="report-preview">
         <div class="report-badge">{t('power_pool.report.mock_label')}</div>
-        <h3 class="report-topic">{t('power_pool.report.stance_distribution')}</h3>
 
-        <div class="report-section">
-          <h4>{t('power_pool.report.stance_distribution')}</h4>
-          <div class="stance-bars">
-            <div class="stance-row">
-              <span class="stance-label">{t('blindspot.camp.pan_green')}</span>
-              <div class="stance-bar-track">
-                <div class="stance-bar-fill green" style="width: 42%"></div>
-              </div>
-              <span class="stance-pct">42%</span>
-            </div>
-            <div class="stance-row">
-              <span class="stance-label">{t('blindspot.camp.pan_white')}</span>
-              <div class="stance-bar-track">
-                <div class="stance-bar-fill white" style="width: 23%"></div>
-              </div>
-              <span class="stance-pct">23%</span>
-            </div>
-            <div class="stance-row">
-              <span class="stance-label">{t('blindspot.camp.pan_blue')}</span>
-              <div class="stance-bar-track">
-                <div class="stance-bar-fill blue" style="width: 35%"></div>
-              </div>
-              <span class="stance-pct">35%</span>
-            </div>
+        <!-- 1. Direction badge -->
+        <div class="rp-direction-row">
+          <h3 class="rp-topic">{t('power_pool.report.mock_topic')}</h3>
+          <span class="rp-direction-badge diverse">
+            {t('power_pool.report.mock_direction')}
+          </span>
+        </div>
+        <p class="rp-meta">{t('power_pool.report.mock_meta')}</p>
+
+        <!-- 2. Source breakdown -->
+        <div class="rp-source-list">
+          <div class="rp-source-row">
+            <span class="rp-camp-dot" style="background: #2E7D32"></span>
+            <span class="rp-source-name">自由時報</span>
+            <span class="rp-camp-tag green">泛綠</span>
+            <span class="rp-bias">-1.8</span>
+            <span class="rp-angle">強調修法保障勞權，批評資方反對聲浪</span>
+          </div>
+          <div class="rp-source-row">
+            <span class="rp-camp-dot" style="background: #757575"></span>
+            <span class="rp-source-name">中央社</span>
+            <span class="rp-camp-tag neutral">中立</span>
+            <span class="rp-bias">+0.2</span>
+            <span class="rp-angle">平衡報導各方立場，引述勞資雙方說法</span>
+          </div>
+          <div class="rp-source-row">
+            <span class="rp-camp-dot" style="background: #1565C0"></span>
+            <span class="rp-source-name">聯合報</span>
+            <span class="rp-camp-tag blue">泛藍</span>
+            <span class="rp-bias">+1.5</span>
+            <span class="rp-angle">聚焦企業經營成本增加，引述商會反對意見</span>
+          </div>
+          <div class="rp-source-row">
+            <span class="rp-camp-dot" style="background: #1565C0"></span>
+            <span class="rp-source-name">TVBS</span>
+            <span class="rp-camp-tag blue">泛藍</span>
+            <span class="rp-bias">+2.0</span>
+            <span class="rp-angle">側重產業衝擊面，引述企業主訪談</span>
+          </div>
+          <div class="rp-source-row">
+            <span class="rp-camp-dot" style="background: #757575"></span>
+            <span class="rp-source-name">公視</span>
+            <span class="rp-camp-tag neutral">中立</span>
+            <span class="rp-bias">-0.3</span>
+            <span class="rp-angle">訪問勞工團體與學者，探討政策長期影響</span>
           </div>
         </div>
+
+        <!-- 3. Camp statistics -->
+        <div class="rp-camp-grid">
+          <div class="rp-camp-card green">
+            <span class="rp-camp-card-label">泛綠</span>
+            <span class="rp-camp-card-stat">1 篇 · avg -1.8</span>
+            <span class="rp-camp-card-mood">略帶立場</span>
+          </div>
+          <div class="rp-camp-card neutral">
+            <span class="rp-camp-card-label">中立</span>
+            <span class="rp-camp-card-stat">2 篇 · avg -0.1</span>
+            <span class="rp-camp-card-mood">冷靜客觀</span>
+          </div>
+          <div class="rp-camp-card blue">
+            <span class="rp-camp-card-label">泛藍</span>
+            <span class="rp-camp-card-stat">2 篇 · avg +1.8</span>
+            <span class="rp-camp-card-mood">情緒化</span>
+          </div>
+        </div>
+
+        <!-- 4. Group summary -->
+        <p class="rp-summary">{t('power_pool.report.mock_summary')}</p>
       </div>
     </Card>
   </section>
@@ -481,13 +526,25 @@
     color: #FF5722;
   }
 
-  /* Report Mock */
-  .report-mock {
+  /* Reward Badge */
+  .reward-badge {
+    display: inline-block;
+    font: var(--md-sys-typescale-label-small-font);
+    background: var(--md-sys-color-surface-container);
+    color: var(--md-sys-color-on-surface-variant);
+    padding: 1px 8px;
+    border: 2px solid var(--pr-ink);
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  /* Report Preview */
+  .report-preview {
     position: relative;
     padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
   }
   .report-badge {
     position: absolute;
@@ -497,56 +554,127 @@
     background: var(--md-sys-color-tertiary-container);
     color: var(--md-sys-color-on-tertiary-container);
     padding: 2px 10px;
-    border-radius: 0;
     border: 2px solid var(--pr-ink);
   }
-  .report-topic {
+  .rp-direction-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .rp-topic {
     margin: 0;
     font: var(--md-sys-typescale-title-medium-font);
     color: var(--md-sys-color-on-surface);
   }
-  .report-section h4 {
-    margin: 0 0 8px;
-    font: var(--md-sys-typescale-title-small-font);
-    color: var(--md-sys-color-on-surface);
+  .rp-direction-badge {
+    font: var(--md-sys-typescale-label-medium-font);
+    padding: 2px 10px;
+    border: 2px solid var(--pr-ink);
+    font-weight: 600;
   }
-  .stance-bars {
+  .rp-direction-badge.diverse {
+    background: #E8F5E9;
+    color: #2E7D32;
+  }
+  .rp-meta {
+    margin: 0;
+    font: var(--md-sys-typescale-body-small-font);
+    color: var(--md-sys-color-on-surface-variant);
+  }
+
+  /* Source list */
+  .rp-source-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
+    border-top: 1px solid var(--md-sys-color-outline-variant);
+    padding-top: 12px;
   }
-  .stance-row {
+  .rp-source-row {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     gap: 8px;
+    font: var(--md-sys-typescale-body-small-font);
+    color: var(--md-sys-color-on-surface);
+    flex-wrap: wrap;
   }
-  .stance-label {
-    font: var(--md-sys-typescale-label-medium-font);
-    color: var(--md-sys-color-on-surface-variant);
-    width: 40px;
+  .rp-camp-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    align-self: center;
+  }
+  .rp-source-name {
+    font-weight: 600;
+    flex-shrink: 0;
+    min-width: 56px;
+  }
+  .rp-camp-tag {
+    font: var(--md-sys-typescale-label-small-font);
+    padding: 0 6px;
+    border: 1px solid;
     flex-shrink: 0;
   }
-  .stance-bar-track {
-    flex: 1;
-    height: 12px;
-    background: var(--md-sys-color-surface-container);
-    border-radius: 0;
-    border: 2px solid var(--pr-ink);
-    overflow: hidden;
-  }
-  .stance-bar-fill {
-    height: 100%;
-    border-radius: 0;
-    transition: width 0.6s ease;
-  }
-  .stance-bar-fill.green { background: #4caf50; }
-  .stance-bar-fill.white { background: #9e9e9e; }
-  .stance-bar-fill.blue { background: #2196f3; }
-  .stance-pct {
+  .rp-camp-tag.green { border-color: #2E7D32; color: #2E7D32; }
+  .rp-camp-tag.neutral { border-color: #757575; color: #757575; }
+  .rp-camp-tag.blue { border-color: #1565C0; color: #1565C0; }
+  .rp-bias {
     font: var(--md-sys-typescale-label-small-font);
     color: var(--md-sys-color-on-surface-variant);
-    width: 36px;
-    text-align: right;
     flex-shrink: 0;
+    min-width: 28px;
+    text-align: right;
+  }
+  .rp-angle {
+    color: var(--md-sys-color-on-surface-variant);
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Camp grid */
+  .rp-camp-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    border-top: 1px solid var(--md-sys-color-outline-variant);
+    padding-top: 12px;
+  }
+  @media (max-width: 480px) {
+    .rp-camp-grid { grid-template-columns: 1fr; }
+  }
+  .rp-camp-card {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px;
+    border: 2px solid var(--pr-ink);
+  }
+  .rp-camp-card.green { border-left: 4px solid #2E7D32; }
+  .rp-camp-card.neutral { border-left: 4px solid #757575; }
+  .rp-camp-card.blue { border-left: 4px solid #1565C0; }
+  .rp-camp-card-label {
+    font: var(--md-sys-typescale-label-medium-font);
+    font-weight: 600;
+    color: var(--md-sys-color-on-surface);
+  }
+  .rp-camp-card-stat {
+    font: var(--md-sys-typescale-body-small-font);
+    color: var(--md-sys-color-on-surface-variant);
+  }
+  .rp-camp-card-mood {
+    font: var(--md-sys-typescale-label-small-font);
+    color: var(--md-sys-color-on-surface-variant);
+  }
+
+  /* Summary */
+  .rp-summary {
+    margin: 0;
+    font: var(--md-sys-typescale-body-medium-font);
+    color: var(--md-sys-color-on-surface-variant);
+    border-top: 1px solid var(--md-sys-color-outline-variant);
+    padding-top: 12px;
+    line-height: 1.6;
   }
 </style>

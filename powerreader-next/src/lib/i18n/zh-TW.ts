@@ -766,12 +766,15 @@ const messages: Record<string, string> = {
   'power_pool.transparency.proxy_compute_title': '代理運算',
   'power_pool.transparency.proxy_compute_desc': '由伺服器驅動 AI 模型，為沒有高效能裝置的使用者提供代理算力，讓人人都能參與媒體偏見分析。即使沒有算力，也能透過贊助取得代理運算額度，用最簡單的方式支持公民分析。',
   'power_pool.transparency.reward_title': '回饋機制',
+  'power_pool.transparency.reward_badge': '未開放',
   'power_pool.transparency.reward_desc': '每月設有綜合獎金池，用於回饋資料庫維護者與積極參與算力的公民。抽獎機制完全去中心化——開發者僅能設定每月配額，無法介入抽獎結果。所有機率與抽獎邏輯皆可透過開源程式碼驗證，確保公平公正、不可操控。',
   'power_pool.report.title': '群體分析報告',
   'power_pool.report.desc': '當一個議題的所有文章分析完畢，自動生成綜合立場分布與偏見報告。',
-  'power_pool.report.stance_distribution': '立場分布',
-  'power_pool.report.bias_report': '偏見報告',
   'power_pool.report.mock_label': '範例預覽',
+  'power_pool.report.mock_direction': '多元',
+  'power_pool.report.mock_topic': '勞基法修法爭議',
+  'power_pool.report.mock_meta': '5 篇 · 4 家媒體',
+  'power_pool.report.mock_summary': '此議題呈現多元觀點。泛綠媒體聚焦勞工權益保障，泛藍媒體側重企業成本衝擊，中立媒體則平衡呈現各方立場。整體報導情緒強度中等，泛藍媒體情緒較高。',
 
   // ==============================================
   // Sponsor (ECPay — Power Pool)
