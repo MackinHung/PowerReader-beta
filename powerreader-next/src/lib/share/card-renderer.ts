@@ -199,9 +199,7 @@ function drawBiasSpectrum(
   for (let i = 0; i < 7; i++) {
     ctx.fillStyle = BIAS_COLORS[i];
     const sx = x + i * segW;
-    const radius = i === 0 ? [12, 0, 0, 12] : i === 6 ? [0, 12, 12, 0] : [0, 0, 0, 0];
-    roundRect(ctx, sx, y, segW, barH, radius);
-    ctx.fill();
+    ctx.fillRect(sx, y, segW, barH);
   }
 
   // Indicator position: biasScore 0-100 maps to segment 0-6
@@ -281,14 +279,7 @@ function drawCampBar(
     grad.addColorStop(1, cfg.end);
     ctx.fillStyle = grad;
 
-    const isFirst = bx === x;
-    const isLast = bx + segW >= x + w - 1;
-    const r = isFirst && isLast ? [8, 8, 8, 8]
-      : isFirst ? [8, 0, 0, 8]
-      : isLast ? [0, 8, 8, 0]
-      : [0, 0, 0, 0];
-    roundRect(ctx, bx, y, segW, barH, r);
-    ctx.fill();
+    ctx.fillRect(bx, y, segW, barH);
 
     // Percentage label if wide enough
     if (segW > 60) {
@@ -339,14 +330,12 @@ function drawEmotionChip(
   const chipW = 360;
   const chipH = 48;
   ctx.fillStyle = level.color + '33'; // 20% alpha
-  roundRect(ctx, x, y, chipW, chipH, [24, 24, 24, 24]);
-  ctx.fill();
+  ctx.fillRect(x, y, chipW, chipH);
 
   // Chip border
   ctx.strokeStyle = level.color + '66'; // 40% alpha
   ctx.lineWidth = 2;
-  roundRect(ctx, x, y, chipW, chipH, [24, 24, 24, 24]);
-  ctx.stroke();
+  ctx.strokeRect(x, y, chipW, chipH);
 
   // Text
   ctx.font = `bold 24px ${SANS}`;
@@ -396,8 +385,7 @@ function drawNonPoliticalBadge(ctx: CanvasRenderingContext2D, y: number): number
 
   // Badge background
   ctx.fillStyle = '#E8E4DE';
-  roundRect(ctx, chipX, y, chipW, chipH, [26, 26, 26, 26]);
-  ctx.fill();
+  ctx.fillRect(chipX, y, chipW, chipH);
 
   // Text
   ctx.fillStyle = TEXT_SECONDARY;
@@ -430,13 +418,11 @@ function drawBlindspotWarning(
   const chipX = (W - chipW) / 2;
 
   ctx.fillStyle = '#FFF3E0';
-  roundRect(ctx, chipX, y, chipW, chipH, [24, 24, 24, 24]);
-  ctx.fill();
+  ctx.fillRect(chipX, y, chipW, chipH);
 
   ctx.strokeStyle = '#FF9800';
   ctx.lineWidth = 2;
-  roundRect(ctx, chipX, y, chipW, chipH, [24, 24, 24, 24]);
-  ctx.stroke();
+  ctx.strokeRect(chipX, y, chipW, chipH);
 
   ctx.fillStyle = '#E65100';
   ctx.textAlign = 'center';
@@ -494,8 +480,7 @@ function drawAnalysisProgressBar(
   // Bar background
   const barH = 20;
   ctx.fillStyle = '#E8E4DE';
-  roundRect(ctx, x, y, w, barH, [10, 10, 10, 10]);
-  ctx.fill();
+  ctx.fillRect(x, y, w, barH);
 
   // Bar fill
   if (pct > 0) {
@@ -504,8 +489,7 @@ function drawAnalysisProgressBar(
     grad.addColorStop(0, GOLD);
     grad.addColorStop(1, '#E8C97A');
     ctx.fillStyle = grad;
-    roundRect(ctx, x, y, fillW, barH, [10, 10, 10, 10]);
-    ctx.fill();
+    ctx.fillRect(x, y, fillW, barH);
   }
   y += barH + 14;
 
@@ -543,8 +527,7 @@ function drawAnalysisCTA(
   // Compact progress bar
   const barH = 16;
   ctx.fillStyle = '#E8E4DE';
-  roundRect(ctx, x, y, w, barH, [8, 8, 8, 8]);
-  ctx.fill();
+  ctx.fillRect(x, y, w, barH);
   y += barH + 12;
 
   // Progress text

@@ -27,6 +27,7 @@ function createMockCtx() {
     fill: vi.fn(),
     stroke: vi.fn(),
     drawImage: vi.fn(),
+    strokeRect: vi.fn(),
     measureText: vi.fn((text) => ({
       width: [...text].reduce((w, ch) => w + (ch.charCodeAt(0) > 255 ? 30 : 15), 0),
     })),
