@@ -46,7 +46,7 @@
     </div>
 
     <!-- Source Breakdowns -->
-    <Card variant="filled">
+    <Card variant="subtle">
       <div class="section">
         <span class="section-label">{t('group.source_breakdown')}</span>
         <div class="source-list">
@@ -70,7 +70,7 @@
 
     <!-- Camp Statistics -->
     {#if report.camp_statistics.length > 0}
-      <Card variant="filled">
+      <Card variant="subtle">
         <div class="section">
           <span class="section-label">{t('group.camp_stats')}</span>
           <div class="camp-stats-grid">
@@ -95,7 +95,7 @@
 
     <!-- Group Summary -->
     {#if report.group_summary}
-      <Card variant="filled">
+      <Card variant="subtle">
         <div class="section">
           <span class="section-label">{t('group.summary')}</span>
           <p class="group-summary-text">{report.group_summary}</p>

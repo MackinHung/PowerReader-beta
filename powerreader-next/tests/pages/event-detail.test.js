@@ -11,6 +11,8 @@ import {
   parseSourcesJson,
   getArticleAnalysisStatus,
   buildShareData,
+  getSubClusterArticles,
+  getOrphanArticles,
 } from '../../src/lib/pages/event-detail.js';
 
 // ── Test Data Factory ──
@@ -289,6 +291,84 @@ describe('buildShareData', () => {
   it('uses production URL', () => {
     const result = buildShareData(makeCluster(), 'test-id');
     expect(result.url).toContain('powerreader.pages.dev');
+  });
+});
+
+// ══════════════════════════════════════════════
+// 7. getSubClusterArticles
+// ══════════════════════════════════════════════
+
+describe('getSubClusterArticles', () => {
+  it('returns articles matching sub-cluster article_ids', () => {
+    const sub = { article_ids: ['art-1', 'art-3'] };
+    const articles = [
+      makeArticle({ article_id: 'art-1' }),
+      makeArticle({ article_id: 'art-2' }),
+      makeArticle({ article_id: 'art-3' }),
+    ];
+    const result = getSubClusterArticles(sub, articles);
+    expect(result).toHaveLength(2);
+    expect(result.map(a => a.article_id)).toEqual(['art-1', 'art-3']);
+  });
+
+  it('returns empty array when no matching ids', () => {
+    const sub = { article_ids: ['art-99'] };
+    const articles = [makeArticle({ article_id: 'art-1' })];
+    expect(getSubClusterArticles(sub, articles)).toEqual([]);
+  });
+
+  it('handles sub-cluster with no article_ids', () => {
+    const sub = {};
+    const articles = [makeArticle()];
+    expect(getSubClusterArticles(sub, articles)).toEqual([]);
+  });
+
+  it('handles empty articles array', () => {
+    const sub = { article_ids: ['art-1'] };
+    expect(getSubClusterArticles(sub, [])).toEqual([]);
+  });
+});
+
+// ══════════════════════════════════════════════
+// 8. getOrphanArticles
+// ══════════════════════════════════════════════
+
+describe('getOrphanArticles', () => {
+  it('returns articles not in any sub-cluster', () => {
+    const subs = [
+      { article_ids: ['art-1'] },
+      { article_ids: ['art-2'] },
+    ];
+    const articles = [
+      makeArticle({ article_id: 'art-1' }),
+      makeArticle({ article_id: 'art-2' }),
+      makeArticle({ article_id: 'art-3' }),
+    ];
+    const result = getOrphanArticles(subs, articles);
+    expect(result).toHaveLength(1);
+    expect(result[0].article_id).toBe('art-3');
+  });
+
+  it('returns empty when all articles are in sub-clusters', () => {
+    const subs = [{ article_ids: ['art-1', 'art-2'] }];
+    const articles = [
+      makeArticle({ article_id: 'art-1' }),
+      makeArticle({ article_id: 'art-2' }),
+    ];
+    expect(getOrphanArticles(subs, articles)).toEqual([]);
+  });
+
+  it('returns all articles when sub-clusters have no article_ids', () => {
+    const subs = [{}];
+    const articles = [makeArticle({ article_id: 'art-1' })];
+    const result = getOrphanArticles(subs, articles);
+    expect(result).toHaveLength(1);
+  });
+
+  it('handles empty sub-clusters array', () => {
+    const articles = [makeArticle({ article_id: 'art-1' })];
+    const result = getOrphanArticles([], articles);
+    expect(result).toHaveLength(1);
   });
 });
 

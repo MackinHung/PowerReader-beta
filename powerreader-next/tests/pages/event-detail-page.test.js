@@ -317,9 +317,9 @@ describe('EventDetailPage — sub-cluster grouping', () => {
     await vi.waitFor(() => {
       expect(screen.getByText('總統府召開國安會議討論區域安全')).toBeTruthy();
     });
-    // Sub-cluster headers should appear
-    const subHeaders = screen.getAllByText(/子事件/);
-    expect(subHeaders.length).toBeGreaterThanOrEqual(1);
+    // Sub-cluster titles should appear in accordions (may also appear in article cards)
+    expect(screen.getAllByText('台灣里詐騙案起訴').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('柬埔寨詐騙案開庭').length).toBeGreaterThanOrEqual(1);
   });
 
   it('shows flat article list when no sub_clusters', async () => {
@@ -335,8 +335,8 @@ describe('EventDetailPage — sub-cluster grouping', () => {
     await vi.waitFor(() => {
       expect(screen.getByText('總統府召開國安會議討論區域安全')).toBeTruthy();
     });
-    // No sub-cluster group elements
-    expect(container.querySelector('.sub-cluster-group')).toBeNull();
+    // No accordion elements when flat list
+    expect(container.querySelector('.accordion')).toBeNull();
   });
 
   it('shows flat article list when sub_clusters has only 1 entry', async () => {
@@ -358,6 +358,6 @@ describe('EventDetailPage — sub-cluster grouping', () => {
     await vi.waitFor(() => {
       expect(screen.getByText('總統府召開國安會議討論區域安全')).toBeTruthy();
     });
-    expect(container.querySelector('.sub-cluster-group')).toBeNull();
+    expect(container.querySelector('.accordion')).toBeNull();
   });
 });

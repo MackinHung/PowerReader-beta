@@ -4,13 +4,14 @@
   import { untrack } from 'svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import IconButton from '$lib/components/ui/IconButton.svelte';
+  import Accordion from '$lib/components/ui/Accordion.svelte';
   import ShareCardButton from '$lib/components/share/ShareCardButton.svelte';
   import CampBar from '$lib/components/data-viz/CampBar.svelte';
   import BlindspotAlert from '$lib/components/data-viz/BlindspotAlert.svelte';
   import ClusterTimeline from '$lib/components/data-viz/ClusterTimeline.svelte';
   import AnalysisZone from '$lib/components/data-viz/AnalysisZone.svelte';
+  import ComparisonTable from '$lib/components/data-viz/ComparisonTable.svelte';
   import ArticleCard from '$lib/components/article/ArticleCard.svelte';
-  import SourceIcon from '$lib/components/article/SourceIcon.svelte';
   import ProgressIndicator from '$lib/components/ui/ProgressIndicator.svelte';
   import GroupReport from '$lib/components/data-viz/GroupReport.svelte';
   import { t } from '$lib/i18n/zh-TW.js';
@@ -21,6 +22,8 @@
     getAnalysisProgress,
     groupArticlesBySource,
     buildShareData,
+    getSubClusterArticles,
+    getOrphanArticles,
   } from '$lib/pages/event-detail.js';
   import {
     checkGroupReadiness,
@@ -265,16 +268,14 @@
     <!-- Group Analysis Section -->
     {#if analysisState !== 'none'}
       <div class="group-analysis-section">
-        <h2 class="section-heading">
+        <h2 class="section-heading section-heading--accent">
           <span class="material-symbols-outlined">analytics</span>
           {t('group.title')}
         </h2>
 
         {#if groupReport}
-          <!-- State C: completed -->
           <GroupReport report={groupReport} />
         {:else if groupReadiness.ready}
-          <!-- State B: ready to generate -->
           <div class="group-action">
             <Button
               variant="outlined"
@@ -294,7 +295,6 @@
             {/if}
           </div>
         {:else}
-          <!-- State A: not enough data -->
           <div class="group-not-ready">
             <span class="material-symbols-outlined not-ready-icon">hourglass_empty</span>
             <p>{t('group.not_ready', {
@@ -306,67 +306,25 @@
       </div>
     {/if}
 
-    <!-- Cross-media Comparison (Light) -->
-    {#if articlesBySource.length >= 2}
-      <div class="comparison-section">
-        <h2 class="section-heading">
-          <span class="material-symbols-outlined">compare_arrows</span>
-          跨媒體比較
-        </h2>
-        <div class="comparison-table">
-          <div class="comparison-header-row">
-            <span class="col-source">來源</span>
-            <span class="col-title">標題</span>
-            <span class="col-bias">偏向</span>
-          </div>
-          {#each articlesBySource as [source, sourceArticles], rowIdx}
-            <div class="comparison-row" class:odd={rowIdx % 2 === 1}>
-              <div class="comparison-source">
-                <SourceIcon source={source} size="medium" />
-                <span class="source-name">{source}</span>
-                <span class="source-count">{sourceArticles.length} 篇</span>
-              </div>
-              <div class="comparison-articles">
-                {#each sourceArticles as art}
-                  <button
-                    class="comparison-article"
-                    onclick={() => handleArticleClick(art)}
-                  >
-                    <span class="art-title">{art.title}</span>
-                    {#if art.bias_score != null}
-                      <span class="art-bias" class:green={art.bias_score <= 40} class:blue={art.bias_score >= 60}>
-                        {art.bias_score}
-                      </span>
-                    {:else}
-                      <span class="art-bias pending">待分析</span>
-                    {/if}
-                  </button>
-                {/each}
-              </div>
-            </div>
-          {/each}
-        </div>
-      </div>
-    {/if}
+    <!-- Cross-media Comparison -->
+    <ComparisonTable {articlesBySource} onArticleClick={handleArticleClick} />
 
-    <!-- Related Articles (Light) — grouped by sub-cluster when available -->
+    <!-- Related Articles — grouped by sub-cluster when available -->
     <div class="articles-section">
       <h2 class="section-heading">
         <span class="material-symbols-outlined">article</span>
-        相關報導 ({articles.length})
+        相關報導 <span class="heading-count">({articles.length})</span>
       </h2>
 
       {#if cluster.sub_clusters?.length > 1}
-        <!-- Grouped by sub-clusters -->
         {#each cluster.sub_clusters as sub, subIdx}
-          {@const subArticleIds = new Set(sub.article_ids || [])}
-          {@const subArticles = articles.filter(a => subArticleIds.has(a.article_id))}
+          {@const subArticles = getSubClusterArticles(sub, articles)}
           {#if subArticles.length > 0}
-            <details class="sub-cluster-group" open={subIdx === 0}>
-              <summary class="sub-cluster-header">
-                <span class="sub-cluster-label">{t('cluster.sub_event_prefix')}: {sub.representative_title}</span>
-                <span class="sub-cluster-count">{subArticles.length} 篇</span>
-              </summary>
+            <Accordion
+              title={sub.representative_title}
+              badge="{subArticles.length} 篇"
+              open={subIdx === 0}
+            >
               <div class="articles-list">
                 {#each subArticles as article, i (article.article_id ?? i)}
                   <ArticleCard
@@ -376,13 +334,12 @@
                   />
                 {/each}
               </div>
-            </details>
+            </Accordion>
           {/if}
         {/each}
 
         <!-- Articles not in any sub-cluster (fallback) -->
-        {@const allSubIds = new Set(cluster.sub_clusters.flatMap(s => s.article_ids || []))}
-        {@const orphanArticles = articles.filter(a => !allSubIds.has(a.article_id))}
+        {@const orphanArticles = getOrphanArticles(cluster.sub_clusters, articles)}
         {#if orphanArticles.length > 0}
           <div class="articles-list">
             {#each orphanArticles as article, i (article.article_id ?? i)}
@@ -414,7 +371,7 @@
   .cluster-detail {
     display: flex;
     flex-direction: column;
-    gap: var(--pr-page-gap);
+    gap: var(--pr-section-gap-medium, 24px);
     padding: var(--pr-page-padding);
     max-width: 900px;
     margin: 0 auto;
@@ -443,6 +400,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    padding-bottom: var(--pr-section-gap-small, 12px);
   }
   .header-row {
     display: flex;
@@ -561,128 +519,31 @@
     font: var(--md-sys-typescale-label-medium-font);
     color: var(--pr-analysis-on-surface-variant);
   }
+
+  /* === Section Headings (Differentiated Hierarchy) === */
   .section-heading {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin: 24px 0 16px 0;
+    margin: var(--pr-section-gap-large, 40px) 0 var(--pr-section-gap-small, 12px) 0;
     padding-left: 0;
     border-left: none;
-    font: 900 30px/36px var(--pr-font-sans);
+    font: var(--pr-heading-secondary, 800 clamp(18px, 3vw, 24px)/1.3 var(--pr-font-sans));
     color: var(--pr-ink);
   }
   .section-heading .material-symbols-outlined {
-    font-size: 40px;
+    font-size: var(--pr-section-icon, clamp(20px, 3vw, 28px));
+    color: var(--md-sys-color-on-surface-variant);
+    flex-shrink: 0;
+  }
+  /* Only Group Analysis gets orange accent */
+  .section-heading--accent .material-symbols-outlined {
     color: #FF5722;
-    flex-shrink: 0;
   }
-
-  /* === Comparison Table (Light, with zebra stripes) === */
-  .comparison-section, .articles-section {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .comparison-table {
-    display: flex;
-    flex-direction: column;
-    border-radius: 0;
-    overflow: hidden;
-    border: 3px solid var(--pr-ink);
-    box-shadow: none;
-    background: #FFFFFF;
-  }
-  .comparison-header-row {
-    display: none;
-    padding: 12px 16px;
-    background: #000000;
-    color: #FFFFFF;
-    font: 900 16px var(--pr-font-sans);
-    gap: 8px;
-  }
-  @media (min-width: 768px) {
-    .comparison-header-row {
-      display: flex;
-    }
-    .col-source { width: 120px; flex-shrink: 0; }
-    .col-title { flex: 1; }
-    .col-bias { width: 60px; text-align: right; flex-shrink: 0; }
-  }
-  .comparison-row {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 16px;
-    background: #FFFFFF;
-    border-top: 1px solid var(--pr-ink);
-  }
-  .comparison-row:first-of-type {
-    border-top: none;
-  }
-  .comparison-row.odd {
-    background: #F0F0F0;
-  }
-  .comparison-source {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .source-name {
-    font: var(--md-sys-typescale-label-large-font);
-    color: var(--md-sys-color-on-surface);
-    font-weight: 600;
-  }
-  .source-count {
-    font: var(--md-sys-typescale-label-small-font);
+  .heading-count {
+    font: var(--md-sys-typescale-label-medium-font);
     color: var(--md-sys-color-on-surface-variant);
-  }
-  .comparison-articles {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding-left: 8px;
-  }
-  .comparison-article {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 8px;
-    background: none;
-    border: none;
-    padding: 8px 12px;
-    min-height: 44px;
-    border-radius: 0;
-    cursor: pointer;
-    text-align: left;
-    width: 100%;
-  }
-  .comparison-article:hover {
-    background: var(--md-sys-color-surface-container);
-  }
-  .art-title {
-    font: var(--md-sys-typescale-body-small-font);
-    color: var(--md-sys-color-on-surface-variant);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    flex: 1;
-  }
-  .art-bias {
-    font: var(--md-sys-typescale-label-small-font);
-    color: var(--md-sys-color-on-surface-variant);
-    white-space: nowrap;
-    flex-shrink: 0;
-    padding: 1px 6px;
-    border-radius: var(--md-sys-shape-corner-extra-small);
-    background: var(--md-sys-color-surface-container);
-  }
-  .art-bias.green { color: var(--camp-green); background: rgba(46, 125, 50, 0.08); }
-  .art-bias.blue { color: var(--camp-blue); background: rgba(21, 101, 192, 0.08); }
-  .art-bias.pending {
-    color: var(--md-sys-color-on-surface-variant);
-    background: var(--md-sys-color-surface-container-high);
-    opacity: 0.7;
+    font-weight: 500;
   }
 
   /* === Group Analysis === */
@@ -712,7 +573,8 @@
     text-align: center;
     background: var(--md-sys-color-surface-container-low);
     border-radius: 0;
-    border: 3px solid var(--pr-ink);
+    border-top: var(--pr-divider, 1px solid var(--md-sys-color-surface-container-high));
+    border-bottom: var(--pr-divider, 1px solid var(--md-sys-color-surface-container-high));
   }
   .not-ready-icon {
     font-size: 32px;
@@ -725,75 +587,15 @@
     color: var(--md-sys-color-on-surface-variant);
   }
 
-  /* === Sub-cluster Groups === */
-  .sub-cluster-group {
-    border: none;
-    border-left: 4px solid var(--pr-ink);
-    border-radius: 0;
-    overflow: visible;
-  }
-  .sub-cluster-header {
+  /* === Articles === */
+  .articles-section {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 12px 16px;
-    background: transparent;
-    cursor: pointer;
-    list-style: none;
+    flex-direction: column;
+    gap: 12px;
   }
-  .sub-cluster-header::-webkit-details-marker {
-    display: none;
-  }
-  .sub-cluster-header::before {
-    content: '';
-    display: inline-block;
-    width: 0;
-    height: 0;
-    border-left: 5px solid var(--md-sys-color-on-surface-variant);
-    border-top: 4px solid transparent;
-    border-bottom: 4px solid transparent;
-    margin-right: 8px;
-    transition: transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
-  }
-  .sub-cluster-group[open] > .sub-cluster-header::before {
-    transform: rotate(90deg);
-  }
-  .sub-cluster-label {
-    font: 500 14px/20px var(--pr-font-serif);
-    color: var(--md-sys-color-on-surface);
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .sub-cluster-count {
-    font: var(--md-sys-typescale-label-small-font);
-    color: var(--md-sys-color-on-surface-variant);
-    white-space: nowrap;
-  }
-  .sub-cluster-group > .articles-list {
-    padding: 4px 0 4px 12px;
-  }
-
-  /* === Articles List === */
   .articles-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
   }
-
-  /* === Sub-cluster expand animation === */
-  .sub-cluster-group[open] > .articles-list {
-    animation: slideDown var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-standard);
-  }
-  @keyframes slideDown {
-    from { opacity: 0; transform: translateY(-8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .sub-cluster-group[open] > .articles-list { animation: none; }
-  }
-
 </style>

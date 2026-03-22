@@ -31,7 +31,7 @@
     background: var(--md-sys-color-error-container);
     color: var(--md-sys-color-on-error-container);
     border-radius: 0;
-    border: 3px solid var(--pr-ink);
+    border: 2px solid var(--md-sys-color-error);
     font: var(--md-sys-typescale-label-medium-font);
     animation: slide-in-top var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate);
   }

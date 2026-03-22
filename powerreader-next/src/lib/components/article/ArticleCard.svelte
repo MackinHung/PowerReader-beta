@@ -44,7 +44,14 @@
       <SourceBadge source={article.source} />
       <span class="date">{formattedDate()}</span>
     </div>
-    <h3 class="card-title">{article.title ?? ''}</h3>
+    {#if article.primary_url}
+      <a class="card-title-link" href={article.primary_url} target="_blank" rel="noopener" onclick={(e) => e.stopPropagation()}>
+        <h3 class="card-title">{article.title ?? ''}</h3>
+        <span class="material-symbols-outlined card-title-icon">open_in_new</span>
+      </a>
+    {:else}
+      <h3 class="card-title">{article.title ?? ''}</h3>
+    {/if}
     <div class="card-bottom">
       {#if analysisCount > 0}
         <span class="analysis-badge analyzed">
@@ -59,12 +66,6 @@
       {/if}
     </div>
     <div class="card-actions">
-      {#if article.primary_url}
-        <span class="external-hint">
-          <span class="material-symbols-outlined" style="font-size: 16px;">open_in_new</span>
-          原文
-        </span>
-      {/if}
       {#if onanalyze}
         <button
           class="analyze-btn"
@@ -97,14 +98,15 @@
     flex-direction: column;
     gap: 12px;
     background: #FFFFFF;
-    border: 3px solid var(--pr-ink);
-    box-shadow: 4px 4px 0px var(--pr-ink);
-    padding: 20px;
+    border: var(--pr-border-subtle, 1px solid var(--md-sys-color-outline-variant));
+    box-shadow: none;
+    padding: 16px;
     border-radius: 0;
-    transition: box-shadow 150ms ease;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
   }
   .article-card-wrapper:hover .brutalist-article {
-    box-shadow: 6px 6px 0px var(--pr-ink);
+    border-color: var(--pr-ink);
+    box-shadow: 3px 3px 0px var(--pr-ink);
   }
   .card-top {
     display: flex;
@@ -115,6 +117,30 @@
     font: var(--md-sys-typescale-label-small-font);
     color: var(--md-sys-color-on-surface-variant);
     margin-left: auto;
+  }
+  .card-title-link {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .card-title-link:hover .card-title {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+  }
+  .card-title-icon {
+    flex-shrink: 0;
+    font-size: 16px;
+    color: var(--md-sys-color-on-surface-variant);
+    margin-top: 3px;
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+  .card-title-link:hover .card-title-icon {
+    opacity: 1;
+    color: var(--md-sys-color-primary);
   }
   .card-title {
     font: var(--md-sys-typescale-title-small-font);
@@ -155,13 +181,6 @@
     align-items: center;
     justify-content: space-between;
     padding-top: 4px;
-  }
-  .external-hint {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font: var(--md-sys-typescale-label-small-font);
-    color: var(--md-sys-color-primary);
   }
   .analyze-btn {
     display: inline-flex;

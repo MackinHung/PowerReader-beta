@@ -4,7 +4,7 @@
 - **Stack**: SvelteKit + Svelte 5 + TypeScript + Vite + Vitest
 - **Repo**: `MackinHung/PowerReader-beta` branch `master`
 - **Deploy**: Cloudflare Pages project `powerreader` (production branch = `master`)
-- **Tests**: `npm test` (vitest run) — 1239 tests (all passing)
+- **Tests**: `npm test` (vitest run) — 1312 tests (all passing)
 
 ## Directory Structure
 ```

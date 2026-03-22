@@ -92,6 +92,24 @@ export function getArticleAnalysisStatus(article: Record<string, unknown> | null
   return 'pending';
 }
 
+// ── Sub-Cluster Helpers ──
+
+interface SubCluster {
+  representative_title?: string;
+  article_ids?: string[];
+  article_count?: number;
+}
+
+export function getSubClusterArticles(subCluster: SubCluster, articles: Article[]): Article[] {
+  const idSet = new Set(subCluster.article_ids ?? []);
+  return articles.filter(a => idSet.has(a.article_id));
+}
+
+export function getOrphanArticles(subClusters: SubCluster[], articles: Article[]): Article[] {
+  const allSubIds = new Set(subClusters.flatMap(s => s.article_ids ?? []));
+  return articles.filter(a => !allSubIds.has(a.article_id));
+}
+
 // ── Share ──
 
 export function buildShareData(cluster: ClusterInfo | null, clusterId: string): ShareData {

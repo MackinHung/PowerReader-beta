@@ -40,6 +40,11 @@
     color: var(--pr-analysis-on-surface);
     border: var(--pr-border-width) solid var(--pr-border-color);
   }
+  .subtle {
+    background: var(--md-sys-color-surface-container-low);
+    border: 1px solid var(--md-sys-color-outline-variant);
+    box-shadow: none;
+  }
   .clickable {
     cursor: pointer;
   }

@@ -21,7 +21,7 @@
     align-items: center;
     gap: 4px;
     border-radius: 0;
-    border: 2px solid var(--pr-ink);
+    border: 1px solid var(--md-sys-color-outline-variant);
     background: var(--md-sys-color-surface-container);
     white-space: nowrap;
   }
@@ -46,7 +46,7 @@
     font-weight: 900;
     flex-shrink: 0;
     line-height: 1;
-    border: 1px solid var(--pr-ink);
+    border: none;
   }
   .small .brand-icon {
     width: 18px;

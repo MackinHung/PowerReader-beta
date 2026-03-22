@@ -17,7 +17,7 @@
     color: #FFFFFF;
     border-radius: 0;
     padding: 32px;
-    border: 3px solid var(--pr-analysis-border);
+    border: none;
     box-shadow: none;
   }
   .zone-title {
