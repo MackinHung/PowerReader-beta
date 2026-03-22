@@ -8,7 +8,7 @@
  *   Pass 2: Narrative analysis (3-5 key points + stances)
  *
  * Config:
- *   - Model: Qwen3-4B-q4f16_1-MLC (3.4GB, WebGPU)
+ *   - Model: Qwen3-8B-q4f16_1-MLC (4.3GB, WebGPU)
  *   - Params: think=false, t=0.5, response_format=json_object
  *   - Timeout: 30s/pass GPU, 120s/pass CPU
  *
@@ -36,6 +36,11 @@ import { hashPrompts, buildFingerprint } from './fingerprint.js';
 
 const WEBLLM_CDN = 'https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm/+esm';
 const MODEL_ID = 'Qwen3-8B-q4f16_1-MLC';
+
+// TODO: Self-hosted model on Cloudflare R2 (Taiwan edge = fast download)
+// Uncomment after uploading 8B model shards to R2 bucket
+// const R2_MODEL_URL = 'https://pub-62bdee77df82409a9c64f63c8327c756.r2.dev/Qwen3-8B-q4f16_1-MLC/';
+// const MODEL_LIB_URL = 'https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/web-llm-models/v0_2_80/Qwen3-8B-q4f16_1-ctx4k_cs1k-webgpu.wasm';
 const MODEL_PARAMS = {
   temperature: 0.3,
   top_p: 0.85,
@@ -78,7 +83,7 @@ let _webllmLoading = false;
 
 /**
  * Get or create the WebLLM engine (singleton).
- * Downloads model on first call (~3.4GB).
+ * Downloads model on first call (~4.3GB).
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getWebLLMEngine(onProgress?: (progress: { text: string; progress: number }) => void): Promise<any> {

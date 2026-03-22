@@ -131,10 +131,10 @@ const messages: Record<string, string> = {
   // ==============================================
   // Model Management
   // ==============================================
-  'model.title': '模型管理',
+  'model.title': 'AI 模型管理',
   'model.name': 'Qwen3-8B (q4f16)',
   'model.version_label': '版本: v{version}',
-  'model.size_label': '大小: ~4.5 GB (建議 6GB+ VRAM)',
+  'model.size_label': '大小: ~4.3 GB (建議 6GB+ VRAM)',
   'model.download.button': '下載模型',
   'model.download.pause': '暫停下載',
   'model.download.resume': '繼續下載',
@@ -142,17 +142,17 @@ const messages: Record<string, string> = {
   'model.download.estimate': '預估剩餘: 約 {minutes} 分鐘',
   'model.download.complete': '下載完成',
   'model.download.heading': '下載 AI 模型',
-  'model.download.first_time_hint': '首次使用需下載模型 (約 4.5GB)，下載完成後將自動開始分析',
+  'model.download.first_time_hint': '首次使用需下載模型 (約 4.3GB)，下載完成後將自動開始分析',
   'model.download.chunks': '區塊',
-  'model.download.wifi_required': '請連接 WiFi 後再下載模型 (約 4.5 GB)',
+  'model.download.wifi_required': '請連接 WiFi 後再下載模型 (約 4.3 GB)',
   'model.download.low_battery': '電量不足 20%，請充電後再下載',
   'model.download.charging_required': '請接上充電器後再下載模型',
   'model.download.confirm_heading': '首次使用需下載 AI 模型',
-  'model.download.confirm_desc': '分析功能需要下載約 4.5GB 的 AI 模型至瀏覽器，下載後可離線使用。建議使用 WiFi 下載。',
+  'model.download.confirm_desc': '分析功能需要下載約 4.3GB 的 AI 模型至瀏覽器，下載後可離線使用。建議使用 WiFi 下載。',
   'model.download.check_wifi': '網路連線',
   'model.download.check_battery': '電量充足',
   'model.download.check_storage': '儲存空間',
-  'model.download.cellular_warning': '偵測到行動網路連線，下載 4.5GB 模型可能產生大量數據費用。',
+  'model.download.cellular_warning': '偵測到行動網路連線，下載 4.3GB 模型可能產生大量數據費用。',
   'model.download.confirm_start': '確認下載並分析',
   'model.download.confirm_anyway': '仍然下載',
   'model.delete.button': '刪除模型',
@@ -171,7 +171,7 @@ const messages: Record<string, string> = {
   'model.inference.preparing': '正在組裝提示詞...',
   'model.inference.running': 'AI 分析中...',
   'model.inference.generating': '產生結果...',
-  'model.inference.loading_model': '載入 AI 模型中... (首次約需下載 4.5GB)',
+  'model.inference.loading_model': '載入 AI 模型中... (首次約需下載 4.3GB)',
   'model.inference.loading_model_pct': '載入模型: {text}',
   'model.inference.pass1_running': 'Pass 1/2: 分數分析中...',
   'model.inference.pass1_done': 'Pass 1 完成，開始論述分析...',
@@ -299,7 +299,7 @@ const messages: Record<string, string> = {
   'auto_analysis.consent.title': '自動分析說明',
   'auto_analysis.consent.desc': 'PowerReader 會使用您的 GPU 自動分析文章立場。過程約 15 秒，完全在您的裝置上執行，不會上傳原文。',
   'auto_analysis.consent.confirm': '了解，開始分析',
-  'auto_analysis.download.size_hint': '模型大小: 約 4.5GB',
+  'auto_analysis.download.size_hint': '模型大小: 約 4.3GB',
 
   // ==============================================
   // Article Status Labels
@@ -888,7 +888,7 @@ const messages: Record<string, string> = {
   'a11y.button.share': '分享此分析結果',
   'a11y.button.go_original': '在新視窗開啟原文連結',
   'a11y.button.install_pwa': '將此應用程式加入主畫面',
-  'a11y.button.download_model': '下載 AI 分析模型，檔案大小約 4.5 GB',
+  'a11y.button.download_model': '下載 AI 分析模型，檔案大小約 4.3 GB',
   'a11y.button.delete_model': '刪除已下載的 AI 分析模型',
 
   // Forms

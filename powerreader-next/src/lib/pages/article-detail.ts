@@ -385,7 +385,7 @@ async function renderGPUConsent(section: HTMLElement, article: ArticleDetail): P
 
     const hint = document.createElement('p');
     hint.className = 'gpu-consent-card__hint';
-    hint.textContent = '4.5GB 模型需要桌面電腦的 GPU 運算，請使用桌面瀏覽器';
+    hint.textContent = '4.3GB 模型需要桌面電腦的 GPU 運算，請使用桌面瀏覽器';
     card.appendChild(hint);
 
     section.appendChild(card);
@@ -427,7 +427,7 @@ async function renderGPUConsent(section: HTMLElement, article: ArticleDetail): P
 
   const modelHint = document.createElement('p');
   modelHint.className = 'gpu-consent-card__info';
-  modelHint.textContent = '首次使用將下載約 4.5GB AI 模型至瀏覽器';
+  modelHint.textContent = '首次使用將下載約 4.3GB AI 模型至瀏覽器';
   card.appendChild(modelHint);
 
   const privacyHint = document.createElement('p');

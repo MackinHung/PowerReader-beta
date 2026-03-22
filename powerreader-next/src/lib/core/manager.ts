@@ -1,7 +1,7 @@
 /**
  * PowerReader - Model Download Manager
  *
- * Manages Qwen3-4B model download via WebLLM with:
+ * Manages Qwen3-8B model download via WebLLM with:
  *   - Pre-download condition checks (WiFi, battery, storage)
  *   - Resumable download via Range requests
  *   - OPFS storage (preferred) or IndexedDB fallback

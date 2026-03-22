@@ -556,7 +556,7 @@
           <span class="material-symbols-outlined model-icon">smart_toy</span>
           <div class="model-text">
             <span class="model-name">Qwen3-8B</span>
-            <span class="model-size">約 4.5 GB（4-bit 量化版，WebGPU 加速）</span>
+            <span class="model-size">約 4.3 GB（4-bit 量化版，WebGPU 加速）</span>
           </div>
           {#if modelReady && !modelLoading}
             <span class="material-symbols-outlined model-check">check_circle</span>
