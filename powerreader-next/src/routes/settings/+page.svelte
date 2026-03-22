@@ -41,6 +41,19 @@
   const ETA_ALPHA = 0.9;               // ETA smoothing (stable)
   const ESTIMATED_MB = 4500;           // ~4.5GB for Qwen3-8B
 
+  /** Pre-download estimate via Network Information API (navigator.connection.downlink, Mbps). */
+  let estimatedDownloadTime = $derived(() => {
+    const conn = typeof navigator !== 'undefined' ? navigator.connection : null;
+    if (!conn?.downlink) return null;
+    const bytesPerSec = (conn.downlink * 1_000_000) / 8;  // Mbps → B/s
+    const secs = (ESTIMATED_MB * 1_000_000) / bytesPerSec; // total seconds
+    if (secs < 60) return `約 ${Math.ceil(secs)} 秒`;
+    if (secs < 3600) return `約 ${Math.ceil(secs / 60)} 分鐘`;
+    const hrs = Math.floor(secs / 3600);
+    const mins = Math.ceil((secs % 3600) / 60);
+    return `約 ${hrs} 小時 ${mins} 分鐘`;
+  });
+
   // ── GPU detection state ──
   let gpuResult = $state(null);         // scanGPU() result
   let gpuScanning = $state(false);
@@ -447,7 +460,7 @@
   <section class="section">
     <h2 class="section-title">
       <span class="material-symbols-outlined section-icon">smart_toy</span>
-      模型管理
+      AI 模型管理
     </h2>
     <Card variant="filled">
       <div class="model-section">
@@ -456,12 +469,15 @@
           <span class="material-symbols-outlined model-icon">smart_toy</span>
           <div class="model-text">
             <span class="model-name">Qwen3-8B</span>
-            <span class="model-size">約 4.5 GB（4-bit 量化版）</span>
+            <span class="model-size">約 4.5 GB（4-bit 量化版，WebGPU 加速）</span>
           </div>
           {#if modelReady && !modelLoading}
             <span class="material-symbols-outlined model-check">check_circle</span>
           {/if}
         </div>
+        <p class="model-desc">
+          Qwen3-8B 是阿里巴巴開源的大型語言模型，支援多語言理解與推理。PowerReader 使用 4-bit 量化版本，在瀏覽器內透過 WebGPU 直接執行，無需伺服器。
+        </p>
 
         <!-- Progress bar during download -->
         {#if modelLoading}
@@ -499,6 +515,19 @@
               尚未下載，需要穩定網路和足夠儲存空間
             {/if}
           </span>
+          {#if !modelReady}
+            <div class="download-hint">
+              <span class="material-symbols-outlined hint-icon">schedule</span>
+              <div class="hint-text">
+                <span>下載時間因網路環境而異</span>
+                {#if estimatedDownloadTime()}
+                  <span class="hint-estimate">目前網速預估：{estimatedDownloadTime()}</span>
+                {:else}
+                  <span class="hint-estimate">Wi-Fi 環境約 5-15 分鐘，行動網路可能更久</span>
+                {/if}
+              </div>
+            </div>
+          {/if}
         {/if}
 
         <p class="model-note">
@@ -918,10 +947,41 @@
     font: var(--md-sys-typescale-body-small-font);
     color: var(--md-sys-color-on-surface-variant);
   }
+  .model-desc {
+    margin: 0;
+    padding-left: 0;
+    font: var(--md-sys-typescale-body-small-font);
+    color: var(--md-sys-color-on-surface-variant);
+    line-height: 1.5;
+  }
   .model-status-text {
     font: var(--md-sys-typescale-body-small-font);
     color: var(--md-sys-color-on-surface-variant);
     padding-left: 0;
+  }
+  .download-hint {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 12px;
+    background: color-mix(in srgb, var(--md-sys-color-primary) 6%, transparent);
+    border-radius: var(--md-sys-shape-corner-small);
+  }
+  .hint-icon {
+    font-size: 18px;
+    color: var(--md-sys-color-primary);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .hint-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font: var(--md-sys-typescale-body-small-font);
+    color: var(--md-sys-color-on-surface-variant);
+  }
+  .hint-estimate {
+    color: var(--md-sys-color-outline);
   }
   .model-note {
     margin: 4px 0 0;
@@ -944,8 +1004,14 @@
     color: var(--md-sys-color-error);
   }
   @media (min-width: 768px) {
+    .model-desc {
+      padding-left: 44px;
+    }
     .model-status-text {
       padding-left: 44px;
+    }
+    .download-hint {
+      margin-left: 44px;
     }
     .model-actions {
       padding-left: 44px;
