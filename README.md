@@ -1,109 +1,263 @@
-# PowerReader — 台灣新聞偏見分析系統
+# PowerReader — AI代理識讀新聞立場分析平台
 
-去中心化新聞偏見分析平台。用戶端透過 WebLLM 運行 Qwen3-4B 瀏覽器內推理，Cloudflare 全棧提供 RAG 知識注入。
+**[powerreader.pages.dev](https://powerreader.pages.dev)**
 
-## Quick Start
+<!-- TODO: 首頁截圖 — 報導熱點頁面，顯示事件卡片與立場光譜 -->
 
-```bash
-# Install dependencies
-npm install
+---
 
-# Build Workers (dry-run)
-npx wrangler deploy --dry-run --outdir dist
+## 特色
 
-# Run tests
-cd T05_REWARD_SYSTEM && npx jest
+- **去中心化分析** — AI 模型直接在你的瀏覽器中運行，新聞全文不離開你的裝置，沒有任何伺服器看得到你在讀什麼
+- **公民算力驅動** — 不靠廣告、不靠企業、不由任何政治立場主導。每位使用者貢獻自己的 GPU 算力，共同建構分析生態
+- **三層透明機制** — 每筆分析都可展開查看：AI 使用了什麼評分框架、注入了哪些背景知識、原始輸入是什麼。附推論指紋供驗證
+- **跨媒體盲區偵測** — 不只告訴你這篇偏哪邊，還自動偵測哪些事件只有單一陣營在報導、哪些觀點被集體忽略
+- **社群共建知識庫** — 808+ 筆政治人物、社會議題、歷史事件資料，任何人可建議編輯，審核後合併
 
-# Deploy Workers (via REST API, see DEPLOY_GUIDE.md)
-# Deploy Pages
-npx wrangler pages deploy T04_FRONTEND/src --project-name powerreader --branch main
+---
+
+## 概念
+
+台灣擁有高度自由的新聞環境，但同一事件經過不同媒體的詮釋後，讀者看到的面貌往往截然不同。演算法推薦又加深了「同溫層」效應 — 你接收到的觀點，可能只是整個光譜的一小段。
+
+PowerReader 的目標是**讓你看見完整的光譜**：這篇報導偏向哪個陣營？偏了多少？同一件事不同媒體怎麼說？哪些事件只有單一立場的媒體在報導？
+
+與傳統新聞分析工具不同，PowerReader 的分析不是由某個機構或編輯台產出的 — 它由使用者社群用自己的裝置算力集體完成，所有分析邏輯開源、可審計、可驗證。
+
+---
+
+## 網站操作說明
+
+### 1. 報導熱點（首頁）
+
+<!-- TODO: 截圖 — 首頁事件列表，顯示類別篩選 chips 與事件卡片 -->
+
+打開網站就是今日新聞熱點。每則新聞以事件為單位聚類，顯示有多少篇報導、多少家媒體。你可以用類別篩選（政治、社會、國際、兩岸、財經、科技、娛樂等 12 類），也可以直接搜尋關鍵字。
+
+點進任何一則事件，可以看到：
+- 所有相關報導與子事件
+- 各篇報導的立場分數與陣營比例
+- 跨媒體分析報告（需 3 家以上媒體的分析結果）
+
+### 2. 觀察偏見
+
+<!-- TODO: 截圖 — 跨媒體比較頁面，同一事件多家媒體的立場分歧視覺化 -->
+
+#### 跨媒體比較
+選擇一個事件，並排比較 20+ 家台灣媒體的報導角度。系統計算「立場分歧分數」，一眼看出各家媒體在同一事件上的偏向差異。
+
+涵蓋的媒體包括：中央社、自由時報、聯合報、公視、風傳媒、三立、ETtoday、TVBS、東森、科技新報、報導者、關鍵評論網等。
+
+#### 報導盲區偵測
+
+<!-- TODO: 截圖 — 盲區偵測頁面，顯示「僅泛綠報導」「僅泛藍報導」的事件卡片 -->
+
+自動偵測資訊死角：
+- **僅泛綠報導** — 只有泛綠媒體報導、泛藍沉默的事件
+- **僅泛藍報導** — 只有泛藍媒體報導、泛綠沉默的事件
+- **缺乏中立報導** — 沒有中立觀點的議題
+- **報導失衡** — 立場比例嚴重偏斜的話題
+
+#### 媒體傾向
+根據近 30 天報導的立場分數滾動平均，動態推導各媒體整體傾向，標示信心度（高 / 中 / 低）。
+
+### 3. AI 分析
+
+<!-- TODO: 截圖 — 文章分析結果頁面，顯示立場光譜、陣營比例、情緒煽動度 -->
+
+#### 手動分析
+點進任何一篇文章，按下「分析」按鈕即可啟動。首次使用需下載 AI 模型（約 4.3GB，建議 WiFi），下載後所有分析都在本地執行。
+
+每篇報導經過兩輪分析：
+
+| 輪次 | 內容 | 約需時間 |
+|------|------|---------|
+| **第一輪** | 立場分數 (0–100)、陣營比例（綠/藍/白/灰）、情緒煽動度 | ~8 秒 |
+| **第二輪** | 3–5 個關鍵論述摘要、涉及的政黨立場標註 | ~5 秒 |
+
+#### 分析透明化
+
+<!-- TODO: 截圖 — 展開「分析依據」三層面板 -->
+
+分析完成後，你可以展開「查看分析依據」查看三層透明資訊：
+1. **系統分析框架** — AI 使用的評分規則（0=泛綠 ~ 100=泛藍）
+2. **背景知識注入** — 本次分析時注入給 AI 參考的知識庫條目
+3. **原始文章** — 實際送入模型的文章內容（截取前 8,400 字）
+
+每筆分析附有推論指紋（模型版本、Prompt 雜湊、GPU 資訊、時間戳），可供第三方驗證。
+
+#### 自動分析
+開啟自動模式後，系統持續從待分析文章中取出報導、自動完成雙輪分析。你可以隨時暫停、繼續或停止。
+
+分析結果經品質驗證（格式檢查、數值範圍、歷史一致性、重複防護），通過後計入你的貢獻紀錄。
+
+> 沒有高效能 GPU 的裝置不用擔心 — 系統自動偵測硬體能力，切換為 CPU 模式或伺服器端代理分析。
+
+### 4. 立場光譜怎麼看
+
+```
+偏綠 ◄──────────── 中立 ────────────► 偏藍
+0        25        50        75       100
 ```
 
-## Directory Structure
+**陣營比例**反映「誰的聲音在這篇報導中主導」：
+
+| 陣營 | 意義 |
+|------|------|
+| 綠 | 民進黨及泛綠陣營的論述佔比 |
+| 藍 | 國民黨及泛藍陣營的論述佔比 |
+| 白 | 民眾黨、中立或跨黨派觀點佔比 |
+| 灰 | 非政治性內容佔比 |
+
+**情緒煽動度**（0–100）是獨立於立場的指標：
+
+| 區間 | 等級 |
+|------|------|
+| 0–20 | 冷靜客觀 |
+| 21–40 | 略帶立場 |
+| 41–60 | 情緒化 |
+| 61–80 | 煽情 |
+| 81–100 | 極端煽動 |
+
+非政治新聞的立場分數固定為 50（中立），陣營比例全為灰色。
+
+---
+
+## 知識庫
+
+<!-- TODO: 截圖 — 知識庫頁面，顯示政治人物/議題條目與各黨立場比較 -->
+
+知識庫是 PowerReader 分析品質的基礎。AI 分析報導時，會自動從知識庫中抓取相關的政治人物背景、議題脈絡、歷史事件，作為判斷依據注入。
+
+### 瀏覽與查詢
+- 依類型篩選：政治人物 / 社會議題 / 歷史事件
+- 依政黨篩選：國民黨 / 民進黨 / 民眾黨 / 時代力量 / 台灣基進
+- 關鍵字搜尋
+
+### 各黨立場比較
+每筆議題條目都可展開「各黨立場比較」，並排查看民進黨、國民黨、民眾黨對同一議題的官方立場。
+
+### 社群編輯
+任何人都可以對知識庫條目建議修改：
+1. 點擊「建議編輯」，修改內容並填寫修改原因
+2. 系統自動建立 Pull Request
+3. 管理者審核通過後合併，網站自動更新
+
+**編輯規範：**
+- 內容必須客觀、可查證，不可包含主觀意見
+- 不可使用侮辱性或歧視性語言
+- 日期格式統一 YYYY-MM-DD
+- 每欄位上限 120 字
+
+---
+
+## 公民算力飛輪
+
+PowerReader 的運作模式是一個正向循環：
 
 ```
-├── CLAUDE.md                  # Agent cold-start file (read first)
-├── MASTER_ROADMAP.md          # Decisions, progress, file index
-├── DEPLOY_GUIDE.md            # Cloudflare deployment instructions
-│
-├── shared/                    # SSOT config, enums, response helpers
-├── src/workers/               # Cloudflare Workers API backend
-│   ├── handlers/              #   Route handlers (articles, auth, knowledge, etc.)
-│   ├── middleware/             #   Auth + rate limiting
-│   └── index.js               #   Entry point
-│
-├── T04_FRONTEND/src/          # Cloudflare Pages PWA frontend
-│   ├── js/pages/              #   Page modules (analyze, compare, profile, etc.)
-│   ├── js/model/              #   Local Qwen inference + prompt assembly
-│   └── js/utils/              #   Shared utilities
-│
-├── T05_REWARD_SYSTEM/         # Points engine + anti-cheat
-│   └── src/                   #   points-calculation, points-validation
-│
-├── monitoring/                # Health checks, metrics, Sentry
-├── scripts/                   # Validation + data import scripts
-├── tests/                     # Test files + knowledge base CSVs
-│
-├── M01_PROJECT_LEAD/          # Project management docs
-├── T01_SYSTEM_ARCHITECTURE/   # KV Schema, API Routes, architecture docs
-├── T02_DATA_ACQUISITION/      # Crawler specs, news sources, dedup logic
-├── T03_AI_INFERENCE/          # Prompt versions, quality gates, model reports
-├── T06_COMPLIANCE/            # Crawler compliance, privacy, error handling
-├── T07_DEPLOYMENT/            # CI/CD, monitoring, performance benchmarks
-│
-└── docs/                      # Common mistakes, data structure audit
+你貢獻算力分析一篇報導
+       ↓
+  獲得點數獎勵（每次 0.1–0.5 點）
+       ↓
+  分析結果匯入全平台
+       ↓
+  更多人看見不同觀點
+       ↓
+  更多人加入 → 飛輪越轉越快
 ```
 
-## Architecture
+### 點數與配額
+- 每日有免費分析配額，用完後仍可繼續分析（不獲得點數）
+- 配額每日 24:00（台灣時間）重置
+- 分析結果經四道品質驗證（格式、數值範圍、歷史一致性、重複防護）
+- 連續 3 次未通過品質驗證 → 暫停分析 1 小時
+
+### 點數商店（開發中）
+
+點數商店正在建設中，預計提供以下兌換項目：
+
+- **外觀徽章**：公民分析師、動力貢獻者、資料先鋒
+- **功能道具**：分析加量包（+10 次配額）、冷卻跳過券、歷史記錄擴展（30 天→6 個月）
+
+---
+
+## 平台維護與永續
+
+### 贊助模式（開發中）
+
+PowerReader 不靠廣告收入，計畫透過公民贊助維持運作。贊助功能正在開發中，資金分配設計如下：
+
+| 贊助方案 | 平台基金 | 代理運算 | 開發者 |
+|---------|---------|---------|--------|
+| 請杯咖啡 | — | — | 100% |
+| 公民力量 | 80% | — | 20% |
+| 算力推動 | 40% | 50% | 10% |
+| 代理媒體 | — | 80% | 20% |
+
+- **平台基金**：建構點數商店與獎勵機制
+- **代理運算**：為沒有高效能裝置的使用者提供伺服器端 AI 分析
+- **開發者**：維護開發
+
+### 開源與透明
+- 所有程式碼以 [AGPL-3.0](LICENSE) 授權公開
+- 分析邏輯（prompt 設計、評分框架）完全可審計
+- 獎金池抽獎機制去中心化 — 開發者只能設定每月配額，無法介入結果
+
+### 社群共建
+- 知識庫由社群持續更新，審核合併流程公開透明
+- 分析結果由全體使用者集體產出，非單一機構判定
+- 歡迎在 [Issues](https://github.com/MackinHung/PowerReader/issues) 回報問題或提出建議
+
+---
+
+## 隱私承諾
+
+- 報導全文**只在你的裝置上處理**，不上傳至任何伺服器
+- 提交至平台的僅有結構化分析結果（分數、比例、摘要），不含原文
+- 離線時分析結果暫存本地，恢復連線後自動同步
+- 所有核心功能無需登入即可使用
+- 支援資料匯出與帳號刪除
+
+---
+
+## 技術架構
 
 ```
-Crawler (AGPL-3.0, separate repo)
-  → RSS/API → bge-small-zh topic filter → dedup → clean
+Crawler（閉源）
+  → RSS/API 爬取 → bge-small-zh 議題篩選 → 去重清洗
   → POST /api/v1/articles/batch → PowerReader API
 
-PowerReader API (Cloudflare Workers)
-  → bge-m3 embedding (Workers AI) → Vectorize knowledge search
-  → R2 (full text) + D1 (structured data) + KV (config/cache)
+PowerReader API（Cloudflare Workers）
+  → bge-m3 嵌入 (Workers AI) → Vectorize 知識搜索
+  → R2 (全文) + D1 (結構化資料) + KV (設定/快取)
 
-Client (Cloudflare Pages PWA)
-  → Fetch articles + knowledge → Assemble 3-layer prompt
-  → WebLLM Qwen3-4B browser inference → Results + knowledge transparency panel
+瀏覽器端（Cloudflare Pages PWA）
+  → 取得文章 + 知識 → 組裝三層 Prompt
+  → WebLLM Qwen3-8B 本地推論（WebGPU）→ 結果 + 透明化面板
 ```
 
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Cloudflare Pages (PWA) + IndexedDB |
-| Backend | Cloudflare Workers + D1 + R2 + KV + Vectorize |
-| Embedding | Workers AI bge-m3 (1024d) + bge-small-zh (512d) |
-| Inference | Qwen3-4B (client-side, WebLLM WebGPU, ~6s/article) |
-| Crawler | GitHub Actions (every 2h), 13 RSS/API sources |
-| Auth | Google OAuth (server-side redirect) + JWT RS256 |
-
-## Support This Project
-
-PowerReader 是一個完全開源的公民科技專案，致力於讓每個人都能用 AI 理解新聞背後的立場與偏見。
-
-我們靠社群的力量維持營運 — 伺服器費用、資料處理、模型優化都需要持續投入。
-
-### How to Support
-
-| 管道 | 說明 |
+| 層級 | 技術 |
 |------|------|
-| [GitHub Sponsors](https://github.com/sponsors/MackinHung) | 零手續費，直接支持開發者 |
-| [Open Collective](https://opencollective.com/powerreader) | 完全透明的收支紀錄 |
+| 前端 | SvelteKit 2 + Svelte 5 + TypeScript |
+| AI 推論 | WebGPU + [WebLLM](https://github.com/mlc-ai/web-llm)（MLC） |
+| 語言模型 | [Qwen3](https://github.com/QwenLM/Qwen3)-8B（4-bit, 4.3GB） |
+| 後端 | Cloudflare Workers + D1 + R2 + KV + Vectorize |
+| 嵌入模型 | Workers AI bge-m3（1024d）+ bge-small-zh（512d） |
+| 向量搜索 | Cloudflare Vectorize |
+| 部署 | Cloudflare Pages + Workers |
+| 測試 | 1,342 tests（Vitest + Playwright） |
 
-即使是一杯咖啡的金額，也能幫助我們持續改善台灣的新聞分析工具。
+---
 
-### Why Sponsor?
-
-- **100% 開源** — 你的贊助讓公共財持續存在
-- **透明化** — 所有資金用途公開可查
-- **公民驅動** — 不接受政黨或企業廣告收入
-
-## License
+## 授權
 
 AGPL-3.0 — see [LICENSE](LICENSE)
 
 **Copyright** MackinHung
+
+---
+
+<p align="center">
+  <strong>PowerReader</strong> — 用你的算力，守護媒體真相
+</p>
