@@ -144,16 +144,7 @@ function drawHeader(ctx: CanvasRenderingContext2D, y: number): number {
   ctx.font = `bold 36px ${SERIF}`;
   ctx.fillStyle = GOLD;
   ctx.fillText('PowerReader · 新聞立場分析', PAD, y + 36);
-  y += 56;
-
-  // Gold separator
-  ctx.strokeStyle = GOLD;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(PAD, y);
-  ctx.lineTo(W - PAD, y);
-  ctx.stroke();
-  y += 30;
+  y += 72;
 
   return y;
 }
@@ -179,16 +170,7 @@ function drawSourceBadge(ctx: CanvasRenderingContext2D, text: string, y: number)
 }
 
 function drawSectionLabel(ctx: CanvasRenderingContext2D, label: string, y: number): number {
-  y += 20;
-  // Thin gold line
-  ctx.strokeStyle = GOLD_LINE_ALPHA;
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(PAD, y);
-  ctx.lineTo(W - PAD, y);
-  ctx.stroke();
-  y += 24;
-
+  y += 30;
   ctx.font = `600 26px ${SANS}`;
   ctx.fillStyle = GOLD;
   ctx.fillText(label, PAD, y + 24);
@@ -467,15 +449,6 @@ function drawEventStats(
   ];
   const colW = w / cols.length;
 
-  // Divider line above
-  ctx.strokeStyle = GOLD_LINE_ALPHA;
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(x, y);
-  ctx.lineTo(x + w, y);
-  ctx.stroke();
-  y += 32;
-
   for (let i = 0; i < cols.length; i++) {
     const cx = x + i * colW;
 
@@ -488,28 +461,9 @@ function drawEventStats(
     ctx.font = `28px ${SANS}`;
     ctx.fillStyle = TEXT_SECONDARY;
     ctx.fillText(cols[i].label, cx + 8, y + 108);
-
-    // Vertical divider between columns
-    if (i < cols.length - 1) {
-      ctx.strokeStyle = GOLD_LINE_ALPHA;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(cx + colW, y - 10);
-      ctx.lineTo(cx + colW, y + 115);
-      ctx.stroke();
-    }
   }
 
-  y += 140;
-
-  // Divider line below
-  ctx.strokeStyle = GOLD_LINE_ALPHA;
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(x, y);
-  ctx.lineTo(x + w, y);
-  ctx.stroke();
-  y += 16;
+  y += 130;
 
   return y;
 }
@@ -594,26 +548,18 @@ function drawAnalysisCTA(
 }
 
 function drawFooter(ctx: CanvasRenderingContext2D): void {
-  const y = H - 100;
-
-  // Separator line
-  ctx.strokeStyle = GOLD;
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(PAD, y);
-  ctx.lineTo(W - PAD, y);
-  ctx.stroke();
+  const y = H - 90;
 
   // URL
   ctx.font = `26px ${SANS}`;
   ctx.fillStyle = GOLD;
   ctx.textAlign = 'center';
-  ctx.fillText('powerreader.pages.dev', W / 2, y + 36);
+  ctx.fillText('powerreader.pages.dev', W / 2, y + 28);
 
   // Tagline
   ctx.font = `22px ${SANS}`;
   ctx.fillStyle = TEXT_SECONDARY;
-  ctx.fillText('利用 AI 看透新聞濾鏡 · 透過公民驅動透明', W / 2, y + 68);
+  ctx.fillText('利用 AI 看透新聞濾鏡 · 透過公民驅動透明', W / 2, y + 60);
   ctx.textAlign = 'left';
 }
 
