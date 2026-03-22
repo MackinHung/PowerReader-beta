@@ -2,29 +2,7 @@
   import { onMount } from 'svelte';
   import Card from '$lib/components/ui/Card.svelte';
   import { t } from '$lib/i18n/zh-TW.js';
-  import { createSponsorOrder, fetchSponsorStats } from '$lib/core/api.js';
-  import { getAuthStore } from '$lib/stores/auth.svelte.js';
-
-  const auth = getAuthStore();
-
-  // Sponsor flow state
-  let selectedAmount = $state(0);
-  let customAmount = $state('');
-  let selectedType = $state('');
-  let paying = $state(false);
-  let errorMsg = $state('');
-
-  const PRESET_AMOUNTS = [60, 150, 300];
-
-  const SPONSOR_TYPES = [
-    { key: 'coffee',  icon: 'coffee',    nameKey: 'sponsor.type_coffee',  descKey: 'sponsor.type_coffee_desc' },
-    { key: 'civic',   icon: 'groups',    nameKey: 'sponsor.type_civic',   descKey: 'sponsor.type_civic_desc' },
-    { key: 'compute', icon: 'memory',    nameKey: 'sponsor.type_compute', descKey: 'sponsor.type_compute_desc' },
-    { key: 'proxy',   icon: 'newspaper', nameKey: 'sponsor.type_proxy',   descKey: 'sponsor.type_proxy_desc' },
-  ];
-
-  let finalAmount = $derived(selectedAmount > 0 ? selectedAmount : (Number(customAmount) || 0));
-  let canPay = $derived(finalAmount >= 30 && selectedType !== '');
+  import { fetchSponsorStats } from '$lib/core/api.js';
 
   // Stats
   let stats = $state(null);
@@ -36,49 +14,6 @@
       statsLoading = false;
     });
   });
-
-  function selectAmount(amount) {
-    selectedAmount = amount;
-    customAmount = '';
-  }
-
-  function onCustomInput(e) {
-    selectedAmount = 0;
-    customAmount = e.target.value;
-  }
-
-  function selectType(key) {
-    selectedType = key;
-  }
-
-  async function handlePay() {
-    if (!canPay || paying) return;
-    paying = true;
-    errorMsg = '';
-
-    const token = auth.token || undefined;
-    const res = await createSponsorOrder({ amount: finalAmount, type: selectedType }, token);
-
-    if (!res.success) {
-      errorMsg = t('sponsor.error');
-      paying = false;
-      return;
-    }
-
-    // Create hidden form and submit to ECPay
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = res.data.action_url;
-    for (const [key, value] of Object.entries(res.data.form_params)) {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = key;
-      input.value = value;
-      form.appendChild(input);
-    }
-    document.body.appendChild(form);
-    form.submit();
-  }
 
   let poolTotal = $derived(
     stats ? stats.pools.developer + stats.pools.platform + stats.pools.compute : 0
@@ -135,79 +70,17 @@
     </Card>
   </section>
 
-  <!-- Section 2: Sponsor & Subscribe (2-step flow) -->
+  <!-- Section 2: Sponsor & Subscribe (coming soon) -->
   <section class="section">
     <h2 class="section-title">
       <span class="material-symbols-outlined section-icon">favorite</span>
       {t('sponsor.title')}
     </h2>
     <Card variant="elevated">
-      <div class="sponsor-flow">
-        <p class="sponsor-desc">{t('power_pool.sponsor.desc')}</p>
-
-        <!-- Step 1: Amount Selection -->
-        <div class="sponsor-step">
-          <h3 class="step-heading">{t('sponsor.step1_title')}</h3>
-          <div class="amount-grid">
-            {#each PRESET_AMOUNTS as amt}
-              <button
-                class="amount-btn"
-                class:selected={selectedAmount === amt}
-                onclick={() => selectAmount(amt)}
-              >
-                ${amt}
-              </button>
-            {/each}
-            <div class="amount-custom-wrap">
-              <input
-                type="number"
-                class="amount-custom"
-                class:selected={selectedAmount === 0 && customAmount !== ''}
-                placeholder={t('sponsor.amount_custom')}
-                min="30"
-                value={customAmount}
-                oninput={onCustomInput}
-              />
-              <span class="amount-min-hint">{t('sponsor.amount_min')}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Step 2: Type Selection (shown when amount selected) -->
-        {#if finalAmount >= 30}
-          <div class="sponsor-step">
-            <h3 class="step-heading">{t('sponsor.step2_title')}</h3>
-            <div class="type-grid">
-              {#each SPONSOR_TYPES as st}
-                <button
-                  class="type-card"
-                  class:selected={selectedType === st.key}
-                  onclick={() => selectType(st.key)}
-                >
-                  <span class="material-symbols-outlined type-icon">{st.icon}</span>
-                  <span class="type-name">{t(st.nameKey)}</span>
-                  <span class="type-desc">{t(st.descKey)}</span>
-                </button>
-              {/each}
-            </div>
-          </div>
-        {/if}
-
-        <!-- Pay Button -->
-        {#if canPay}
-          <button
-            class="pay-btn"
-            onclick={handlePay}
-            disabled={paying}
-          >
-            <span class="material-symbols-outlined">payment</span>
-            {paying ? t('sponsor.paying') : `${t('sponsor.pay_button')} $${finalAmount}`}
-          </button>
-        {/if}
-
-        {#if errorMsg}
-          <p class="sponsor-error">{errorMsg}</p>
-        {/if}
+      <div class="sponsor-coming-soon">
+        <span class="material-symbols-outlined coming-soon-icon">construction</span>
+        <p class="coming-soon-text">即將開放</p>
+        <p class="coming-soon-desc">贊助功能正在準備中，敬請期待</p>
       </div>
     </Card>
   </section>
@@ -474,159 +347,28 @@
     text-align: center;
   }
 
-  /* Sponsor Flow */
-  .sponsor-flow {
+  /* Sponsor Coming Soon */
+  .sponsor-coming-soon {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    padding: 20px;
+    align-items: center;
+    gap: 8px;
+    padding: 40px 20px;
   }
-  .sponsor-desc {
+  .coming-soon-icon {
+    font-size: 48px;
+    color: var(--md-sys-color-on-surface-variant);
+    opacity: 0.5;
+  }
+  .coming-soon-text {
+    margin: 0;
+    font: var(--md-sys-typescale-title-medium-font);
+    color: var(--md-sys-color-on-surface);
+  }
+  .coming-soon-desc {
     margin: 0;
     font: var(--md-sys-typescale-body-medium-font);
     color: var(--md-sys-color-on-surface-variant);
-    text-align: center;
-  }
-  .sponsor-step {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .step-heading {
-    margin: 0;
-    font: var(--md-sys-typescale-title-small-font);
-    color: var(--md-sys-color-on-surface);
-  }
-
-  /* Amount Grid */
-  .amount-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-  @media (min-width: 480px) {
-    .amount-grid {
-      grid-template-columns: repeat(4, 1fr);
-    }
-  }
-  .amount-btn {
-    padding: 12px 8px;
-    border: 2px solid var(--md-sys-color-outline);
-    border-radius: 0;
-    background: var(--md-sys-color-surface);
-    color: var(--md-sys-color-on-surface);
-    font: var(--md-sys-typescale-label-large-font);
-    cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
-  }
-  .amount-btn:hover {
-    border-color: var(--md-sys-color-primary);
-  }
-  .amount-btn.selected {
-    border-color: #FF5722;
-    background: rgba(255, 87, 34, 0.08);
-    color: #FF5722;
-    font-weight: 700;
-  }
-  .amount-custom-wrap {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .amount-custom {
-    padding: 12px 8px;
-    border: 2px solid var(--md-sys-color-outline);
-    border-radius: 0;
-    background: var(--md-sys-color-surface);
-    color: var(--md-sys-color-on-surface);
-    font: var(--md-sys-typescale-label-large-font);
-    width: 100%;
-    box-sizing: border-box;
-  }
-  .amount-custom.selected {
-    border-color: #FF5722;
-  }
-  .amount-custom:focus {
-    outline: 2px solid var(--md-sys-color-primary);
-    outline-offset: -2px;
-  }
-  .amount-min-hint {
-    font: var(--md-sys-typescale-label-small-font);
-    color: var(--md-sys-color-on-surface-variant);
-  }
-
-  /* Type Grid */
-  .type-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-  .type-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    padding: 16px 8px;
-    border: 2px solid var(--md-sys-color-outline);
-    border-radius: 0;
-    background: var(--md-sys-color-surface);
-    cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
-    text-align: center;
-  }
-  .type-card:hover {
-    border-color: var(--md-sys-color-primary);
-  }
-  .type-card.selected {
-    border-color: #FF5722;
-    background: rgba(255, 87, 34, 0.08);
-  }
-  .type-icon {
-    font-size: 28px;
-    color: var(--md-sys-color-primary);
-  }
-  .type-card.selected .type-icon {
-    color: #FF5722;
-  }
-  .type-name {
-    font: var(--md-sys-typescale-title-small-font);
-    color: var(--md-sys-color-on-surface);
-  }
-  .type-desc {
-    font: var(--md-sys-typescale-label-small-font);
-    color: var(--md-sys-color-on-surface-variant);
-    line-height: 1.3;
-  }
-
-  /* Pay Button */
-  .pay-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 14px 28px;
-    border: 3px solid var(--pr-ink);
-    border-radius: 0;
-    background: #FF5722;
-    color: white;
-    font: var(--md-sys-typescale-label-large-font);
-    font-weight: 700;
-    cursor: pointer;
-    transition: opacity 0.15s;
-    align-self: center;
-  }
-  .pay-btn:hover:not(:disabled) {
-    opacity: 0.9;
-  }
-  .pay-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-  .sponsor-error {
-    margin: 0;
-    font: var(--md-sys-typescale-body-small-font);
-    color: var(--md-sys-color-error);
-    text-align: center;
   }
 
   /* Stats */

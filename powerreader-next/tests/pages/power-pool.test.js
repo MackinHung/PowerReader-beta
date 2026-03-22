@@ -138,78 +138,11 @@ describe('Power Pool Page', () => {
     expect(steps.length).toBe(5);
   });
 
-  it('renders sponsor section with step 1 heading', () => {
+  it('renders sponsor section with coming soon placeholder', () => {
     const { container } = render(PowerPoolPage);
-    const heading = container.querySelector('.step-heading');
-    expect(heading).toBeTruthy();
-    expect(heading.textContent).toContain('選擇金額');
-  });
-
-  it('renders 3 preset amount buttons', () => {
-    const { container } = render(PowerPoolPage);
-    const amountBtns = container.querySelectorAll('.amount-btn');
-    expect(amountBtns.length).toBe(3);
-    expect(amountBtns[0].textContent).toContain('60');
-    expect(amountBtns[1].textContent).toContain('150');
-    expect(amountBtns[2].textContent).toContain('300');
-  });
-
-  it('renders custom amount input with min=30', () => {
-    const { container } = render(PowerPoolPage);
-    const customInput = container.querySelector('.amount-custom');
-    expect(customInput).toBeTruthy();
-    expect(customInput.getAttribute('min')).toBe('30');
-  });
-
-  it('highlights selected amount button on click', async () => {
-    const { container } = render(PowerPoolPage);
-    const amountBtns = container.querySelectorAll('.amount-btn');
-
-    await fireEvent.click(amountBtns[0]);
-    expect(amountBtns[0].classList.contains('selected')).toBe(true);
-    expect(amountBtns[1].classList.contains('selected')).toBe(false);
-  });
-
-  it('shows type grid after amount selection', async () => {
-    const { container } = render(PowerPoolPage);
-
-    // Initially no type grid (amount < 30)
-    expect(container.querySelector('.type-grid')).toBeFalsy();
-
-    // Select $60
-    const amountBtns = container.querySelectorAll('.amount-btn');
-    await fireEvent.click(amountBtns[0]);
-
-    expect(container.querySelector('.type-grid')).toBeTruthy();
-  });
-
-  it('renders 4 sponsor type cards when amount selected', async () => {
-    const { container } = render(PowerPoolPage);
-    const amountBtns = container.querySelectorAll('.amount-btn');
-
-    await fireEvent.click(amountBtns[0]);
-    const typeCards = container.querySelectorAll('.type-card');
-    expect(typeCards.length).toBe(4);
-  });
-
-  it('shows pay button after selecting amount and type', async () => {
-    const { container } = render(PowerPoolPage);
-
-    // No pay button initially
-    expect(container.querySelector('.pay-btn')).toBeFalsy();
-
-    // Select amount $60
-    const amountBtns = container.querySelectorAll('.amount-btn');
-    await fireEvent.click(amountBtns[0]);
-
-    // Select coffee type
-    const typeCards = container.querySelectorAll('.type-card');
-    await fireEvent.click(typeCards[0]);
-
-    const payBtn = container.querySelector('.pay-btn');
-    expect(payBtn).toBeTruthy();
-    expect(payBtn.textContent).toContain('前往付款');
-    expect(payBtn.textContent).toContain('60');
+    const comingSoon = container.querySelector('.sponsor-coming-soon');
+    expect(comingSoon).toBeTruthy();
+    expect(comingSoon.textContent).toContain('即將開放');
   });
 
   it('renders sponsor stats section title', () => {

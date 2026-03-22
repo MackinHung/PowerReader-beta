@@ -262,7 +262,7 @@
         快捷入口
       </h2>
       <div class="entry-cards">
-        <div class="entry-card power-pool-card disabled">
+        <a href="/power-pool" class="entry-card power-pool-card">
           <div class="entry-card-icon">
             <span class="material-symbols-outlined">rocket_launch</span>
           </div>
@@ -270,8 +270,8 @@
             <span class="entry-card-title">動力池</span>
             <span class="entry-card-desc">查看飛輪願景、獎池分配與群體分析報告</span>
           </div>
-          <span class="entry-card-badge">Soon</span>
-        </div>
+          <span class="material-symbols-outlined entry-card-arrow">chevron_right</span>
+        </a>
         <div class="entry-card shop-card disabled">
           <div class="entry-card-icon shop-icon">
             <span class="material-symbols-outlined">storefront</span>
