@@ -27,8 +27,8 @@
   ];
 
   const sidebarExtraItems = [
-    { icon: 'rocket_launch', label: '動力池', href: '/power-pool' },
-    { icon: 'storefront', label: '點數商店', href: '/point-shop' }
+    { icon: 'rocket_launch', label: '動力池', href: '', disabled: true, badge: 'Soon' },
+    { icon: 'storefront', label: '點數商店', href: '', disabled: true, badge: 'Soon' }
   ];
 
   const titles = {

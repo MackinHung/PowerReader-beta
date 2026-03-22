@@ -262,7 +262,7 @@
         快捷入口
       </h2>
       <div class="entry-cards">
-        <a href="/power-pool" class="entry-card power-pool-card">
+        <div class="entry-card power-pool-card disabled">
           <div class="entry-card-icon">
             <span class="material-symbols-outlined">rocket_launch</span>
           </div>
@@ -270,9 +270,9 @@
             <span class="entry-card-title">動力池</span>
             <span class="entry-card-desc">查看飛輪願景、獎池分配與群體分析報告</span>
           </div>
-          <span class="material-symbols-outlined entry-card-arrow">chevron_right</span>
-        </a>
-        <a href="/point-shop" class="entry-card shop-card">
+          <span class="entry-card-badge">Soon</span>
+        </div>
+        <div class="entry-card shop-card disabled">
           <div class="entry-card-icon shop-icon">
             <span class="material-symbols-outlined">storefront</span>
           </div>
@@ -280,8 +280,8 @@
             <span class="entry-card-title">點數商店</span>
             <span class="entry-card-desc">使用貢獻點數兌換徽章與進階功能</span>
           </div>
-          <span class="material-symbols-outlined entry-card-arrow">chevron_right</span>
-        </a>
+          <span class="entry-card-badge">Soon</span>
+        </div>
       </div>
     </section>
 
@@ -654,6 +654,11 @@
   .entry-card-arrow {
     color: var(--md-sys-color-on-surface-variant);
     flex-shrink: 0;
+  }
+  .entry-card.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: default;
   }
   .entry-card-badge {
     font: var(--md-sys-typescale-label-small-font);
