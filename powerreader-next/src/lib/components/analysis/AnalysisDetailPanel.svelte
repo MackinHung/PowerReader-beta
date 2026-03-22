@@ -86,7 +86,14 @@
 {/if}
 
 {#snippet panelContent()}
-  <h3 class="article-title">{article.title ?? ''}</h3>
+  {#if article.primary_url}
+    <a class="article-title-link" href={article.primary_url} target="_blank" rel="noopener">
+      <h3 class="article-title">{article.title ?? ''}</h3>
+      <span class="material-symbols-outlined title-icon">open_in_new</span>
+    </a>
+  {:else}
+    <h3 class="article-title">{article.title ?? ''}</h3>
+  {/if}
 
   {#if !isPolitical}
     <div class="not-political-badge">
@@ -224,6 +231,27 @@
     flex-direction: column;
     gap: 12px;
   }
+  .article-title-link {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .article-title-link:hover .article-title {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+  .title-icon {
+    flex-shrink: 0;
+    font-size: 20px;
+    color: var(--md-sys-color-on-surface-variant);
+    margin-top: 4px;
+  }
+  .article-title-link:hover .title-icon {
+    color: var(--md-sys-color-primary);
+  }
   .article-title {
     margin: 0;
     font: var(--md-sys-typescale-headline-small-font);
@@ -264,12 +292,5 @@
   }
   .source-attribution .material-symbols-outlined {
     font-size: 16px;
-  }
-  .summary-text {
-    margin: 0;
-    font: var(--md-sys-typescale-body-medium-font);
-    color: var(--md-sys-color-on-surface-variant);
-    line-height: 1.6;
-    white-space: pre-wrap;
   }
 </style>

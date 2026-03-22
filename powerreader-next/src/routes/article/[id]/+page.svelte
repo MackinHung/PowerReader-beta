@@ -169,23 +169,15 @@
           <SourceBadge source={article.source} size="medium" />
           <span class="date">{formatDate(article.published_at)}</span>
         </div>
-        <h1 class="article-title">{article.title}</h1>
         {#if article.primary_url}
-          <button class="original-link" onclick={handleOpenOriginal}>
-            <span class="material-symbols-outlined">open_in_new</span>
-            查看原文
-          </button>
+          <a class="article-title-link" href={article.primary_url} target="_blank" rel="noopener">
+            <h1 class="article-title">{article.title}</h1>
+            <span class="material-symbols-outlined title-external-icon">open_in_new</span>
+          </a>
+        {:else}
+          <h1 class="article-title">{article.title}</h1>
         {/if}
       </div>
-
-      {#if article.content_markdown || article.summary}
-        <Card variant="filled">
-          <div class="content-section">
-            <h3>摘要</h3>
-            <p>{article.summary || article.content_markdown || article.title}</p>
-          </div>
-        </Card>
-      {/if}
 
       {#if article.analysis_status === 'done'}
         <div class="share-row">
@@ -335,27 +327,33 @@
     font: var(--md-sys-typescale-label-medium-font);
     color: var(--md-sys-color-on-surface-variant);
   }
+  .article-title-link {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .article-title-link:hover .article-title {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+  .title-external-icon {
+    flex-shrink: 0;
+    font-size: 20px;
+    color: var(--md-sys-color-on-surface-variant);
+    margin-top: 6px;
+  }
+  .article-title-link:hover .title-external-icon {
+    color: var(--md-sys-color-primary);
+  }
   .article-title {
     margin: 0;
     font: var(--md-sys-typescale-headline-small-font);
     color: var(--md-sys-color-on-surface);
     line-height: 1.4;
     overflow-wrap: break-word;
-  }
-  .original-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font: var(--md-sys-typescale-label-large-font);
-    color: var(--md-sys-color-primary);
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    text-decoration: none;
-  }
-  .original-link:hover {
-    text-decoration: underline;
   }
   .viz-block {
     display: flex;
@@ -365,23 +363,6 @@
   .viz-label {
     font: var(--md-sys-typescale-label-medium-font);
     color: var(--md-sys-color-on-surface-variant);
-  }
-  .content-section {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .content-section h3 {
-    margin: 0;
-    font: var(--md-sys-typescale-title-small-font);
-    color: var(--md-sys-color-on-surface);
-  }
-  .content-section p {
-    margin: 0;
-    font: var(--md-sys-typescale-body-medium-font);
-    color: var(--md-sys-color-on-surface-variant);
-    line-height: 1.6;
-    white-space: pre-wrap;
   }
   .share-row {
     display: flex;
