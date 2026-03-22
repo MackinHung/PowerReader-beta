@@ -158,8 +158,10 @@
     padding: 16px;
   }
   .dialog-content {
-    background: var(--md-sys-color-surface-container-highest);
-    border-radius: var(--md-sys-shape-corner-extra-large);
+    background: var(--md-sys-color-surface-container-high);
+    border-radius: 0;
+    border: 4px solid var(--pr-ink);
+    box-shadow: 8px 8px 0px var(--pr-ink);
     max-width: 480px;
     width: 100%;
     max-height: 85vh;
@@ -184,14 +186,15 @@
     justify-content: center;
     width: 40px;
     height: 40px;
-    border: none;
-    border-radius: var(--md-sys-shape-corner-full);
+    border: 2px solid transparent;
+    border-radius: 0;
     background: transparent;
     color: var(--md-sys-color-on-surface-variant);
     cursor: pointer;
   }
   .close-btn:hover {
-    background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
+    border-color: var(--pr-ink);
+    color: var(--md-sys-color-on-surface);
   }
   .dialog-body {
     padding: 16px 24px;
@@ -222,14 +225,13 @@
     display: flex;
     justify-content: center;
     background: var(--md-sys-color-surface-container);
-    border-radius: var(--md-sys-shape-corner-medium);
+    border: 2px solid var(--pr-ink);
     padding: 8px;
   }
   .preview-img {
     width: 100%;
     max-height: 50vh;
     object-fit: contain;
-    border-radius: var(--md-sys-shape-corner-small);
   }
   .status-msg {
     margin: 12px 0 0;
@@ -246,13 +248,13 @@
   .action-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     padding: 10px 20px;
     border: none;
-    border-radius: var(--md-sys-shape-corner-full);
+    border-radius: 0;
     font: var(--md-sys-typescale-label-large-font);
     cursor: pointer;
-    transition: background var(--md-sys-motion-duration-short4);
   }
   .action-btn .material-symbols-outlined {
     font-size: 20px;
@@ -263,17 +265,18 @@
     pointer-events: none;
   }
   .action-btn.primary {
-    background: var(--md-sys-color-primary);
-    color: var(--md-sys-color-on-primary);
+    background: #000000;
+    color: #FFFFFF;
   }
   .action-btn.primary:hover {
-    background: color-mix(in srgb, var(--md-sys-color-primary) 92%, var(--md-sys-color-on-primary));
+    box-shadow: var(--md-sys-elevation-1);
   }
   .action-btn.secondary {
-    background: var(--md-sys-color-surface-container);
+    background: transparent;
     color: var(--md-sys-color-on-surface);
+    border: 2px solid var(--pr-ink);
   }
   .action-btn.secondary:hover {
-    background: var(--md-sys-color-surface-container-high);
+    background: var(--md-sys-color-surface-container);
   }
 </style>
