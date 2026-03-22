@@ -30,29 +30,67 @@
   let modelProgress = $state(0);       // 0.0-1.0
   let modelStageText = $state('');      // WebLLM progress text
   let modelError = $state('');
-  let downloadStartTime = $state(0);
   let downloadSpeed = $state('');       // e.g. "12.3 MB/s"
-  let downloadEta = $state('');         // e.g. "2:30"
+  let downloadEta = $state('');         // e.g. "剩餘 2:30"
+  let downloadFinishTime = $state('');  // e.g. "預計 14:35 完成"
 
-  // EMA smoothing state for stable ETA
-  let smoothedSpeed = 0;               // EMA of progress/s
-  let smoothedEta = 0;                 // EMA of remaining seconds
-  const SPEED_ALPHA = 0.7;             // speed smoothing (responsive)
-  const ETA_ALPHA = 0.9;               // ETA smoothing (stable)
-  const ESTIMATED_MB = 4500;           // ~4.5GB for Qwen3-8B
+  // ── Download ETA tracking (byte-based, phase-aware) ──
+  const MODEL_TOTAL_BYTES = 4_607_731_712;  // Qwen3-8B-q4f16_1-MLC exact size
+  const MODEL_TOTAL_MB = MODEL_TOTAL_BYTES / (1024 * 1024);  // 4393 MiB
+  const SPEED_ALPHA = 0.3;   // New speed sample weight (lower = smoother)
+  const ETA_ALPHA = 0.15;    // New ETA sample weight (very stable)
+  const MIN_UPDATES_FOR_ETA = 3;          // Don't show ETA until 3+ data points
+  const ETA_DISPLAY_GRANULARITY = 5;      // Round to 5-second increments
+  const ETA_INCREASE_THRESHOLD = 1.10;    // Only increase displayed ETA if 10%+ higher
 
-  /** Pre-download estimate via Network Information API (navigator.connection.downlink, Mbps). */
-  let estimatedDownloadTime = $derived(() => {
+  let emaSpeedBps = 0;         // EMA of bytes/sec
+  let emaEtaSec = 0;           // EMA of remaining seconds (raw)
+  let displayedEtaSec = 0;     // Jitter-suppressed ETA shown to user
+  let updateCount = 0;         // Number of valid speed samples
+  let lastFetchedBytes = 0;    // Last parsed byte count
+  let lastUpdateTime = 0;      // Last update timestamp (ms)
+  let downloadPhase = 'init';  // 'init' | 'download' | 'gpu-load' | 'compile' | 'done'
+
+  /** Pre-download estimate via Network Information API. */
+  let preDownloadEstimate = $derived(() => {
     const conn = typeof navigator !== 'undefined' ? navigator.connection : null;
     if (!conn?.downlink) return null;
-    const bytesPerSec = (conn.downlink * 1_000_000) / 8;  // Mbps → B/s
-    const secs = (ESTIMATED_MB * 1_000_000) / bytesPerSec; // total seconds
-    if (secs < 60) return `約 ${Math.ceil(secs)} 秒`;
-    if (secs < 3600) return `約 ${Math.ceil(secs / 60)} 分鐘`;
+    const bytesPerSec = (conn.downlink * 1_000_000) / 8 * 0.7;  // 0.7x = overhead factor
+    const secs = MODEL_TOTAL_BYTES / bytesPerSec;
+    return secs;
+  });
+
+  let preDownloadTimeText = $derived(() => {
+    const secs = preDownloadEstimate();
+    if (secs == null) return null;
+    return formatDuration(secs);
+  });
+
+  let preDownloadFinishText = $derived(() => {
+    const secs = preDownloadEstimate();
+    if (secs == null) return null;
+    return formatClockTime(Date.now() + secs * 1000);
+  });
+
+  /** Format seconds as human-readable duration. */
+  function formatDuration(secs) {
+    if (secs <= 0) return '';
+    if (secs < 60) return `${Math.ceil(secs)} 秒`;
+    if (secs < 3600) {
+      const mins = Math.floor(secs / 60);
+      const s = Math.ceil(secs % 60);
+      return `${mins}:${String(s).padStart(2, '0')}`;
+    }
     const hrs = Math.floor(secs / 3600);
     const mins = Math.ceil((secs % 3600) / 60);
-    return `約 ${hrs} 小時 ${mins} 分鐘`;
-  });
+    return `${hrs}:${String(mins).padStart(2, '0')}:00`;
+  }
+
+  /** Format a timestamp (ms) as HH:MM clock time. */
+  function formatClockTime(timestampMs) {
+    const d = new Date(timestampMs);
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
 
   // ── GPU detection state ──
   let gpuResult = $state(null);         // scanGPU() result
@@ -218,7 +256,7 @@
     localStorage.setItem('pr_confirm_gpu', confirmGpu ? '1' : '0');
   });
 
-  // ── Model download ──
+  // ── Model download (byte-based ETA with phase detection) ──
   async function handleDownloadModel() {
     modelLoading = true;
     modelError = '';
@@ -226,57 +264,99 @@
     modelStageText = '正在初始化...';
     downloadSpeed = '';
     downloadEta = '';
-    downloadStartTime = Date.now();
-    smoothedSpeed = 0;
-    smoothedEta = 0;
-    let lastProgress = 0;
-    let lastTime = Date.now();
+    downloadFinishTime = '';
+
+    // Reset ETA tracking state
+    emaSpeedBps = 0;
+    emaEtaSec = 0;
+    displayedEtaSec = 0;
+    updateCount = 0;
+    lastFetchedBytes = 0;
+    lastUpdateTime = 0;
+    downloadPhase = 'init';
 
     try {
       await getWebLLMEngine((report) => {
         const pct = report.progress || 0;
+        const text = report.text || '';
         modelProgress = pct;
-        modelStageText = report.text || '';
+        modelStageText = text;
 
-        const now = Date.now();
-        const dt = (now - lastTime) / 1000;
-        if (dt > 0.5 && pct > lastProgress) {
-          const dp = pct - lastProgress;
-          const instantSpeed = dp / dt;  // progress/s
+        // Phase detection from report.text
+        const prevPhase = downloadPhase;
+        if (text.startsWith('Fetching param cache') || text.includes('MB fetched')) {
+          downloadPhase = 'download';
+        } else if (text.startsWith('Loading model from cache') || text.includes('MB loaded')) {
+          downloadPhase = 'gpu-load';
+        } else if (text.startsWith('Finish loading')) {
+          downloadPhase = 'done';
+        }
 
-          // EMA smoothing: speed (α=0.7 responsive), ETA (α=0.9 stable)
-          smoothedSpeed = smoothedSpeed === 0
+        // Reset EMA on phase transition
+        if (downloadPhase !== prevPhase && prevPhase !== 'init') {
+          emaSpeedBps = 0;
+          emaEtaSec = 0;
+          displayedEtaSec = 0;
+          updateCount = 0;
+          lastFetchedBytes = 0;
+          lastUpdateTime = 0;
+          if (downloadPhase === 'gpu-load') {
+            downloadSpeed = '';
+            downloadEta = '';
+            downloadFinishTime = '';
+          }
+        }
+
+        // Parse actual MB from report.text (e.g. "320MB fetched" or "120MB loaded")
+        const mbMatch = text.match(/(\d+)MB (?:fetched|loaded)/);
+        if (!mbMatch) return;
+        const fetchedBytes = parseInt(mbMatch[1]) * 1024 * 1024;
+
+        const now = performance.now();
+        const dt = lastUpdateTime > 0 ? (now - lastUpdateTime) / 1000 : 0;
+        const db = fetchedBytes - lastFetchedBytes;
+
+        if (dt > 0 && db > 0) {
+          const instantSpeed = db / dt;  // bytes/sec
+
+          // EMA speed smoothing
+          emaSpeedBps = emaSpeedBps === 0
             ? instantSpeed
-            : (1 - SPEED_ALPHA) * instantSpeed + SPEED_ALPHA * smoothedSpeed;
+            : SPEED_ALPHA * instantSpeed + (1 - SPEED_ALPHA) * emaSpeedBps;
 
-          const remaining = smoothedSpeed > 0 ? (1.0 - pct) / smoothedSpeed : 0;
-          smoothedEta = smoothedEta === 0
-            ? remaining
-            : (1 - ETA_ALPHA) * remaining + ETA_ALPHA * smoothedEta;
+          // Calculate remaining bytes → raw ETA
+          const remainingBytes = MODEL_TOTAL_BYTES - fetchedBytes;
+          const rawEta = emaSpeedBps > 0 ? remainingBytes / emaSpeedBps : 0;
 
-          // Format speed
-          const speedMB = smoothedSpeed * ESTIMATED_MB;
+          // EMA ETA smoothing
+          emaEtaSec = emaEtaSec === 0
+            ? rawEta
+            : ETA_ALPHA * rawEta + (1 - ETA_ALPHA) * emaEtaSec;
+
+          updateCount++;
+
+          // Format speed (bytes/sec → MB/s)
+          const speedMB = emaSpeedBps / (1024 * 1024);
           downloadSpeed = speedMB >= 1
             ? `${speedMB.toFixed(1)} MB/s`
             : `${(speedMB * 1024).toFixed(0)} KB/s`;
 
-          // Format ETA
-          const eta = Math.max(0, smoothedEta);
-          if (eta < 60) {
-            downloadEta = `${Math.ceil(eta)} 秒`;
-          } else if (eta < 3600) {
-            const mins = Math.floor(eta / 60);
-            const secs = Math.ceil(eta % 60);
-            downloadEta = `${mins}:${String(secs).padStart(2, '0')}`;
-          } else {
-            const hrs = Math.floor(eta / 3600);
-            const mins = Math.floor((eta % 3600) / 60);
-            downloadEta = `${hrs}:${String(mins).padStart(2, '0')}:00`;
-          }
+          // Jitter-suppressed ETA display (only after MIN_UPDATES_FOR_ETA samples)
+          if (updateCount >= MIN_UPDATES_FOR_ETA && emaEtaSec > 0) {
+            const rounded = Math.ceil(emaEtaSec / ETA_DISPLAY_GRANULARITY) * ETA_DISPLAY_GRANULARITY;
 
-          lastProgress = pct;
-          lastTime = now;
+            // Asymmetric update: decrease freely, increase only if 10%+ higher
+            if (displayedEtaSec === 0 || rounded < displayedEtaSec || rounded > displayedEtaSec * ETA_INCREASE_THRESHOLD) {
+              displayedEtaSec = rounded;
+            }
+
+            downloadEta = formatDuration(displayedEtaSec);
+            downloadFinishTime = formatClockTime(Date.now() + displayedEtaSec * 1000);
+          }
         }
+
+        lastFetchedBytes = fetchedBytes;
+        lastUpdateTime = now;
       });
 
       modelReady = true;
@@ -284,6 +364,7 @@
       modelStageText = '下載完成';
       downloadSpeed = '';
       downloadEta = '';
+      downloadFinishTime = '';
     } catch (err) {
       modelError = err.message || '下載失敗';
       modelStageText = '';
@@ -492,9 +573,14 @@
               {/if}
             </div>
             <ProgressIndicator type="linear" value={modelProgress * 100} />
-            {#if modelStageText}
-              <span class="progress-stage">{modelStageText}</span>
-            {/if}
+            <div class="progress-footer">
+              {#if modelStageText}
+                <span class="progress-stage">{modelStageText}</span>
+              {/if}
+              {#if downloadFinishTime}
+                <span class="progress-finish">預計 {downloadFinishTime} 完成</span>
+              {/if}
+            </div>
           </div>
         {/if}
 
@@ -520,8 +606,8 @@
               <span class="material-symbols-outlined hint-icon">schedule</span>
               <div class="hint-text">
                 <span>下載時間因網路環境而異</span>
-                {#if estimatedDownloadTime()}
-                  <span class="hint-estimate">目前網速預估：{estimatedDownloadTime()}</span>
+                {#if preDownloadTimeText()}
+                  <span class="hint-estimate">目前網速預估：約 {preDownloadTimeText()}（約 {preDownloadFinishText()} 完成）</span>
                 {:else}
                   <span class="hint-estimate">Wi-Fi 環境約 5-15 分鐘，行動網路可能更久</span>
                 {/if}
@@ -1059,12 +1145,26 @@
     color: var(--md-sys-color-on-surface-variant);
     margin-left: auto;
   }
+  .progress-footer {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
   .progress-stage {
     font: var(--md-sys-typescale-body-small-font);
     color: var(--md-sys-color-on-surface-variant);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+  }
+  .progress-finish {
+    font: var(--md-sys-typescale-label-medium-font);
+    color: var(--md-sys-color-primary);
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   /* ── Hardware Section ── */
