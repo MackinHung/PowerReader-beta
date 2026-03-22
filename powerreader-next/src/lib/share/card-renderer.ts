@@ -95,6 +95,7 @@ export async function renderArticleCard(data: ArticleCardData): Promise<Blob> {
 // ── Event Card ──────────────────────────────────────────────
 
 export async function renderEventCard(data: EventCardData): Promise<Blob> {
+  // Draw on max-height canvas first, then crop to content
   const canvas = createCanvas(W, H);
   const ctx = canvas.getContext('2d')!;
 
@@ -120,9 +121,17 @@ export async function renderEventCard(data: EventCardData): Promise<Blob> {
     y = drawBlindspotWarning(ctx, y, data.blindspotType);
   }
 
-  drawFooter(ctx);
+  // Footer right after content
+  y += 40;
+  drawFooterAt(ctx, y);
+  const finalH = y + 80 + PAD;
 
-  return canvasToBlob(canvas);
+  // Crop to actual content height
+  const cropped = createCanvas(W, finalH);
+  const cctx = cropped.getContext('2d')!;
+  cctx.drawImage(canvas, 0, 0);
+
+  return canvasToBlob(cropped);
 }
 
 // ── Drawing Helpers ─────────────────────────────────────────
@@ -545,6 +554,18 @@ function drawAnalysisCTA(
   y += 44;
 
   return y;
+}
+
+function drawFooterAt(ctx: CanvasRenderingContext2D, y: number): void {
+  ctx.font = `26px ${SANS}`;
+  ctx.fillStyle = GOLD;
+  ctx.textAlign = 'center';
+  ctx.fillText('powerreader.pages.dev', W / 2, y + 28);
+
+  ctx.font = `22px ${SANS}`;
+  ctx.fillStyle = TEXT_SECONDARY;
+  ctx.fillText('利用 AI 看透新聞濾鏡 · 透過公民驅動透明', W / 2, y + 60);
+  ctx.textAlign = 'left';
 }
 
 function drawFooter(ctx: CanvasRenderingContext2D): void {
