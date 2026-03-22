@@ -581,6 +581,10 @@
                 <span class="progress-finish">預計 {downloadFinishTime} 完成</span>
               {/if}
             </div>
+            <div class="progress-tip">
+              <span class="material-symbols-outlined tip-icon">info</span>
+              <span>下載過程中可以離開此頁面瀏覽其他內容，不影響下載進度。回來後會自動顯示最新狀態。</span>
+            </div>
           </div>
         {/if}
 
@@ -1165,6 +1169,19 @@
     color: var(--md-sys-color-primary);
     white-space: nowrap;
     flex-shrink: 0;
+  }
+  .progress-tip {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font: var(--md-sys-typescale-body-small-font);
+    color: var(--md-sys-color-outline);
+    line-height: 1.4;
+  }
+  .tip-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+    margin-top: 1px;
   }
 
   /* ── Hardware Section ── */
