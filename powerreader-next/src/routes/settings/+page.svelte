@@ -51,12 +51,18 @@
   let lastUpdateTime = 0;      // Last update timestamp (ms)
   let downloadPhase = 'init';  // 'init' | 'download' | 'gpu-load' | 'compile' | 'done'
 
-  /** Pre-download estimate via Network Information API. */
+  /**
+   * Pre-download estimate via Network Information API.
+   * navigator.connection.downlink reports conservative bandwidth (small-request based),
+   * but WebLLM downloads 4 shards in parallel with sustained throughput that's typically
+   * 2-3x higher. We apply a 2.5x multiplier to match real-world download speeds.
+   */
   let preDownloadEstimate = $derived(() => {
     const conn = typeof navigator !== 'undefined' ? navigator.connection : null;
     if (!conn?.downlink) return null;
-    const bytesPerSec = (conn.downlink * 1_000_000) / 8 * 0.7;  // 0.7x = overhead factor
-    const secs = MODEL_TOTAL_BYTES / bytesPerSec;
+    const reportedBps = (conn.downlink * 1_000_000) / 8;        // Mbps → B/s
+    const adjustedBps = reportedBps * 2.5;                       // parallel + sustained boost
+    const secs = MODEL_TOTAL_BYTES / adjustedBps;
     return secs;
   });
 
