@@ -136,7 +136,7 @@
     </Card>
   </section>
 
-  <!-- Section 4: Transparency Plan -->
+  <!-- Section 4: Contribution Mechanisms -->
   <section class="section">
     <h2 class="section-title">
       <span class="material-symbols-outlined section-icon">verified</span>
@@ -159,18 +159,11 @@
             <p>{t('power_pool.transparency.proxy_compute_desc')}</p>
           </div>
         </div>
-        <div class="transparency-item">
-          <span class="material-symbols-outlined item-icon">edit_note</span>
-          <div class="item-content">
-            <h3>{t('power_pool.transparency.other_contrib_title')}</h3>
-            <p>{t('power_pool.transparency.other_contrib_desc')}</p>
-          </div>
-        </div>
         <div class="transparency-item highlight">
           <span class="material-symbols-outlined item-icon">casino</span>
           <div class="item-content">
-            <h3>{t('power_pool.transparency.lottery_title')}</h3>
-            <p>{t('power_pool.transparency.lottery_desc')}</p>
+            <h3>{t('power_pool.transparency.reward_title')}</h3>
+            <p>{t('power_pool.transparency.reward_desc')}</p>
           </div>
         </div>
       </div>
